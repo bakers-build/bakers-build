@@ -18,9 +18,10 @@
 {% set tile_name = value ~ ' ' ~ label ~ (comparison ? ', ' ~ comparison.label ~ ': ' ~ comparison.value ~ ', ' ~ comparison.delta : '') %}
 {# Shared by the info and the exact-value disclosure: shown while hovered or focused, dismissed with
    Escape (WCAG 1.4.13) and shown again on the next hover or focus. #}
-{# Hidden with opacity, never `hidden`/`invisible`: Drupal's unlayered hidden.module.css defines both
-   and would beat the layered hover/focus variants. #}
-{% set tip_classes = 'absolute left-0 top-full z-10 mt-inline-xs w-max max-w-prose rounded-xs bg-text px-inline py-inline-xs text-meta text-surface opacity-0 pointer-events-none' %}
+{# Out of layout at rest, so a tooltip never widens a narrow page. `hidden` is applied only while
+   NOT hovered or focused, never shown by a `block` variant: Drupal's unlayered hidden.module.css
+   defines `.hidden` and would beat a layered show variant. #}
+{% set tip_classes = 'absolute left-0 top-full z-10 mt-inline-xs w-max max-w-prose rounded-xs bg-text px-inline py-inline-xs text-meta text-surface pointer-events-none' %}
 {% set uid = 'stat-tile-' ~ random(1000000) %}
 {#- With a url the whole tile is the link target: a stretched anchor named
     after the figure, beneath the tooltips (z-20) so they stay reachable. -#}
@@ -34,10 +35,10 @@
       <span class="stat-tile__label">{{ label }}</span>
       {% if info %}
         <span class="relative z-20 inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
-          <button type="button" class="inline-flex rounded-xs text-text-faint hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" aria-label="About {{ label }}" aria-describedby="{{ uid }}-info">
+          <button type="button" class="inline-flex items-center justify-center max-md:min-h-touch max-md:min-w-touch rounded-xs text-text-faint hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" aria-label="About {{ label }}" aria-describedby="{{ uid }}-info">
             {{- include('bb_theme:icon', { name: 'info-circle', size: 'xs' }, with_context = false) -}}
           </button>
-          <span id="{{ uid }}-info" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ info }} Source: {{ source }}</span>
+          <span id="{{ uid }}-info" role="tooltip" class="{{ tip_classes }} not-group-hover:not-group-focus-within:hidden" :class="{ '!hidden': dismissed }">{{ info }} Source: {{ source }}</span>
         </span>
       {% endif %}
     </span>
@@ -45,7 +46,7 @@
       {% if exact %}
         <span class="relative z-20 inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
           <span tabindex="0" aria-describedby="{{ uid }}-exact" class="stat-tile__value text-stat-value rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring {{ tone_map[tone]|default('text-title') }}">{{ value }}</span>
-          <span id="{{ uid }}-exact" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ exact }}</span>
+          <span id="{{ uid }}-exact" role="tooltip" class="{{ tip_classes }} not-group-hover:not-group-focus-within:hidden" :class="{ '!hidden': dismissed }">{{ exact }}</span>
         </span>
       {% else %}
         <span class="stat-tile__value text-stat-value {{ tone_map[tone]|default('text-title') }}">{{ value }}</span>
@@ -63,7 +64,7 @@
           <span class="relative z-20 inline-flex gap-inline-xs group text-meta text-text-light" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
             {{ comparison.label }}
             <span tabindex="0" aria-describedby="{{ uid }}-previous" class="rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ comparison.value }}</span>
-            <span id="{{ uid }}-previous" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ comparison.exact }}</span>
+            <span id="{{ uid }}-previous" role="tooltip" class="{{ tip_classes }} not-group-hover:not-group-focus-within:hidden" :class="{ '!hidden': dismissed }">{{ comparison.exact }}</span>
           </span>
         {% else %}
           <span class="text-meta text-text-light">{{ comparison.label }} {{ comparison.value }}</span>
@@ -73,7 +74,7 @@
     {% if detail and detail_exact %}
       <span class="relative z-20 inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
         <span tabindex="0" aria-describedby="{{ uid }}-detail" class="text-meta text-text-light rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ detail }}</span>
-        <span id="{{ uid }}-detail" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ detail_exact }}</span>
+        <span id="{{ uid }}-detail" role="tooltip" class="{{ tip_classes }} not-group-hover:not-group-focus-within:hidden" :class="{ '!hidden': dismissed }">{{ detail_exact }}</span>
       </span>
     {% elseif detail %}
       <span class="text-meta text-text-light">{{ detail }}</span>

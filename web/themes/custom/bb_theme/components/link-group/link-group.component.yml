@@ -18,7 +18,9 @@ description: >-
   usual path; the `rows` slot is a composition escape hatch, and it WINS over
   `links` when filled. Renders nothing when it has neither `links` nor a filled
   `rows` slot — a group with a promising label and no rows is worse than an
-  absent one.
+  absent one. PHONE TOUCH DELTA (AC-15): below md, each row title link is at
+  least the `touch` height (44px), its text centred vertically; md and up are
+  unchanged.
 provider: bb_theme
 props:
   type: object
@@ -34,7 +36,9 @@ props:
     framed:
       type: boolean
       title: Framed
-      description: Draws a hairline frame with padding around the group, for groups that stand side by side. Off by default.
+      description: >-
+        Draws a hairline frame with padding around the group, for groups that
+        stand side by side. Off by default.
     links:
       type: array
       title: Links

@@ -11,7 +11,7 @@ Feature: AI proposals are reviewed before anything is booked
     When I open the proposal review link
     Then the week grid row "Bread · Time capture" shows "1:30" on "Mon 14"
     And the week grid row "Bread · Time capture" on "Mon 14" is marked Proposed
-    And the page shows "Proposed — not yet recorded: 3:30"
+    And the week grid row "Proposed — not yet recorded" reads "3:30" on "Total"
     And the overview total is "0:00"
     And "north-lead" of "Time capture" on "2026-09-14" totals 0 seconds
     When I type "1:15" into the week grid row "Bread · Time capture" on "Mon 14"

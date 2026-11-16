@@ -18,7 +18,7 @@
   {% if url %}<a class="use-ajax absolute inset-0 z-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ url }}" data-dialog-type="dialog.off_canvas" data-dialog-options='{"width":"40%"}' aria-label="Open {{ identifier }}"></a>{% endif %}
   <div class="flex items-center gap-inline-xs mb-inline-xs">
     {% if type_dot_map[type_key] is defined %}<span class="inline-block w-2 h-2 rounded-full shrink-0 {{ type_dot_map[type_key] }}" title="{{ type_key }}" aria-label="{{ type_key }}"></span>{% endif %}
-    <span class="font-mono text-data text-text">{{ identifier }}</span>
+    <span class="min-w-0 font-mono text-data text-text max-md:wrap-anywhere">{{ identifier }}</span>
     <span class="flex-1"></span>
     {#- P1 is `critical`, not `wait`. Both draw the same red pair, so nothing moves on
         the screen; what changes is what the badge SAYS. `wait` means nobody is acting
@@ -33,7 +33,7 @@
   {% set is_blocked = blockers|length > 0 or blocked_hidden|default(false) %}
   {% if is_blocked or state == 'cancelled' %}
     <div class="flex flex-wrap gap-inline-xs mt-inline">
-      {% if is_blocked %}<span class="inline-flex items-center gap-inline-xs px-inline py-inline-xs rounded-xs bg-surface-2 border border-border text-meta font-medium text-text"><span class="size-2 shrink-0 bg-state-unassigned-ink" aria-hidden="true"></span>Blocked by{% if blockers|length > 0 %} <span class="font-mono text-data">{{ blockers|join(', ') }}</span>{% endif %}</span>{% endif %}
+      {% if is_blocked %}<span class="inline-flex items-center gap-inline-xs px-inline py-inline-xs rounded-xs bg-surface-2 border border-border text-meta font-medium text-text"><span class="size-2 shrink-0 bg-state-unassigned-ink" aria-hidden="true"></span>Blocked by{% if blockers|length > 0 %} <span class="font-mono text-data max-md:wrap-anywhere">{{ blockers|join(', ') }}</span>{% endif %}</span>{% endif %}
       {% if state == 'cancelled' %}{{ include('bb_theme:badge', { label: 'Cancelled', tone: 'neutral' }, with_context = false) }}{% endif %}
     </div>
   {% endif %}

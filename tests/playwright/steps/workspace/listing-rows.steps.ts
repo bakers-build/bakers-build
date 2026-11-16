@@ -536,3 +536,39 @@ Then("every ticket row ends with the assignee's mark, named by its tooltip", asy
     expect(mark!.text.length, 'The mark shows more than initials').toBeLessThanOrEqual(3);
   }
 });
+
+/**
+ * Touch targets: every visible button, link, tab and form control in main.
+ * A checkbox or radio is measured by its label, its real hit area. Links
+ * inside prose sentences are excluded, and so is a link whose clickable list
+ * row is itself a large enough target to the same place.
+ */
+Then('every control in the main region is at least {int} pixels in both dimensions', async ({ page }, minimum: number) => {
+  await page.waitForLoadState('load');
+  const small = await page.getByRole('main').evaluate((main, min) => {
+    const controls = main.querySelectorAll('a[href], button, input:not([type="hidden"]), select, textarea, [role="tab"], summary');
+    return Array.from(controls).flatMap((control) => {
+      if (control.closest('p') && control.tagName === 'A') {
+        return [];
+      }
+      const input = control as HTMLInputElement;
+      const target = (input.type === 'checkbox' || input.type === 'radio') && input.labels?.[0] ? input.labels[0] : control;
+      if (!target.checkVisibility({ visibilityProperty: true })) {
+        return [];
+      }
+      const box = target.getBoundingClientRect();
+      if (box.width === 0 || (box.width >= min && box.height >= min)) {
+        return [];
+      }
+      const row = control.closest('li[data-list-item][x-data]');
+      const headline = row?.querySelector('[data-list-region="headline"] a');
+      if (row && row.getBoundingClientRect().height >= min && headline?.getAttribute('href') === control.getAttribute('href')) {
+        return [];
+      }
+      const name = (target.getAttribute('aria-label') ?? target.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 30);
+      const owner = control.closest('[data-component-id]')?.getAttribute('data-component-id') ?? '';
+      return [`${target.tagName.toLowerCase()} "${name}" ${Math.round(box.width)}×${Math.round(box.height)} in ${owner}`];
+    });
+  }, minimum);
+  expect(small, 'Controls smaller than the touch minimum').toEqual([]);
+});

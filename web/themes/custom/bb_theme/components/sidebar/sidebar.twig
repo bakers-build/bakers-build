@@ -34,7 +34,7 @@
      shares a row with the workspace mark. `translate-x-1/2` is the "beside"
      placement: the hit target stays on the border in both widths. #}
   <button type="button"
-    class="absolute top-2 right-0 translate-x-1/2 z-10 inline-grid place-items-center w-7 h-7 shrink-0 rounded-full bg-surface-2 border border-border text-text-faint cursor-pointer transition-colors duration-fast hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+    class="absolute top-2 right-0 translate-x-1/2 z-10 inline-grid place-items-center w-7 h-7 max-md:min-h-touch max-md:min-w-touch shrink-0 rounded-full bg-surface-2 border border-border text-text-faint cursor-pointer transition-colors duration-fast hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
     data-sidebar-toggle
     aria-controls="{{ body_id }}"
     aria-expanded="{{ is_collapsed ? 'false' : 'true' }}"

@@ -58,7 +58,7 @@
   x-init="$nextTick(() => { overflows = $refs.body.scrollHeight > $refs.body.clientHeight })">
   <div class="rich-text self-stretch {{ prose_classes }}" x-ref="body" :id="$id('rich-text-body')" :class="expanded ? '' : 'line-clamp-5'">{{ body }}</div>
   <button type="button" hidden aria-expanded="false"
-    class="p-0 bg-transparent border-0 text-meta text-link cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+    class="p-0 max-md:min-h-touch max-md:min-w-touch bg-transparent border-0 text-meta text-link cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
     :hidden="!overflows"
     :aria-expanded="expanded ? 'true' : 'false'"
     :aria-controls="$id('rich-text-body')"

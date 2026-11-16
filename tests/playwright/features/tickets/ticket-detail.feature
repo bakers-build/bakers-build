@@ -252,3 +252,20 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     When the world deployment is closed
     And I open the world ticket "First work"
     Then the ticket header shows the deployed badge "develop"
+
+  # THE PHONE DETAILS DISCLOSURE (BAKERS-57 AC-13). Below `lg` the inspector
+  # folds behind one button that reports `aria-expanded`, closed by default, so
+  # the description and activity come first; desktop always shows it.
+  Scenario: Ticket details fold on a phone
+    Given the viewport is 390 pixels wide
+    When I visit the ticket "BB-142"
+    Then the ticket details are folded
+    When I toggle the ticket details
+    Then the ticket details are unfolded
+    When I toggle the ticket details
+    Then the ticket details are folded
+
+  Scenario: Ticket details stay open on desktop
+    Given the viewport is 1440 pixels wide
+    When I visit the ticket "BB-142"
+    Then the ticket details show without a disclosure

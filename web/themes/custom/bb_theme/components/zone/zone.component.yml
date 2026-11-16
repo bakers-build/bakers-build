@@ -142,6 +142,16 @@ props:
         Number of columns the content grid renders at `lg` and above, narrowing
         to two at `md` and one below it. Only meaningful when `direction` is
         `column`. Defaults to 1.
+    measure:
+      type: string
+      enum:
+        - full
+        - narrow
+      title: Measure
+      description: >-
+        How wide the zone may grow. `full` (the default) fills its container as
+        every zone always has; `narrow` caps it at the narrow measure (960px),
+        so a settings section such as Members stays readable on a wide screen.
     description:
       type: string
       title: Description

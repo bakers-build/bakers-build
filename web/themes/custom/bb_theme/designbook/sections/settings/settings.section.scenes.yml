@@ -62,14 +62,14 @@ ui_requirements: >
   **Entities read**
 
 
-  - `bb_workspace.bb_workspace` — `full` view mode, and it is **empty**.
-  `name` is the settings
+  - `bb_workspace.bb_workspace` — `full` view mode, and it is **empty**. `name`
+  is the settings
     screen's heading (edited in place) and `billing_profile` its sub-line, and a `full` view mode
     emits no header (BB-378 — `designbook/design-system/layout.md` §2); `created`, `changed` and
     `owner_user_id` are deliberately not on screen. So the screen authors its own `page_header` and
     places no workspace node. The mapping file says why, so nobody puts the header back.
-  - `bb_term.label` — Labels field group on the settings screen. Since
-  BAKERS-17 the product has
+  - `bb_term.label` — Labels field group on the settings screen. Since BAKERS-17
+  the product has
     three term vocabularies (`type`, `recipe`, `label`) on tabs Types, Recipes and Labels;
     the capability-tags vocabulary is gone. This scene still shows the Labels group only (follow-up).
   - `bb_team.bb_team` — the Overview tab's **body**, `full` view mode: the
@@ -105,8 +105,8 @@ ui_requirements: >
   and the argument is now the container's own: a listing without columns, which
   is what "not a table"
 
-  means. BB-435 extended the rule to the project rather than letting the
-  project contradict it: the
+  means. BB-435 extended the rule to the project rather than letting the project
+  contradict it: the
 
   same object was rendered as a `list` here and as a fully presented
   `bb_theme:table` there, which
@@ -157,15 +157,15 @@ ui_requirements: >
   so there is no confirmation. The control **names the effect** (from the
   membership mapping): since
 
-  BB-456 D9 a team membership carries permissions, so removing one revokes
-  their access — the same
+  BB-456 D9 a team membership carries permissions, so removing one revokes their
+  access — the same
 
   sentence the project already uses. Workspace settings has no members block at
   all.
 
 
-  **The n:m project assignment lives on `bb_project.teams`** and is edited
-  from the team screen
+  **The n:m project assignment lives on `bb_project.teams`** and is edited from
+  the team screen
 
   and the projects section — one field, two ends.
 
@@ -217,8 +217,9 @@ scenes:
       which is what `zone`'s `direction: row` is for, and what `section`'s
       `justify_items: start` was working around before BB-378. Optional “New
       label” affordance is present; term description/weight have no surface yet.
-      The capability-tags vocabulary no longer exists; `type` and `recipe` are sibling
-      vocabularies (product tabs Types and Recipes, not yet in this scene).
+      The capability-tags vocabulary no longer exists; `type` and `recipe` are
+      sibling vocabularies (product tabs Types and Recipes, not yet in this
+      scene).
 
       THE SHELL IS INHERITED, NOT RETYPED (BB-378 D1): this scene starts with
       `scene: "design-system:shell"` and fills its `content` with exactly one
@@ -323,19 +324,17 @@ scenes:
     group: Screens
     section: settings
     docs: >-
-      THE WORKSPACE MEMBERS FACE: pending invitations and the roster. Inviting
-      is a DIALOG opened by the primary **Invite members** action on the Members
-      zone, not a zone of this face; `action-pattern.md` names the exception and
-      its reason. After a successful invite the dialog closes, the face
-      re-renders and a status `message` reports who was invited and who was
-      skipped (already a member, already invited). The pending list names each
-      invitation's role and team; Revoke stays the item's one control.
-
-      BOTH LISTS ARE `layout: cards` with `spacing: comfortable`, and each item
-      is a patterned row (BB-638) — `headline: [person]`, `meta: [joined,
-      team]`, `right: [state, role, transfer, remove]` — so the person and the
-      joined date sit on the left and the role or state, transfer and remove are
-      right-aligned, as GroupMembersForm::listZone() renders it.
+      THE WORKSPACE MEMBERS FACE: pending invitations and the roster, each a
+      headed `table` with 44px rows (`row_height: lg`) in a zone capped at the
+      narrow measure (960px). Inviting is a DIALOG opened by the primary
+      **Invite members** action on the Members zone, not a zone of this face;
+      `action-pattern.md` names the exception and its reason. After a successful
+      invite the dialog closes, the face re-renders and a status `message`, in a
+      narrow zone of its own, reports who was invited and who was skipped. The
+      invitations table reads Email, Team, Role, Status (a neutral Invited, a
+      critical Expired) and the Invited date, with Revoke as the row action; the
+      roster reads Name, Team, Role and Joined, with transfer and remove as the
+      row actions, as GroupMembersForm::listZone() renders it.
     items:
       - scene: design-system:shell
         with:
@@ -349,84 +348,102 @@ scenes:
                       title: Members
                       description: keytec · who belongs to this workspace and in which role
                 main:
-                  - component: bb_theme:message
-                    props:
-                      status: status
-                    slots:
-                      body: >-
-                        Invited 2 people. Skipped: sven.gruber@keytec.example
-                        (already a member).
                   - component: bb_theme:zone
+                    props:
+                      inset: none
+                      measure: narrow
+                    slots:
+                      content:
+                        - component: bb_theme:message
+                          props:
+                            status: status
+                          slots:
+                            body: >-
+                              Invited 2 people. Skipped:
+                              sven.gruber@keytec.example (already a member).
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      measure: narrow
                     slots:
                       heading: Pending invitations
                       content:
-                        - component: bb_theme:list
+                        - component: bb_theme:table
                           props:
-                            layout: cards
-                            spacing: comfortable
-                            pattern:
-                              headline:
-                                - person
-                              meta:
-                                - joined
-                                - team
-                              right:
-                                - state
-                                - role
-                                - transfer
-                                - remove
-                            items:
+                            row_height: lg
+                            columns:
+                              - key: person
+                                label: Email
+                              - key: team
+                                label: Team
+                              - key: role
+                                label: Role
+                              - key: state
+                                label: Status
+                              - key: joined
+                                label: Invited
+                              - key: controls
+                                label: ''
+                            rows:
                               - cells:
                                   person:
                                     kind: text
                                     value: lena.fischer@keytec.example
                                     emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: Platform crew
                                   role:
                                     kind: badge
                                     label: Contributor
                                     tone: neutral
-                                  team:
-                                    kind: text
-                                    value: Platform crew
                                   state:
                                     kind: badge
                                     label: Invited
-                                    tone: wait
+                                    tone: neutral
                                   joined:
-                                    kind: mono
-                                    value: invited 2026-10-02
-                                  remove:
-                                    kind: rendered
-                                    markup: Revoke
+                                    kind: text
+                                    value: 31 Oct
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
                                       Revoke invitation for
                                       lena.fischer@keytec.example
+                                    icon: x-circle
+                                    icon_only: true
                               - cells:
                                   person:
                                     kind: text
                                     value: m.vandijk@northwind.example
                                     emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: '-'
+                                    emphasis: faint
                                   role:
                                     kind: badge
                                     label: Member
                                     tone: neutral
-                                  team:
-                                    kind: text
-                                    value: No team
                                   state:
                                     kind: badge
                                     label: Expired
                                     tone: critical
                                   joined:
-                                    kind: mono
-                                    value: invited 2026-09-18
-                                  remove:
-                                    kind: rendered
-                                    markup: Revoke
+                                    kind: text
+                                    value: 17 Oct
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
                                       Revoke invitation for
                                       m.vandijk@northwind.example
+                                    icon: x-circle
+                                    icon_only: true
                   - component: bb_theme:zone
+                    props:
+                      inset: none
+                      measure: narrow
                     slots:
                       heading: Members
                       actions:
@@ -437,22 +454,21 @@ scenes:
                           href: >-
                             /?path=/story/designbook-sections-settings-scenes--workspace-invite
                       content:
-                        - component: bb_theme:list
+                        - component: bb_theme:table
                           props:
-                            layout: cards
-                            spacing: comfortable
-                            pattern:
-                              headline:
-                                - person
-                              meta:
-                                - joined
-                                - team
-                              right:
-                                - state
-                                - role
-                                - transfer
-                                - remove
-                            items:
+                            row_height: lg
+                            columns:
+                              - key: person
+                                label: Name
+                              - key: team
+                                label: Team
+                              - key: role
+                                label: Role
+                              - key: joined
+                                label: Joined
+                              - key: controls
+                                label: ''
+                            rows:
                               - cells:
                                   person:
                                     kind: person
@@ -460,12 +476,23 @@ scenes:
                                     initials: CW
                                     color: unassigned
                                     mail: christian.wiedemann@keytec.example
+                                  team:
+                                    kind: text
+                                    value: Platform crew
                                   role:
-                                    kind: rendered
-                                    markup: Admin
+                                    kind: text
+                                    value: Admin
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
+                                    kind: text
+                                    value: 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Christian Wiedemann from the
+                                      workspace. Revokes their access.
+                                    icon: x-circle
+                                    icon_only: true
                               - cells:
                                   person:
                                     kind: person
@@ -473,18 +500,23 @@ scenes:
                                     initials: SG
                                     color: running
                                     mail: sven.gruber@keytec.example
+                                  team:
+                                    kind: text
+                                    value: Design crew
                                   role:
-                                    kind: rendered
-                                    markup: Member
+                                    kind: text
+                                    value: Member
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
+                                    kind: text
+                                    value: 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
                                       Remove Sven Gruber from the workspace.
                                       Revokes their access.
+                                    icon: x-circle
+                                    icon_only: true
   - name: workspace-invite
     group: Screens
     section: settings
@@ -730,18 +762,18 @@ scenes:
     section: settings
     docs: >-
       ONE TEAM, reached by clicking it in the rail. This is what that row's url
-      promises, and it is the other half of BB-341's pending question: there
-      is NO teams list here, because the rail is already one. `team-row` was
+      promises, and it is the other half of BB-341's pending question: there is
+      NO teams list here, because the rail is already one. `team-row` was
       therefore never created — without a table it would have no consumer, and a
       component with no consumer is a contract nobody checks.
 
       > **Scope change 2026-09-13 (BB-454), recorded under
-      `@bakers-build/scope-change` > as a refinement of this ticket's own qualification
-      handoff, which listed > scene changes as out of scope.** `Load`/`Delivery`
-      are retired in favour > of `Overview` (the master-data face, inline-edit
-      follow-up) and the > broader `Stats`; `Tickets` joins as its own tab
-      (BB-428, never > reflected here before). Tab structure and naming only —
-      no new > component, design token or entity mapping.
+      `@bakers-build/scope-change` > as a refinement of this ticket's own
+      qualification handoff, which listed > scene changes as out of scope.**
+      `Load`/`Delivery` are retired in favour > of `Overview` (the master-data
+      face, inline-edit follow-up) and the > broader `Stats`; `Tickets` joins as
+      its own tab (BB-428, never > reflected here before). Tab structure and
+      naming only — no new > component, design token or entity mapping.
 
       THIS IS AN ENTITY PLACE, SO THE SCREEN OWNS THE CHROME (BB-378 D7/D19).
       `page_header` carries the team's name, its sub-line and the five faces IA
@@ -756,17 +788,17 @@ scenes:
       heading.
 
       AND THE BODY IS NEITHER A VIEW NOR A VIEW MODE (BB-435). It WAS a view:
-      `canvas.main` held exactly one node, `view.bb_group_members`, derived
-      from og's `og_members_overview` so that an og release could not collide
-      with it. That is retired, and the reason is what the members surface has
-      to be rather than a preference. Two of the four cells are interactive —
-      the role and the remove control — so they have to be form controls, and a
-      Views field smuggling a control into a table cell is what forced the one
-      global `views-view-table.html.twig` to carry a thirty-line rule about what
-      counts as content when a cell holds no text node: a naive `|striptags`
-      drew an em-dash OVER the only affordance the row had, and four browser
-      scenarios failed on it. The body is now ONE FORM that renders its own
-      items, and it needs none of that.
+      `canvas.main` held exactly one node, `view.bb_group_members`, derived from
+      og's `og_members_overview` so that an og release could not collide with
+      it. That is retired, and the reason is what the members surface has to be
+      rather than a preference. Two of the four cells are interactive — the role
+      and the remove control — so they have to be form controls, and a Views
+      field smuggling a control into a table cell is what forced the one global
+      `views-view-table.html.twig` to carry a thirty-line rule about what counts
+      as content when a cell holds no text node: a naive `|striptags` drew an
+      em-dash OVER the only affordance the row had, and four browser scenarios
+      failed on it. The body is now ONE FORM that renders its own items, and it
+      needs none of that.
 
       THE ROSTER IS A PATTERNED ROW (BB-638): `layout: cards` with `spacing:
       comfortable` and the pattern `headline: [person]`, `meta: [joined, team]`,
@@ -775,9 +807,8 @@ scenes:
 
       A view mode is still not the answer either, and for the original reason:
       membership is an `og_membership` entity, so this body is a query over a
-      DIFFERENT entity type than the screen addresses.
-      `bb_team.bb_team.full` stays the entity's own body and is separate
-      work.
+      DIFFERENT entity type than the screen addresses. `bb_team.bb_team.full`
+      stays the entity's own body and is separate work.
 
       THIS FACE AND THE PROJECT'S MEMBERS FACE ARE ONE SURFACE, which BB-419
       established and this ticket keeps. The view it replaced already took the
@@ -791,22 +822,21 @@ scenes:
       title and sub-line stay here, because they are the screen's header.
 
       THE TAB BODIES USED TO BE FOLLOW-UPS' TO FILL; OVERVIEW NO LONGER IS
-      (BB-484). Overview is the face the canonical address shows. BB-454
-      follows IA D12.3 literally: the five tabs are five Drupal local tasks
-      (three controller-backed, two native Views pages), and Overview is the
-      DEFAULT task — a default task is not a route of its own, it IS the base
-      route, so `/{workspace}/team/{id}` renders Overview.
+      (BB-484). Overview is the face the canonical address shows. BB-454 follows
+      IA D12.3 literally: the five tabs are five Drupal local tasks (three
+      controller-backed, two native Views pages), and Overview is the DEFAULT
+      task — a default task is not a route of its own, it IS the base route, so
+      `/{workspace}/team/{id}` renders Overview.
 
       That reverses what this scene used to say. Members was named the active
       face here so the surface would show something while Overview's body was
       still undesigned; BB-484 designs that body, in the sibling scene
       `team-detail-overview` below, so the canonical address no longer renders
-      an EMPTY body. Overview's body is the `bb_team.bb_team` `full` view
-      mode: just the Projects relation now (see that scene's own docs for why
-      Members is not repeated there). Stats stays empty for the reason this
-      scene used to give Overview — it is a BB-454 follow-up's to fill;
-      Tickets and Runs are native Views pages with no Designbook body of their
-      own.
+      an EMPTY body. Overview's body is the `bb_team.bb_team` `full` view mode:
+      just the Projects relation now (see that scene's own docs for why Members
+      is not repeated there). Stats stays empty for the reason this scene used
+      to give Overview — it is a BB-454 follow-up's to fill; Tickets and Runs
+      are native Views pages with no Designbook body of their own.
 
       Members is the one face THIS scene shows content for: its zone plus the
       Projects relation, one click away, and the face the live behaviour is
@@ -832,22 +862,22 @@ scenes:
       THE RAIL SHOWS THE SHELL'S OWN STATE rather than this team's row in the
       trail — the accepted cost of declaring the shell once (D1). That used to
       be recorded here as a Storybook-only cost, on the grounds that in Drupal
-      the trail comes from the route. BB-396 sharpens it: on a DIRECT visit
-      the route still supplies the trail, but after a boosted navigation the
-      rail is outside the replaced markup and its active entry is stale in
-      Drupal too (D3, module fact F6). The cost is real on both surfaces, and
-      the alternative is re-rendering the whole menu tree on every click.
+      the trail comes from the route. BB-396 sharpens it: on a DIRECT visit the
+      route still supplies the trail, but after a boosted navigation the rail is
+      outside the replaced markup and its active entry is stale in Drupal too
+      (D3, module fact F6). The cost is real on both surfaces, and the
+      alternative is re-rendering the whole menu tree on every click.
 
       THIS SCREEN IS RENDERED INSIDE THE `island-content` BOUNDARY, and naming
-      it is all this scene does about it (BB-396 D15). Everything the scene
-      puts in the shell's `content` slot — the `canvas`, its `page_header` with
-      the four tabs, and the members `zone` — sits inside `island-content`,
-      which by D1 is the page's ONE swap target and is addressed by that DOM id
-      rather than by a class or a `closest` selector. The tab row rides along
-      with it: `local_tasks_block` is placed inside the same island in the
-      shipped page layout, so its current entry is right after a tab click
-      without declaring anything of its own (D8). The rail, outside the
-      boundary, is the paragraph above.
+      it is all this scene does about it (BB-396 D15). Everything the scene puts
+      in the shell's `content` slot — the `canvas`, its `page_header` with the
+      four tabs, and the members `zone` — sits inside `island-content`, which by
+      D1 is the page's ONE swap target and is addressed by that DOM id rather
+      than by a class or a `closest` selector. The tab row rides along with it:
+      `local_tasks_block` is placed inside the same island in the shipped page
+      layout, so its current entry is right after a tab click without declaring
+      anything of its own (D8). The rail, outside the boundary, is the paragraph
+      above.
 
       STORYBOOK CANNOT RENDER AN ISLAND AND DOES NOT SIMULATE ONE. An island is
       a render array `IslandWrapper` contributes at request time, and this scene
@@ -1064,14 +1094,14 @@ scenes:
       the team's name, its sub-line and the same five tabs — Overview · Stats ·
       Tickets · Runs · Members — in its `tabs` slot, with `Overview` `active:
       true` here. The header is a SCREEN-level `page_header` rather than the
-      `bb_team.bb_team.full` view mode: a view mode DISPLAYS an entity, a
-      screen ARRANGES one, and the tabs are a screen-level fact no single-record
+      `bb_team.bb_team.full` view mode: a view mode DISPLAYS an entity, a screen
+      ARRANGES one, and the tabs are a screen-level fact no single-record
       mapping can know.
 
       AND THE BODY IS THE ENTITY'S OWN VIEW MODE, unlike the Members face.
       Overview addresses the SAME entity type the screen is about —
-      `bb_team.bb_team` — so, unlike Members' `og_membership` query, a view
-      mode is exactly the right shape here: `canvas.main` places one
+      `bb_team.bb_team` — so, unlike Members' `og_membership` query, a view mode
+      is exactly the right shape here: `canvas.main` places one
       `bb_team.bb_team` `full` entity node, selected on this team's id.
 
       OVERVIEW IS NOW FILLED, NOT EMPTY. The `team` scene's docs used to say the
@@ -1443,11 +1473,11 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: false
-                filters:
+                main:
                   - component: bb_theme:filters
                     props:
-                      title: Filters
                       label: Time filters
+                      layout: bar
                     slots:
                       controls:
                         - component: bb_theme:segmented_control
@@ -1511,58 +1541,10 @@ scenes:
                                   - value: api-member
                                     label: api-member
                                     selected: false
-                main:
-                  - component: bb_theme:week-strip
-                    props:
-                      label: Days of week 2026-12-07
-                      days:
-                        - weekday: Mon
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-07'
-                          active: false
-                          aria_label: Mon 2026-12-07, 0:00
-                        - weekday: Tue
-                          date: '08'
-                          total: '2:45'
-                          url: '?mode=day&date=2026-12-08'
-                          active: false
-                          aria_label: Tue 2026-12-08, 2:45
-                        - weekday: Wed
-                          date: '09'
-                          total: '1:00'
-                          url: '?mode=day&date=2026-12-09'
-                          active: false
-                          aria_label: Wed 2026-12-09, 1:00
-                        - weekday: Thu
-                          date: '10'
-                          total: '2:00'
-                          url: '?mode=day&date=2026-12-10'
-                          active: false
-                          aria_label: Thu 2026-12-10, 2:00
-                        - weekday: Fri
-                          date: '11'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-11'
-                          active: false
-                          aria_label: Fri 2026-12-11, 0:00
-                        - weekday: Sat
-                          date: '12'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-12'
-                          active: false
-                          aria_label: Sat 2026-12-12, 0:00
-                        - weekday: Sun
-                          date: '13'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-13'
-                          active: false
-                          aria_label: Sun 2026-12-13, 0:00
-                      total_label: Week total
-                      total: '5:45'
                   - component: bb_theme:text
                     props:
-                      text: 'Total recorded time: 5:45'
+                      text: Week total 5:45
+                      align: end
                   - component: bb_theme:table
                     props:
                       columns:
@@ -1572,24 +1554,31 @@ scenes:
                         - key: '2026-12-07'
                           label: Mon 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-08'
                           label: Tue 08
                           num: true
+                          sublabel: '2:45'
                         - key: '2026-12-09'
                           label: Wed 09
                           num: true
+                          sublabel: '1:00'
                         - key: '2026-12-10'
                           label: Thu 10
                           num: true
+                          sublabel: '2:00'
                         - key: '2026-12-11'
                           label: Fri 11
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-12'
                           label: Sat 12
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-13'
                           label: Sun 13
                           num: true
+                          sublabel: '0:00'
                         - key: total
                           label: Total
                           num: true
@@ -1734,31 +1723,4 @@ scenes:
                             total:
                               kind: text
                               value: '3:30'
-                        - cells:
-                            label:
-                              kind: text
-                              value: Total
-                            '2026-12-07':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-08':
-                              kind: text
-                              value: '2:45'
-                            '2026-12-09':
-                              kind: text
-                              value: '1:00'
-                            '2026-12-10':
-                              kind: text
-                              value: '2:00'
-                            '2026-12-11':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-12':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-13':
-                              kind: text
-                              value: '0:00'
-                            total:
-                              kind: text
-                              value: '5:45'
+                      row_height: md

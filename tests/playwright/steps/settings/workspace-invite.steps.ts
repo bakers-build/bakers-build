@@ -225,7 +225,7 @@ Then(
   'each invited address is listed as pending with the role {string} and the team {string}',
   async ({ page }, role: string, team: string) => {
     for (const address of invitedAddresses) {
-      const row = page.getByRole('listitem').filter({ hasText: address }).first();
+      const row = page.getByRole('row').filter({ hasText: address }).first();
       await expect(row, `${address} is not listed as pending`).toBeVisible();
       await expect(row).toContainText(role);
       await expect(row).toContainText(team);

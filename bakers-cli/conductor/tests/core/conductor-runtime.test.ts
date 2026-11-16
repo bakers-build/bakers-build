@@ -286,8 +286,9 @@ describe('runtime slot — launch wrapping', () => {
     );
     expect(isolated.seen.prompt).toContain('Read-only here: .bakers, .ddev.');
     expect(isolated.seen.prompt).toContain(
-      'a maintainer merges the target outside the run',
+      'forge_update_branch merges the target into your branch; follow its sync',
     );
+    expect(isolated.seen.prompt).not.toContain('a maintainer merges');
     expect(isolated.seen.prompt).not.toContain('runtime_transfer_commit');
 
     const { hostRuntime } = await import('../../src/plugins/runtime.js');

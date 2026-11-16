@@ -108,7 +108,8 @@ const positionPanel = (picker) => {
   const width = document.documentElement.clientWidth;
   const height = window.innerHeight;
   const dialog = picker.closest('dialog');
-  const clip = dialog?.getBoundingClientRect();
+  // The filters sheet's dialog is inline `display: contents` at lg+, whose rect is all zeros.
+  const clip = dialog && getComputedStyle(dialog).display !== 'contents' ? dialog.getBoundingClientRect() : undefined;
   const leftEdge = Math.max(margin, clip ? clip.left + margin : margin);
   const rightEdge = Math.min(width - margin, clip ? clip.right - margin : width - margin);
   const topEdge = Math.max(margin, clip ? clip.top + margin : margin);

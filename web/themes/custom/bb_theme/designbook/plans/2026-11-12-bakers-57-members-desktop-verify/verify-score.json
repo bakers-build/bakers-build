@@ -1,0 +1,11 @@
+{
+  "score": 8,
+  "passed": false,
+  "issue_count": 8,
+  "checks": [
+    {
+      "id": null,
+      "passed": false
+    }
+  ]
+}
