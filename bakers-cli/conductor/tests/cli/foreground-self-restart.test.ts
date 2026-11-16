@@ -187,7 +187,7 @@ describe('bakers conductor start --foreground self-restart', () => {
   });
 
   describe('when the secrets file changes', () => {
-    it('on a changed value, logs the key names only, drains without offline and re-execs without a config check', async () => {
+    it('on any write that loads, drains without offline and re-execs without a config check, logging no value', async () => {
       writeSecrets(`TOKEN=${OLD}\nGONE=${OLD}\n`);
       const remote = new TickRemote();
       const h = harness(remote, async () => undefined);
@@ -203,29 +203,9 @@ describe('bakers conductor start --foreground self-restart', () => {
       expect(h.execve).toHaveBeenCalledTimes(1);
       expect(h.checks).toBe(0);
       expect(remote.statusWrites).toEqual([]);
-      expect(log()).toContain(
-        'secrets file changed (added: ADDED; removed: GONE; changed: TOKEN); restarting conductor',
-      );
+      expect(log()).toContain('secrets file changed; restarting conductor');
       expect(log()).not.toContain(OLD);
       expect(log()).not.toContain(NEW);
-    });
-
-    it('ignores a write that changes no key or value', async () => {
-      writeSecrets(`TOKEN=${OLD}\n`);
-      const remote = new TickRemote();
-      const h = harness(remote, async () => undefined);
-      remote.onTick = (n) => {
-        if (n === 1) {
-          writeSecrets(`# rotated later\n\nTOKEN=${OLD}\n`);
-          void h.change([secrets]);
-        }
-        if (n === 3) process.emit('SIGTERM');
-      };
-
-      await h.run();
-
-      expect(h.execve).not.toHaveBeenCalled();
-      expect(remote.statusWrites).toEqual([['mid-fg', 'offline']]);
     });
 
     it('keeps serving on a file that fails to load, logs the file and fix without values, and restarts on the next valid write', async () => {
@@ -280,7 +260,7 @@ describe('bakers conductor start --foreground self-restart', () => {
       );
     });
 
-    it('re-checks a held-back config change once the secrets file loads again, even unchanged', async () => {
+    it('re-checks a held-back config change once the secrets file loads again', async () => {
       writeSecrets(`TOKEN=${OLD}\n`);
       const remote = new TickRemote();
       const h = harness(remote, async () => undefined);

@@ -3,7 +3,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  diffSecrets,
   loadSecretsFile,
   parseSecretsFile,
   pickSecrets,
@@ -111,28 +110,5 @@ describe('pickSecrets', () => {
         { B: 'shell-b', C: 'shell-c', D: 'shell-d' },
       ),
     ).toEqual({ A: 'file-a', B: 'shell-b', C: 'shell-c' });
-  });
-});
-
-describe('diffSecrets', () => {
-  it('names added, removed and changed keys, sorted, without values', () => {
-    const diff = diffSecrets(
-      { KEEP: 'same', OLD: 'gone-value', ZED: 'v1', ALPHA: 'a1' },
-      { KEEP: 'same', NEW: 'new-value', ZED: 'v2', ALPHA: 'a2' },
-    );
-    expect(diff).toEqual({
-      added: ['NEW'],
-      removed: ['OLD'],
-      changed: ['ALPHA', 'ZED'],
-    });
-    expect(JSON.stringify(diff)).not.toMatch(/value|v1|v2|a1|a2/);
-  });
-
-  it('is empty for equal maps', () => {
-    expect(diffSecrets({ A: '1' }, { A: '1' })).toEqual({
-      added: [],
-      removed: [],
-      changed: [],
-    });
   });
 });

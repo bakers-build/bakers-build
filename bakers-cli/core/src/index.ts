@@ -200,7 +200,6 @@ export {
 } from './core/run-clone.js';
 export { cliRootOf } from './core/runtime-paths.js';
 export {
-  diffSecrets,
   loadSecretsFile,
   parseSecretsFile,
   pickSecrets,

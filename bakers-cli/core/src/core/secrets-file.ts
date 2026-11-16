@@ -72,20 +72,3 @@ export function pickSecrets(
   }
   return picked;
 }
-
-/** Key names that differ between two loads, sorted; never their values. */
-export function diffSecrets(
-  before: Secrets,
-  after: Secrets,
-): { added: string[]; removed: string[]; changed: string[] } {
-  const keys = [
-    ...new Set([...Object.keys(before), ...Object.keys(after)]),
-  ].sort();
-  return {
-    added: keys.filter((k) => !(k in before)),
-    removed: keys.filter((k) => !(k in after)),
-    changed: keys.filter(
-      (k) => k in before && k in after && before[k] !== after[k],
-    ),
-  };
-}

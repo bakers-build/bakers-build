@@ -16,7 +16,6 @@ import {
   defaultProcProbe,
   deriveCheckoutRoot,
   deriveConductorLiveness,
-  diffSecrets,
   homeBbDir,
   loadReadyBbConnection,
   loadSecretsFile,
@@ -731,19 +730,13 @@ async function cmdStartForeground(
           if (controller.signal.aborted) return;
           const secretsPath = secretsFilePath();
           for (const p of paths) if (p !== secretsPath) heldBack.add(p);
-          const next = reloadSecrets();
-          if (!next) return;
+          if (!reloadSecrets()) return;
           const path = [...heldBack].join(', ');
           heldBack.clear();
-          const diff = diffSecrets(secrets, next);
-          const named = (['added', 'removed', 'changed'] as const)
-            .filter((k) => diff[k].length)
-            .map((k) => `${k}: ${diff[k].join(', ')}`);
           if (!path) {
-            if (!named.length) return; // a comment, whitespace or touch
             logger.info(
-              diff,
-              `secrets file changed (${named.join('; ')}); restarting conductor`,
+              { path: secretsPath },
+              'secrets file changed; restarting conductor',
             );
             restartNow();
             return;
@@ -762,8 +755,6 @@ async function cmdStartForeground(
             );
             return;
           }
-          if (named.length)
-            logger.info(diff, `secrets file changed (${named.join('; ')})`);
           logger.info({ path }, 'config check passed; restarting conductor');
           restartNow();
         },
