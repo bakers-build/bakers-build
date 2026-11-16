@@ -254,6 +254,17 @@ dispatch exec playground-ticket -- c1 '$(touch planted); id' working
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 10 exec --raw -- drush php:script scripts/e2e/playground-ticket.php -- c1 $(touch planted); id working' ] || fail "calls: $(cat "$TRACE")"
 [ ! -e "$provision_tree/planted" ] || fail 'an argument ran through a shell'
+dispatch exec designbook -- save 0123456789abcdef/fedcba9876543210 sec--scene default desktop-frame.mjs
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 19 exec --raw -- env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c cd web/themes/custom/bb_theme && npx storybook-addon-designbook "$@" designbook reference save --reference /var/www/html/web/themes/custom/bb_theme/designbook/references/0123456789abcdef/fedcba9876543210 --url http://localhost:6006/iframe.html?id=sec--scene&viewMode=story --state default --prelude /var/www/html/web/themes/custom/bb_theme/designbook/preludes/desktop-frame.mjs' ] || fail "calls: $(cat "$TRACE")"
+dispatch exec designbook -- capture-image 0123456789abcdef/fedcba9876543210 sec--scene desktop members default 1440 none 'body > div:nth-of-type(5) > div'
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 25 exec --raw -- env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c cd web/themes/custom/bb_theme && npx storybook-addon-designbook "$@" designbook reference capture-image --reference /var/www/html/web/themes/custom/bb_theme/designbook/references/0123456789abcdef/fedcba9876543210 --path desktop--members--default.png --url http://localhost:6006/iframe.html?id=sec--scene&viewMode=story --width 1440 --view desktop --state default --selector body > div:nth-of-type(5) > div' ] || fail "calls: $(cat "$TRACE")"
+for args in 'save ../../x/fedcba9876543210 s d none' 'save 0123456789abcdef/fedcba9876543210 s d ../x.mjs' 'save 0123456789abcdef/fedcba9876543210 s --state=x none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d wide none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none --selector=x' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none a;id' 'check' 'start x'; do
+  # shellcheck disable=SC2086
+  dispatch exec designbook -- $args
+  [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid designbook exec ran actions: $args: $out"
+done
 for args in 'exec' 'exec web -- drush uli' 'exec other' 'exec phpcs -- x' 'exec phpcs x' 'exec uli' 'exec uli -- --name=admin' 'exec uli -- a;id' 'exec playwright -- --config=/x' 'exec playground-ticket -- c1 --eval' 'exec phpunit' 'exec phpunit -- --filter=X' 'exec phpunit-mariadb -- a;id' 'exec paratest' 'exec paratest -- a b' 'exec paratest -- --processes=99'; do
   # shellcheck disable=SC2086
   dispatch $args
