@@ -81,7 +81,8 @@ Feature: Employees record and correct their own time
     Then the stored duration for description "Corrected review" is 8100 seconds
     When I open the delete confirmation
     And I confirm the delete
-    Then the time entry described as "Corrected review" is gone
+    Then the address includes "/time/add"
+    And the time entry described as "Corrected review" is gone
     And the time entry described as "Peer time" remains
 
   Scenario: Changing the project clears a ticket of the old project
