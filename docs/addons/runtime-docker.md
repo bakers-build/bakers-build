@@ -36,7 +36,7 @@ No `~/.ssh`, `~/.bakers` or Docker socket. Secrets use `-e KEY`, never values in
 Hook scripts are not copied; unreachable ones fail open. Grant them via `mounts`; automatic mounts
 expose host files.
 
-Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
+Permissions stay unchanged; [prefer `yolo`](/agents/isolation#configuration-at-a-glance), which skips check's and startup's host-only preflight warning.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
 See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes the container and home.
 

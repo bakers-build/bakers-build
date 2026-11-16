@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
+import type { SecurityMode } from './agent-args.js';
 
 /** Whether an agent's sandbox can start on this machine; see {@link BbAgent.sandboxPreflight}. */
 export type SandboxPreflight =
@@ -16,8 +17,37 @@ export interface SandboxHost {
   run(cmd: string, args: string[]): Promise<{ ok: boolean; stderr: string }>;
 }
 
-export function runtimeSandboxWarning(runtime = 'host'): string | undefined {
+/** One line per `yolo` agent whose runtime does not isolate the run. */
+export function yoloWithoutIsolationWarnings(
+  agents: readonly {
+    id: string;
+    alias?: string | undefined;
+    permissions?: SecurityMode | undefined;
+  }[],
+  runtime: { id?: string; isolates?: boolean } = {},
+): string[] {
+  if (runtime.isolates === true) return [];
+  const lines = agents
+    .filter((agent) => agent.permissions === 'yolo')
+    .map(
+      (agent) =>
+        `warning: ${agent.alias ?? agent.id}: permissions 'yolo' runs without isolation on runtime ${runtime.id ?? 'host'}; use an isolating runtime (runtime-docker, runtime-bwrap) — see https://bakers.build/docs/agents/isolation`,
+    );
+  return [...new Set(lines)]; // unaliased entries of one harness report the same line
+}
+
+export function runtimeSandboxWarning(
+  runtime = 'host',
+  opts: {
+    isolates?: boolean | undefined;
+    modes?: readonly (SecurityMode | undefined)[] | undefined;
+  } = {},
+): string | undefined {
   if (runtime === 'host') return;
+  // yolo starts no harness sandbox, so there is nothing to check inside the runtime.
+  const modes = opts.modes ?? [];
+  if (opts.isolates && modes.length > 0 && modes.every((m) => m === 'yolo'))
+    return;
   return `Sandbox preflight checks the host only; runtime ${runtime} is not checked. Sandbox tools and namespace support must be available inside the runtime; permissions remain unchanged.`;
 }
 

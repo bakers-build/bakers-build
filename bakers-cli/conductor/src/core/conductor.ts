@@ -538,7 +538,10 @@ export class Conductor {
         'addon registration failed',
       );
     }
-    const warning = runtimeSandboxWarning(this.config.runtime?.id);
+    const warning = runtimeSandboxWarning(this.config.runtime?.id, {
+      isolates: this.config.runtime?.isolates,
+      modes: this.agents.map((a) => a.permissions),
+    });
     if (warning) this.logger.warn({ conductorId: this.id }, warning);
     for (const line of await sandboxFailures(this.agents)) {
       this.logger.error({ conductorId: this.id }, line);

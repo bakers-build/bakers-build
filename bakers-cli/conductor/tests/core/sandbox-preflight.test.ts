@@ -48,7 +48,11 @@ function agentWith(results: SandboxPreflight[]) {
   return agent;
 }
 
-function setup(agent: BbAgent, runtime?: RuntimePlugin) {
+function setup(
+  agent: BbAgent,
+  runtime?: RuntimePlugin,
+  permissions?: 'yolo' | 'sandbox',
+) {
   const root = mkdtempSync(join(tmpdir(), 'bakers-preflight-test-'));
   roots.push(root);
   const worktree = join(root, 'worktree');
@@ -119,29 +123,34 @@ function setup(agent: BbAgent, runtime?: RuntimePlugin) {
     remote,
     executor,
     workspace,
-    [{ id: 'claude', agent }],
+    [{ id: 'claude', agent, ...(permissions ? { permissions } : {}) }],
     log,
     root,
   );
   return { conductor, remote, logs, ensured: () => ensured };
 }
 
+const DOCKER: RuntimePlugin = {
+  kind: 'runtime',
+  id: 'docker',
+  isolates: true,
+  requiredModules: [],
+  createRuntime: async () => ({
+    id: 'docker',
+    wrap: async ({ command, env }) => ({ command, env }),
+    cleanup: async () => {},
+  }),
+};
+
 const SANDBOX_LINE =
   'sandbox unavailable: claude: socat not found — install it with sudo apt-get install -y socat (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)';
 
 describe('sandbox preflight gate', () => {
   it('warns that runtime prerequisites are unchecked without withholding claims', async () => {
-    const { conductor, remote, logs } = setup(agentWith([{ ok: true }]), {
-      kind: 'runtime',
-      id: 'docker',
-      isolates: true,
-      requiredModules: [],
-      createRuntime: async () => ({
-        id: 'docker',
-        wrap: async ({ command, env }) => ({ command, env }),
-        cleanup: async () => {},
-      }),
-    });
+    const { conductor, remote, logs } = setup(
+      agentWith([{ ok: true }]),
+      DOCKER,
+    );
     await conductor.start();
     expect(logs).toContainEqual({
       level: 'warn',
@@ -149,6 +158,16 @@ describe('sandbox preflight gate', () => {
     });
     await conductor.tick();
     expect(remote.calls.markRunning[0]).toMatchObject({ runUuid: 'r-1' });
+  });
+
+  it('an isolating runtime with every agent on yolo starts without the host-only warning', async () => {
+    const { conductor, logs } = setup(
+      agentWith([{ ok: true }]),
+      DOCKER,
+      'yolo',
+    );
+    await conductor.start();
+    expect(logs.some((l) => l.msg?.includes('host only'))).toBe(false);
   });
 
   it('start logs the unavailable sandbox at error', async () => {

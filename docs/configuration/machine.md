@@ -43,7 +43,7 @@ export default {
 | `tunnel` | Optional literal boolean, default `false`. See [below](#preview-link-tunnels). |
 | `connection_url` | Optional SSH or HTTPS address of this host, or `null` to clear the saved one. See [below](#connection-address). |
 | `permissions` | Optional. Run permissions for every agent on this host: `mode` (`sandbox`, `system` or `yolo`) and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/provision/security/shared-settings). |
-| `permissions.mode` | `sandbox`, `system` or `yolo`. |
+| `permissions.mode` | `sandbox`, `system` or `yolo`. Use `yolo` only with an isolating [runtime](/addons/slots#runtime-where-a-run-starts) ([Docker](/addons/runtime-docker#what-a-run-sees), [Bubblewrap](/addons/runtime-bwrap)); on any other runtime, config load warns once per `yolo` agent ([isolation](/agents/isolation#configuration-at-a-glance)). |
 | `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
 | `executor` | Optional executor slot `{ use, export?, with? }`. Overrides every project executor on this machine; server and worktree remain project-owned. For example, [herdr-core](/addons/herdr-core). Omitted uses the project selection. |
 | `executor.use`, `executor.export`, `executor.with` | The slot's package, its named factory and the factory's options. |
