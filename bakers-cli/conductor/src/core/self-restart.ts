@@ -13,20 +13,20 @@ export interface WatchPaths {
 }
 
 /**
- * Call `trigger` with the last changed path after `debounceMs` without a
- * further change. Files are watched through their parent directory, so an
+ * Call `trigger` with every path changed since the last trigger, after
+ * `debounceMs` without a further change. Files are watched through their parent directory, so an
  * editor's rename-replace save and a newly created file both count; dirs are
  * watched recursively. At most one trigger runs at a time; changes during one
  * re-arm the debounce once it returns.
  */
 export function watchForRestart(
   paths: WatchPaths,
-  trigger: (path: string) => Promise<void>,
+  trigger: (paths: string[]) => Promise<void>,
   debounceMs = 2000,
 ): { close(): void } {
   const watchers: FSWatcher[] = [];
   let timer: NodeJS.Timeout | undefined;
-  let last: string | undefined;
+  const changedPaths = new Set<string>();
   let running = false;
   let pending = false;
   let closed = false;
@@ -35,7 +35,9 @@ export function watchForRestart(
     timer = undefined;
     running = true;
     try {
-      await trigger(last as string);
+      const paths = [...changedPaths];
+      changedPaths.clear();
+      await trigger(paths);
     } finally {
       running = false;
       if (pending && !closed) {
@@ -50,7 +52,7 @@ export function watchForRestart(
   };
   const changed = (path: string) => {
     if (closed) return;
-    last = path;
+    changedPaths.add(path);
     if (running) pending = true;
     else arm();
   };

@@ -57,7 +57,7 @@ A start on a machine where an enabled agent cannot start its sandbox prints `war
 
 #### Restart on change
 
-A running conductor (the detached default and `--foreground`) restarts itself when a file it loaded changes: the project `project.config.js` (or its variant), `~/.bakers/machine.config.js`, and the build directory of each configured addon (so `pnpm build` of an addon counts). After 2 seconds without a further change, it checks the new config with `bakers conductor start --dry-run` in a child process:
+A running conductor (the detached default and `--foreground`) restarts itself when a file it loaded changes: the project `project.config.js` (or its variant), `~/.bakers/machine.config.js`, `~/.bakers/.bakers.env`, and the build directory of each configured addon (so `pnpm build` of an addon counts). After 2 seconds without a further change, it checks the new config with `bakers conductor start --dry-run`:
 
 - the check passes: the log shows `config check passed; restarting conductor`. The loop stops claiming, drains its queue and stops its tools as on `SIGTERM`, writes no `offline`, and replaces itself in place: same pid and log. Running agent sessions keep going and are adopted again.
 - the check fails: the log shows `config check failed; keeping the running conductor` with the error, and the next change checks again.

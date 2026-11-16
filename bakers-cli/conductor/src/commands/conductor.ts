@@ -16,6 +16,7 @@ import {
   defaultProcProbe,
   deriveCheckoutRoot,
   deriveConductorLiveness,
+  diffSecrets,
   homeBbDir,
   loadReadyBbConnection,
   loadSecretsFile,
@@ -26,6 +27,7 @@ import {
   resolveCliVersion,
   resolveConfigPath,
   type Secrets,
+  secretsFilePath,
   setDefaultCommandRunner,
   signalVerifiedProcess,
   stemForConfigFile,
@@ -696,6 +698,20 @@ async function cmdStartForeground(
     deps.execve ?? (process as { execve?: Execve }).execve?.bind(process);
   let watcher: { close(): void } | undefined;
   const check = deps.checkConfig ?? defaultCheckConfig;
+  // The restart re-runs loadSecretsOrFail, which exits on a bad file: check first.
+  const reloadSecrets = (): Secrets | undefined => {
+    try {
+      return loadSecretsFile();
+    } catch (err) {
+      logger.error(
+        { path: secretsFilePath() },
+        `${(err as Error).message}; keeping the running conductor on its last good secrets`,
+      );
+      return undefined;
+    }
+  };
+  // Config changes a bad secrets file held back, re-checked on the next change.
+  const heldBack = new Set<string>();
   const restartNow = () => {
     restart = true;
     watcher?.close();
@@ -711,8 +727,27 @@ async function cmdStartForeground(
     } else {
       watcher = (deps.watchForRestart ?? watchForRestart)(
         config.watch_paths,
-        async (path) => {
+        async (paths) => {
           if (controller.signal.aborted) return;
+          const secretsPath = secretsFilePath();
+          for (const p of paths) if (p !== secretsPath) heldBack.add(p);
+          const next = reloadSecrets();
+          if (!next) return;
+          const path = [...heldBack].join(', ');
+          heldBack.clear();
+          const diff = diffSecrets(secrets, next);
+          const named = (['added', 'removed', 'changed'] as const)
+            .filter((k) => diff[k].length)
+            .map((k) => `${k}: ${diff[k].join(', ')}`);
+          if (!path) {
+            if (!named.length) return; // a comment, whitespace or touch
+            logger.info(
+              diff,
+              `secrets file changed (${named.join('; ')}); restarting conductor`,
+            );
+            restartNow();
+            return;
+          }
           logger.info(
             { path },
             `restart_on_change: ${path} changed; checking config`,
@@ -727,6 +762,8 @@ async function cmdStartForeground(
             );
             return;
           }
+          if (named.length)
+            logger.info(diff, `secrets file changed (${named.join('; ')})`);
           logger.info({ path }, 'config check passed; restarting conductor');
           restartNow();
         },
@@ -774,6 +811,7 @@ async function cmdStartForeground(
     );
     busy = true;
     try {
+      if (!reloadSecrets()) return;
       for (const [step, run] of [
         ['config upgrade', migrate],
         ['config check', check],

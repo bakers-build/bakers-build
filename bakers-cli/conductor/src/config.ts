@@ -16,6 +16,7 @@ import {
   resolveModuleEslintStyle,
   scanTopLevelProperties,
   scopeAddons,
+  secretsFilePath,
   stemForConfigFile,
 } from '@bakers-build/core';
 import { readBbProjectSelection } from './cli/project-context.js';
@@ -803,7 +804,7 @@ export async function loadConductorConfig(
     config_path: configPath,
     restart_on_change: restartOnChange,
     watch_paths: {
-      files: [configPath, machineContextPath()],
+      files: [configPath, machineContextPath(), secretsFilePath()],
       // A retired entry keeps its spec as key; only resolved modules have a dir.
       dirs: [
         ...new Set(
