@@ -50,6 +50,13 @@ Then('the selected inline labels are {string}', async ({ page }, labels: string)
 Then('the inline Labels menu fits the viewport at desktop and mobile sizes', async ({ page }) => {
     for (const viewport of [{ width: 1280, height: 720 }, { width: 390, height: 844 }]) {
         await page.setViewportSize(viewport);
+        if (viewport.width < 1024) {
+            // Below `lg` the Details fold behind a disclosure, closed by default.
+            const details = page.getByRole('button', { name: 'Details · Assignee, Priority, Labels, Branch' });
+            await expect(details).toHaveAttribute('aria-expanded', 'false');
+            await details.click();
+            await expect(details).toHaveAttribute('aria-expanded', 'true');
+        }
         const control = picker(page, 'Labels');
         await control.getByRole('combobox').click();
         const panel = control.locator('[data-option-picker-panel]');

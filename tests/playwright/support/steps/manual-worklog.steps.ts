@@ -278,9 +278,8 @@ When('I cancel the delete', async ({ page }) => {
 
 When('I confirm the delete', async ({ page }) => {
   await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+  // The landing page depends on the destination; each scenario asserts its own address.
   await expect(page.getByText('Time entry deleted.').first()).toBeVisible();
-  // Back on the calendar: its toolbar, which picks the period with ‹ ›.
-  await expect(page.getByRole('search', { name: 'Time filters' })).toBeVisible();
 });
 
 Then('the time entry described as {string} is gone', async ({}, description: string) => {
