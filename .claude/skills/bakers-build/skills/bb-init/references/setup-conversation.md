@@ -21,6 +21,8 @@ skill's decision matrix groups its rows into **blocks**; these rules run them.
   target file, one line each: `key: value — source`, the source being the evidence command or
   file, `recommended` or `your answer`. An open value reads `key: ? — asked`. Name each value:
   every lifecycle hook, `provision_up` profile, readiness check and `provision_exec` key.
+  The values a command generates (`bakers config init` defaults such as `capture_logs`) and the
+  `.gitignore` rules setup adds are previewed in the block that writes them, too.
 - Beside each term a row explains, put its **Explain** sentence; say in one sentence which option
   fits when: the row's recommendation, otherwise its documentation.
 - Options: **Take proposal** (recommended); a named variant where the row lists one; **Adjust**.
