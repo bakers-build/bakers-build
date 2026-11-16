@@ -25,7 +25,12 @@ const cases: [addon: string, good: Record<string, unknown>][] = [
   ],
   [
     'codex',
-    { model: 'gpt-5.6-sol', permissions: 'custom', config: { a: 1 }, plugins: false },
+    {
+      model: 'gpt-5.6-sol',
+      permissions: 'custom',
+      config: { a: 1 },
+      plugins: false,
+    },
   ],
   ['fake', { outcome: 'failed', marker_file: 'bakers-run.json' }],
   [
