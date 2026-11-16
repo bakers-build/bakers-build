@@ -459,28 +459,62 @@ scenes:
                   - component: bb_theme:filters
                     props:
                       label: Time filters
-                      layout: bar
+                      layout: toolbar
+                      pinned_width: auto
                     slots:
-                      controls:
+                      pinned:
                         - component: bb_theme:segmented_control
                           props:
                             label: Period
                             items:
                               - label: Day
-                                url: '?mode=day'
+                                url: '?mode=day&date=2026-08-03'
                                 active: false
                               - label: Week
-                                url: '?mode=week'
+                                url: '?mode=week&date=2026-08-03'
                                 active: true
+                      controls:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Previous
+                            href: '?mode=week&date=2026-07-27'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-left
+                                size: sm
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: 3 – 9 Aug 2026
+                            href: '?mode=week&date=2026-08-03'
+                            aria_label: Go to today, 3 – 9 Aug 2026
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Next
+                            href: '?mode=week&date=2026-08-10'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-right
+                                size: sm
                         - component: bb_theme:option_picker
                           props:
+                            variant: field
                             label: Project
-                            name: project
-                            id: time-project
+                            id: filter-project
                             icon: project
                             open: false
-                            value_label: ''
-                            values: []
+                            multiple: false
+                            value_label: All
+                            prominent: false
+                            searchable: false
                           slots:
                             options:
                               component: bb_theme:option_list
@@ -496,10 +530,18 @@ scenes:
                                   - value: API home · API home
                                     label: API home · API home
                                     selected: false
-                  - component: bb_theme:text
-                    props:
-                      text: Week total 4:30
-                      align: end
+                      actions:
+                        - component: bb_theme:text
+                          props:
+                            text: Week total
+                            as: span
+                            size: meta
+                            tone: light
+                        - component: bb_theme:text
+                          props:
+                            text: '4:30'
+                            as: span
+                            size: section-title
                   - component: bb_theme:message
                     props:
                       status: status
@@ -843,28 +885,62 @@ scenes:
                   - component: bb_theme:filters
                     props:
                       label: Time filters
-                      layout: bar
+                      layout: toolbar
+                      pinned_width: auto
                     slots:
-                      controls:
+                      pinned:
                         - component: bb_theme:segmented_control
                           props:
                             label: Period
                             items:
                               - label: Day
-                                url: '?mode=day'
+                                url: '?mode=day&date=2026-08-03'
                                 active: false
                               - label: Week
-                                url: '?mode=week'
+                                url: '?mode=week&date=2026-08-03'
                                 active: true
+                      controls:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Previous
+                            href: '?mode=week&date=2026-07-27'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-left
+                                size: sm
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: 3 – 9 Aug 2026
+                            href: '?mode=week&date=2026-08-03'
+                            aria_label: Go to today, 3 – 9 Aug 2026
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Next
+                            href: '?mode=week&date=2026-08-10'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-right
+                                size: sm
                         - component: bb_theme:option_picker
                           props:
+                            variant: field
                             label: Project
-                            name: project
-                            id: time-project
+                            id: filter-project
                             icon: project
                             open: false
-                            value_label: ''
-                            values: []
+                            multiple: false
+                            value_label: All
+                            prominent: false
+                            searchable: false
                           slots:
                             options:
                               component: bb_theme:option_list
@@ -880,6 +956,18 @@ scenes:
                                   - value: API home · API home
                                     label: API home · API home
                                     selected: false
+                      actions:
+                        - component: bb_theme:text
+                          props:
+                            text: Week total
+                            as: span
+                            size: meta
+                            tone: light
+                        - component: bb_theme:text
+                          props:
+                            text: '4:30'
+                            as: span
+                            size: section-title
                   - component: bb_theme:message
                     props:
                       status: error
@@ -887,10 +975,6 @@ scenes:
                       body: >-
                         The week was not saved. Correct the marked cells;
                         nothing was changed.
-                  - component: bb_theme:text
-                    props:
-                      text: Week total 4:30
-                      align: end
                   - component: bb_theme:table
                     props:
                       columns:
@@ -1204,28 +1288,62 @@ scenes:
                   - component: bb_theme:filters
                     props:
                       label: Time filters
-                      layout: bar
+                      layout: toolbar
+                      pinned_width: auto
                     slots:
-                      controls:
+                      pinned:
                         - component: bb_theme:segmented_control
                           props:
                             label: Period
                             items:
                               - label: Day
-                                url: '?mode=day'
+                                url: '?mode=day&date=2026-08-03'
                                 active: false
                               - label: Week
-                                url: '?mode=week'
+                                url: '?mode=week&date=2026-08-03'
                                 active: true
+                      controls:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Previous
+                            href: '?mode=week&date=2026-07-27'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-left
+                                size: sm
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: 3 – 9 Aug 2026
+                            href: '?mode=week&date=2026-08-03'
+                            aria_label: Go to today, 3 – 9 Aug 2026
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Next
+                            href: '?mode=week&date=2026-08-10'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-right
+                                size: sm
                         - component: bb_theme:option_picker
                           props:
+                            variant: field
                             label: Project
-                            name: project
-                            id: time-project
+                            id: filter-project
                             icon: project
                             open: false
-                            value_label: ''
-                            values: []
+                            multiple: false
+                            value_label: All
+                            prominent: false
+                            searchable: false
                           slots:
                             options:
                               component: bb_theme:option_list
@@ -1241,10 +1359,18 @@ scenes:
                                   - value: API home · API home
                                     label: API home · API home
                                     selected: false
-                  - component: bb_theme:text
-                    props:
-                      text: Week total 0:00
-                      align: end
+                      actions:
+                        - component: bb_theme:text
+                          props:
+                            text: Week total
+                            as: span
+                            size: meta
+                            tone: light
+                        - component: bb_theme:text
+                          props:
+                            text: '0:00'
+                            as: span
+                            size: section-title
                   - component: bb_theme:empty-state
                     props:
                       message: No time entries for this period.
@@ -1403,28 +1529,62 @@ scenes:
                   - component: bb_theme:filters
                     props:
                       label: Time filters
-                      layout: bar
+                      layout: toolbar
+                      pinned_width: auto
                     slots:
-                      controls:
+                      pinned:
                         - component: bb_theme:segmented_control
                           props:
                             label: Period
                             items:
                               - label: Day
-                                url: '?mode=day'
+                                url: '?mode=day&date=2026-08-03'
                                 active: false
                               - label: Week
-                                url: '?mode=week'
+                                url: '?mode=week&date=2026-08-03'
                                 active: true
+                      controls:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Previous
+                            href: '?mode=week&date=2026-07-27'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-left
+                                size: sm
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: 3 – 9 Aug 2026
+                            href: '?mode=week&date=2026-08-03'
+                            aria_label: Go to today, 3 – 9 Aug 2026
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Next
+                            href: '?mode=week&date=2026-08-10'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-right
+                                size: sm
                         - component: bb_theme:option_picker
                           props:
+                            variant: field
                             label: Project
-                            name: project
-                            id: time-project
+                            id: filter-project
                             icon: project
                             open: false
-                            value_label: ''
-                            values: []
+                            multiple: false
+                            value_label: All
+                            prominent: false
+                            searchable: false
                           slots:
                             options:
                               component: bb_theme:option_list
@@ -1440,10 +1600,18 @@ scenes:
                                   - value: API home · API home
                                     label: API home · API home
                                     selected: false
-                  - component: bb_theme:text
-                    props:
-                      text: Week total 3:30
-                      align: end
+                      actions:
+                        - component: bb_theme:text
+                          props:
+                            text: Week total
+                            as: span
+                            size: meta
+                            tone: light
+                        - component: bb_theme:text
+                          props:
+                            text: '3:30'
+                            as: span
+                            size: section-title
                   - component: bb_theme:message
                     props:
                       status: status
