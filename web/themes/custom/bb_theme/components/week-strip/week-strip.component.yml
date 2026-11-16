@@ -9,7 +9,9 @@ description: >-
   marked aria-current="date". It is navigation inside one listing, so it is a
   nav landmark named by `label`. On narrow screens each cell shows the weekday
   initial and the total only; the full day sentence stays in the link's
-  accessible name.
+  accessible name. PHONE TOUCH DELTA (AC-15): below md, the days take four
+  columns and the week total its own line, so each day link is at least 44px
+  wide; md and up are unchanged.
 props:
   type: object
   required:

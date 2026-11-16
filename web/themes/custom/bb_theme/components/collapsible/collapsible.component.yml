@@ -11,7 +11,8 @@ description: >-
   <details> needs no JavaScript at all and keeps working with JavaScript
   disabled entirely, which is why this component ships with no behaviour script
   of its own attached (D2, R1). The chevron affordance rotates via a pure CSS
-  ancestor selector, not a script.
+  ancestor selector, not a script. PHONE TOUCH DELTA (AC-15): below md, the
+  summary row is at least the `touch` height (44px); md and up are unchanged.
 provider: bb_theme
 props:
   type: object

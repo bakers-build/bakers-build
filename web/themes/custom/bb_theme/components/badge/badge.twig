@@ -72,11 +72,11 @@
   'lease': 'outline outline-1 outline-state-lease'
 } %}
 {% set badge_classes = [
-  'inline-flex', 'max-w-full', 'min-w-0', 'overflow-x-clip', '*:min-w-0', 'items-center', 'gap-inline-xs', 'h-5', 'px-inline',
-  'rounded-sm', 'text-badge', 'whitespace-nowrap',
+  'inline-flex', 'max-w-full', 'min-w-0', 'overflow-x-clip', '*:min-w-0', 'items-center', 'gap-inline-xs', 'min-h-5', 'md:h-5', 'px-inline',
+  'rounded-sm', 'text-badge', 'md:whitespace-nowrap',
   tint_map[tone_key]|default(quiet),
 ] %}
-{% if mono %}{% set badge_classes = badge_classes|merge(['font-mono']) %}{% endif %}
+{% if mono %}{% set badge_classes = badge_classes|merge(['font-mono', 'max-md:wrap-anywhere']) %}{% endif %}
 {% if mine and mine_map[tone_key] is defined %}{% set badge_classes = badge_classes|merge([mine_map[tone_key]]) %}{% endif %}
 {#- `role="listitem"` is not derived and not guessed: a badge cannot know whether
     it is a direct child of a `role="list"` container, and a `listitem` outside a

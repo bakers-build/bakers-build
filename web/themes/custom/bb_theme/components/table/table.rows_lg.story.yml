@@ -1,0 +1,55 @@
+component: bb_theme:table
+name: Roomy rows
+props:
+  variant: ''
+  row_height: lg
+  columns:
+    - key: person
+      label: Name
+    - key: team
+      label: Team
+    - key: role
+      label: Role
+    - key: joined
+      label: Joined
+    - key: actions
+      label: ''
+  rows:
+    - cells:
+        person:
+          kind: person
+          display_name: Christian Wiedemann
+          initials: CW
+          color: unassigned
+          mail: christian.wiedemann@keytec.example
+        team:
+          kind: text
+          value: Platform crew
+        role:
+          kind: text
+          value: Admin
+        joined:
+          kind: text
+          value: 6 Jan 2026
+          emphasis: faint
+    - cells:
+        person:
+          kind: person
+          display_name: Sven Gruber
+          initials: SG
+          color: running
+          mail: sven.gruber@keytec.example
+        team:
+          kind: text
+          value: Design crew, Platform crew
+        role:
+          kind: badge
+          label: Member
+          tone: neutral
+        joined:
+          kind: text
+          value: 6 Jan 2026
+          emphasis: faint
+        actions:
+          kind: action
+          label: Remove

@@ -41,6 +41,8 @@ final class InsightsFilterForm extends FormBase {
   public const OOB_IDS = [
     'insights-period',
     'insights-clear',
+    'insights-chips',
+    'insights-filters-opener',
   ];
 
   public function __construct(private readonly InsightsFilterOptions $options) {}
@@ -74,11 +76,13 @@ final class InsightsFilterForm extends FormBase {
    *   The page path the form submits to.
    * @param \Drupal\user\UserInterface|null $user
    *   On My work › Stats, the account: only its projects are offered.
+   * @param array<string, list<array<string, mixed>>>|null $entries
+   *   The picker entries by filter when the caller already built them.
    *
    * @return array<string, mixed>
    *   The form.
    */
-  public function buildForm(array $form, FormStateInterface $form_state, BbWorkspaceInterface|BbProjectInterface|null $scope = NULL, array $filters = [], string $action = '', ?UserInterface $user = NULL): array {
+  public function buildForm(array $form, FormStateInterface $form_state, BbWorkspaceInterface|BbProjectInterface|null $scope = NULL, array $filters = [], string $action = '', ?UserInterface $user = NULL, ?array $entries = NULL): array {
     $form['#method'] = 'get';
     $form['#action'] = $action;
     $form['#token'] = FALSE;
@@ -108,7 +112,10 @@ final class InsightsFilterForm extends FormBase {
       'user' => $this->t('Person'),
     ];
     $pickers = [];
-    $byFilter = $user === NULL ? self::entries($this->options, $scope, $filters) : ['project' => $this->options->projects($user, $filters)];
+    // The Insights page passes the entries it already built for its chips.
+    $byFilter = $user === NULL
+      ? ($entries ?? self::entries($this->options, $scope, $filters))
+      : ['project' => $this->options->projects($user, $filters)];
     foreach ($byFilter as $key => $entries) {
       $pickers[$key] = self::picker((string) $key, (string) $labels[$key], $entries, (array) ($filters[$key] ?? []));
     }

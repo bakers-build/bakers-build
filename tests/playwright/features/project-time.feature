@@ -8,7 +8,7 @@ Feature: The project time view narrows each viewer's own authorized time
     When I open the project time view of "API home" at "mode=week&date=2026-12-08"
     Then the time scope reads "Recorded hours on API home"
     And the week total is "3:45"
-    And the week strip shows "2:45" for "Tue 2026-12-08"
+    And the day column "Tue 08" header shows "2:45"
     And the week grid row "north-contributor" shows "1:30" on "Tue 08"
     And the week grid row "fixture-crew-mate" shows "0:30" on "Tue 08"
     Given I am logged in as the account "north-contributor"

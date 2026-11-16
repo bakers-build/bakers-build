@@ -326,14 +326,15 @@ final class WorkspaceInvite {
         'team' => ['kind' => 'text', 'value' => $this->teamLabel($invite)],
         'state' => $expired
           ? ['kind' => 'badge', 'label' => (string) $this->t('Expired'), 'tone' => 'critical']
-          : ['kind' => 'badge', 'label' => (string) $this->t('Invited'), 'tone' => 'wait'],
+          : ['kind' => 'badge', 'label' => (string) $this->t('Invited'), 'tone' => 'neutral'],
         'joined' => [
           'kind' => 'text',
-          'value' => $this->t('invited @date', ['@date' => $this->date->date((int) $invite->get('created')->value)]),
+          'value' => $this->date->date((int) $invite->get('created')->value),
+          'emphasis' => 'faint',
         ],
       ];
       if ($may_write) {
-        $cells['remove'] = ['kind' => 'rendered'];
+        $cells['controls'] = ['kind' => 'rendered'];
         $controls[$index]['remove'] = [
           '#type' => 'component',
           '#component' => 'bb_theme:button',
@@ -390,7 +391,7 @@ final class WorkspaceInvite {
    */
   private function teamLabel(BbInvite $invite): string {
     if ($invite->getTeamId() === NULL) {
-      return (string) $this->t('No team');
+      return '-';
     }
     $team = $invite->get('team_id')->entity;
     return $team !== NULL ? (string) $team->label() : (string) $this->t('Team unavailable');

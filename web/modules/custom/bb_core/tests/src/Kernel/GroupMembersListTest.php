@@ -13,6 +13,7 @@ use Drupal\bb_core\Form\GroupMembersForm;
 use Drupal\og\OgMembershipInterface;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -152,7 +153,6 @@ final class GroupMembersListTest extends KernelTestBase {
     $item = $this->itemNaming($this->itemsOf($this->renderFace('team', $this->team)), 'rosa');
     $uid = (int) $this->rosa->id();
 
-    self::assertStringContainsString('data-cell="role"', $item, 'a team ships ranks to assign');
     self::assertStringContainsString('data-component-id="bb_theme:option_picker"', $item);
     self::assertStringContainsString('option-list__submit', $item, 'every option row is a submit');
     self::assertStringContainsString(
@@ -166,7 +166,6 @@ final class GroupMembersListTest extends KernelTestBase {
     // The roles are the ones the site ships, read from config rather than
     // listed in the form: a vocabulary the product does not have cannot appear.
     self::assertStringNotContainsString('value="administrator"', $item);
-    self::assertStringNotContainsString('data-cell="state"', $item, 'the role cell replaces the state cell');
     // NO SAVE BUTTON AND NO CONFIRMATION, which is the other half of "the pick
     // is the write". The only non-row submit on this face is the add.
     self::assertStringNotContainsString('type="submit" value="Save"', $item);
@@ -178,6 +177,25 @@ final class GroupMembersListTest extends KernelTestBase {
       'the documented machine handle the browser suite addresses',
     );
     self::assertStringContainsString('Revokes their access.', $item);
+  }
+
+  /**
+   * The team tab's roster is a table without a Team column.
+   *
+   * Every row is that team, so the column would repeat one value.
+   */
+  public function testTeamMembersHaveNoTeamColumn(): void {
+    $page = new Crawler($this->renderFace('team', $this->team));
+
+    self::assertSame(
+      ['Name', 'Role', 'Joined', ''],
+      $page->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())),
+    );
+    self::assertCount(
+      count($this->container->get('bb_core.membership_writer')->memberships($this->team)),
+      $page->filter('table tbody tr'),
+      'one row per member',
+    );
   }
 
   /**
@@ -194,7 +212,8 @@ final class GroupMembersListTest extends KernelTestBase {
 
     $html = $this->renderFace('team', $this->team);
 
-    self::assertStringContainsString('data-cell="person"', $html, 'the roster still renders');
+    self::assertStringContainsString('<table', $html, 'the roster still renders');
+    self::assertStringContainsString('rosa', $html);
     self::assertStringNotContainsString('remove_member_', $html, 'no removal is offered');
     self::assertStringNotContainsString('member_role_', $html, 'no role pick is offered');
     self::assertStringNotContainsString('option-list__submit', $html);
@@ -242,28 +261,22 @@ final class GroupMembersListTest extends KernelTestBase {
   }
 
   /**
-   * The `<li>` items of the rendered roster.
+   * The body rows of the rendered roster table.
    *
-   * SPLIT ON THE ITEM MARKER RATHER THAN MATCHED AS A TAG PAIR, and the reason
-   * is nesting: an item's role control is an `option_list`, whose option ROWS
-   * are `<li>` themselves. A non-greedy `<li>.*?</li>` therefore stops at the
-   * first option row's close and returns a truncated fragment of the item —
-   * measured, as four "items" for two memberships and assertions passing
-   * against markup they were not looking at. Items are siblings under one
-   * `<ul>`, so splitting on the class the container gives an item is exact
-   * where a tag match cannot be.
+   * Split on the row marker rather than matched as a tag pair: a row's role
+   * control nests its own markup, so a non-greedy tag match would stop early.
    *
    * @param string $html
    *   The rendered markup.
    *
    * @return array<int, string>
-   *   The items, each from its own `<li>` up to the next one.
+   *   The rows, each from its own `<tr>` up to the next one.
    */
   private function itemsOf(string $html): array {
-    $chunks = preg_split('#(?=<li data-list-item)#', $html) ?: [];
+    $chunks = preg_split('#(?=<tr data-table-row)#', $html) ?: [];
     return array_values(array_filter(
       $chunks,
-      static fn (string $chunk): bool => str_starts_with($chunk, '<li data-list-item'),
+      static fn (string $chunk): bool => str_starts_with($chunk, '<tr data-table-row'),
     ));
   }
 

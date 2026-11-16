@@ -85,7 +85,14 @@ Then('the week strip shows {string} for {string}', async ({ page }, total: strin
 });
 
 Then('the week total is {string}', async ({ page }, total: string) => {
-  await expect(strip(page)).toContainText(new RegExp(`Week total\\s*${total.replace(':', '\\:')}`));
+  // Week mode states it once above the table; day mode keeps it in the strip.
+  await expect(page.getByRole('main')).toContainText(new RegExp(`Week total\\s*${total.replace(':', '\\:')}`));
+});
+
+Then('the day column {string} header shows {string}', async ({ page }, day: string, total: string) => {
+  const header = page.getByRole('table').getByRole('columnheader').filter({ hasText: new RegExp(`^\\s*${day}\\b`) });
+  await expect(header).toHaveCount(1);
+  await expect(header).toContainText(total);
 });
 
 When('I open the day {string} in the week strip', async ({ page }, day: string) => {
@@ -112,7 +119,8 @@ Then('the day row {string} has no Open link', async ({ page }, text: string) => 
 export async function gridCell(page: Page, row: string, column: string) {
   const table = page.getByRole('table');
   const headers = await table.getByRole('columnheader').allInnerTexts();
-  const index = headers.findIndex((header) => header.trim() === column);
+  // A day header carries the day's total on a second line; match the first.
+  const index = headers.findIndex((header) => header.trim().split('\n')[0].trim() === column);
   expect(index, `No week grid column "${column}" in ${headers.join(', ')}`).toBeGreaterThan(-1);
   // The label is the row header, so the row is found by it and cells are
   // counted across header and data cells alike.
@@ -158,8 +166,7 @@ When('I filter the time by {word} {string}', async ({ page }, field: string, val
   await input.focus();
   await page.keyboard.press(' ');
   await expect(input).toBeChecked();
-  await page.getByRole('button', { name: 'Apply', exact: true }).focus();
-  await page.keyboard.press('Enter');
+  // The toolbar submits a picked value itself; Apply exists only without JavaScript.
   await page.waitForFunction(
     ([key, wanted]) => new URLSearchParams(window.location.search).get(key) === wanted,
     [field, expected],

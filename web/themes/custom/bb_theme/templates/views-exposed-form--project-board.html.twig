@@ -1,6 +1,8 @@
 {# The Board filter bar: Search, the State, Priority and Parent pickers, the
    Assignee avatars, then Details and Clear filters at its end
    (bb_board_summary adds the avatars, Details and Clear to the form).
+   Below `lg` only Search and the "Filters · N" opener stay in the row; the
+   rest moves into the sheet, N being the number of chips.
 
    Assignee is links, not inputs; its active values ride along as hidden
    inputs, so Apply and a picker keep them. Apply is the submit without
@@ -11,6 +13,8 @@
 {% embed 'bb_theme:filters' with {
   layout: 'toolbar',
   label: 'Board filters'|t,
+  sheet: true,
+  active_count: form['#bb_active_count']|default(0),
   search: form.search,
   state: form.state,
   priority: form.priority,
@@ -20,7 +24,8 @@
   details: form.board_details,
   clear: form.board_clear,
 } only %}
-  {% block controls %}{{ search }}{{ state }}{{ priority }}{{ parent }}{{ assignees }}{{ submit }}{% endblock %}
+  {% block pinned %}{{ search }}{% endblock %}
+  {% block controls %}{{ state }}{{ priority }}{{ parent }}{{ assignees }}{{ submit }}{% endblock %}
   {% block actions %}{{ details }}{{ clear }}{% endblock %}
 {% endembed %}
 {{ form|without('search', 'state', 'priority', 'assignee', 'parent_id', 'actions', 'board_assignees', 'board_details', 'board_clear') }}

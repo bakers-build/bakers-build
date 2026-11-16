@@ -432,6 +432,8 @@ final class BbBoardSummary extends AreaPluginBase {
     $form['board_details'] = $bar->details($this->preferences->details());
     $form['board_clear'] = $bar->clear();
     $form['board_health'] = $bar->health($this->health->requested($this->view));
+    // The phone "Filters · N" opener counts what the chips show.
+    $form['#bb_active_count'] = count($summary['chips'] ?? []);
     return $form;
   }
 

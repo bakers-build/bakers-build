@@ -29,6 +29,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -357,6 +358,89 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $state = $built['items'][0]['cells']['state'];
     self::assertSame('Expired', $state['label']);
     self::assertArrayHasKey('remove', $built['controls'][0], 'the revoke control is still offered');
+  }
+
+  /**
+   * A waiting invitation reads neutral; only an expired one reads critical.
+   */
+  public function testInvitedIsNeutralExpiredIsCritical(): void {
+    $now = \Drupal::time()->getRequestTime();
+    $fresh = BbInvite::create([
+      'workspace_id' => $this->workspace->id(),
+      'email' => 'fresh@example.com',
+      'created' => $now,
+    ]);
+    $stale = BbInvite::create([
+      'workspace_id' => $this->workspace->id(),
+      'email' => 'stale@example.com',
+      'created' => $now - ((WorkspaceInvite::VALIDITY_DAYS + 1) * 86400),
+    ]);
+    $items = $this->container->get('bb_core.workspace_invite')->inviteItems([$fresh, $stale], FALSE)['items'];
+
+    $state = static fn (array $item): array => [$item['cells']['state']['label'], $item['cells']['state']['tone']];
+    self::assertSame(['Invited', 'neutral'], $state($items[0]));
+    self::assertSame(['Expired', 'critical'], $state($items[1]));
+  }
+
+  /**
+   * The workspace face renders invitations and members as headed tables.
+   *
+   * The Team column names every team of the member in this workspace, joined
+   * with commas, and "-" for none; the dates carry no word, since the column
+   * header names them.
+   */
+  public function testWorkspaceMembersRenderAsTable(): void {
+    $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    $alpha = $this->createTeam($this->workspace, 'Alpha');
+    $beta = $this->createTeam($this->workspace, 'Beta');
+    $both = $this->createUser([], 'in-both-teams');
+    $none = $this->createUser([], 'in-no-team');
+    self::assertInstanceOf(UserInterface::class, $both);
+    self::assertInstanceOf(UserInterface::class, $none);
+    $memberships = [
+      [$both, $this->workspace],
+      [$none, $this->workspace],
+      [$both, $beta],
+      [$both, $alpha],
+    ];
+    foreach ($memberships as [$account, $group]) {
+      OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+        ->setOwner($account)
+        ->setGroup($group)
+        ->setState(OgMembershipInterface::STATE_ACTIVE)
+        ->save();
+    }
+    BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => 'waiting@example.com'])->save();
+
+    $form = $this->container->get('form_builder')->getForm(
+      GroupMembersForm::class,
+      ['island_id' => 'members', 'host_id' => 'workspace'],
+    );
+    $page = new Crawler((string) $this->container->get('renderer')->renderInIsolation($form));
+    $tables = $page->filter('table');
+    $headers = $tables->each(static fn (Crawler $table): array => $table->filter('thead th')->each(
+      static fn (Crawler $th): string => trim($th->text()),
+    ));
+
+    self::assertSame([
+      ['Email', 'Team', 'Role', 'Status', 'Invited', ''],
+      ['Name', 'Team', 'Role', 'Joined', ''],
+    ], $headers);
+    self::assertCount(0, $page->filter('[data-list-item]'), 'no card list remains');
+    $team_of = static function (Crawler $table, string $name): string {
+      foreach ($table->filter('tbody tr') as $row) {
+        $cells = (new Crawler($row))->filter('td, th');
+        if (str_contains($cells->eq(0)->text(), $name)) {
+          return trim($cells->eq(1)->text());
+        }
+      }
+      self::fail(sprintf('No row names %s.', $name));
+    };
+    $roster = $tables->eq(1);
+    self::assertSame('Alpha, Beta', $team_of($roster, 'in-both-teams'));
+    self::assertSame('-', $team_of($roster, 'in-no-team'));
+    self::assertStringNotContainsString('joined', $roster->filter('tbody')->text());
+    self::assertStringNotContainsString('invited', $tables->eq(0)->filter('tbody')->text());
   }
 
   /**
@@ -1106,7 +1190,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $items = $tenancyInvite->inviteItems([$ranked, $legacy, $stale], FALSE)['items'];
 
     self::assertSame(['Admin', 'Platform'], [$items[0]['cells']['role']['label'], $items[0]['cells']['team']['value']]);
-    self::assertSame(['Member', 'No team'], [$items[1]['cells']['role']['label'], $items[1]['cells']['team']['value']]);
+    self::assertSame(['Member', '-'], [$items[1]['cells']['role']['label'], $items[1]['cells']['team']['value']]);
     self::assertSame(
       ['Role unavailable', 'Team unavailable'],
       [$items[2]['cells']['role']['label'], $items[2]['cells']['team']['value']],
