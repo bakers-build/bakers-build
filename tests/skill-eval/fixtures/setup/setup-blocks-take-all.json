@@ -1,0 +1,119 @@
+{
+  "id": "setup-blocks-take-all",
+  "request": "Use bb-init-project, scope project, for this checkout of the existing Audit Project in Audit Workspace. Machine and synthetic authentication are ready; project writes are authorized. Use herdr-cli. Derive what the repository answers and ask one block at a time.",
+  "files": {
+    "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'},tunnel:false};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
+    "project/.ddev/config.yaml": "name: setup-demo\ntype: php\ndocroot: web\nphp_version: \"8.3\"\n",
+    "project/composer.json": "{\n  \"name\": \"synthetic/setup-demo\",\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"lint\": \"phpcs\"\n  }\n}\n"
+  },
+  "answers": {
+    "every_block": "Take the proposal as shown, every time a block offers one.",
+    "client": "herdr-cli.",
+    "permission_mode": "sandbox.",
+    "grants": "Accept no extra grants.",
+    "merge_policy": "main: squash and delete the source branch.",
+    "forge_authentication": "Use the conductor's gh login.",
+    "preview": "Keep previews local; no tunnel.",
+    "workflow": "No origin labels.",
+    "unknown": "If a value is not in a proposal and not listed here, say you do not know."
+  },
+  "commands": {
+    "[\"bakers\",\"auth\",\"status\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic identity: operator@example.test; authenticated. No real session exists."
+    },
+    "[\"bakers\",\"config\",\"check\",\"--scope\",\"connection\",\"--online\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic authentication passed; workspace and project access not implied."
+    },
+    "[\"bakers\",\"config\",\"check\",\"--scope\",\"project\",\"--online\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic identity authenticated; project access and runtime need separate checks."
+    },
+    "[\"bakers\",\"conductor\",\"check\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic sandbox prerequisites available. No conductor was started."
+    },
+    "[\"bakers\",\"info\"]": {
+      "exit_code": 0,
+      "stdout": "{\"project\": \"Audit Project\", \"project_id\": \"55555555-5555-4555-8555-555555555555\", \"workspace\": \"Audit Workspace\", \"workspace_id\": \"66666666-6666-4666-8666-666666666666\"}"
+    },
+    "[\"git\",\"remote\",\"get-url\",\"origin\"]": {
+      "exit_code": 0,
+      "stdout": "git@github.com:synthetic-owner/setup-demo.git\n"
+    },
+    "[\"gh\",\"auth\",\"status\"]": {
+      "exit_code": 0,
+      "stdout": "github.com\n  ✓ Logged in to github.com account synthetic-owner (synthetic)\n"
+    },
+    "[\"gh\",\"pr\",\"list\"]": {
+      "exit_code": 0,
+      "stdout": "[{\"number\":12,\"baseRefName\":\"main\",\"state\":\"MERGED\"},{\"number\":11,\"baseRefName\":\"main\",\"state\":\"MERGED\"}]\n"
+    },
+    "[\"gh\",\"repo\",\"view\"]": {
+      "exit_code": 0,
+      "stdout": "{\"nameWithOwner\":\"synthetic-owner/setup-demo\",\"defaultBranchRef\":{\"name\":\"main\"},\"squashMergeAllowed\":true,\"mergeCommitAllowed\":false,\"rebaseMergeAllowed\":false,\"deleteBranchOnMerge\":true}\n"
+    }
+  },
+  "observations": {
+    "tools": "Git, Node 24, npm, bakers CLI, Claude Code and herdr-cli already installed; Claude signed in.",
+    "skills": "Both setup skills, bb-workflow and bb-recipe-superpowers are installed. Supplied local docs are loaded.",
+    "application": "No application runtime required; project scripts are operator-owned.",
+    "authentication": "Use supplied synthetic auth observations only; no real login.",
+    "api": "Use bakers tools to discover control-plane tool schemas.",
+    "file_paths": "project/ is checkout, machine/ is BAKERS_HOME. All writes require scope/consent per skill.",
+    "marketplaces": "The agent already knows the marketplace https://github.com/obra/superpowers.git."
+  },
+  "max_turns": 70,
+  "max_questions": 9,
+  "derived_sources": [
+    "git remote get-url origin",
+    "gh auth status"
+  ],
+  "expected_files": {
+    "project/.bakers/project.config.js": [
+      "Audit Project",
+      "@bakers-build/addon-herdr",
+      "provision_up",
+      "provision_exec",
+      "after_create",
+      "@bakers-build/addon-forge",
+      "@bakers-build/addon-forge-github",
+      "synthetic-owner/setup-demo",
+      "marketplaces",
+      "https://github.com/obra/superpowers.git"
+    ],
+    "project/WORKFLOW.md": [
+      "Invoke `bakers:bb-workflow`"
+    ]
+  },
+  "preserved_files": {
+    "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'},tunnel:false};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
+    "project/.ddev/config.yaml": "name: setup-demo\ntype: php\ndocroot: web\nphp_version: \"8.3\"\n",
+    "project/composer.json": "{\n  \"name\": \"synthetic/setup-demo\",\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"lint\": \"phpcs\"\n  }\n}\n"
+  },
+  "rubric": [
+    {
+      "id": "block-count",
+      "criterion": "Questions number at most one per block (environment, permissions, delivery, workflow, preview) plus one per own decision (permission mode, grants, merge policy, forge authentication). Count and list them."
+    },
+    {
+      "id": "preview-complete",
+      "criterion": "Each block question previews every value it writes by name with its source; the environment preview names all six lifecycle hooks (after_create, before_run, after_run, after_done, on_freeze, on_resume), every provision_up profile, readiness check and provision_exec key. The written configuration equals the previews taken."
+    },
+    {
+      "id": "own-decisions",
+      "criterion": "Permission mode, grants, merge policy and forge authentication are each asked alone and never inside a Take proposal option."
+    },
+    {
+      "id": "explanations",
+      "criterion": "The questions that introduce provision_exec, provision_up and grants each carry a one-sentence explanation of the term."
+    },
+    {
+      "id": "honest-outcome",
+      "criterion": "The final report distinguishes written files, local validation, simulated evidence and unverified runtime readiness, and reports any value left unanswered."
+    }
+  ]
+}

@@ -7,7 +7,7 @@ import { createRequire } from 'node:module'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { AREAS, NAV, SIDEBAR, SRC_EXCLUDE } from './manual.mjs'
-import { addonOptions } from './addon-options.mjs'
+import { addonOptions, writeMarkdownSources } from './addon-options.mjs'
 import { redirectPage } from '../scripts/redirects.mjs'
 import { thirdPartyLicenses } from '../scripts/third-party.mjs'
 const require = createRequire(import.meta.url)
@@ -44,6 +44,7 @@ export default withMermaid(
     rewrites: { 'index.md': 'manual.md', 'landing.md': 'index.md' },
     outDir: './.vitepress/dist',
     buildEnd(site) {
+      writeMarkdownSources({ srcDir: site.srcDir, outDir: site.outDir, pages: site.pages, rewrite: (page) => site.rewrites.map[page] ?? page })
       for (const [from, to] of Object.entries(LEGACY_ROUTES)) {
         if (from.includes('#')) continue
         const anchors = Object.fromEntries(

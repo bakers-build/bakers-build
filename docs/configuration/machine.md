@@ -83,6 +83,14 @@ Top-level `addons` supplies harnesses; the sibling `agents` object holds the cat
 
 [Harness configuration](/agents/reference#harnesses) links package-specific options; [Execution security](/provision/security/execution) owns sandbox modes and prerequisites.
 
+### Agent plugins
+
+The plugins a run installs are the project's [`marketplaces`](/configuration/project#agent-plugins); the key fails loading here. A harness entry turns them off for this machine with `plugins: false` ([Claude](/addons/claude#options), [Codex](/addons/codex#options)):
+
+```js
+addons: [{ use: '@bakers-build/addon-claude', with: { plugins: false } }],
+```
+
 ## Secrets file
 
 The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start: foreground, detached, the restart after a config change or an update, and `bakers conductor once`. Never put it in the project's committed `.bakers/`.

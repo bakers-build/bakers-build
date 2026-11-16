@@ -88,6 +88,7 @@ export interface ProjectConfig {
     url: string;
     /** Branch or tag. */
     ref: string;
+    /** Plugins to install from this marketplace, at least one. */
     plugins: Array<string>;
   }>;
   /** Function choosing the agent for a ticket; replaces the shipped selection. */

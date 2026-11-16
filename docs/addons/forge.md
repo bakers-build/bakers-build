@@ -23,6 +23,22 @@ addons: [
 ],
 ```
 
+A `merge` key is a base branch; `*` covers every other base. `backend.with` takes the backend's own options: [GitHub](/addons/forge-github#options) or [GitLab](/addons/forge-gitlab#options).
+
+A repository-specific entry belongs in the project's `.bakers/project.config.js`; it authenticates through the conductor's login or an environment variable, never a stored token:
+
+```js
+addons: [
+  {
+    use: '@bakers-build/addon-forge',
+    with: {
+      merge: { main: { method: 'squash', delete_source: true } },
+      backend: { use: '@bakers-build/addon-forge-github', with: { repository: 'acme/shop', auth: 'gh' } },
+    },
+  },
+],
+```
+
 Without a `forge` entry no tool is served. An entry without `backend.use` stops the conductor's start.
 
 ## Options

@@ -164,6 +164,7 @@
           },
           "plugins": {
             "type": "array",
+            "description": "Plugins to install from this marketplace, at least one.",
             "minItems": 1,
             "items": {
               "$ref": "#/$defs/nonempty"

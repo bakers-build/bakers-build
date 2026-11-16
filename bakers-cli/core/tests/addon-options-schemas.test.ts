@@ -20,9 +20,13 @@ const cases: [addon: string, good: Record<string, unknown>][] = [
       sandbox: { allow_write: ['/tmp'], mcp_servers: {} },
       env_deny: ['SECRET'],
       measure: true,
+      plugins: false,
     },
   ],
-  ['codex', { model: 'gpt-5.6-sol', permissions: 'custom', config: { a: 1 } }],
+  [
+    'codex',
+    { model: 'gpt-5.6-sol', permissions: 'custom', config: { a: 1 }, plugins: false },
+  ],
   ['fake', { outcome: 'failed', marker_file: 'bakers-run.json' }],
   [
     'forge',
