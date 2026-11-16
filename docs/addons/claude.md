@@ -61,8 +61,8 @@ Default: `system`. A [runtime](/addons/runtime-docker) preserves the configured 
 
 ## Isolated runtimes
 
-[Docker](/addons/runtime-docker) gives Claude a private home without its login; plugins are read-only and transcripts stay on the host. Export
-`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY`; allowlist mode keeps it in the proxy. [Bubblewrap](/addons/runtime-bwrap) can copy the login into its private home. Its settings carry `skipDangerousModePermissionPrompt`, so `yolo` skips the bypass dialog.
+[Docker](/addons/runtime-docker) gives Claude a private home without its login; plugins are read-only and transcripts stay on the host. Put
+`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY` in the [secrets file](/configuration/machine#secrets-file) or export it; allowlist mode keeps it in the proxy. [Bubblewrap](/addons/runtime-bwrap) can copy the login into its private home. Its settings carry `skipDangerousModePermissionPrompt`, so `yolo` skips the bypass dialog.
 
 ## Deny unused tools
 

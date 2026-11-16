@@ -53,7 +53,7 @@ Needs Codex 0.166.0+. Writable: Git directories, not config or hooks; read-only:
 
 ## Isolated runtimes
 
-[Bubblewrap](/addons/runtime-bwrap) and [Docker](/addons/runtime-docker) runs get a private `CODEX_HOME`: copied `config.toml` and `rules/`, read-only plugins, writable `sessions/`, and the host's shared `auth.json`. `CODEX_API_KEY` or `OPENAI_API_KEY` replaces that login.
+[Bubblewrap](/addons/runtime-bwrap) and [Docker](/addons/runtime-docker) runs get a private `CODEX_HOME`: copied `config.toml` and `rules/`, read-only plugins, writable `sessions/`, and the host's shared `auth.json`. `CODEX_API_KEY` or `OPENAI_API_KEY`, from the [secrets file](/configuration/machine#secrets-file) or the conductor's shell, replaces that login.
 
 ## Check it works
 

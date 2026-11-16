@@ -60,7 +60,7 @@ Reserved arguments: `--permission-mode`, `--session-id`/`-s`; in sandbox mode al
 
 ## Isolated runtimes
 
-Under [Bubblewrap](/addons/runtime-bwrap) or [Docker](/addons/runtime-docker) the run gets a private `GROK_HOME` with copies of `config.toml`, `sandbox.toml` and `requirements.toml`; a managed profile is written into that copy. This worktree's transcript folder under `~/.grok/sessions/` stays writable on the host. The run shares the host's single `auth.json`; `XAI_API_KEY` in the run or conductor environment replaces it. Docker needs an image with Grok installed.
+Under [Bubblewrap](/addons/runtime-bwrap) or [Docker](/addons/runtime-docker) the run gets a private `GROK_HOME` with copies of `config.toml`, `sandbox.toml` and `requirements.toml`; a managed profile is written into that copy. This worktree's transcript folder under `~/.grok/sessions/` stays writable on the host. The run shares the host's single `auth.json`; `XAI_API_KEY` in the run env, the [secrets file](/configuration/machine#secrets-file) or the conductor's shell replaces it. Docker needs an image with Grok installed.
 
 Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
 

@@ -83,6 +83,31 @@ Top-level `addons` supplies harnesses; the sibling `agents` object holds the cat
 
 [Harness configuration](/agents/reference#harnesses) links package-specific options; [Execution security](/provision/security/execution) owns sandbox modes and prerequisites.
 
+## Secrets file
+
+The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start: foreground, detached, the restart after a config change or an update, and `bakers conductor once`. Never put it in the project's committed `.bakers/`.
+
+```sh
+# ~/.bakers/.bakers.env
+CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
+export OPENAI_API_KEY='sk-...'
+```
+
+| Rule | Behavior |
+|---|---|
+| Format | One `KEY=value` per line; a leading `export ` is accepted, `#` starts a comment line, blank lines are skipped. A value in matching `'…'` or `"…"` loses the quotes. No expansion and no escapes: `$(…)`, backticks and `$VAR` stay literal text, and the file is never run as shell. |
+| Bad line | The start stops and names the line number, never its text. |
+| Permissions | Only you may read it. A file group or others can read stops the start with `chmod 600 ~/.bakers/.bakers.env` as the fix. A missing file is no error. |
+| Shell wins | A variable exported in the shell that starts the conductor overrides the file, so `( . ~/.bakers/.backer.env; bakers conductor start )` keeps working. To switch, rename that file to `.bakers.env` and `chmod 600` it. |
+| Hand-out | A run receives a value only when its agent addon declares the variable. Every other value stays in the conductor, under every runtime, the host included. |
+| Redaction | Logs name the loaded variables, never values. `bakers agents` shows each declared variable as `set` or `unset`. |
+
+| Addon | Declared variables |
+|---|---|
+| [Claude](/addons/claude) | `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` |
+| [Codex](/addons/codex) | `CODEX_API_KEY`, `OPENAI_API_KEY` |
+| [Grok](/addons/grok) | `XAI_API_KEY` |
+
 ## Verify
 
 ```sh

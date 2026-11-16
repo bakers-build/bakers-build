@@ -27,6 +27,7 @@ The public interfaces are exported from `@bakers-build/conductor/contract`. Java
 | `launchCommand(prompt, run?, workspacePath?, tools?, env?)` | Return the shell command; the executor starts it in the worktree. |
 | `getRunLog(worktreePath, run?)` | Return only the named run's transcript; return `''` when unavailable. |
 | `parseFootprint(log)` | Return usage metrics without throwing on missing or partial logs. |
+| `secretEnv` (optional, on the agent and its plugin) | Names the variables its runs may receive from the [secrets file](/configuration/machine#secrets-file) or the conductor's shell. `prepareRun` gets the values in `context.secrets`; nothing else from the file reaches a run. |
 
 The preset registers the harness; it does not start it. During dispatch, bakers.build selects the candidate, constructs the adapter and asks for a launch command. During finalization it reads the transcript and metrics.
 
