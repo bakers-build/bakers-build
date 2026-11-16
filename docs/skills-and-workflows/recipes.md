@@ -45,6 +45,16 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
 
 **Done when:** one ticket has passed through `plan`, `working` and `review` with your recipe loaded, as the run log shows.
 
+## Shipped recipes and their plugins
+
+A shipped recipe names original skills from an external plugin. Add the recipe's ready entry to the project's [`marketplaces`](/configuration/project#agent-plugins), so every run installs that plugin:
+
+| Recipe | Plugin | Marketplace | Recommended ref | `marketplaces` entry |
+|---|---|---|---|---|
+| `bb-recipe-matt` | `mattpocock-skills` | `https://github.com/mattpocock/skills.git` | `v1.3.2` | `{ url: 'https://github.com/mattpocock/skills.git', ref: 'v1.3.2', plugins: ['mattpocock-skills'] }` |
+| `bb-recipe-superpowers` | `superpowers` | `https://github.com/obra/superpowers.git` | `v7.0.0` | `{ url: 'https://github.com/obra/superpowers.git', ref: 'v7.0.0', plugins: ['superpowers'] }` |
+| `bb-recipe-deploy-and-release`, `bb-recipe-verify` | none | — | — | — |
+
 ## The rules
 
 A type-specific phase slot wins; a missing phase falls back to the general state section, then to no recipe slot. The frame's state phase always runs. A recipe can replace a default deliverable, comment, merge or check when its slot names one explicitly. Approval, the coding gate, the verdict and readbacks remain mandatory; a transition slot can only choose a destination allowed by the gate.

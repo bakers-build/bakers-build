@@ -54,7 +54,7 @@ Start with the client, application environment and workflow. Keep existing setti
   { title: 'Configure your workflow', text: 'WORKFLOW.md supplies project rules and checks. Keep the existing recipe, or start with the shipped Matt recipe.', link: '/skills-and-workflows/guide', icon: 'book', meta: 'Understand workflows →' }
 ]" />
 
-Return here after any changes. Before starting agents, install every skill the workflow names and review [tools and security](/provision/guide#check-tools-and-access).
+Return here after any changes. Before starting agents, install every skill the workflow names; a shipped recipe's plugin comes from the ready `marketplaces` entry in [shipped recipes](/skills-and-workflows/recipes#shipped-recipes-and-their-plugins). Review [tools and security](/provision/guide#check-tools-and-access).
 
 <span id="what-changes"></span>
 

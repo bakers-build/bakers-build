@@ -9,6 +9,11 @@
     },
     "effort": {
       "description": "Passed as `-c model_reasoning_effort=…`."
+    },
+    "plugins": {
+      "type": "boolean",
+      "description": "`false` runs this agent in your own Codex home, without the project's `marketplaces` plugins. Plugins are on whenever the project declares `marketplaces`.",
+      "default": true
     }
   },
   "unevaluatedProperties": false
