@@ -56,6 +56,8 @@ const linked = new Set(Object.values(SIDEBAR).flatMap(sidebarLinks))
 function pages(dir) {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name)
+    // .vitepress holds the build output, whose page sources (`<page>.md`) are not pages.
+    if (name === '.vitepress') return []
     if (statSync(path).isDirectory()) return pages(path)
     return name.endsWith('.md') ? [relative(DOCS, path).split(sep).join('/')] : []
   })

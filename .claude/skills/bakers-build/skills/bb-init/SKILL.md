@@ -11,15 +11,15 @@ Documentation owns choices and commands; this skill guides the conversation. Ret
 ## Read
 
 Read [machine setup](references/machine-setup.md), the [setup conversation](references/setup-conversation.md)
-and [Set up a machine](https://bakers.build/provision/machine).
-In a bakers.build source checkout, use its `docs/provision/machine.md` instead, to match the revision.
-If the required documentation cannot be read, report the missing source and stop; do not
+and [Set up a machine](https://bakers.build/provision/machine.md), in full text as the conversation
+rules say. If the required documentation cannot be read, report the missing source and stop; do not
 substitute a remembered tool list.
 **Done when the relevant documentation is loaded.**
 
 ## Ask and explain
 
-Resolve the machine matrix row by row under the conversation rules. Leave client and environment
+Resolve the machine matrix block by block under the conversation rules: derive first, then one
+question per block, own decisions alone. Leave client and environment
 choices to project setup; reuse existing projects’ requirements. A Coder workspace is a remote
 worker whose template provides its tools; its operator documents it. A custom environment calls
 for its project's documented setup and checks.
@@ -38,7 +38,7 @@ Before configuration writes, inspect existing configuration, collect only missin
 write after the person confirms.
 Preserve correct values and keep secrets out of output. On a host that runs tickets, register
 the chosen agent harness and write chosen routes, permissions and preview policy per
-[machine configuration](https://bakers.build/configuration/machine), or report each unresolved.
+[machine configuration](https://bakers.build/configuration/machine.md), or report each unresolved.
 Identity initialization configures none of them.
 Distinguish tool readiness, authentication and workspace access. Blocked prerequisites remain
 outstanding; they are not successful setup.

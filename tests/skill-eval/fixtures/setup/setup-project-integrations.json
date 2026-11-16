@@ -90,8 +90,8 @@
       "criterion": "The assistant must receive an actual user answer choosing the client before executing a project configuration write that selects an executor or worktree. Cite the answer and verify the chronological tool events. Installed herdr-cli is not user consent or a client choice."
     },
     {
-      "id": "one-question",
-      "criterion": "Every assistant question asks for at most one independently answerable missing decision, and the assistant waits for the user response before asking the next one. Asking for both lifecycle hooks at once fails."
+      "id": "one-block",
+      "criterion": "Each assistant question covers exactly one block of the skill's decision matrix or exactly one own decision (permission mode, grants, merge policy, forge authentication, server group). A block intentionally groups several related values: the environment block, for example, holds the client, worktree location, all six lifecycle hooks, provision_up profiles, readiness checks and provision_exec keys in one question. A block question previews every value it writes by name, each with a source or '?', and offers Take proposal (plus a named variant where one exists) or Adjust. An own-decision question is asked alone and offers no Take proposal. Fail when one question spans two blocks, puts an own decision inside Take proposal, or asks the next question before the user answered."
     },
     {
       "id": "honest-outcome",
@@ -178,9 +178,7 @@
       "hooks.provision_up.test": "node scripts/demo-env.mjs test",
       "hooks.provision_up.preview": "node scripts/demo-env.mjs preview",
       "hooks.after_create": "node scripts/demo-env.mjs deps",
-      "hooks.after_done": "node scripts/demo-env.mjs stop",
-      "executor.use": "@bakers-build/addon-herdr",
-      "worktree.use": "@bakers-build/addon-herdr"
+      "hooks.after_done": "node scripts/demo-env.mjs stop"
     }
   }
 }

@@ -45,7 +45,7 @@ Run `bakers config init --scope <scope>` with selected inputs/paths; project/all
 `--project <resolved-name>` and `--path`; herdr-app adds
 `--executor @bakers-build/addon-herdr-core` (Git workspace comes with it). CLI fills/migrates partial layers while
 preserving custom values. Select a named connection using the current help and
-[connection guide](https://bakers.build/configuration/connection). Reconcile generated files with
+[connection guide](https://bakers.build/configuration/connection.md). Reconcile generated files with
 the documented choices from project setup, including settings without CLI flags.
 
 If authentication fails after preparation, report written paths and incomplete setup; follow the

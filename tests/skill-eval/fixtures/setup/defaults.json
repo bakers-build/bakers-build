@@ -34,7 +34,8 @@
     "docs/addons/ports-services.md",
     "docs/addons/ports-cloudflare-quick.md",
     "docs/skills-and-workflows/workflow-file.md",
-    "docs/skills-and-workflows/skills.md"
+    "docs/skills-and-workflows/skills.md",
+    "docs/skills-and-workflows/recipes.md"
   ],
   "answers": {
     "machine_role": "Run tickets on my own local computer.",
