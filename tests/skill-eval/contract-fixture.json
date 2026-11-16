@@ -555,7 +555,7 @@
                     "type": "null"
                   }
                 ],
-                "description": "The branch work bases on; main when omitted.",
+                "description": "The branch work bases on, the repository’s integration branch; main when omitted.",
                 "title": "Default branch"
               },
               "branch_convention": {
@@ -658,6 +658,11 @@
                 "title": "URL"
               },
               "default_branch": {
+                "type": "string",
+                "description": "The branch work bases on.",
+                "title": "Default branch"
+              },
+              "branch_convention": {
                 "oneOf": [
                   {
                     "type": "string"
@@ -666,7 +671,146 @@
                     "type": "null"
                   }
                 ],
-                "description": "The default branch; null means main.",
+                "description": "The branch naming convention.",
+                "title": "Branch convention"
+              }
+            },
+            "required": [
+              "url",
+              "default_branch",
+              "branch_convention"
+            ],
+            "description": "The repository; null when unset or not viewable.",
+            "title": "Repository"
+          },
+          "coder_config": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {},
+            "description": "The coder configuration map; null when unset or not viewable.",
+            "title": "Coder config"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_project_update",
+      "title": "Update a project",
+      "description": "Changes a project’s repository settings; keys not given are kept. Needs edit bb_project on the project. Returns the saved project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project key, e.g. BAKERS, or UUID.",
+            "title": "Project"
+          },
+          "repository": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The clone URL, HTTPS or SSH.",
+                "title": "URL"
+              },
+              "default_branch": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The branch work bases on, the repository’s integration branch.",
+                "title": "Default branch"
+              },
+              "branch_convention": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The branch naming convention.",
+                "title": "Branch convention"
+              }
+            },
+            "description": "The repository keys to change; url is required when the project has no repository yet.",
+            "title": "Repository"
+          }
+        },
+        "required": [
+          "project",
+          "repository"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The project UUID.",
+            "title": "UUID"
+          },
+          "key": {
+            "type": "string",
+            "description": "The ticket identifier prefix, e.g. BAKERS.",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "description": "The project name.",
+            "title": "Name"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The description as Markdown source.",
+            "title": "Description"
+          },
+          "group": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The group UUID.",
+            "title": "Group"
+          },
+          "teams": {
+            "type": "array",
+            "description": "The UUIDs of the project’s teams.",
+            "items": {
+              "type": "string",
+              "description": "One team UUID.",
+              "title": "Team"
+            },
+            "title": "Teams"
+          },
+          "repository": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "description": "The clone URL.",
+                "title": "URL"
+              },
+              "default_branch": {
+                "type": "string",
+                "description": "The branch work bases on.",
                 "title": "Default branch"
               },
               "branch_convention": {
@@ -785,15 +929,8 @@
                 "title": "URL"
               },
               "default_branch": {
-                "oneOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "The default branch; null means main.",
+                "type": "string",
+                "description": "The branch work bases on.",
                 "title": "Default branch"
               },
               "branch_convention": {
