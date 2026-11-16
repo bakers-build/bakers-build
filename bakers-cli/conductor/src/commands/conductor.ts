@@ -17,6 +17,8 @@ import {
   deriveCheckoutRoot,
   deriveConductorLiveness,
   homeBbDir,
+  loadSecretsFile,
+  type Secrets,
   loadReadyBbConnection,
   type ProcProbe,
   printVersionLine,
@@ -318,6 +320,24 @@ function logOptsOf(cmd: Command): LogOpts {
 }
 
 /** Create the conductor logger (with CLI log overrides) and route all exec logging through it. */
+/**
+ * `~/.bakers/.bakers.env`, or undefined after printing why it was refused and
+ * setting exit 1. The log names the loaded keys, never their values.
+ */
+function loadSecretsOrFail(logger?: ConductorLogger): Secrets | undefined {
+  try {
+    const secrets = loadSecretsFile();
+    const names = Object.keys(secrets);
+    if (names.length)
+      logger?.info({ secrets: names }, `secrets file: ${names.join(', ')} set`);
+    return secrets;
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exitCode = 1;
+    return undefined;
+  }
+}
+
 function loggerFor(checkoutRoot: string, log: LogOpts = {}): ConductorLogger {
   const logger = createLogger({ checkoutRoot, ...log });
   setDefaultCommandRunner(new CommandRunner(logger));
@@ -461,6 +481,8 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
   const logger = loggerFor(checkoutRoot, log);
+  const secrets = loadSecretsOrFail(logger);
+  if (!secrets) return;
   if (!(await ensureAuthenticated(config, logger))) return;
   const remote = await resolveRemote(deps, config);
   const executor = deps.executor ?? (await selectExecutor(config, logger));
@@ -477,6 +499,7 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
     frozenStateFileOf(config),
     undefined,
     readMachineContext,
+    secrets,
   );
   await conductor.start();
   await conductor.tick();
@@ -620,6 +643,9 @@ async function cmdStartForeground(
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
   const logger = loggerFor(checkoutRoot, log);
+  // Every start path ends here: detached child, self-restart and update re-exec.
+  const secrets = loadSecretsOrFail(logger);
+  if (!secrets) return;
   if (!(await ensureAuthenticated(config, logger))) return;
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
@@ -646,6 +672,7 @@ async function cmdStartForeground(
     frozenStateFileOf(config),
     undefined,
     readMachineContext,
+    secrets,
   );
   // This process IS the conductor, so it may report its own pid and config
   // name — the two values a cockpit needs to stop it later. poll/reap build a
@@ -921,6 +948,8 @@ async function cmdStart(
   foreground = false,
 ): Promise<void> {
   const current = printVersionLine();
+  // The detached child loads it again; checking here shows a refusal in this shell.
+  if (!foreground && !loadSecretsOrFail()) return;
   if (updateCheck) {
     const options: UpdateCheckOptions = {
       fetchImpl: deps.fetch ?? globalThis.fetch,
