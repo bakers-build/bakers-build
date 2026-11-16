@@ -97,3 +97,17 @@ it('hands the managed launcher the run GROK_HOME, else the user Grok home', () =
   ).toContain(" '/run/home/.grok' ");
   expect(agent.launchCommand('work')).toContain(` '${source}' `);
 });
+
+it('takes the key from the secrets the conductor hands out', () => {
+  expect(new GrokAgent().secretEnv).toEqual(['XAI_API_KEY']);
+  const out = prepareGrokRun(
+    {
+      homePath,
+      workspacePath: '/w/tree',
+      env: {},
+      secrets: { XAI_API_KEY: 'from-file' },
+    },
+    source,
+  );
+  expect(out.env.XAI_API_KEY).toBe('from-file');
+});

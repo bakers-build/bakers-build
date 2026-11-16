@@ -159,6 +159,8 @@ export interface AgentRunContext {
   homePath: string;
   workspacePath: string;
   env: Readonly<Record<string, string>>;
+  /** The agent's declared `secretEnv` values the conductor hands this run. */
+  secrets?: Readonly<Record<string, string>>;
 }
 
 /** Files and environment an agent needs, independent of its execution backend. */
@@ -192,6 +194,13 @@ export interface AgentModelApi {
 export interface AgentRuntimeInfo {
   readonly installCommand?: string;
   readonly modelApi?: AgentModelApi;
+  /**
+   * Env names this agent's runs may receive from `~/.bakers/.bakers.env` or
+   * the conductor's shell; no other secrets-file value reaches a run.
+   */
+  readonly secretEnv?: readonly string[];
+  /** The declared values the conductor hands this run; never logged. */
+  readonly secrets?: Readonly<Record<string, string>>;
 }
 
 export interface BbAgent extends AgentRuntimeInfo {

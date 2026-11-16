@@ -17,11 +17,15 @@ export function encodeGrokSessionCwd(cwd: string): string {
   return encodeURIComponent(cwd);
 }
 
+/** The model credential a Grok run may receive from the secrets file. */
+export const GROK_SECRET_ENV = ['XAI_API_KEY'] as const;
+
 /** Prepare Grok's files in the home supplied by any execution backend. */
 export function prepareGrokRun(
   context: AgentRunContext,
   grokHome: string,
-  hostEnv: Readonly<Record<string, string | undefined>> = process.env,
+  hostEnv: Readonly<Record<string, string | undefined>> = context.secrets ??
+    process.env,
 ): AgentRunPreparation {
   const home = join(context.homePath, '.grok');
   mkdirSync(join(home, 'sessions'), { recursive: true });
