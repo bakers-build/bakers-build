@@ -344,7 +344,12 @@ DELETED_ALLOWLIST=''
 # `meter` cell one load against a capacity. The Board's column header is NOT a
 # component: it is `board`'s own `column()` macro, so the board still owns its
 # columns (B1). Data Display (single word). 69 + 1 = 70.
-TARGET_COMPONENT_COUNT=70
+# 71 SINCE BAKERS-263: `danger_zone`, the irreversible action of a Settings
+# surface set apart GitHub/GitLab-style - a heading over a danger-framed row
+# with what the action does and its button. `surface_card` frames in the
+# neutral border and has no action row; `note` is one hairline and no frame.
+# Layout (snake_case), sibling of `surface_card`. 70 + 1 = 71.
+TARGET_COMPONENT_COUNT=71
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'
