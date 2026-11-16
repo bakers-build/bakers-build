@@ -89,6 +89,15 @@ final class ProjectReadToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A repository without a default branch reads as the effective main.
+   */
+  public function testEffectiveDefaultBranch(): void {
+    $this->project->set('repository', ['url' => 'https://git.example.com/a/b.git'])->save();
+    $out = $this->outputs($this->runTool('bakers_project_read', ['project' => 'TOOLPROJEC']));
+    self::assertSame('main', $out['repository']['default_branch']);
+  }
+
+  /**
    * A foreign contributor cannot read the project; neither can an unknown key.
    */
   public function testRefusesUnreadable(): void {
