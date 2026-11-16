@@ -65,3 +65,13 @@ Feature: Deleting a workspace from its Settings
     And I confirm the deletion
     Then the page confirms the disposable entity was deleted
     And the disposable entity no longer exists
+
+  Scenario: The owner deletes a group someone else created in the workspace
+    Given a disposable "group in an owned workspace" exists
+    And I am logged in as the account "fixture-workspace-owner"
+    When I open the page where the disposable entity is managed
+    Then the disposable entity offers its Delete action
+    When I open the Delete action of the disposable entity
+    And I confirm the deletion
+    Then the page confirms the disposable entity was deleted
+    And the disposable entity no longer exists

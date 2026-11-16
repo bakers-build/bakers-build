@@ -54,7 +54,7 @@ Feature: Delete opens its confirmation as a dialog over the page
       | recipe |
 
   Scenario: A project that still has tickets names them and offers only Close
-    Given a disposable "busy project" exists in the Northside workspace
+    Given a disposable "busy project" created by "north-lead" exists in the Northside workspace
     And I am logged in as the account "north-lead"
     When I open the page where the disposable entity is managed
     And I open the Delete dialog of the disposable entity

@@ -31,6 +31,8 @@ export const KINDS: Record<string, string> = {
   workspace: '$e = $etm->getStorage("bb_workspace")->create(["name" => $l, "slug" => "delete-" . $n]); $e->save(); $manage = "/delete-$n/settings";',
   // As sign-up leaves it, owned by fixture-workspace-owner; the first team is the helper.
   'owned workspace': OWNED_WORKSPACE + '$manage = "/" . $e->getSlug() . "/settings";',
+  // A group nobody in the workspace created, so only the owner deletes it.
+  'group in an owned workspace': OWNED_WORKSPACE + '$extra[] = $e; $e = $etm->getStorage("bb_group")->create(["name" => $l, "workspace_id" => $e->id()]); $e->save(); $manage = $e->toUrl()->toString() . "/settings";',
   'owned workspace with a group': OWNED_WORKSPACE + '$g = $etm->getStorage("bb_group")->create(["name" => $l, "workspace_id" => $e->id()]); $g->save(); $extra[] = $g; $manage = "/" . $e->getSlug() . "/settings";',
 };
 
@@ -38,15 +40,19 @@ export const KINDS: Record<string, string> = {
  * The PHP that creates a disposable entity of the kind.
  *
  * It prints "type:id[,type:id…]|label|managing path|delete path", the subject
- * first, then the helpers it needed.
+ * first, then the helpers it needed. A creator account becomes the subject's
+ * owner.
  */
-export function disposableSnippet(kind: string, n: string): string {
+export function disposableSnippet(kind: string, n: string, creator?: string): string {
   const create = KINDS[kind];
   if (!create) throw new Error(`No disposable kind "${kind}".`);
   return [
     PRELUDE,
     `$n = "${n}"; $l = "Delete me ${kind} ${n}"; $extra = []; $delete = NULL;`,
     create,
+    creator
+      ? `$e->set("owner_user_id", current($etm->getStorage("user")->loadByProperties(["name" => ${JSON.stringify(creator)}]))->id())->save();`
+      : '',
     '$delete = $delete ?? $e->toUrl("delete-form")->toString();',
     '$created = array_merge([$e->getEntityTypeId() . ":" . $e->id()], array_map(fn($x) => $x->getEntityTypeId() . ":" . $x->id(), $extra));',
     '$label = $e->label() ?: $e->getEntityType()->getSingularLabel();',

@@ -37,18 +37,19 @@ After({ tags: '@feature:entity-delete or @feature:delete-dialog or @feature:work
   const record = disposables.get(page);
   disposables.delete(page);
   if (!record) return;
-  // Helpers first (a ticket blocks its project), then the subject.
+  // Helpers first (a ticket blocks its project), then the subject; a second
+  // pass removes a helper the subject still blocked (a group its workspace).
   const references = [...record.created.slice(1), record.created[0]];
   lastLine([
-    `foreach (${JSON.stringify(references)} as $r) { [$type, $id] = explode(":", $r);`,
-    'try { $x = \\Drupal::entityTypeManager()->getStorage($type)->load($id); if ($x) { $x->delete(); } } catch (\\Throwable $e) {} }',
+    `for ($i = 0; $i < 2; $i++) { foreach (${JSON.stringify(references)} as $r) { [$type, $id] = explode(":", $r);`,
+    'try { $x = \\Drupal::entityTypeManager()->getStorage($type)->load($id); if ($x) { $x->delete(); } } catch (\\Throwable $e) {} } }',
     'print "ok";',
   ].join(' '));
 });
 
-function createDisposable(page: Page, kind: string): void {
+function createDisposable(page: Page, kind: string, creator?: string): void {
   const n = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
-  const output = lastLine(disposableSnippet(kind, n));
+  const output = lastLine(disposableSnippet(kind, n, creator));
   const [created, label, manage, deletePath] = output.split('|');
   if (!created || !manage || !deletePath) {
     throw new Error(`The disposable ${kind} did not settle: "${output}".`);
@@ -58,6 +59,10 @@ function createDisposable(page: Page, kind: string): void {
 
 Given('a disposable {string} exists in the Northside workspace', async ({ page }, kind: string) => {
   createDisposable(page, kind);
+});
+
+Given('a disposable {string} created by {string} exists in the Northside workspace', async ({ page }, kind: string, creator: string) => {
+  createDisposable(page, kind, creator);
 });
 
 // A kind that brings its own workspace.
