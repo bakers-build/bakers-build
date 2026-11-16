@@ -27,7 +27,7 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   },
   forge_update_branch: {
     description:
-      "Merge the ticket's current target (fetched fresh) into the ticket branch of an isolated run; pushes nothing, changes no PR/MR. Commit first. Returns previous, target and resulting SHAs and sync: none (no-op), in_place (run the returned git merge --ff-only before further work) or restart (protected paths changed: stop, cancel the run with bakers_run_cancel; the next run starts at resulting). Refuses uncommitted work, conflicts (naming paths) and concurrent branch movement without changing anything.",
+      "Merge the ticket's current target (fetched fresh) into the ticket branch of an isolated run; pushes nothing, changes no PR/MR. Commit first. Returns previous, target and resulting SHAs and sync: none (no-op), in_place (run the returned git merge --ff-only before further work) or restart (protected paths changed: stop, cancel the run with bakers_run_cancel; the next run starts at resulting). Refuses uncommitted work, conflicts and concurrent branch movement without changing anything. A conflict names its paths: stop and report it to the developers, who merge outside the run.",
     input: { type: 'object', properties: {} },
   },
   forge_push: {
