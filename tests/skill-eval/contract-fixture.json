@@ -12,8 +12,8 @@
   },
   "tools": [
     {
-      "name": "tool_api__bakers_comment_publish",
-      "title": "Publish a ticket comment",
+      "name": "tool_api__bakers_comment_create",
+      "title": "Create a ticket comment",
       "description": "Stores a Markdown comment of the given type (plan, spec, summary, …) on a ticket. The create response is the confirmation.",
       "inputSchema": {
         "type": "object",
@@ -1552,7 +1552,7 @@
       }
     },
     {
-      "name": "tool_api__bakers_ticket_runs_list",
+      "name": "tool_api__bakers_run_list",
       "title": "List ticket runs",
       "description": "Lists the runs of a ticket you can view, newest first: state, the ticket state the run started in, agent, conductor, start time and whether the run is closed.",
       "inputSchema": {
@@ -2208,7 +2208,7 @@
       }
     },
     {
-      "name": "tool_api__bakers_time_propose",
+      "name": "tool_api__bakers_worklog_propose",
       "title": "Propose time",
       "description": "Stores activities as proposed worklogs of one new proposed submission owned by the caller, for review in the week sheet. Any failing entry stores nothing; the message names it by 1-based position and source_key.",
       "inputSchema": {

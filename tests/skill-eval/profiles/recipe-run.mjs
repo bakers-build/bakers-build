@@ -20,7 +20,7 @@ export function validate(f) {
 
 export function checkOutput(f, output, context) {
   const e = f.expect, trace = calls(context, f.simulation.files), all = writes(trace), ticket = f.simulation.ticket;
-  const own = all.filter(c => c.name === tool('bakers_comment_publish') && succeeded(c) && names(c, ticket));
+  const own = all.filter(c => c.name === tool('bakers_comment_create') && succeeded(c) && names(c, ticket));
   const types = own.map(c => arg(c, 'type'));
   const states = all.filter(c => c.name === tool('bakers_ticket_transition') && names(c, ticket) && arg(c, 'state'));
   const external = trace.filter(c => ['git', 'glab'].includes(c.tool));
