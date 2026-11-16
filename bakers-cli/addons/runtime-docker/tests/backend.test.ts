@@ -241,6 +241,22 @@ describe('runtime-docker wrap', () => {
     ).rejects.toThrow(/mine:1/);
     expect(calls.some(([, a]) => a[0] === 'build')).toBe(false);
   });
+
+  it('takes the credential from the secrets the conductor hands out', async () => {
+    const rt = dockerRuntime(
+      {},
+      deps({ env: { XDG_CACHE_HOME: cache, HOME: join(root, 'home') } }),
+    );
+    const secrets = { MODEL_TOKEN: 'from-file' };
+    const prepared = await rt.prepareRun?.(
+      { uuid: 'r-uuid', id: 7 },
+      { ...agent(), secrets },
+    );
+    expect(prepared?.env).toEqual(secrets);
+    const out = await rt.wrap(launch({ secrets }));
+    expect(out.env.MODEL_TOKEN).toBe('from-file');
+    expect(out.command).not.toContain('from-file');
+  });
 });
 
 describe('runtime-docker cleanup', () => {
@@ -435,6 +451,31 @@ describe('runtime-docker allowlist mode', () => {
     ]);
     expect(out.env.MODEL_TOKEN).toBeUndefined();
     expect(out.command).toContain("'bb-runtime-aaa'");
+  });
+
+  it('hands the sidecar a file secret through the exec env, never argv', async () => {
+    const seen: Array<{ args: string[]; env?: Record<string, string> }> = [];
+    const base = fakeDocker({ networks: new Set() });
+    const rt = dockerRuntime(allowOpts, {
+      ...base,
+      env: { XDG_CACHE_HOME: cache, HOME: join(root, 'home') },
+      exec: async (file, args, opts) => {
+        seen.push({ args, ...(opts?.env ? { env: opts.env } : {}) });
+        return base.exec(file, args);
+      },
+    });
+    await rt.toolServerHosts?.();
+    rt.toolsUrl?.('http://127.0.0.1:4242');
+    const out = await rt.wrap(
+      launch({ secrets: { MODEL_TOKEN: 'from-file' } }),
+    );
+    const proxy = seen.find(
+      ({ args }) => args[0] === 'run' && args.includes('-d'),
+    );
+    expect(proxy?.args).toContain('MODEL_TOKEN');
+    expect(proxy?.args.join(' ')).not.toContain('from-file');
+    expect(proxy?.env).toEqual({ MODEL_TOKEN: 'from-file' });
+    expect(out.env.MODEL_TOKEN).toBeUndefined();
   });
 
   it('recreates a sidecar still attached to the old shared run network', async () => {

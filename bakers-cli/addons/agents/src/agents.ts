@@ -11,8 +11,14 @@ export function catalogReport(config: AgentCatalog) {
   };
 }
 
-/** Report the already-resolved catalog; no agent launch or connection I/O. */
-export function agentReport(config: AgentCatalog) {
+/**
+ * Report the already-resolved catalog; no agent launch or connection I/O.
+ * With `isSet`, each agent's declared secrets show `set` or `unset`, never a value.
+ */
+export function agentReport(
+  config: AgentCatalog,
+  isSet?: (name: string) => boolean,
+) {
   return {
     agents: config.agents.map((c) => ({
       alias: c.alias,
@@ -20,6 +26,16 @@ export function agentReport(config: AgentCatalog) {
       harness: c.agent.id,
       model: c.model ?? null,
       permissions: c.agent.permissions ?? null,
+      ...(isSet && c.agent.secretEnv?.length
+        ? {
+            secret_env: Object.fromEntries(
+              c.agent.secretEnv.map((name) => [
+                name,
+                isSet(name) ? 'set' : 'unset',
+              ]),
+            ),
+          }
+        : {}),
     })),
     enabled_agents: config.enabled_agents,
     disabled_agents: config.disabled_agents,

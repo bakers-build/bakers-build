@@ -22,11 +22,15 @@ import type {
  */
 const SHARED = ['plugins', 'skills', 'packages', '.tmp/marketplaces'];
 
+/** The model credentials a Codex run may receive from the secrets file. */
+export const CODEX_SECRET_ENV = ['CODEX_API_KEY', 'OPENAI_API_KEY'] as const;
+
 /** Prepare Codex's files in the home supplied by any execution backend. */
 export function prepareCodexRun(
   context: AgentRunContext,
   configDir: string,
-  hostEnv: Readonly<Record<string, string | undefined>> = process.env,
+  hostEnv: Readonly<Record<string, string | undefined>> = context.secrets ??
+    process.env,
 ): AgentRunPreparation {
   const source = context.env.CODEX_HOME ?? configDir;
   const home = join(context.homePath, '.codex');
@@ -56,7 +60,7 @@ export function prepareCodexRun(
     symlinkSync(path, join(home, name));
     readPaths.push(path);
   }
-  const keys = ['CODEX_API_KEY', 'OPENAI_API_KEY'];
+  const keys = CODEX_SECRET_ENV;
   const env: Record<string, string> = { CODEX_HOME: home };
   const bindPaths: RunBind[] = [];
   if (!keys.some((key) => context.env[key])) {

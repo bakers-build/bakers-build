@@ -149,3 +149,27 @@ describe('agent catalog report', () => {
     expect(report.agents[0]?.permissions).toEqual(security);
   });
 });
+
+describe('secret_env', () => {
+  it('names each declared variable and whether it is set, never its value', () => {
+    const plain = candidate('plain');
+    const agent = candidate('fast');
+    const catalog = {
+      agents: [
+        { ...agent, agent: { ...agent.agent, secretEnv: ['TOKEN', 'KEY'] } },
+        plain,
+      ],
+      enabled_agents: ['fast', 'plain'],
+      disabled_agents: [],
+      default_agent: 'fast',
+      routes: {},
+    };
+    const report = agentReport(catalog, (name) => name === 'TOKEN');
+    expect(report.agents[0]?.secret_env).toEqual({
+      TOKEN: 'set',
+      KEY: 'unset',
+    });
+    expect(report.agents[1]).not.toHaveProperty('secret_env');
+    expect(catalogReport(catalog).agents[0]).not.toHaveProperty('secret_env');
+  });
+});

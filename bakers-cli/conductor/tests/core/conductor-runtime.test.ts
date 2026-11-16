@@ -179,6 +179,7 @@ function setup(
   extension: Record<string, unknown> = {},
   instructions: string | null = null,
   clones = true,
+  secrets: Record<string, string> = {},
 ) {
   const order: string[] = [];
   const runtime =
@@ -239,6 +240,10 @@ function setup(
     ],
     log,
     CHECKOUT,
+    undefined,
+    undefined,
+    undefined,
+    secrets,
   );
   const run = async (inspect?: () => Promise<void>, endpointFile?: string) => {
     if (withTools) {
@@ -572,6 +577,86 @@ describe('runtime slot — launch wrapping', () => {
     expect(host.logs.find((l) => l.msg === 'dispatched run')?.obj.runtime).toBe(
       'host',
     );
+  });
+});
+
+describe('secrets file hand-out', () => {
+  const file = { DECLARED_KEY: 'file-declared', OTHER_KEY: 'file-other' };
+  let shell: string | undefined;
+  beforeEach(() => {
+    shell = process.env.DECLARED_KEY;
+    delete process.env.DECLARED_KEY;
+  });
+  afterEach(() => {
+    if (shell === undefined) delete process.env.DECLARED_KEY;
+    else process.env.DECLARED_KEY = shell;
+  });
+
+  it('hands an isolated run only the declared secrets, through runtime and agent', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const seen: { runtime?: unknown; context?: unknown } = {};
+    const s = setup(
+      recordingRuntime([], rec, {
+        prepareRun: async (_run, info) => {
+          seen.runtime = info.secrets;
+          return { homePath: '/private/run' };
+        },
+      }),
+      false,
+      {
+        secretEnv: ['DECLARED_KEY'],
+        prepareRun: (context: { secrets?: unknown }) => {
+          seen.context = context.secrets;
+          return { env: {}, readPaths: [], writePaths: [] };
+        },
+      },
+      null,
+      true,
+      file,
+    );
+    await s.run();
+    const declared = { DECLARED_KEY: 'file-declared' };
+    expect(seen.runtime).toEqual(declared);
+    expect(seen.context).toEqual(declared);
+    expect(rec.wraps[0]?.secrets).toEqual(declared);
+    expect(JSON.stringify(rec.wraps[0])).not.toContain('file-other');
+    expect(JSON.stringify(s.executor.started)).not.toContain('file-other');
+    expect(JSON.stringify(s.logs)).not.toContain('file-declared');
+  });
+
+  it('lets a variable exported in the shell win over the file', async () => {
+    process.env.DECLARED_KEY = 'shell-declared';
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const s = setup(
+      recordingRuntime([], rec),
+      false,
+      { secretEnv: ['DECLARED_KEY'] },
+      null,
+      true,
+      file,
+    );
+    await s.run();
+    expect(rec.wraps[0]?.secrets).toEqual({ DECLARED_KEY: 'shell-declared' });
+  });
+
+  it('adds a file-only declared secret to a host run env, never an undeclared one', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const runtime: RuntimePlugin = {
+      ...recordingRuntime([], rec),
+      isolates: false,
+    };
+    const s = setup(
+      runtime,
+      false,
+      { secretEnv: ['DECLARED_KEY'], prepareRun: undefined },
+      null,
+      true,
+      file,
+    );
+    await s.run();
+    const env = s.executor.started[0]?.env ?? {};
+    expect(env.DECLARED_KEY).toBe('file-declared');
+    expect(env).not.toHaveProperty('OTHER_KEY');
   });
 });
 

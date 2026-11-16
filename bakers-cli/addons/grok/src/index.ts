@@ -22,7 +22,11 @@ import {
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
 import { parseGrokTranscript } from './footprint.js';
-import { encodeGrokSessionCwd, prepareGrokRun } from './run.js';
+import {
+  encodeGrokSessionCwd,
+  GROK_SECRET_ENV,
+  prepareGrokRun,
+} from './run.js';
 
 export { parseGrokTranscript } from './footprint.js';
 export { encodeGrokSessionCwd } from './run.js';
@@ -178,6 +182,7 @@ async function readJson(path: string): Promise<Record<string, unknown> | null> {
 
 export class GrokAgent implements BbAgent {
   readonly id = 'grok';
+  readonly secretEnv = GROK_SECRET_ENV;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
@@ -522,6 +527,7 @@ export function grokAgent(options: GrokAgentOptions = {}): AgentPlugin {
     id: 'grok',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent() {
       return agent;
     },

@@ -51,6 +51,7 @@ export class TestConductor extends Conductor {
     frozenStateFile?: string,
     hookRunner?: HookRunner,
     readMachine?: ConstructorParameters<typeof Conductor>[9],
+    secrets?: ConstructorParameters<typeof Conductor>[10],
   ) {
     const rec = executor as BbExecutor & Recorders;
     const wired: BbWorkspace = Object.create(workspace);
@@ -80,6 +81,7 @@ export class TestConductor extends Conductor {
       frozenStateFile,
       runHook,
       readMachine,
+      secrets,
     );
   }
 }

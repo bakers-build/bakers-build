@@ -141,3 +141,18 @@ it('shares only the allow-listed directories of a previously used agent home', (
     { source: realpathSync(hostLogin), target: join(home, 'auth.json') },
   ]);
 });
+
+it('takes the key from the secrets the conductor hands out', () => {
+  const agent = new CodexAgent();
+  expect(agent.secretEnv).toEqual(['CODEX_API_KEY', 'OPENAI_API_KEY']);
+  const out = prepareCodexRun(
+    {
+      homePath,
+      workspacePath: '/w/tree',
+      env: {},
+      secrets: { OPENAI_API_KEY: 'from-file' },
+    },
+    source,
+  );
+  expect(out.env.OPENAI_API_KEY).toBe('from-file');
+});

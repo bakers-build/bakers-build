@@ -38,7 +38,7 @@ import {
   withoutGitDirs,
 } from '@bakers-build/core';
 import { parseCodexTranscript } from './footprint.js';
-import { prepareCodexRun } from './run.js';
+import { CODEX_SECRET_ENV, prepareCodexRun } from './run.js';
 
 export { parseCodexTranscript } from './footprint.js';
 
@@ -192,6 +192,7 @@ const CODEX_KNOWN: readonly KnownOptionSpec[] = [
 
 export class CodexAgent implements BbAgent {
   readonly id = 'codex';
+  readonly secretEnv = CODEX_SECRET_ENV;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
@@ -565,6 +566,7 @@ export function codexAgent(options: CodexAgentOptions = {}): AgentPlugin {
     id: 'codex',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent(config) {
       agent.useMarketplaces(config.marketplaces ?? []);
       return agent;

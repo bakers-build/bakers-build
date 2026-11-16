@@ -41,7 +41,11 @@ import {
 } from '@bakers-build/core';
 import { shareLogin } from './credentials.js';
 import { parseClaudeTranscript } from './footprint.js';
-import { encodeClaudeProjectDir, prepareClaudeRun } from './run.js';
+import {
+  CLAUDE_SECRET_ENV,
+  encodeClaudeProjectDir,
+  prepareClaudeRun,
+} from './run.js';
 import { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 export { parseClaudeTranscript } from './footprint.js';
@@ -211,6 +215,7 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
+  readonly secretEnv = CLAUDE_SECRET_ENV;
   readonly installCommand = claudeInstallCommand;
   readonly modelApi = claudeModelApi;
   private readonly args: string[];
@@ -599,6 +604,7 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     id: 'claude',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent(config) {
       agent.useMarketplaces(config.marketplaces ?? []);
       return agent;
