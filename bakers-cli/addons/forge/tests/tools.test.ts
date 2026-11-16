@@ -897,13 +897,14 @@ describe('forge tools for a run clone', () => {
     expect(f.remoteSha('next')).toBe(git(f.clone, 'rev-parse', 'origin/next'));
   });
 
-  it('forge_update_branch refuses a conflict, naming the paths, and changes nothing', async () => {
+  it('forge_update_branch refuses a conflict, naming the paths, sends it to the developers and changes nothing', async () => {
     const { f, workspace, run, commit, tools } = cloned();
     moveTarget(f, 'clash.txt');
     const tip = commit('clash.txt');
 
-    await expect(update(tools, workspace)).rejects.toThrow(
-      /conflicts in clash\.txt; nothing changed/,
+    const refusal = await update(tools, workspace).catch((e: Error) => e);
+    expect(String(refusal)).toMatch(
+      /conflicts in clash\.txt; nothing changed\. The run cannot resolve this: stop and report it to the developers\. A developer with write access merges origin\/next into 'feat\/bb-7-work' outside the run/,
     );
 
     expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(tip);
