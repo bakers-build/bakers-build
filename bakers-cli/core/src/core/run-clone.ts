@@ -36,6 +36,27 @@ export interface RunClone {
   protectedPaths?: string[];
   /** Set when forge_update_branch changed protected paths the run cannot see: push refuses until a fresh clone. */
   restartPending?: string;
+  /** A conflicting forge_update_branch awaiting continue or abort: push and a new start refuse meanwhile. */
+  pendingUpdate?: PendingUpdate;
+}
+
+export interface UpdateConflict {
+  path: string;
+  kind: 'content' | 'add_add' | 'modify_delete';
+  deleted_by?: 'branch' | 'target';
+}
+
+/** Pinned when the conflict was handed to the run; saved before its workspace is touched. */
+export interface PendingUpdate {
+  targetBranch: string;
+  /** The branch tip the merge starts from; the run's tip must stay here. */
+  previous: string;
+  target: string;
+  /** merge-tree's result: the target's clean changes and the marked conflict files. */
+  tree: string;
+  conflicts: UpdateConflict[];
+  /** The merge commit, recorded before the branch moves, so an interrupted continue finishes. */
+  resulting?: string;
 }
 
 export interface RunCloneOptions {

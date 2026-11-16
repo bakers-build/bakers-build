@@ -36,7 +36,7 @@ Without a `forge` entry no tool is served. An entry without `backend.use` stops 
 | Tool | Does | Limit |
 |---|---|---|
 | `forge_fetch` | Fetches `base_branch`, the ticket branch and the parent branches named in `branches`. | Read only; no tags. |
-| `forge_update_branch` | Merges the current target into a run clone's ticket branch; `sync` says how the run follows. | Pushes nothing. |
+| `forge_update_branch` | Merges the current target into a run clone's ticket branch; `sync` says how the run follows. See [conflicts](/addons/forge/update-conflicts). | Pushes nothing. |
 | `forge_push` | Pushes an owned branch. | Fast-forward, or `force_with_lease`; bare force does not exist. |
 | `forge_pr_upsert` | Opens, updates or retargets the PR/MR into the derived base. | Refuses a non-Conventional Commits title before any request. |
 | `forge_checks` | Lists checks with raw `conclusion`, `run_id`, `job_id` and `overall`. | Read only. |

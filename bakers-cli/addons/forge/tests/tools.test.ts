@@ -1,4 +1,11 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import type { ToolRequest } from '@bakers-build/conductor/contract';
 import { createRunClone, loadRunClone, saveRunClone } from '@bakers-build/core';
@@ -175,6 +182,12 @@ describe('forge tools', () => {
         ).toBe(false);
     }
     expect(calls).toEqual([]);
+    const update = FORGE_TOOL_DEFINITIONS.forge_update_branch!.input;
+    expect(
+      validateArgs(update, { action: 'continue', keep: ['a'], delete: ['b'] })
+        .ok,
+    ).toBe(true);
+    expect(validateArgs(update, { action: 'rebase' }).ok).toBe(false);
   });
 
   it('forge_push refuses branches the run does not own, naming the pattern', async () => {
@@ -808,12 +821,17 @@ describe('forge tools for a run clone', () => {
   });
 
   /** A new commit on the remote's `next`, as another merged ticket would add it. */
-  function moveTarget(f: ReturnType<typeof gitFixture>, path = 'moved') {
+  function moveTarget(
+    f: ReturnType<typeof gitFixture>,
+    path = 'moved',
+    content: string | null = `${path}\n`,
+  ) {
     const seed = join(f.root, 'seed');
     git(seed, 'checkout', '-q', 'next');
     mkdirSync(join(seed, path, '..'), { recursive: true });
-    writeFileSync(join(seed, path), `${path}\n`);
-    git(seed, 'add', path);
+    if (content === null) rmSync(join(seed, path));
+    else writeFileSync(join(seed, path), content);
+    git(seed, 'add', '-A', path);
     git(seed, 'commit', '-qm', path);
     git(seed, 'push', '-q', `file://${f.remote}`, 'next');
     return git(seed, 'rev-parse', 'HEAD');
@@ -897,19 +915,326 @@ describe('forge tools for a run clone', () => {
     expect(f.remoteSha('next')).toBe(git(f.clone, 'rev-parse', 'origin/next'));
   });
 
-  it('forge_update_branch refuses a conflict, naming the paths, and changes nothing', async () => {
-    const { f, workspace, run, commit, tools } = cloned();
-    moveTarget(f, 'clash.txt');
-    const tip = commit('clash.txt');
-
-    await expect(update(tools, workspace)).rejects.toThrow(
-      /conflicts in clash\.txt; nothing changed/,
+  const act = async (
+    tools: ReturnType<typeof forgeTools>,
+    workspace: string,
+    args: Record<string, unknown>,
+  ) =>
+    JSON.parse(
+      (await tools.forge_update_branch!(request(args, workspace))).text,
     );
 
-    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(tip);
+  /** Both sides change `a`, the target also adds `clean.txt`. */
+  function contentConflict() {
+    const c = cloned();
+    const clean = moveTarget(c.f, 'clean.txt');
+    const target = moveTarget(c.f, 'a', 'target side\n');
+    const tip = c.commit('a');
+    const branchAt = () => git(c.f.clone, 'rev-parse', RUN.branchName);
+    const file = (path = 'a') => readFileSync(join(c.workspace, path), 'utf8');
+    return { ...c, clean, target, tip, branchAt, file };
+  }
+
+  it('forge_update_branch hands a content conflict to the run: pinned SHAs, kinds and marked files, branch unmoved', async () => {
+    const { workspace, run, tools, clean, target, tip, branchAt, file } =
+      contentConflict();
+
+    const result = await act(tools, workspace, {});
+
+    expect(result).toMatchObject({
+      branch: RUN.branchName,
+      target_branch: 'next',
+      previous: tip,
+      target,
+      sync: 'conflict',
+      conflicts: [{ path: 'a', kind: 'content' }],
+    });
+    expect(result.next).toMatch(/action.*continue.*keep.*abort/);
+    expect(file()).toMatch(/^<<<<<<< .*\nrun work\n=+\ntarget side\n>>>>>>> /m);
+    expect(existsSync(join(workspace, 'clean.txt'))).toBe(false);
+    expect(branchAt()).toBe(tip);
     expect(run('rev-parse', 'HEAD')).toBe(tip);
+    expect(run('show', `${target}:a`)).toBe('target side');
+    expect(run('cat-file', '-t', clean)).toBe('commit');
+    expect(loadRunClone(workspace)?.pendingUpdate).toMatchObject({
+      previous: tip,
+      target,
+    });
+  });
+
+  it('continue commits the resolution as one merge keeping both sides; the run syncs in place and pushes', async () => {
+    const { f, workspace, run, tools, target, tip, branchAt, file } =
+      contentConflict();
+    await act(tools, workspace, {});
+    writeFileSync(join(workspace, 'a'), 'resolved\n');
+
+    const result = await act(tools, workspace, {
+      action: 'continue',
+      keep: ['a'],
+    });
+
+    expect(result).toMatchObject({ previous: tip, target, sync: 'in_place' });
+    expect(branchAt()).toBe(result.resulting);
+    expect(
+      git(f.clone, 'rev-list', '--parents', '-n1', result.resulting).split(' '),
+    ).toEqual([result.resulting, tip, target]);
     expect(run('status', '--porcelain')).toBe('');
-    expect(loadRunClone(workspace)?.expected).toBe(tip);
+    expect(loadRunClone(workspace)?.pendingUpdate).toBeUndefined();
+    run('merge', '--ff-only', '-q', result.resulting);
+    expect(file()).toBe('resolved\n');
+    expect(file('clean.txt')).toBe('clean.txt\n');
+    expect(file('work')).toBe('work\n');
+    const pushed = JSON.parse(
+      (await tools.forge_push!(request({}, workspace))).text,
+    );
+    expect(pushed.sha).toBe(result.resulting);
+    expect(f.remoteSha(RUN.branchName)).toBe(result.resulting);
+  });
+
+  it.each([
+    ['target', 'keep'],
+    ['branch', 'delete'],
+  ] as const)('a modify/delete conflict, deleted by the %s, resolves with %s', async (deletedBy, decision) => {
+    const { f, workspace, run, commit, tools } = cloned();
+    if (deletedBy === 'target') {
+      moveTarget(f, 'a', null);
+      commit('a');
+    } else {
+      moveTarget(f, 'a', 'target side\n');
+      run('rm', '-q', 'a');
+      run(...ident, 'commit', '-qm', 'rm a');
+    }
+
+    const result = await act(tools, workspace, {});
+
+    expect(result.conflicts).toEqual([
+      { path: 'a', kind: 'modify_delete', deleted_by: deletedBy },
+    ]);
+    expect(readFileSync(join(workspace, 'a'), 'utf8')).toBe(
+      deletedBy === 'target' ? 'run work' : 'target side\n',
+    );
+    if (decision === 'delete') rmSync(join(workspace, 'a'));
+    const done = await act(tools, workspace, {
+      action: 'continue',
+      [decision]: ['a'],
+    });
+    expect(run('status', '--porcelain')).toBe('');
+    run('merge', '--ff-only', '-q', done.resulting);
+    expect(existsSync(join(workspace, 'a'))).toBe(decision === 'keep');
+  });
+
+  it('continue refuses unresolved, missing, still present, undecided, ambiguous and unknown paths, keeping edits and pending', async () => {
+    const { workspace, tools, tip, branchAt, file } = contentConflict();
+    await act(tools, workspace, {});
+    const marked = file();
+    const refused: [Record<string, unknown>, RegExp][] = [
+      [{ keep: ['a'] }, /conflict markers remain in a/],
+      [{}, /no keep or delete decision for a/],
+      [{ keep: ['a', 'b'] }, /b is no conflict path/],
+      [{ keep: ['a'], delete: ['a'] }, /both keep and delete: a/],
+      [{ delete: ['a'] }, /delete a, but it still exists/],
+    ];
+    for (const [args, why] of refused) {
+      await expect(
+        act(tools, workspace, { action: 'continue', ...args }),
+      ).rejects.toThrow(why);
+      expect(file()).toBe(marked);
+    }
+    rmSync(join(workspace, 'a'));
+    await expect(
+      act(tools, workspace, { action: 'continue', keep: ['a'] }),
+    ).rejects.toThrow(/keep a, but it is missing/);
+    await expect(
+      act(tools, workspace, { action: 'abort', keep: ['a'] }),
+    ).rejects.toThrow(/keep and delete go only with action continue/);
+    expect(branchAt()).toBe(tip);
+    expect(loadRunClone(workspace)?.pendingUpdate?.previous).toBe(tip);
+  });
+
+  it('continue refuses a target moved since the conflict; abort and a new start take the new target', async () => {
+    const { f, workspace, tools, tip, branchAt } = contentConflict();
+    await act(tools, workspace, {});
+    writeFileSync(join(workspace, 'a'), 'resolved\n');
+    const later = moveTarget(f, 'later.txt');
+
+    await expect(
+      act(tools, workspace, { action: 'continue', keep: ['a'] }),
+    ).rejects.toThrow(/'next' moved to .* abort, then start again/);
+    expect(branchAt()).toBe(tip);
+    expect(readFileSync(join(workspace, 'a'), 'utf8')).toBe('resolved\n');
+
+    await act(tools, workspace, { action: 'abort' });
+    const again = await act(tools, workspace, {});
+    expect(again).toMatchObject({ sync: 'conflict', target: later });
+  });
+
+  it('continue refuses work outside the conflict paths and a run commit made while the update is pending', async () => {
+    const { workspace, run, tools, tip, branchAt } = contentConflict();
+    await act(tools, workspace, {});
+    writeFileSync(join(workspace, 'a'), 'resolved\n');
+    writeFileSync(join(workspace, 'work'), 'changed');
+    writeFileSync(join(workspace, 'other.txt'), 'new');
+
+    await expect(
+      act(tools, workspace, { action: 'continue', keep: ['a'] }),
+    ).rejects.toThrow(/outside the conflict paths \(work, other\.txt\)/);
+
+    run('add', 'work', 'other.txt');
+    run(...ident, 'commit', '-qm', 'during');
+    await expect(
+      act(tools, workspace, { action: 'continue', keep: ['a'] }),
+    ).rejects.toThrow(/the run's branch moved to .* since the conflict/);
+    expect(branchAt()).toBe(tip);
+  });
+
+  it('a continue interrupted after the merge finishes on retry; a repeated continue finds nothing pending', async () => {
+    const { workspace, run, tools, tip, branchAt } = contentConflict();
+    await act(tools, workspace, {});
+    const pending = loadRunClone(workspace)!.pendingUpdate!;
+    writeFileSync(join(workspace, 'a'), 'resolved\n');
+    const done = await act(tools, workspace, {
+      action: 'continue',
+      keep: ['a'],
+    });
+    // As if the conductor stopped right after moving the branch.
+    saveRunClone({
+      ...loadRunClone(workspace)!,
+      expected: tip,
+      pendingUpdate: { ...pending, resulting: done.resulting },
+    });
+    writeFileSync(join(workspace, 'a'), 'resolved\n');
+
+    const again = await act(tools, workspace, {
+      action: 'continue',
+      keep: ['a'],
+    });
+
+    expect(again).toMatchObject({
+      resulting: done.resulting,
+      sync: 'in_place',
+    });
+    expect(branchAt()).toBe(done.resulting);
+    expect(run('status', '--porcelain')).toBe('');
+    for (const action of ['continue', 'abort'])
+      await expect(act(tools, workspace, { action })).rejects.toThrow(
+        /no pending update/,
+      );
+  });
+
+  it('abort restores the conflict paths, keeps unrelated work and leaves the branch where it was', async () => {
+    const { workspace, run, tools, tip, branchAt, file } = contentConflict();
+    await act(tools, workspace, {});
+    writeFileSync(join(workspace, 'a'), 'half resolved\n');
+    writeFileSync(join(workspace, 'mine.txt'), 'unrelated');
+
+    const result = await act(tools, workspace, { action: 'abort' });
+
+    expect(result).toMatchObject({ previous: tip, sync: 'aborted' });
+    expect(file()).toBe('run work');
+    expect(file('mine.txt')).toBe('unrelated');
+    expect(run('status', '--porcelain')).toBe('?? mine.txt');
+    expect(branchAt()).toBe(tip);
+    expect(loadRunClone(workspace)?.pendingUpdate).toBeUndefined();
+  });
+
+  it('a conflict on a protected path refuses, listing it apart from the writable ones, and writes nothing', async () => {
+    const { f, workspace, tools } = cloned();
+    moveTarget(f, '.bakers/provision.sh', 'target\n');
+    moveTarget(f, 'a', 'target side\n');
+    // The branch's protected change comes from outside the run.
+    mkdirSync(join(f.clone, '.bakers'));
+    writeFileSync(join(f.clone, '.bakers/provision.sh'), 'branch\n');
+    writeFileSync(join(f.clone, 'a'), 'branch side\n');
+    git(f.clone, 'add', '-A');
+    git(f.clone, 'commit', '-qm', 'branch');
+    const fresh = createRunClone({
+      parent: f.clone,
+      workspace,
+      branch: RUN.branchName,
+      target: 'next',
+    });
+    saveRunClone({ ...fresh, protectedPaths: ['.bakers'] });
+
+    await expect(act(tools, workspace, {})).rejects.toThrow(
+      /conflicts in protected paths \(\.bakers\/provision\.sh\).*writable paths \(a\).*nothing changed/,
+    );
+
+    expect(loadRunClone(workspace)?.pendingUpdate).toBeUndefined();
+    expect(readFileSync(join(workspace, 'a'), 'utf8')).toBe('branch side\n');
+    expect(readFileSync(join(workspace, '.bakers/provision.sh'), 'utf8')).toBe(
+      'branch\n',
+    );
+  });
+
+  it('forge_push and a new start refuse while an update is pending', async () => {
+    const { f, workspace, tools } = contentConflict();
+    await act(tools, workspace, {});
+
+    for (const call of [
+      tools.forge_push!(request({}, workspace)),
+      act(tools, workspace, {}),
+    ])
+      await expect(call).rejects.toThrow(/pending update.*continue.*abort/);
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+  });
+
+  it('a continued merge that brings protected target changes stops the run for a restart', async () => {
+    const { f, workspace, commit, tools } = cloned();
+    moveTarget(f, '.bakers/provision.sh');
+    moveTarget(f, 'a', 'target side\n');
+    commit('a');
+    await act(tools, workspace, {});
+    writeFileSync(join(workspace, 'a'), 'resolved\n');
+
+    const result = await act(tools, workspace, {
+      action: 'continue',
+      keep: ['a'],
+    });
+
+    expect(result.sync).toBe('restart');
+    expect(loadRunClone(workspace)?.restartPending).toBe(result.resulting);
+    await expect(tools.forge_push!(request({}, workspace))).rejects.toThrow(
+      /bakers_run_cancel/,
+    );
+  });
+
+  it('a conflict runs no planted hook, config or driver, and never writes through a symlink the run planted', async () => {
+    const { f, workspace, commit, plant, tools } = cloned();
+    moveTarget(f, 'd/x', 'target side\n');
+    writeFileSync(
+      join(workspace, '.gitattributes'),
+      '* merge=evil filter=evil diff=evil\n',
+    );
+    commit('d/x');
+    plant();
+    for (const [key, value] of [
+      ['merge.evil.driver', `sh -c 'echo ran >> ${f.marker}'`],
+      ['filter.evil.clean', `sh -c 'echo ran >> ${f.marker}'`],
+      ['filter.evil.smudge', `sh -c 'echo ran >> ${f.marker}'`],
+    ])
+      git(f.clone, 'config', key!, value!);
+
+    const started = await tools.forge_update_branch!(request({}, workspace));
+    expect(JSON.parse(started.text).conflicts).toEqual([
+      { path: 'd/x', kind: 'add_add' },
+    ]);
+    const outside = join(f.root, 'outside');
+    mkdirSync(outside);
+    writeFileSync(join(outside, 'x'), 'outside\n');
+    rmSync(join(workspace, 'd'), { recursive: true });
+    symlinkSync(outside, join(workspace, 'd'));
+
+    const text = await tools.forge_update_branch!(
+      request({ action: 'continue', keep: ['d/x'] }, workspace),
+    )
+      .then((r) => r.text)
+      .catch((e: Error) => e.message);
+    expect(text).toMatch(/nothing changed/);
+    await act(tools, workspace, { action: 'abort' });
+
+    expect(readFileSync(join(outside, 'x'), 'utf8')).toBe('outside\n');
+    expect(text).not.toContain(SECRET);
+    expect(markerRan(f)).toBe(false);
   });
 
   it.each([

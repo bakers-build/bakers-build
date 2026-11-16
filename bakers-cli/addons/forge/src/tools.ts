@@ -11,6 +11,7 @@ import {
   changedProtectedPaths,
   homeBbDir,
   loadRunClone,
+  type PendingUpdate,
   type RunClone,
   refreshRunTarget,
   runCloneTip,
@@ -19,7 +20,15 @@ import {
 } from '@bakers-build/core';
 import type { ForgeBackend, ForgeCheck } from './backend.js';
 import { FORGE_NEEDS_BACKEND, loadForgeBackend, mergeRule } from './config.js';
-import { fetchBranches, pushBranch, updateBranch } from './git.js';
+import {
+  completeUpdate,
+  fetchBranches,
+  type GitAuth,
+  localSha,
+  pushBranch,
+  restorePaths,
+  updateBranch,
+} from './git.js';
 import {
   derivedBase,
   isConventionalTitle,
@@ -90,6 +99,9 @@ function ownedBranch(req: ToolRequest, run: Run): string {
 const restartRefusal = (sha: string) =>
   `forge: the branch was updated to ${sha} with protected changes this run cannot see; stop and cancel this run with bakers_run_cancel on its ticket, the next run starts there`;
 
+const pendingRefusal = (p: PendingUpdate) =>
+  `forge: a pending update merges ${p.targetBranch} at ${p.target} with conflicts in ${p.conflicts.map((c) => c.path).join(', ')}; resolve them and call forge_update_branch with action continue, or action abort`;
+
 /**
  * Bring the run's commits into the parent. A run behind its branch (an update
  * it has not synced) or awaiting a restart is refused: it would act on stale files.
@@ -97,6 +109,7 @@ const restartRefusal = (sha: string) =>
 function transferRun(clone: RunClone): RunClone {
   if (clone.restartPending)
     throw new Error(restartRefusal(clone.restartPending));
+  if (clone.pendingUpdate) throw new Error(pendingRefusal(clone.pendingUpdate));
   const tip = runCloneTip(clone);
   const expected = transferIsolatedCommit(clone, tip);
   if (expected !== tip)
@@ -131,6 +144,115 @@ export function overall(checks: readonly ForgeCheck[]): Overall {
   if (required.some(isRed)) return 'failure';
   if (required.some((c) => c.status !== 'success')) return 'pending';
   return 'success';
+}
+
+const withoutPending = ({ pendingUpdate: _, ...clone }: RunClone): RunClone =>
+  clone;
+
+/**
+ * Record the branch at `resulting` and say how the run follows: in place, or
+ * a restart when protected paths changed since `tip`, the run's own tip.
+ */
+function synced(
+  clone: RunClone,
+  target: string,
+  tip: string,
+  resulting: string,
+) {
+  const protectedPaths =
+    resulting === tip ? [] : changedProtectedPaths(clone, tip, resulting);
+  const sync =
+    resulting === tip
+      ? 'none'
+      : protectedPaths.length > 0
+        ? 'restart'
+        : 'in_place';
+  if (sync === 'in_place') refreshRunTarget(clone, [target], [resulting]);
+  saveRunClone({
+    ...clone,
+    expected: resulting,
+    ...(sync === 'restart' ? { restartPending: resulting } : {}),
+  });
+  const next = {
+    none: `nothing to do: '${clone.branch}' already contains ${target}`,
+    in_place: `run git merge --ff-only ${resulting} before any further work, then validate and forge_push`,
+    restart: `protected paths changed (${protectedPaths.join(', ')}): do no further work or publication; cancel this run with bakers_run_cancel on its ticket, the next run starts at ${resulting}`,
+  }[sync];
+  return { sync, next };
+}
+
+/** Merge the current target; a conflict in writable paths becomes a pending update the run resolves. */
+async function startUpdate(
+  req: ToolRequest,
+  run: Run,
+  loaded: RunClone,
+  auth: GitAuth,
+): Promise<ToolResult> {
+  const target = await currentBase(req, run.branchName, run);
+  const tip = runCloneTip(loaded);
+  // Run commits first, so the merge keeps them; a run behind its branch keeps its tip.
+  const clone = { ...loaded, expected: transferIsolatedCommit(loaded, tip) };
+  saveRunClone(clone);
+  await fetchBranches(clone.parentGitDir, auth, [target, run.branchName]);
+  refreshRunTarget(clone, [target]);
+  const u = await updateBranch(clone.parentGitDir, auth, {
+    branch: run.branchName,
+    target,
+    expected: clone.expected,
+    workspace: { path: clone.workspace, clean: tip },
+  });
+  const head = {
+    branch: run.branchName,
+    target_branch: target,
+    previous: u.previous,
+    target: u.target,
+  };
+  if (!u.conflicts)
+    return json({
+      ...head,
+      resulting: u.resulting,
+      noop: u.noop,
+      ...synced(clone, target, tip, u.resulting),
+    });
+  const paths = u.conflicts.map((c) => c.path);
+  const nothing = `; nothing changed`;
+  // Both sides changed a conflict path, so the target's diff names every protected one.
+  const locked = changedProtectedPaths(clone, u.previous, u.target).filter(
+    (path) => paths.includes(path),
+  );
+  if (locked.length > 0)
+    throw new Error(
+      `forge: merging '${target}' into '${run.branchName}' conflicts in protected paths (${locked.join(', ')}) the run cannot write, and in writable paths (${paths.filter((x) => !locked.includes(x)).join(', ') || 'none'})${nothing}. A maintainer merges origin/${target} into the branch outside the run`,
+    );
+  if (u.previous !== tip)
+    throw new Error(
+      `forge: the run is behind its branch at ${u.previous}; run git merge --ff-only ${u.previous}, then call forge_update_branch again${nothing}`,
+    );
+  // Saved before the workspace is touched: an interruption leaves an update abort can undo.
+  saveRunClone({
+    ...clone,
+    pendingUpdate: {
+      targetBranch: target,
+      previous: u.previous,
+      target: u.target,
+      tree: u.tree!,
+      conflicts: u.conflicts,
+    },
+  });
+  await restorePaths(clone.parentGitDir, auth, {
+    workspace: clone.workspace,
+    index: u.previous,
+    source: u.tree!,
+    paths,
+  });
+  return json({
+    ...head,
+    resulting: u.previous,
+    noop: false,
+    sync: 'conflict',
+    conflicts: u.conflicts,
+    next: `the conflict files are in the workspace, content conflicts with markers; compare with git show ${u.previous}:<path> and ${u.target}:<path>. Edit them without staging or committing, then call forge_update_branch with action continue, keep (paths whose file you resolved) and delete (paths to remove), or action abort`,
+  });
 }
 
 export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
@@ -206,53 +328,102 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         );
       if (loaded.restartPending)
         throw new Error(restartRefusal(loaded.restartPending));
-      const target = await currentBase(req, run.branchName, run);
+      const action = req.args.action ?? 'start';
+      const keep = (req.args.keep as string[] | undefined) ?? [];
+      const drop = (req.args.delete as string[] | undefined) ?? [];
+      if (
+        action !== 'continue' &&
+        (req.args.keep !== undefined || req.args.delete !== undefined)
+      )
+        throw new Error('forge: keep and delete go only with action continue');
+      const pending = loaded.pendingUpdate;
+      if (action === 'start' && pending)
+        throw new Error(pendingRefusal(pending));
+      if (action !== 'start' && !pending)
+        throw new Error(
+          `forge: no pending update to ${String(action)}; call forge_update_branch without an action to start one`,
+        );
       const auth = await (await backend()).gitAuth();
-      const tip = runCloneTip(loaded);
-      // Run commits first, so the merge keeps them; a run behind its branch keeps its tip.
-      const clone = {
-        ...loaded,
-        expected: transferIsolatedCommit(loaded, tip),
+      if (action === 'start') return startUpdate(req, run, loaded, auth);
+      const p = pending!;
+      const paths = p.conflicts.map((c) => c.path);
+      const parentAt = await localSha(loaded.parentGitDir, run.branchName);
+      // Give the run its pre-update conflict files back; the commit, if any, holds the resolution.
+      const restore = () =>
+        restorePaths(loaded.parentGitDir, auth, {
+          workspace: loaded.workspace,
+          index: p.tree,
+          source: p.previous,
+          paths,
+        });
+      const head = {
+        branch: run.branchName,
+        target_branch: p.targetBranch,
+        previous: p.previous,
+        target: p.target,
       };
-      saveRunClone(clone);
-      await fetchBranches(clone.parentGitDir, auth, [target, run.branchName]);
-      refreshRunTarget(clone, [target]);
-      const u = await updateBranch(clone.parentGitDir, auth, {
-        branch: run.branchName,
-        target,
-        expected: clone.expected,
-        workspace: { path: clone.workspace, clean: tip },
-      });
-      const protectedPaths =
-        u.resulting === tip
-          ? []
-          : changedProtectedPaths(clone, tip, u.resulting);
-      const sync =
-        u.resulting === tip
-          ? 'none'
-          : protectedPaths.length > 0
-            ? 'restart'
-            : 'in_place';
-      if (sync === 'in_place') refreshRunTarget(clone, [target], [u.resulting]);
-      saveRunClone({
-        ...clone,
-        expected: u.resulting,
-        ...(sync === 'restart' ? { restartPending: u.resulting } : {}),
-      });
-      const next = {
-        none: `nothing to do: '${run.branchName}' already contains ${u.target}`,
-        in_place: `run git merge --ff-only ${u.resulting} before any further work, then validate and forge_push`,
-        restart: `protected paths changed (${protectedPaths.join(', ')}): do no further work or publication; cancel this run with bakers_run_cancel on its ticket, the next run starts at ${u.resulting}`,
-      }[sync];
+      if (action === 'abort') {
+        if (p.resulting && parentAt === p.resulting)
+          throw new Error(
+            `forge: the update already merged at ${p.resulting}; call forge_update_branch with action continue to finish it`,
+          );
+        await restore();
+        saveRunClone(withoutPending(loaded));
+        return json({
+          ...head,
+          resulting: p.previous,
+          sync: 'aborted',
+          next: `nothing merged; the conflict paths are back at ${p.previous}. Call forge_update_branch to start again`,
+        });
+      }
+      if (action !== 'continue')
+        throw new Error('forge: action is start, continue or abort');
+      let resulting = p.resulting;
+      if (!resulting || parentAt !== resulting) {
+        const refuse = (why: string) =>
+          new Error(`forge: ${why}; nothing changed`);
+        const both = keep.filter((path) => drop.includes(path));
+        if (both.length > 0)
+          throw refuse(`both keep and delete: ${both.join(', ')}`);
+        const unknown = [...keep, ...drop].filter((x) => !paths.includes(x));
+        if (unknown.length > 0)
+          throw refuse(
+            `${unknown.join(', ')} is no conflict path (${paths.join(', ')})`,
+          );
+        const open = paths.filter(
+          (x) => !keep.includes(x) && !drop.includes(x),
+        );
+        if (open.length > 0)
+          throw refuse(`no keep or delete decision for ${open.join(', ')}`);
+        const tip = runCloneTip(loaded);
+        if (tip !== p.previous)
+          throw refuse(
+            `the run's branch moved to ${tip} since the conflict at ${p.previous}; leave the resolution unstaged and uncommitted (git reset ${p.previous}) and continue again`,
+          );
+        await fetchBranches(loaded.parentGitDir, auth, [
+          p.targetBranch,
+          run.branchName,
+        ]);
+        resulting = await completeUpdate(loaded.parentGitDir, auth, {
+          branch: run.branchName,
+          workspace: loaded.workspace,
+          pending: p,
+          keep,
+          beforeMove: (r) =>
+            saveRunClone({ ...loaded, pendingUpdate: { ...p, resulting: r } }),
+        });
+      }
+      await restore();
       return json({
-        branch: run.branchName,
-        target_branch: target,
-        previous: u.previous,
-        target: u.target,
-        resulting: u.resulting,
-        noop: u.noop,
-        sync,
-        next,
+        ...head,
+        resulting,
+        noop: false,
+        ...synced(
+          withoutPending(loaded),
+          p.targetBranch,
+          p.previous,
+          resulting,
+        ),
       });
     },
 
