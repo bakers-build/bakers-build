@@ -59,6 +59,7 @@ final class ShellPageLayoutTabRoutesTest extends KernelTestBase {
     'view.tickets.team_tickets',
     'view.runs.team_runs',
     'bb_core.bb_team.members',
+    'bb_core.bb_team.settings',
   ];
 
   /**
