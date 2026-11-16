@@ -1,0 +1,14 @@
+{# A heading over a danger-framed row: title and description left, the action right.
+   The row wraps under the text on a narrow column such as a detail-page card. #}
+<section{{ (attributes ?: create_attribute()).addClass(['danger-zone', 'flex', 'flex-col', 'gap-inline']) }}>
+  <h2 class="m-0 text-section-title text-title">{{ heading|default('Danger zone'|t) }}</h2>
+  <div class="flex flex-wrap items-center justify-between gap-stack p-group border border-state-unassigned rounded-sm">
+    <div class="flex flex-col min-w-0">
+      <span class="text-body font-semibold text-text">{{ title }}</span>
+      {%- if description %}
+      <span class="text-meta text-text-light">{{ description }}</span>
+      {%- endif %}
+    </div>
+    <div class="shrink-0">{% block action %}{% if action %}{{ action }}{% endif %}{% endblock %}</div>
+  </div>
+</section>

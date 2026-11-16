@@ -147,6 +147,7 @@ section is absent on every other site.
 | `fixture-onboarding-guest` | Northside guest; onboarding not completed (scenarios reset it) | Onboarding wizard without the first-project step |
 | `fixture-app` | Northside lead, North Crew | Registers conductors, which grants it the app rank |
 | `fixture-lead` | Northside lead, North Crew | JSON:API lead matrix; lead of the disposable detail-card worlds |
+| `fixture-workspace-owner` | none; each scenario provisions and owns its own workspace | Deletes its own workspace from Settings |
 | `fixture-conductor-owner` | Northside contributor, only in Conductor Owner Crew (not in API home's team) | Owns the edit and conductor-properties conductors and their machine |
 | `fixture-claim-owner` | Northside contributor in API home's team | Owns the assignable JSON:API contract conductors and claims with them |
 | `fixture-foreign-lead` | Northside member, North Crew, Southside lead | A lead rank in another workspace grants nothing here |

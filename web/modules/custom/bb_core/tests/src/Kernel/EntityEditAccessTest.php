@@ -210,7 +210,7 @@ final class EntityEditAccessTest extends KernelTestBase {
     self::assertTrue($project->access('update', $secondLead), 'lead of a referenced team must edit the project');
     self::assertTrue($project->access('update', $teamOwner), 'owner of a referenced team must edit the project');
     self::assertFalse($project->access('update', $unrelatedLead), 'lead of an unreferenced team must not edit the project');
-    self::assertTrue($project->access('delete', $secondLead), 'team-lead delete of a referenced project stays granted');
+    self::assertFalse($project->access('delete', $secondLead), 'a team lead deletes only the projects it created');
     self::assertFalse($home['project']->access('update', $secondLead), 'a team lead does not edit an unreferenced project');
   }
 

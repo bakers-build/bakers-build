@@ -257,6 +257,8 @@ final class AccessFenceHooks {
     // rank half, on its memberships.
     $cacheable_metadata->addCacheContexts(['user.permissions', 'user']);
     $cacheable_metadata->addCacheTags(['og_membership_list']);
+    // `delete own` reads the group's owner.
+    $cacheable_metadata->addCacheableDependency($group);
 
     // getAdminPermission() returns FALSE, not NULL, when none is declared.
     $admin_permission = $entity_type->getAdminPermission();
@@ -267,11 +269,10 @@ final class AccessFenceHooks {
       return;
     }
 
-    $entity_type_id = $entity_type->id();
     // The chain includes the group itself, so a project lead is answered by
     // its own project and a workspace lead by the workspace above it.
     $chain = $this->rankEntityFence->groupsAnchoredBy($group);
-    $this->mapUpdateAndDeletePermissions($permissions, $account, $chain, $entity_type_id);
+    $this->mapUpdateAndDeletePermissions($permissions, $account, $chain, $group);
   }
 
   /**
@@ -281,7 +282,8 @@ final class AccessFenceHooks {
    * `update any <type>` are mapped: the shipped ranks carry the latter for
    * the other group types. `update own <type>` is deliberately not mapped,
    * because holdsPermission() ignores ownership and would widen it to every
-   * group of the type.
+   * group of the type; `delete own <type>` is mapped only for the group's
+   * owner.
    *
    * @param array<int, string> $permissions
    *   The permissions to add to, by reference.
@@ -289,10 +291,11 @@ final class AccessFenceHooks {
    *   The account asking.
    * @param array<int, \Drupal\Core\Entity\EntityInterface> $chain
    *   The tenancy chain to check group permissions against.
-   * @param string $entity_type_id
-   *   The group's entity type id.
+   * @param \Drupal\Core\Entity\EntityInterface $group
+   *   The group asked about.
    */
-  private function mapUpdateAndDeletePermissions(array &$permissions, AccountInterface $account, array $chain, string $entity_type_id): void {
+  private function mapUpdateAndDeletePermissions(array &$permissions, AccountInterface $account, array $chain, EntityInterface $group): void {
+    $entity_type_id = $group->getEntityTypeId();
     $may_update = $this->holdsPermission('edit ' . $entity_type_id, $account, $chain)
       || $this->holdsPermission(
         'update any ' . $entity_type_id,
@@ -308,7 +311,10 @@ final class AccessFenceHooks {
         'delete any ' . $entity_type_id,
         $account,
         $chain,
-      );
+      )
+      || ($group instanceof EntityOwnerInterface
+        && (int) $group->getOwnerId() === (int) $account->id()
+        && $this->holdsPermission('delete own ' . $entity_type_id, $account, $chain));
     if ($may_delete) {
       $permissions[] = OgAccess::DELETE_GROUP_PERMISSION;
     }

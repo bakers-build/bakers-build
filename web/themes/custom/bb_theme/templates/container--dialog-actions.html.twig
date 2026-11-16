@@ -1,0 +1,13 @@
+{#
+/**
+ * @file
+ * A form's action row lifted into a dialog footer: the footer already draws
+ * the divider and padding, so the row only lines its controls up.
+ *
+ * Reached by name: bb_theme_form_alter() sets this wrapper instead of
+ * container__form_actions when the form is answered inside a dialog.
+ */
+#}
+<div{{ attributes.addClass(['flex', 'flex-wrap', 'items-center', 'justify-end', 'gap-inline']) }}>
+  {{- children -}}
+</div>

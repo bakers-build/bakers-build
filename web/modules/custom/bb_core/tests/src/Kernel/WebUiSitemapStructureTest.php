@@ -571,14 +571,14 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // Same literal-count guard as the project case above, against the
     // parser's silent-drop failure mode rather than the parser's own count.
     self::assertCount(
-      5,
+      6,
       $this->tabOrder['Team detail'],
-      'The sitemap file must parse exactly five Team detail tab rows.',
+      'The sitemap file must parse exactly six Team detail tab rows.',
     );
     self::assertSame(
       $this->tabOrder['Team detail'],
       $this->tabRoutesOn('entity.bb_team.canonical', $this->accounts['lead']),
-      'The team tab row is exactly the agreed five, in order.',
+      'The team tab row is exactly the agreed six, in order.',
     );
   }
 
@@ -751,8 +751,6 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
    */
   private const NO_NAV_HOME_ROUTES = [
     'bb_core.run_log_download',
-    // Former Settings url: redirects to the detail page's cards.
-    'bb_core.bb_team.settings',
     // Overlay body for the island dialog; the canonical run is already
     // excluded as a no-nav-home entity type.
     'entity.bb_run.overlay',
@@ -898,7 +896,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // downstream able to tell the difference from a genuinely six/five-row
     // table.
     self::assertCount(8, $order['Project detail'] ?? [], 'The sitemap file must declare exactly eight Project detail tabs.');
-    self::assertCount(5, $order['Team detail'] ?? [], 'The sitemap file must declare exactly five Team detail tabs.');
+    self::assertCount(6, $order['Team detail'] ?? [], 'The sitemap file must declare exactly six Team detail tabs.');
     self::assertCount(7, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly seven Workspace settings tabs.');
     self::assertCount(2, $order['Group detail'] ?? [], 'The sitemap file must declare exactly two Group detail tabs.');
     self::assertCount(1, $order['Conductor detail'] ?? [], 'The sitemap file must declare exactly one Conductor detail tab.');
@@ -980,6 +978,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'entity.bb_team.canonical' => 403,
     'bb_core.bb_team.stats' => 403,
     'bb_core.bb_team.members' => 403,
+    'bb_core.bb_team.settings' => 403,
     'view.tickets.team_tickets' => 403,
     'view.runs.team_runs' => 403,
     'entity.bb_group.canonical' => 403,
@@ -1005,7 +1004,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
    * actually being correct.
    *
    * Reflects the shipped ranks as of BB-454 round 4: `contributor` no
-   * longer carries `edit bb_project` / `delete bb_project` directly (moved
+   * longer carries `edit bb_project` directly (moved
    * to `bb_team-bb_team-lead`, BB-454 round 4 review finding 1); the
    * project canonical route is gated on `bb_project.view`, not `.update`
    * (finding 3), so it is reachable by every ranked account here; and
@@ -1054,6 +1053,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'view.runs.team_runs' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'entity.bb_team.canonical' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'bb_core.bb_team.members' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
+    // Like group Settings: `update any bb_team` is the lead's alone.
+    'bb_core.bb_team.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'view.project_board.project_board' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.projects.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.groups.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],

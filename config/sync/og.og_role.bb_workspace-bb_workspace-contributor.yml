@@ -20,6 +20,8 @@ permissions:
   - 'create bb_project'
   - 'create bb_term'
   - 'create bb_ticket'
+  - 'delete own bb_group'
+  - 'delete own bb_project'
   - 'record own worklog'
   - 'register bakers conductor'
   - 'update any bb_term'

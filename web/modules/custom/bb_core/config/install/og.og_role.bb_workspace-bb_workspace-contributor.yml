@@ -5,7 +5,8 @@
 # and `create bb_group`. `claim bakers tickets` and `register bakers conductor`
 # let a conductor's owning user run it through their own rank. Creating a
 # project additionally requires this role within a team the project is placed
-# into; that fence lives in the group-scope constraint.
+# into; that fence lives in the group-scope constraint. `delete own` lets the
+# creator of a project or group delete it.
 #
 # Shipped in its saved form, key for key.
 langcode: en
@@ -29,6 +30,8 @@ permissions:
   - 'create bb_project'
   - 'create bb_term'
   - 'create bb_ticket'
+  - 'delete own bb_group'
+  - 'delete own bb_project'
   - 'record own worklog'
   - 'register bakers conductor'
   - 'update any bb_term'
