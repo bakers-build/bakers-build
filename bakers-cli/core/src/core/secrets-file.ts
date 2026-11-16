@@ -33,14 +33,14 @@ export function parseSecretsFile(text: string): Record<string, string> {
     values[match[1] as string] = quoted ? raw.slice(1, -1) : raw;
   });
   if (bad.length)
-    throw new Error(
-      bad.map((n) => `line ${n}: expected KEY=value`).join('; '),
-    );
+    throw new Error(bad.map((n) => `line ${n}: expected KEY=value`).join('; '));
   return values;
 }
 
 /** The file's values; `{}` when it does not exist. Refuses a file others can read. */
-export function loadSecretsFile(path = secretsFilePath()): Record<string, string> {
+export function loadSecretsFile(
+  path = secretsFilePath(),
+): Record<string, string> {
   let mode: number;
   try {
     mode = statSync(path).mode;
