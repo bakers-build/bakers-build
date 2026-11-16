@@ -15,13 +15,13 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[Group('bb_track')]
 #[RunTestsInSeparateProcesses]
-final class TimeProposeToolTest extends TimeToolTestBase {
+final class WorklogProposeToolTest extends TimeToolTestBase {
 
   /**
    * Every entry lands as a proposed row of one proposed submission.
    */
   public function testEntriesBecomeOneProposal(): void {
-    $out = $this->outputs($this->runTool('bakers_time_propose', [
+    $out = $this->outputs($this->runTool('bakers_worklog_propose', [
       'project' => $this->project->uuid(),
       'entries' => [$this->entry('a'), $this->entry('b', 1800), $this->entry('c', 600)],
     ]));
@@ -68,7 +68,7 @@ final class TimeProposeToolTest extends TimeToolTestBase {
       'invalid date' => [['work_date' => '2026-02-30'] + $this->entry('date'), 'date', 'Entry 2 (date)'],
     ];
     foreach ($bad as $case => [$entry, $key, $message]) {
-      $result = $this->runTool('bakers_time_propose', [
+      $result = $this->runTool('bakers_worklog_propose', [
         'project' => $this->project->uuid(),
         'entries' => [$this->entry('good-1'), $entry, $this->entry('good-2')],
       ]);
@@ -84,8 +84,8 @@ final class TimeProposeToolTest extends TimeToolTestBase {
    */
   public function testResendIsRefused(): void {
     $values = ['project' => $this->project->uuid(), 'entries' => [$this->entry('once')]];
-    $this->outputs($this->runTool('bakers_time_propose', $values));
-    $this->assertFailure($this->runTool('bakers_time_propose', $values), 'Entry 1 (once): This source was already recorded.');
+    $this->outputs($this->runTool('bakers_worklog_propose', $values));
+    $this->assertFailure($this->runTool('bakers_worklog_propose', $values), 'Entry 1 (once): This source was already recorded.');
     self::assertSame(1, $this->stored('bb_track_submission'));
     self::assertSame(1, $this->stored('bb_track_worklog'));
   }
@@ -95,7 +95,7 @@ final class TimeProposeToolTest extends TimeToolTestBase {
    */
   public function testAnonymousIsDenied(): void {
     $this->container->get('current_user')->setAccount(new AnonymousUserSession());
-    $result = $this->runTool('bakers_time_propose', [
+    $result = $this->runTool('bakers_worklog_propose', [
       'project' => $this->project->uuid(),
       'entries' => [$this->entry('anon')],
     ]);
