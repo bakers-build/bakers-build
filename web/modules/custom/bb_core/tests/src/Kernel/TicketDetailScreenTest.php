@@ -645,18 +645,19 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * A detail card keeps its Save, and the last write still wins.
    */
   public function testDetailCardsKeepTheirSaveButton(): void {
-    $team = $this->container->get('entity_type.manager')->getStorage('bb_team')
-      ->create(['name' => 'Platform Crew', 'workspace_id' => $this->workspace->id()]);
-    self::assertInstanceOf(ContentEntityInterface::class, $team);
-    $team->save();
-    $this->tabsOn('entity.bb_team.canonical', ['bb_team' => $team]);
-    $opening = $this->openForm($team, 'identity');
-    $team->set('name', 'Renamed elsewhere')->save();
+    // Team and group cards only show now; a machine card still edits.
+    $this->installEntitySchema('bb_machine');
+    $machine = $this->container->get('entity_type.manager')->getStorage('bb_machine')
+      ->create(['name' => 'Build box', 'host_key' => 'detail-card-save', 'owner_user_id' => 1]);
+    self::assertInstanceOf(ContentEntityInterface::class, $machine);
+    $machine->save();
+    $opening = $this->openForm($machine, 'identity');
+    $machine->set('name', 'Renamed elsewhere')->save();
 
-    [$form, $state] = $this->postForm($team, 'identity', ['name' => [['value' => 'Platform Team']]] + $opening);
+    [$form, $state] = $this->postForm($machine, 'identity', ['name' => [['value' => 'Build server']]] + $opening);
 
     self::assertSame([], $state->getErrors());
-    self::assertSame('Platform Team', $this->stored($team)->label());
+    self::assertSame('Build server', $this->stored($machine)->label());
     self::assertSame('Save', (string) $form['actions']['submit']['#value']);
     self::assertNotContains('js-hide', $form['actions']['#attributes']['class'] ?? []);
   }
@@ -1241,6 +1242,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'view.tickets.team_tickets',
         'view.runs.team_runs',
         'bb_core.bb_team.members',
+        'bb_core.bb_team.settings',
         'view.worklog.team',
       ],
       $tabs,

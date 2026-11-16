@@ -70,6 +70,7 @@ final class BbProjectAccessTest extends KernelTestBase {
     $this->assertInstanceOf(UserInterface::class, $deleter);
     $this->assertFalse($project->access('delete', $deleter), 'delete own needs the project to be theirs');
     $project->set('owner_user_id', $deleter->id())->save();
+    \Drupal::entityTypeManager()->getAccessControlHandler('bb_project')->resetCache();
     $this->assertTrue($project->access('delete', $deleter));
 
     $nobody = $this->createUser([]);
