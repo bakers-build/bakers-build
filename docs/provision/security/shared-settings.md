@@ -90,7 +90,6 @@ and builds in its own container, not on the host.
 A change to a protected path is made by a maintainer outside an isolated run. A run merges the
 target with `forge_update_branch` on the host; when that changes a protected path, it answers
 `sync: restart`, refuses `forge_push`, and the next run's fresh clone starts at the merge.
-A protected-path conflict is refused; the run resolves writable ones.
 
 ### DDEV tool protection
 

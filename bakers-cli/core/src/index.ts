@@ -191,14 +191,12 @@ export { normalizeRepoUrl } from './core/repo-url.js';
 export {
   createRunClone,
   loadRunClone,
-  type PendingUpdate,
   type RunClone,
   type RunCloneOptions,
   registerRunCloneWorktree,
   removeRunClone,
   runCloneGitDir,
   saveRunClone,
-  type UpdateConflict,
 } from './core/run-clone.js';
 export { cliRootOf } from './core/runtime-paths.js';
 export {

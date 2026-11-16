@@ -1778,7 +1778,7 @@ export class Conductor {
         'Commit before you end: uncommitted work is not carried over. ' +
         'forge_fetch refreshes the origin refs and forge_push transfers and pushes your commits. ' +
         `Read-only here: ${['.bakers', ...(this.config.readOnly ?? [])].filter((path, index, all) => all.indexOf(path) === index).join(', ')}. ` +
-        'forge_update_branch merges the target into your branch; follow its sync: in_place, run the returned git merge --ff-only before further work; restart, stop and cancel this run with bakers_run_cancel; conflict, edit the listed files without staging, then call it with action continue (keep, delete) or abort.';
+        'forge_update_branch merges the target into your branch; follow its sync: in_place, run the returned git merge --ff-only before further work; restart, stop and cancel this run with bakers_run_cancel; a conflict, stop and report it to the developers.';
     // BB-473 review round 2 (Critical 1): pinning the run's own UUID
     // unconditionally makes a re-dispatch of the same run — an existing,
     // supported path (see the cleanupRun comment above) — fail to launch,

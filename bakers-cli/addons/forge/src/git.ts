@@ -9,11 +9,7 @@ import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import {
-  type PendingUpdate,
-  UI_REFRESH_FILE,
-  type UpdateConflict,
-} from '@bakers-build/core';
+import { UI_REFRESH_FILE } from '@bakers-build/core';
 
 export interface GitAuth {
   /** The configured repository URL, never the clone's `origin`. */
@@ -161,54 +157,6 @@ async function withScratch<T>(
   }
 }
 
-type Scratch = Parameters<Parameters<typeof withScratch>[2]>[0];
-
-/**
- * Git over the run's workspace through a throwaway index at `head`, under only
- * the scratch's clean config: no filter, driver, hook or fsmonitor runs, and
- * Git itself refuses paths beyond a symlink.
- */
-async function workspaceGit(
-  { home, remote }: Scratch,
-  path: string,
-  /** A commit for status; without, read a tree into the index yourself. */
-  head?: string,
-) {
-  await mkdir(join(home, 'scratch.git', 'info'), { recursive: true });
-  await writeFile(
-    join(home, 'scratch.git', 'info', 'exclude'),
-    `/.bakers/${UI_REFRESH_FILE}\n`,
-  );
-  const tree = { GIT_WORK_TREE: path, GIT_INDEX_FILE: join(home, 'index') };
-  if (head) {
-    await remote(['update-ref', '--no-deref', 'HEAD', head]);
-    await remote(['read-tree', 'HEAD'], undefined, tree);
-  }
-  return (args: string[]) => remote(args, undefined, tree);
-}
-
-const literal = (path: string) => `:(literal)${path}`;
-
-/** Changed and untracked paths of the workspace against its head, `except` left out. */
-async function dirtyPaths(
-  wt: (args: string[]) => Promise<string>,
-  except: readonly string[] = [],
-): Promise<string[]> {
-  const out = await wt([
-    'status',
-    '--porcelain',
-    '--untracked-files=all',
-    '--no-renames',
-    '--',
-    '.',
-    ...except.map((path) => `:(exclude,literal)${path}`),
-  ]);
-  return out
-    .split('\n')
-    .filter(Boolean)
-    .map((l) => l.replace(/^[ MADRCU?!]{1,2} /, ''));
-}
-
 /** The SHA of a local branch of the clone, if it exists. */
 export async function localSha(
   worktree: string,
@@ -336,96 +284,9 @@ export interface BranchUpdate {
   previous: string;
   /** The fetched target tip that was merged. */
   target: string;
-  /** The branch tip after the update; `previous` for a no-op or a conflict. */
+  /** The branch tip after the update; `previous` for a no-op. */
   resulting: string;
   noop: boolean;
-  /** Set on a conflict: nothing moved, `tree` holds merge-tree's result. */
-  conflicts?: UpdateConflict[];
-  tree?: string;
-}
-
-/** merge-tree's `-z` conflicted file info as one entry per path, kinded by its stages. */
-function parseConflicts(entries: readonly string[]): UpdateConflict[] {
-  const stages = new Map<string, Set<string>>();
-  for (const entry of entries) {
-    const m = /^\d+ [0-9a-f]+ ([123])\t([\s\S]+)$/.exec(entry);
-    if (m) stages.set(m[2]!, (stages.get(m[2]!) ?? new Set()).add(m[1]!));
-  }
-  return [...stages].map(([path, s]): UpdateConflict => {
-    if (s.has('2') && s.has('3'))
-      return { path, kind: s.has('1') ? 'content' : 'add_add' };
-    if (s.has('1') && (s.has('2') || s.has('3')))
-      return {
-        path,
-        kind: 'modify_delete',
-        deleted_by: s.has('2') ? 'target' : 'branch',
-      };
-    return { path, kind: 'content' };
-  });
-}
-
-const BOT = {
-  GIT_AUTHOR_NAME: 'bakers.build',
-  GIT_AUTHOR_EMAIL: 'noreply@bakers.build',
-  GIT_COMMITTER_NAME: 'bakers.build',
-  GIT_COMMITTER_EMAIL: 'noreply@bakers.build',
-};
-
-/** Commit `tree` as the merge of `target` into `branch`, then compare-and-swap the branch from `previous`. */
-async function commitMerge(
-  { common, env, remote }: Scratch,
-  m: {
-    branch: string;
-    targetBranch: string;
-    previous: string;
-    target: string;
-    tree: string;
-  },
-  beforeMove: (resulting: string) => void = () => {},
-): Promise<string> {
-  const resulting = await remote(
-    [
-      'commit-tree',
-      m.tree,
-      '-p',
-      m.previous,
-      '-p',
-      m.target,
-      '-m',
-      `Merge ${m.targetBranch} into ${m.branch}`,
-    ],
-    undefined,
-    BOT,
-  );
-  beforeMove(resulting);
-  // Compare-and-swap: a branch that moved meanwhile is refused, never overwritten.
-  await inClone(
-    common,
-    env,
-    'update-ref',
-    `refs/heads/${m.branch}`,
-    resulting,
-    m.previous,
-  );
-  return resulting;
-}
-
-async function refusePushedElsewhere(
-  { common, env, remote }: Scratch,
-  branch: string,
-  previous: string,
-) {
-  const pushed = await readRef(common, env, `refs/remotes/origin/${branch}`);
-  if (
-    pushed &&
-    !(await remote(['merge-base', '--is-ancestor', pushed, previous]).then(
-      () => true,
-      () => false,
-    ))
-  )
-    throw new Error(
-      `origin/${branch} has commits '${branch}' lacks (pushed elsewhere); integrate them first; nothing changed`,
-    );
 }
 
 /**
@@ -433,8 +294,7 @@ async function refusePushedElsewhere(
  * checkout: merge-tree and commit-tree in the scratch, so no partial merge,
  * hook, driver or repository config can run, then compare-and-swap the branch.
  * Refuses a branch moved past `expected`, uncommitted work in `workspace`
- * against `clean` and a remote branch the local one lacks. A conflict moves
- * nothing and returns the conflicts with merge-tree's tree. Pushes nothing.
+ * against `clean`, a remote branch the local one lacks, and conflicts (naming their paths). Pushes nothing.
  */
 export async function updateBranch(
   worktree: string,
@@ -448,8 +308,7 @@ export async function updateBranch(
   },
 ): Promise<BranchUpdate> {
   const { branch, target, expected, workspace } = opts;
-  return withScratch(worktree, auth, async (ctx) => {
-    const { common, env, remote } = ctx;
+  return withScratch(worktree, auth, async ({ common, env, home, remote }) => {
     const previous = await readRef(common, env, `refs/heads/${branch}`);
     if (!previous) throw new Error(`no local branch '${branch}' to update`);
     if (expected && previous !== expected)
@@ -459,29 +318,52 @@ export async function updateBranch(
     const merged = await readRef(common, env, `refs/remotes/origin/${target}`);
     if (!merged)
       throw new Error(`target '${target}' was not fetched; nothing changed`);
-    if (workspace) {
-      const dirty = await dirtyPaths(
-        await workspaceGit(ctx, workspace.path, workspace.clean),
-      );
-      if (dirty.length > 0)
-        throw new Error(
-          `uncommitted work in the run (${dirty.join(', ')}); commit or remove it, then call forge_update_branch again; nothing changed`,
-        );
-    }
-    await refusePushedElsewhere(ctx, branch, previous);
-    if (
-      await remote(['merge-base', '--is-ancestor', merged, previous]).then(
+    const isAncestor = (a: string, b: string) =>
+      remote(['merge-base', '--is-ancestor', a, b]).then(
         () => true,
         () => false,
-      )
-    )
+      );
+    if (workspace) {
+      // A throwaway index and only the scratch's clean config: status runs no filter or fsmonitor.
+      await mkdir(join(home, 'scratch.git', 'info'), { recursive: true });
+      await writeFile(
+        join(home, 'scratch.git', 'info', 'exclude'),
+        `/.bakers/${UI_REFRESH_FILE}\n`,
+      );
+      const tree = {
+        GIT_WORK_TREE: workspace.path,
+        GIT_INDEX_FILE: join(home, 'index'),
+      };
+      await remote(['update-ref', '--no-deref', 'HEAD', workspace.clean]);
+      await remote(['read-tree', 'HEAD'], undefined, tree);
+      const dirty = await remote(
+        ['status', '--porcelain', '--untracked-files=all', '--no-renames'],
+        undefined,
+        tree,
+      );
+      if (dirty)
+        throw new Error(
+          `uncommitted work in the run (${dirty
+            .split('\n')
+            .map((l) => l.replace(/^[ MADRCU?!]{1,2} /, ''))
+            .join(
+              ', ',
+            )}); commit or remove it, then call forge_update_branch again; nothing changed`,
+        );
+    }
+    const pushed = await readRef(common, env, `refs/remotes/origin/${branch}`);
+    if (pushed && !(await isAncestor(pushed, previous)))
+      throw new Error(
+        `origin/${branch} has commits '${branch}' lacks (pushed elsewhere); integrate them first; nothing changed`,
+      );
+    if (await isAncestor(merged, previous))
       return { previous, target: merged, resulting: previous, noop: true };
     let tree: string;
     try {
       tree = await remote([
         'merge-tree',
         '--write-tree',
-        '-z',
+        '--name-only',
         '--no-messages',
         previous,
         merged,
@@ -489,124 +371,41 @@ export async function updateBranch(
     } catch (err) {
       const { code, stdout } = err as { code?: unknown; stdout?: string };
       if (code !== 1) throw err;
-      const [conflictTree = '', ...entries] = String(stdout).split('\0');
-      return {
-        previous,
-        target: merged,
-        resulting: previous,
-        noop: false,
-        conflicts: parseConflicts(entries),
-        tree: conflictTree,
-      };
-    }
-    const resulting = await commitMerge(ctx, {
-      branch,
-      targetBranch: target,
-      previous,
-      target: merged,
-      tree: tree.replace(/\0$/, ''),
-    });
-    return { previous, target: merged, resulting, noop: false };
-  });
-}
-
-/**
- * Write `paths` as `source` has them into the workspace, through a throwaway
- * index of `index`, so a path `source` lacks is removed. Git refuses to write
- * beyond a symlink; nothing else in the workspace is touched.
- */
-export async function restorePaths(
-  worktree: string,
-  auth: GitAuth,
-  opts: {
-    workspace: string;
-    index: string;
-    source: string;
-    paths: readonly string[];
-  },
-): Promise<void> {
-  await withScratch(worktree, auth, async (ctx) => {
-    const wt = await workspaceGit(ctx, opts.workspace);
-    await wt(['read-tree', opts.index]);
-    await wt([
-      'restore',
-      `--source=${opts.source}`,
-      '--worktree',
-      '--no-overlay',
-      '--',
-      ...opts.paths.map(literal),
-    ]);
-  });
-}
-
-const MARKER = /^(<<<<<<<|>>>>>>>)( |$)/m;
-
-/**
- * Commit the run's resolution of a pending update: the merge tree with each
- * kept path taken from the workspace and each deleted one removed, as one
- * merge of `previous` and `target`, then compare-and-swap the branch. Refuses
- * a moved branch or target, work outside the conflict paths, remaining
- * markers and a decision the workspace contradicts, changing nothing.
- */
-export async function completeUpdate(
-  worktree: string,
-  auth: GitAuth,
-  opts: {
-    branch: string;
-    workspace: string;
-    pending: PendingUpdate;
-    keep: readonly string[];
-    beforeMove: (resulting: string) => void;
-  },
-): Promise<string> {
-  const { branch, pending, keep } = opts;
-  const refuse = (why: string) => new Error(`${why}; nothing changed`);
-  return withScratch(worktree, auth, async (ctx) => {
-    const { common, env } = ctx;
-    const at = await readRef(common, env, `refs/heads/${branch}`);
-    if (at !== pending.previous)
-      throw refuse(
-        `'${branch}' moved to ${at} since the conflict at ${pending.previous}`,
+      const paths = [...new Set(String(stdout).split('\n').slice(1))].filter(
+        Boolean,
       );
-    const target = await readRef(
+      throw new Error(
+        `merging '${target}' into '${branch}' conflicts in ${paths.join(', ')}; nothing changed. The run cannot resolve this: stop and report it to the developers. A developer with write access merges origin/${target} into '${branch}' outside the run, resolves those paths and pushes; the next run starts there`,
+      );
+    }
+    const resulting = await remote(
+      [
+        'commit-tree',
+        tree,
+        '-p',
+        previous,
+        '-p',
+        merged,
+        '-m',
+        `Merge ${target} into ${branch}`,
+      ],
+      undefined,
+      {
+        GIT_AUTHOR_NAME: 'bakers.build',
+        GIT_AUTHOR_EMAIL: 'noreply@bakers.build',
+        GIT_COMMITTER_NAME: 'bakers.build',
+        GIT_COMMITTER_EMAIL: 'noreply@bakers.build',
+      },
+    );
+    // Compare-and-swap: a branch that moved meanwhile is refused, never overwritten.
+    await inClone(
       common,
       env,
-      `refs/remotes/origin/${pending.targetBranch}`,
+      'update-ref',
+      `refs/heads/${branch}`,
+      resulting,
+      previous,
     );
-    if (target !== pending.target)
-      throw refuse(
-        `'${pending.targetBranch}' moved to ${target} since the conflict at ${pending.target}; abort, then start again`,
-      );
-    await refusePushedElsewhere(ctx, branch, pending.previous);
-    const paths = pending.conflicts.map((c) => c.path);
-    const wt = await workspaceGit(ctx, opts.workspace, pending.previous);
-    const outside = await dirtyPaths(wt, paths);
-    if (outside.length > 0)
-      throw refuse(
-        `the run changed files outside the conflict paths (${outside.join(', ')}); undo them, keeping only the resolution`,
-      );
-    await wt(['read-tree', pending.tree]);
-    await wt(['add', '-A', '--', ...paths.map(literal)]).catch((err: Error) => {
-      throw refuse(err.message);
-    });
-    for (const path of paths) {
-      const present = (await wt(['ls-files', '--', literal(path)])) !== '';
-      const kept = keep.includes(path);
-      if (kept && !present) throw refuse(`keep ${path}, but it is missing`);
-      if (!kept && present) throw refuse(`delete ${path}, but it still exists`);
-      if (kept && MARKER.test(await wt(['cat-file', 'blob', `:${path}`])))
-        throw refuse(`conflict markers remain in ${path}`);
-    }
-    return commitMerge(
-      ctx,
-      {
-        branch,
-        targetBranch: pending.targetBranch,
-        previous: pending.previous,
-        target: pending.target,
-        tree: await wt(['write-tree']),
-      },
-      opts.beforeMove,
-    );
+    return { previous, target: merged, resulting, noop: false };
   });
 }

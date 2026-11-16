@@ -27,28 +27,8 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   },
   forge_update_branch: {
     description:
-      "Merge the ticket's current target (fetched fresh) into the ticket branch of an isolated run; pushes nothing, changes no PR/MR. Commit first. Returns previous, target and resulting SHAs and sync: none (no-op), in_place (run the returned git merge --ff-only before further work) or restart (protected paths changed: stop, cancel the run with bakers_run_cancel; the next run starts at resulting). A conflict returns sync: conflict with conflicts (path, kind content/add_add/modify_delete, deleted_by) and writes those files, with markers, into the workspace; the branch stays. Edit them without staging or committing, then call again with action continue, keep (resolved paths) and delete (paths to remove), naming every conflict path; or action abort restores them. Until then forge_push and a new update refuse. Refuses uncommitted work, protected-path conflicts, a target moved since the conflict and concurrent branch movement without changing anything.",
-    input: {
-      type: 'object',
-      properties: {
-        action: {
-          type: 'string',
-          enum: ['start', 'continue', 'abort'],
-          description: 'default start',
-        },
-        keep: {
-          type: 'array',
-          items: { type: 'string' },
-          description:
-            'continue: conflict paths committed as the workspace has them',
-        },
-        delete: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'continue: conflict paths the merge removes',
-        },
-      },
-    },
+      "Merge the ticket's current target (fetched fresh) into the ticket branch of an isolated run; pushes nothing, changes no PR/MR. Commit first. Returns previous, target and resulting SHAs and sync: none (no-op), in_place (run the returned git merge --ff-only before further work) or restart (protected paths changed: stop, cancel the run with bakers_run_cancel; the next run starts at resulting). Refuses uncommitted work, conflicts and concurrent branch movement without changing anything. A conflict names its paths: stop and report it to the developers, who merge outside the run.",
+    input: { type: 'object', properties: {} },
   },
   forge_push: {
     description:

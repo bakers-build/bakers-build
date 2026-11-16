@@ -17,7 +17,7 @@ holds no key and no token. Every operation that needs the network or a credentia
 | Tool | Does | Limits enforced by the tool |
 |---|---|---|
 | `forge_fetch` | Fetches the parents into the local clone: the ticket's `base_branch` and the branches of parent-linked tickets. The agent then rebases or pulls locally with `git`, offline. | Read only. |
-| `forge_update_branch` | Merges the ticket's current target into the ticket branch on the host with `git merge-tree`, without a checkout, so target changes to read-only paths arrive. | Ticket branch of an isolated run only; no hooks, drivers or repository config; compare-and-swap on the branch; pushes nothing. A conflict becomes a pending update in the host's run-clone record: the conflict files go to the workspace, `action: continue` commits the run's resolution, `abort` restores them; protected-path conflicts are refused. |
+| `forge_update_branch` | Merges the ticket's current target into the ticket branch on the host with `git merge-tree`, without a checkout, so target changes to read-only paths arrive. | Ticket branch of an isolated run only; no hooks, drivers or repository config; compare-and-swap on the branch; pushes nothing. A conflict refuses, naming its paths, and goes to a developer, who merges outside the run. |
 | `forge_push` | Pushes an owned branch. | Owned branches only. Hooks and repository config are disabled. `--force-with-lease` is allowed, bare `--force` never. |
 | `forge_pr_upsert` | Creates the PR/MR, or updates its title and description. | Rejects a title that is not a Conventional Commits subject right away. |
 | `forge_checks` | Reads the status of checks and pipelines, with run, job and raw conclusion. | Read only. |
