@@ -1,12 +1,13 @@
 {# Seven day links and the week total. Links work with JavaScript off; the
-   selected day is aria-current="date". Narrow screens keep one row of seven
-   compact cells (weekday initial + total); the accessible name of each link
-   carries the full day sentence. #}
+   selected day is aria-current="date". Narrow screens keep compact cells
+   (weekday initial + total); below md the days take four columns and the
+   total its own line, so each day is a 44px touch target. The accessible
+   name of each link carries the full day sentence. #}
 <nav{{ (attributes ?: create_attribute()).addClass([
-    'week-strip', 'flex', 'w-full', 'min-w-0', 'items-stretch', 'gap-inline',
+    'week-strip', 'flex', 'max-md:flex-wrap', 'w-full', 'min-w-0', 'items-stretch', 'gap-inline',
   ]) }}
   aria-label="{{ label }}">
-  <ul class="m-0 grid min-w-0 flex-1 list-none grid-cols-7 gap-inline-xs p-0">
+  <ul class="m-0 grid min-w-0 flex-1 max-md:basis-full list-none grid-cols-7 max-md:grid-cols-4 gap-inline-xs p-0">
     {%- for day in days %}
       {%- set is_active = day.active|default(false) %}
       {%- set is_zero = day.total == '0:00' %}

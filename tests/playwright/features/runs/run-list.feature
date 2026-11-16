@@ -110,3 +110,20 @@ Feature: The project and team Runs tabs list runs
     Given I am signed in as a member of the "other" workspace
     When I visit the runs tab of project "bakers-e2e-project"
     Then no run of the "bakers-e2e-project" project is listed
+
+  # THE PHONE FILTER SHEET (BAKERS-57 AC-10), as on the ticket lists: the run
+  # facets sit behind "Filters · N", and a tick waits for "Show results".
+  Scenario: The run facets sit behind one button on a phone
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 390 pixels wide
+    When I visit the runs tab of project "bakers-e2e-project"
+    Then the filters button reads "Filters"
+    When I open the filter sheet
+    Then the filter sheet holds the "State" facet
+    When I tick "Running" in the "State" facet
+    Then the filter sheet is open
+    And the address does not carry "state[]=running"
+    When I close the open filter
+    And I click button "Show results"
+    Then the address carries "state[]=running"
+    And the filters button reads "Filters · 1"

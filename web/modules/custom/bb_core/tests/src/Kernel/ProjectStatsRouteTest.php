@@ -179,10 +179,17 @@ final class ProjectStatsRouteTest extends KernelTestBase {
    * A tick fetches this tab and refreshes the project's filter parts only.
    */
   public function testFiltersApplyToThisTabThroughHtmx(): void {
-    $attributes = $this->page([])['controls']['#slots']['content']['filters']['#attributes'];
+    $attributes = $this->page([])['controls']['#slots']['content']['bar']['#slots']['controls']['#attributes'];
     self::assertSame('/north/project/atl/stats', $attributes['data-hx-get']);
     self::assertSame(
-      ['#insights-filter-epic', '#insights-filter-user', '#insights-period', '#insights-clear'],
+      [
+        '#insights-filter-epic',
+        '#insights-filter-user',
+        '#insights-period',
+        '#insights-clear',
+        '#insights-chips',
+        '#insights-filters-opener',
+      ],
       explode(',', $attributes['data-hx-select-oob']),
     );
   }

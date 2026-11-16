@@ -20,7 +20,7 @@ bakers tools [<global options>] [<wire name>] [--schema] [--data <json|@file>] [
 | `bakers tools <wire name> --data '<json>'` | Call it with inline JSON arguments |
 | `bakers tools <wire name> --param key=value` | Set one argument; repeatable, and wins over the same key in `--data` |
 
-Use a plain ID such as `bakers_ticket_read` or its wire name `tool_api__bakers_ticket_read`. The CLI normalizes either form for the selected server. Prefer `--data @file` for anything but a one-word value: write the file with an editor, a file tool or a JSON encoder, so Markdown bodies survive byte for byte and no shell quoting gets in the way.
+Prefer `--data @file` for anything but a one-word value: write the file with an editor, a file tool or a JSON encoder, so Markdown bodies survive byte for byte and no shell quoting gets in the way.
 
 ## Global options
 
@@ -63,6 +63,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_project_list` | optional `workspace`, `group`, `query` | Projects you can reach, with `key` and `uuid` |
 | `bakers_project_read` | `project` (key or UUID) | One project: group, teams, repository, coder configuration, environments |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
+| `bakers_project_update` | `project`, `repository` (`url`, `default_branch`, `branch_convention`) | Change a project's repository, keeping omitted keys; needs `edit bb_project` |
 | `bakers_conductor_list` | `project` | A project's conductors and their status, with each conductor's `machine` (machine_id), `owner` and `assignment` |
 | `bakers_machine_list` | optional `workspace` (UUID), `conductor_uuid` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel`, `current_load` and `assignment` |
 | `bakers_label_list` | `workspace`; optional `query` | A workspace's labels |

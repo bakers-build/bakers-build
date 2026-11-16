@@ -19,6 +19,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "glob": "^11.0.1",
     "marked": "^17",
+    "playwright": "1.61.1",
     "storybook": "^10",
     "storybook-addon-designbook": "^0.14.0",
     "storybook-addon-sdc": "^0.24.18",

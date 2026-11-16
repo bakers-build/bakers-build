@@ -16,7 +16,7 @@
   'max-w-full',
   size_map[size|default('body')]|default('text-body'),
   href ? 'text-link' : tone_map[tone|default('default')]|default(''),
-  align|default('start') == 'center' ? 'text-center' : '',
+  {'center': 'text-center', 'end': 'text-right'}[align|default('start')]|default(''),
   tracking|default('normal') == 'widest' ? 'tracking-widest' : '',
 ]|filter(c => c) %}
 {% set text_attributes = (attributes ?: create_attribute()).addClass(text_classes) %}

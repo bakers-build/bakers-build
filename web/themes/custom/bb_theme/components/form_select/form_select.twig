@@ -11,7 +11,7 @@
    `max-w-full` + `min-w-0` are the point: a native select sizes itself to its
    longest option, and in a narrow column that pushed the document sideways. #}
 <select{{ (attributes ?: create_attribute()).addClass([
-    'w-full', 'min-w-0', 'max-w-full', 'h-[38px]', 'px-[11px]', 'bg-app', 'border', 'border-control-border',
+    'w-full', 'min-w-0', 'max-w-full', 'h-[38px]', 'max-md:min-h-touch', 'px-[11px]', 'bg-app', 'border', 'border-control-border',
     'rounded-sm', 'text-text', 'text-body', 'truncate', 'focus:border-primary',
     'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring',
   ]) }}

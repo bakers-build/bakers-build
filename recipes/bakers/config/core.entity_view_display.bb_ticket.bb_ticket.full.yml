@@ -179,6 +179,10 @@ third_party_settings:
                             source_id: checkbox
                             source:
                               value: true
+                          label:
+                            source_id: textfield
+                            source:
+                              value: 'Details · Assignee, Priority, Labels, Branch'
                         slots:
                           rows:
                             sources:

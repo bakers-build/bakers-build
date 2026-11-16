@@ -45,6 +45,12 @@ install:
   # on it.
   - bb_inbox
   - bb_addon
+  # Core's breakpoint registry, BEFORE the views are imported: Better Exposed
+  # Filters reads `bb_theme:bb_theme.lg` from it to auto-submit the ticket
+  # facets only from `lg` up, so the phone filter sheet applies on "Show
+  # results". Without it the breakpoint is silently ignored and every tick
+  # reloads the list. Also in `config/sync/core.extension.yml`.
+  - breakpoint
   - better_exposed_filters
   # Swaps the 'string'/'combine'/'search_api_text'/'search_api_fulltext' Views
   # filter handler CLASS for every view (hook_views_plugins_filter_alter), not

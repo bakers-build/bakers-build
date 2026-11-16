@@ -42,7 +42,23 @@ description: >-
   nothing in this theme read `data-row-url` except the tests asserting it. That
   absence of a per-view seam is the property worth stating in the component
   rather than only in the binding, because it is exactly what a later “just add
-  a preprocess” would quietly destroy while every gate stayed green.
+  a preprocess” would quietly destroy while every gate stayed green. PHONE DELTA
+  (BAKERS-57): The exact-value tooltip is removed from layout at rest (hidden
+  unless hovered or focused; !hidden while dismissed), so it no longer widens a
+  390px page; hover/focus/Escape behaviour unchanged. PHONE TOUCH DELTA
+  (BAKERS-57, AC-15): below md, a `link` cell anchor and the timesheet input
+  cell's Details link measure at least the `touch` size (44px) in both
+  dimensions; the Details link leaves the input's corner and sits below the
+  input instead. md and up are unchanged, so the 36px `md` row of My time holds.
+  PHONE TOUCH DELTA (AC-15): below md, a sortable header link, a linked badge
+  chip and any link a formatter puts in a `rendered` cell also measure at least
+  the `touch` size (44px); a `contents` wrapper around `rendered` markup carries
+  that rule and keeps the cell layout; md and up are unchanged. PHONE TOUCH
+  DELTA (AC-15): below md, the tree disclosure link is the `touch` size (44px)
+  and its placeholder as wide, so row names stay aligned; md and up are
+  unchanged. PHONE TOUCH DELTA (AC-15): the `rendered` cell touch rule addresses
+  only direct-child links (`[&>a]`), so the prose selectors stay with rich-text
+  and a nested formatter markup keeps its own layout; md and up are unchanged.
 provider: bb_theme
 props:
   type: object
@@ -105,6 +121,13 @@ props:
             description: >-
               Right-aligned and tabular, for a column of numbers or durations
               that is read down rather than across.
+          sublabel:
+            type: string
+            title: Header sublabel
+            description: >-
+              A second header line under `label`, aligned like the column: the
+              recorded total of a day above that day's hours in a week grid.
+              Absent renders the label alone, as before.
           row_header:
             type: boolean
             title: Row header
@@ -114,6 +137,19 @@ props:
               scope="row">`), so a screen reader announces every other cell of
               the row with it, and it stays in view at the left edge when the
               table scrolls sideways.
+    row_height:
+      type: string
+      enum:
+        - default
+        - md
+        - lg
+      title: Row height
+      description: >-
+        Height of a single-line body row. `default` is the `row` token (34px)
+        every table has had; `md` is the dense data-table row (36px) of a
+        timesheet such as My time; `lg` is the roomy row (44px) of a people
+        table such as Members. Cozy density adds 6px to each. Absent means
+        `default`, so no existing table changes.
     rows:
       type: array
       title: Rows

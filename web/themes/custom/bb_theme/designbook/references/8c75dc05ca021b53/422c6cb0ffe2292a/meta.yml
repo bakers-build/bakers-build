@@ -1,0 +1,71 @@
+{
+ "source": {
+  "kind": "figma",
+  "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv/bakers-build",
+  "revision": null
+ },
+ "role": "reference",
+ "elements": [
+  {
+   "id": "ticket-list",
+   "locator": {
+    "kind": "figma-node",
+    "value": "65:3720"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "mobile",
+     "width": 390,
+     "height": 844
+    }
+   ]
+  },
+  {
+   "id": "ticket-detail",
+   "locator": {
+    "kind": "figma-node",
+    "value": "65:3881"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "mobile",
+     "width": 390,
+     "height": 844
+    }
+   ]
+  },
+  {
+   "id": "board",
+   "locator": {
+    "kind": "figma-node",
+    "value": "65:4020"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "mobile",
+     "width": 390,
+     "height": 844
+    }
+   ]
+  }
+ ],
+ "assets_dir": "assets"
+}

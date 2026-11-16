@@ -63,7 +63,8 @@ trait ProjectInputTrait {
       'teams' => array_map(static fn ($team) => $team->uuid(), $project->getTeams()),
       'repository' => $viewable('repository') ? [
         'url' => $repository['url'],
-        'default_branch' => $repository['default_branch'] ?? NULL,
+        // The effective branch, as BaseBranchItemList bases tickets on it.
+        'default_branch' => ($repository['default_branch'] ?? '') !== '' ? $repository['default_branch'] : 'main',
         'branch_convention' => $repository['branch_convention'] ?? NULL,
       ] : NULL,
       'coder_config' => $viewable('coder_config') ? $project->get('coder_config')->first()?->getValue() : NULL,

@@ -17,13 +17,21 @@ the wrong rights, which reads as working until someone is missing access or has 
 it on the group create. Selecting an existing group writes nothing to that group, so its
 description stays as its owner left it. **Teams are chosen the same way:** they decide who works
 on the project, so offer the workspace's teams and stop for an answer.
+**A repository carries its confirmed default branch**, the branch tickets base on and merge
+requests target. Derive it from the remote's `HEAD` (`git ls-remote --symref <url> HEAD`) and,
+where `gh` or `glab` reaches the repository, the target of its recently merged merge requests; when
+the two differ, propose the merge target and show both. Name the source with the proposal and stop
+for confirmation; when nothing derives, ask. A run that cannot ask creates no project and reports
+`default_branch` as unresolved: the server's `main` fallback reads as working until the first merge
+request targets the wrong branch.
 
 Call the named tools ([tools](../bb-workflow/references/tools.md)); their schemas list every
 argument. Find the workspace with `bakers_workspace_list`, its groups with `bakers_group_list` and
 its teams with `bakers_team_list`, following `next_offset` until it is null before offering a
 choice. Create a new group with `bakers_group_create`, then the project with
-`bakers_project_create`: `group`, `name`, `teams`, and `description`, `repository` or
+`bakers_project_create`: `group`, `name`, `teams`, `repository` with its confirmed `default_branch`, and `description` or
 `coder_config` only when given; key and counter are server-owned. Read the project back with
 `bakers_project_read` (a created group with `bakers_group_list` and its `group` UUID) and confirm
-the stored description is the exact text given, or absent when skipped. Return the created project; do not initialize or dispatch
+the stored description is the exact text given, or absent when skipped, and `repository.default_branch` is the
+confirmed branch. Return the created project; do not initialize or dispatch
 it.
