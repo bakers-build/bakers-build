@@ -5,7 +5,9 @@ import {
   killRunProcesses,
   loadRunClone,
   type MachineContext,
+  pickSecrets,
   protectedProjectPaths,
+  type Secrets,
   saveRunClone,
   shellQuote,
   stemForConfigFile,
@@ -307,6 +309,8 @@ export class Conductor {
     ),
     /** Re-reads machine.config.js per run; absent, `config.tunnel` stays. */
     private readonly readMachine?: () => Promise<Partial<MachineContext>>,
+    /** `~/.bakers/.bakers.env`, loaded at start; runs get declared names only. */
+    private readonly secrets: Secrets = {},
   ) {
     this.tunnel = config.tunnel === true;
     this.inboxAddons = new InboxRuntime(
@@ -1823,11 +1827,14 @@ export class Conductor {
       : undefined;
     const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
+    // Only the names the agent declares; a value exported in the shell wins.
+    const secrets = pickSecrets(chosen.agent.secretEnv ?? [], this.secrets);
     const agentInfo = {
       ...(chosen.agent.installCommand
         ? { installCommand: chosen.agent.installCommand }
         : {}),
       ...(chosen.agent.modelApi ? { modelApi: chosen.agent.modelApi } : {}),
+      secrets,
     };
     const isolates = this.config.runtime?.isolates === true;
     // Without it the run starts in an empty private home and cannot sign in.
@@ -1848,9 +1855,14 @@ export class Conductor {
           ...runtimeContext,
           workspacePath: ws.path,
           env,
+          secrets,
         })
       : undefined;
     if (preparation) Object.assign(env, preparation.env);
+    // A host run inherits the shell's values; it lacks only the file's.
+    if (!runtimeContext)
+      for (const [name, value] of Object.entries(secrets))
+        if (!process.env[name]) env[name] = value;
     // An isolated run without its own clone would share the parent's Git data.
     if (isolates && !ws.clone)
       throw new Error(
