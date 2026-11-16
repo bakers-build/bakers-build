@@ -22,7 +22,7 @@ Never put credentials in tickets, README files or committed project configuratio
 | **Contributor** | Work: create and edit tickets, assign, freeze and cancel them, create projects and groups and delete the ones you created, register your own conductor, record your own time. |
 | **Guest** | Read tickets, comments, projects and teams. Change nothing. |
 
-The person who created the workspace owns it and holds the Admin rank; their rights come from that rank, plus two: the owner deletes any project or group of the workspace, and the owner, and no other Admin, can delete the workspace from its Settings once it holds no groups or projects, by typing its slug. Other Admins and team leads delete only the projects and groups they created. Nobody can remove or demote the owner or the last Admin. Creating a workspace, and deleting any other, is reserved for the instance administrator.
+The person who created the workspace owns it and holds the Admin rank; their rights come from that rank, plus two: the owner deletes any project or group of the workspace, and the owner, and no other Admin, can delete the workspace from its Settings once it holds no groups or projects, by typing its slug. Other Admins and Contributors delete only the projects and groups they created. Nobody can remove or demote the owner or the last Admin. Creating a workspace, and deleting any other, is reserved for the instance administrator.
 
 ### Teams
 
