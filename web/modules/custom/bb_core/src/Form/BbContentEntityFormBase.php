@@ -54,6 +54,10 @@ class BbContentEntityFormBase extends ContentEntityForm {
       // confirmation and validation errors render inside the form.
       $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
       unset($form['created'], $form['changed']);
+      $text = $this->dangerZoneText();
+      if ($text !== []) {
+        $form += static::dangerZone($this->entity, ...$text);
+      }
       return $form;
     }
 
@@ -159,7 +163,21 @@ class BbContentEntityFormBase extends ContentEntityForm {
   protected function actions(array $form, FormStateInterface $form_state): array {
     $actions = parent::actions($form, $form_state);
     unset($actions['delete']);
+    // Settings with a danger zone offer Delete there instead.
+    if ($this->getOperation() === 'settings' && $this->dangerZoneText() !== []) {
+      return $actions;
+    }
     return $actions + static::deleteAction($this->getEntity());
+  }
+
+  /**
+   * The label and description of the Settings danger zone, if it has one.
+   *
+   * @return array{}|array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: \Drupal\Core\StringTranslation\TranslatableMarkup}
+   *   Empty keeps Delete in the action row.
+   */
+  protected function dangerZoneText(): array {
+    return [];
   }
 
   /**

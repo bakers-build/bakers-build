@@ -164,9 +164,9 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
   }
 
   /**
-   * Project Settings and the team card move Delete into the danger zone too.
+   * Project, group and team Settings put Delete in a danger zone.
    */
-  public function testProjectAndTeamDeleteSitInTheDangerZone(): void {
+  public function testProjectGroupAndTeamDeleteSitInTheDangerZone(): void {
     $workspace = $this->provision();
     $etm = $this->container->get('entity_type.manager');
     $group = $etm->getStorage('bb_group')->create(['name' => 'Clients', 'workspace_id' => $workspace->id()]);
@@ -185,7 +185,7 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
     $admin = $this->createUser(['administer bakers'], 'site-admin');
     self::assertInstanceOf(UserInterface::class, $admin);
     $this->setCurrentUser($admin);
-    foreach ([[$project, 'settings'], [$team, 'identity']] as [$entity, $operation]) {
+    foreach ([[$project, 'settings'], [$group, 'settings'], [$team, 'settings']] as [$entity, $operation]) {
       $form = $this->container->get('entity.form_builder')->getForm($entity, $operation);
       $type = $entity->getEntityTypeId();
       self::assertArrayNotHasKey('delete', $form['actions'] ?? [], "$type: no Delete in the action row");
@@ -194,6 +194,11 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
       self::assertSame('danger', $button['#props']['variant']);
       self::assertSame($entity->toUrl('delete-form')->toString(), $button['#props']['href']);
     }
+    // The team's identity card only shows it now: no input, no Save, no Delete.
+    $card = $this->container->get('entity.form_builder')->getForm($team, 'identity');
+    self::assertArrayNotHasKey('danger_zone', $card);
+    self::assertArrayNotHasKey('submit', $card['actions'] ?? []);
+    self::assertArrayNotHasKey('name', $card);
   }
 
 }

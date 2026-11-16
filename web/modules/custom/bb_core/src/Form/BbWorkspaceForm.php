@@ -69,12 +69,20 @@ final class BbWorkspaceForm extends BbContentEntityFormBase {
         '#weight' => 4,
       ];
     }
-    $form += static::dangerZone(
-      $this->entity,
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: \Drupal\Core\StringTranslation\TranslatableMarkup}
+   *   The label and description.
+   */
+  protected function dangerZoneText(): array {
+    return [
       $this->t('Delete workspace'),
       $this->t('Deletes this workspace with its first team, members, invitations, terms, templates, triggers and addons. Groups and projects must be removed first.'),
-    );
-    return $form;
+    ];
   }
 
   /**
@@ -83,8 +91,6 @@ final class BbWorkspaceForm extends BbContentEntityFormBase {
   protected function actions(array $form, FormStateInterface $form_state): array {
     $actions = parent::actions($form, $form_state);
     if ($this->getOperation() === 'settings') {
-      // Offered in the danger zone below the form instead.
-      unset($actions['delete']);
       $actions['#attributes']['class'][] = 'flex-wrap';
       $actions['workspace_overview'] = [
         '#type' => 'component',

@@ -248,7 +248,7 @@ function fixture(name: string): Fixture {
 
 /** The address each entity type's product edit form had before the cards. */
 function formerSettings(subject: Fixture): string {
-  const suffix: Record<string, string> = { bb_team: '/settings', bb_group: '/settings', bb_machine: '/edit' };
+  const suffix: Record<string, string> = { bb_group: '/settings', bb_machine: '/edit' };
   if (!suffix[subject.entityType]) throw new Error(`${subject.entityType} had no retired settings address.`);
   return `${subject.url}${suffix[subject.entityType]}`;
 }

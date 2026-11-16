@@ -78,10 +78,6 @@ Then('the disposable entity offers the Delete action {string}', async ({ page },
   await expect(page.locator(`a[href^="${subject(page).deletePath}"]`, { hasText: label })).toBeVisible();
 });
 
-Then('the disposable entity offers no Delete action', async ({ page }) => {
-  await expect(page.locator(`a[href^="${subject(page).deletePath}"]`)).toHaveCount(0);
-});
-
 When('I open the Delete action of the disposable entity', async ({ page }) => {
   const response = await page.goto(subject(page).deletePath);
   expect(response?.status()).toBe(200);
@@ -163,6 +159,11 @@ Then('the entities the disposable entity needed no longer exist', async ({ page 
   for (const reference of subject(page).created.slice(1)) {
     expect(exists(reference), reference).toBe(false);
   }
+});
+
+Then('the page where the disposable entity is managed answers {int}', async ({ page }, status: number) => {
+  const response = await page.goto(subject(page).manage);
+  expect(response?.status()).toBe(status);
 });
 
 Then('the delete page of the disposable entity answers {int}', async ({ page }, status: number) => {

@@ -72,11 +72,11 @@ Feature: Deleting an entity where it is managed
       | north-lead  | conductor   |
       | north-lead  | workspace   |
 
-  Scenario: A guest sees the team but no Delete action on it
+  Scenario: A guest gets neither the team Settings nor its Delete
     Given a disposable "team" exists in the Northside workspace
     And I am logged in as the account "north-guest"
-    When I open the page where the disposable entity is managed
-    Then the disposable entity offers no Delete action
+    Then the page where the disposable entity is managed answers 403
+    And the delete page of the disposable entity answers 403
 
   Scenario Outline: A site administrator deletes a <kind> after confirming
     Given a disposable "<kind>" exists in the Northside workspace

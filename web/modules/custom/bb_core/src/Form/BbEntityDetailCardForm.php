@@ -43,8 +43,9 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
    * Card fields keyed by entity type and form operation.
    */
   private const CARDS = [
+    // Team Settings edit a team; its card only shows it.
     'bb_team' => [
-      'identity' => ['edit' => ['name'], 'show' => ['workspace_id', 'owner_user_id']],
+      'identity' => ['edit' => [], 'show' => ['name', 'workspace_id', 'owner_user_id']],
     ],
     // Group Settings edit a group; its detail cards only show it.
     'bb_group' => [
@@ -163,13 +164,6 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
    */
   public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
-    if ($this->teamIdentity()) {
-      $form += BbContentEntityFormBase::dangerZone(
-        $this->entity,
-        $this->t('Delete team'),
-        $this->t('Deletes this team; its invitations stay without it. A project whose only team this is must get another team first.'),
-      );
-    }
     if (!isset($form['property_baseline'])) {
       return $form;
     }
@@ -229,8 +223,7 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
    */
   protected function actions(array $form, FormStateInterface $form_state): array {
     // The identity card is where a type without a Settings form is managed.
-    // A team's Delete sits in its danger zone instead.
-    $delete = $this->getOperation() === 'identity' && $this->card()['edit'] !== [] && !$this->teamIdentity()
+    $delete = $this->getOperation() === 'identity' && $this->card()['edit'] !== []
       ? BbContentEntityFormBase::deleteAction($this->entity)
       : [];
     if (!$this->entity->access('update')) {
@@ -242,13 +235,6 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
       }
     }
     return $delete;
-  }
-
-  /**
-   * Whether this is a team's identity card, which carries its danger zone.
-   */
-  private function teamIdentity(): bool {
-    return $this->getOperation() === 'identity' && $this->entity->getEntityTypeId() === 'bb_team';
   }
 
   /**
