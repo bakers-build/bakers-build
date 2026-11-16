@@ -34,6 +34,8 @@ export interface RunClone {
   target?: string;
   shared: boolean;
   protectedPaths?: string[];
+  /** Set when forge_update_branch changed protected paths the run cannot see: push refuses until a fresh clone. */
+  restartPending?: string;
 }
 
 export interface RunCloneOptions {
