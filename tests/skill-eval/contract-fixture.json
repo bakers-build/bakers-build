@@ -847,6 +847,230 @@
       }
     },
     {
+      "name": "tool_api__bakers_environment_create",
+      "title": "Create an environment",
+      "description": "Creates an environment on a project: a name unique in the project, the branch it deploys and its base URL. Needs create bb_environment in the project’s workspace. Afterwards bakers_ticket_update environments_add takes its name. Returns the saved environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project key, e.g. BAKERS, or UUID.",
+            "title": "Project"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The environment name, unique in the project, e.g. prod.",
+            "title": "Name"
+          },
+          "branch": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The branch it deploys, e.g. main; a deployment ticket with this environment targets it.",
+            "title": "Branch"
+          },
+          "base_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The environment URL.",
+            "title": "Base URL"
+          }
+        },
+        "required": [
+          "project",
+          "name",
+          "branch"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The environment UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "The environment name.",
+            "title": "Name"
+          },
+          "branch": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The branch it deploys.",
+            "title": "Branch"
+          },
+          "base_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The environment URL.",
+            "title": "Base URL"
+          },
+          "project": {
+            "type": "string",
+            "description": "The project key.",
+            "title": "Project"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_environment_update",
+      "title": "Update an environment",
+      "description": "Changes a project’s environment, addressed by name or UUID: its name, branch or base URL; keys not given are kept. Needs update bb_environment in the project’s workspace. Returns the saved environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project key, e.g. BAKERS, or UUID.",
+            "title": "Project"
+          },
+          "environment": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The environment name or UUID within the project.",
+            "title": "Environment"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The new name, unique in the project.",
+            "title": "Name"
+          },
+          "branch": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The new branch it deploys; a deployment ticket with this environment targets it.",
+            "title": "Branch"
+          },
+          "base_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The new environment URL.",
+            "title": "Base URL"
+          }
+        },
+        "required": [
+          "project",
+          "environment"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The environment UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "The environment name.",
+            "title": "Name"
+          },
+          "branch": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The branch it deploys.",
+            "title": "Branch"
+          },
+          "base_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The environment URL.",
+            "title": "Base URL"
+          },
+          "project": {
+            "type": "string",
+            "description": "The project key.",
+            "title": "Project"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_environment_delete",
+      "title": "Delete an environment",
+      "description": "Removes a project’s environment, addressed by name or UUID; tickets that referenced it keep everything else. Needs delete bb_environment in the project’s workspace. Returns the removed environment’s UUID and name.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project key, e.g. BAKERS, or UUID.",
+            "title": "Project"
+          },
+          "environment": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The environment name or UUID within the project.",
+            "title": "Environment"
+          }
+        },
+        "required": [
+          "project",
+          "environment"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The removed environment’s UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "The removed environment’s name.",
+            "title": "Name"
+          }
+        }
+      }
+    },
+    {
       "name": "tool_api__bakers_project_read",
       "title": "Read a project",
       "description": "Returns one readable project by key or UUID: name, description, group, teams, repository and coder config. Environment variables are never returned.",
