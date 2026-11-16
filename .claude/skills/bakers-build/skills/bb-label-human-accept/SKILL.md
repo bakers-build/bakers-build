@@ -22,7 +22,7 @@ ends the run as a technical problem.
 | qualification | approves the criteria and transitions to `plan` |
 | plan | approves its spec, plan and test, or the diagnosis; records under `Decisions` whether the plan touches the risk list and which items; transitions to `working` |
 | working | at a GREEN [coding gate](../bb-workflow/references/coding-gate.md) asks for the **acceptance**, then transitions to `review` once it is given |
-| review | publishes the verdict; `Not OK` that coding can fix transitions to `working`; `OK` merges, except with a planned risky change: then it stops until the confirming person confirms the verdict |
+| review | publishes the verdict; `Not OK` that coding can fix transitions to `working`; `OK` merges, except with a planned risky change: then it stops with one question that names the confirming person and asks them to confirm the verdict |
 
 The **acceptance** is one question for a non-technical reader: only what changed and how to try it
 at exactly one URL, the tunnel link from [preview links](../bb-workflow/references/preview-links.md)

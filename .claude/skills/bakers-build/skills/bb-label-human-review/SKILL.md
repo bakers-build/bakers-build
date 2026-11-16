@@ -24,7 +24,7 @@ An unplanned risky change ends the run as a technical problem
 | qualification | approves the criteria and transitions to `plan` |
 | plan | approves its spec, plan and test, or the diagnosis, and transitions to `working` |
 | working | at a GREEN [coding gate](../bb-workflow/references/coding-gate.md) transitions to `review` |
-| review | publishes the verdict; `Not OK` that coding can fix transitions to `working`; `OK` stops and asks the confirming person to confirm the verdict and authorize the merge |
+| review | publishes the verdict; `Not OK` that coding can fix transitions to `working`; `OK` stops with one question that names the confirming person and asks them to confirm the verdict and authorize the merge |
 
 The confirming person's confirmation and merge authorization in a comment newer than the verdict pass
 `verdict` and `merge`; then merge under the frame.
