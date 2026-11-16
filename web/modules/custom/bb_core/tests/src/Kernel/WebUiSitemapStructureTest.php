@@ -1004,7 +1004,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
    * actually being correct.
    *
    * Reflects the shipped ranks as of BB-454 round 4: `contributor` no
-   * longer carries `edit bb_project` / `delete bb_project` directly (moved
+   * longer carries `edit bb_project` directly (moved
    * to `bb_team-bb_team-lead`, BB-454 round 4 review finding 1); the
    * project canonical route is gated on `bb_project.view`, not `.update`
    * (finding 3), so it is reachable by every ranked account here; and

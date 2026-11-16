@@ -19,12 +19,17 @@ final class EntityDeleteAccessTest extends KernelTestBase {
   use WorkspaceReadScopeTestTrait;
 
   /**
-   * The workspace content a workspace lead deletes.
+   * The workspace content any workspace lead deletes.
    */
   private const array WORKSPACE_CONTENT = [
-    'bb_ticket', 'bb_project', 'bb_team', 'bb_group', 'bb_environment',
+    'bb_ticket', 'bb_team', 'bb_environment',
     'bb_comment', 'bb_ticket_template', 'bb_term', 'bb_invite',
   ];
+
+  /**
+   * The types only their creator, the workspace owner or an admin deletes.
+   */
+  private const array CREATOR_TYPES = ['bb_project', 'bb_group'];
 
   /**
    * The types only a site administrator deletes; runs only outside the UI.
@@ -122,13 +127,52 @@ final class EntityDeleteAccessTest extends KernelTestBase {
   }
 
   /**
-   * A team lead deletes the projects of the team.
+   * Only the creator, the workspace owner or an admin delete a project/group.
    */
-  public function testTeamLeadDeletesTheTeamsProject(): void {
-    $account = $this->member('a');
-    $this->addMembership($this->fixture('a', 'bb_team'), $account, ['lead']);
-    self::assertTrue($this->fixture('a', 'bb_project')->access('delete', $account));
-    self::assertFalse($this->fixture('b', 'bb_project')->access('delete', $account));
+  public function testProjectAndGroupDeleteIsTheCreatorsOrWorkspaceOwners(): void {
+    // As shipped: OG's default would let any owner pass on ownership alone.
+    $this->config('og.settings')->set('group_manager_full_access', FALSE)->save();
+    $workspace = $this->fixture('a', 'bb_workspace');
+    $owner = $this->member('a');
+    $this->addMembership($workspace, $owner, ['lead']);
+    $workspace->set('owner_user_id', $owner->id())->set('slug', 'workspace-a')->save();
+    $creator = $this->createAccount('creator-a');
+    $this->addMembership($workspace, $creator, ['contributor']);
+    $contributor = $this->createAccount('contributor-a');
+    $this->addMembership($workspace, $contributor, ['contributor']);
+    // Both are in the project's team, so only ownership tells them apart.
+    foreach ([$creator, $contributor] as $account) {
+      $this->addMembership($this->fixture('a', 'bb_team'), $account, ['member']);
+    }
+    $lead = $this->createAccount('other-lead-a');
+    $this->addMembership($workspace, $lead, ['lead']);
+    $team_lead = $this->createAccount('team-lead-a');
+    $this->addMembership($this->fixture('a', 'bb_team'), $team_lead, ['lead']);
+    $member = $this->createAccount('plain-member-a');
+    $this->addMembership($workspace, $member, ['member']);
+    $admin = $this->createAccount('site-admin', ['administer bakers']);
+
+    $this->container->get('router.builder')->rebuild();
+    $access_manager = $this->container->get('access_manager');
+    $cases = [
+      'creator contributor' => [$creator, TRUE],
+      'other contributor' => [$contributor, FALSE],
+      'non-owner workspace lead' => [$lead, FALSE],
+      'team lead' => [$team_lead, FALSE],
+      'workspace owner' => [$owner, TRUE],
+      'member' => [$member, FALSE],
+      'site admin' => [$admin, TRUE],
+    ];
+    foreach (self::CREATOR_TYPES as $type) {
+      $entity = $this->fixture('a', $type);
+      $entity->set('owner_user_id', $creator->id())->save();
+      $url = $entity->toUrl('delete-form');
+      foreach ($cases as $who => [$account, $expected]) {
+        $this->container->get('entity_type.manager')->getAccessControlHandler($type)->resetCache();
+        self::assertSame($expected, $entity->access('delete', $account), "$who: $type entity access");
+        self::assertSame($expected, $access_manager->checkNamedRoute($url->getRouteName(), $url->getRouteParameters(), $account), "$who: $type route access");
+      }
+    }
   }
 
   /**

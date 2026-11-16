@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
@@ -199,6 +200,57 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
     self::assertArrayNotHasKey('danger_zone', $card);
     self::assertArrayNotHasKey('submit', $card['actions'] ?? []);
     self::assertArrayNotHasKey('name', $card);
+  }
+
+  /**
+   * A non-owner lead sees no project/group danger zone unless they created it.
+   */
+  public function testProjectAndGroupDangerZoneIsTheCreatorsOrOwners(): void {
+    $workspace = $this->provision();
+    $etm = $this->container->get('entity_type.manager');
+    // Created by someone else, so the owner passes as owner, not as creator.
+    $creator = $this->createUser([], 'creator');
+    self::assertInstanceOf(UserInterface::class, $creator);
+    $group = $etm->getStorage('bb_group')->create([
+      'name' => 'Clients',
+      'workspace_id' => $workspace->id(),
+      'owner_user_id' => $creator->id(),
+    ]);
+    $group->save();
+    $team = current($etm->getStorage('bb_team')->loadByProperties(['workspace_id' => $workspace->id()]));
+    self::assertInstanceOf(EntityInterface::class, $team);
+    $project = $etm->getStorage('bb_project')->create([
+      'name' => 'Site',
+      'key' => 'SITE',
+      'group_id' => $group->id(),
+      'teams' => [$team->id()],
+      'owner_user_id' => $creator->id(),
+    ]);
+    $project->save();
+
+    // The workspace owner deletes what someone else created.
+    foreach ([$project, $group] as $entity) {
+      $form = $this->container->get('entity.form_builder')->getForm($entity, 'settings');
+      self::assertArrayHasKey('danger_zone', $form, $entity->getEntityTypeId() . ': owner sees the danger zone');
+    }
+
+    $lead = $this->createUser([], 'other-lead');
+    self::assertInstanceOf(UserInterface::class, $lead);
+    $this->addMembership($workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+    foreach ([$project, $group] as $entity) {
+      self::assertInstanceOf(ContentEntityInterface::class, $entity);
+      $type = $entity->getEntityTypeId();
+      $etm->getAccessControlHandler($type)->resetCache();
+      $form = $this->container->get('entity.form_builder')->getForm($entity, 'settings');
+      self::assertArrayNotHasKey('danger_zone', $form, "$type: a non-owner lead sees none");
+      self::assertArrayNotHasKey('delete', $form['actions'] ?? [], "$type: nor a Delete action");
+
+      $entity->set('owner_user_id', $lead->id())->save();
+      $etm->getAccessControlHandler($type)->resetCache();
+      $form = $this->container->get('entity.form_builder')->getForm($entity, 'settings');
+      self::assertArrayHasKey('danger_zone', $form, "$type: its creator does");
+    }
   }
 
 }

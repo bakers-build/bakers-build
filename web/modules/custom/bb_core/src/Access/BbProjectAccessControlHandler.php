@@ -9,6 +9,7 @@ use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\EntityAccessControlHandler;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\user\EntityOwnerInterface;
 
 /**
  * Granular per-operation access for bb_project; admin_permission bypasses.
@@ -25,10 +26,18 @@ final class BbProjectAccessControlHandler extends EntityAccessControlHandler {
     if (!$parent->isNeutral()) {
       return $parent;
     }
+    if ($operation === 'delete') {
+      // The generated `delete own` grant; the workspace owner's delete is
+      // added by BbRankEntityFence.
+      return AccessResult::allowedIf(
+        $account->hasPermission('delete own bb_project')
+          && $entity instanceof EntityOwnerInterface
+          && (int) $entity->getOwnerId() === (int) $account->id(),
+      )->cachePerPermissions()->cachePerUser()->addCacheableDependency($entity);
+    }
     $perm = match ($operation) {
       'view' => 'view bb_project',
       'update' => 'edit bb_project',
-      'delete' => 'delete bb_project',
       default => NULL,
     };
     return $perm === NULL ? $parent : AccessResult::allowedIfHasPermission($account, $perm);

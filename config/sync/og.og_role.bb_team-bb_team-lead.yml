@@ -14,7 +14,6 @@ group_type: bb_team
 group_bundle: bb_team
 is_admin: false
 permissions:
-  - 'delete bb_project'
   - 'edit bb_project'
   - 'view bakers figure team_members'
   - 'view bakers figure team_members_tickets_trend'
