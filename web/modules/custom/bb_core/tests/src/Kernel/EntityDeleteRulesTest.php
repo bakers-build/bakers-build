@@ -286,4 +286,29 @@ final class EntityDeleteRulesTest extends KernelTestBase {
     $this->assertNull($this->reload($template));
   }
 
+  /**
+   * The workspace's first team goes with it; any later team blocks.
+   */
+  public function testWorkspaceDeletesItsFirstTeamOnly(): void {
+    $rules = $this->container->get('bb_core.entity_delete_rules');
+    $workspace = $this->make('bb_workspace', ['name' => 'W', 'slug' => 'w']);
+    $first = $this->make('bb_team', ['name' => 'First', 'workspace_id' => $workspace->id()]);
+    $ids = fn(array $entities) => array_map(fn($e) => $e->getEntityTypeId() . ':' . $e->id(), $entities);
+
+    $references = $rules->references($workspace);
+    $this->assertSame([], $references['block']);
+    $this->assertContains('bb_team:' . $first->id(), $ids($references['cascade']));
+
+    $second = $this->make('bb_team', ['name' => 'Second', 'workspace_id' => $workspace->id()]);
+    $references = $rules->references($workspace);
+    $this->assertSame(['bb_team:' . $second->id()], $ids($references['block']));
+    $this->assertBlocked($workspace);
+    $this->assertNotNull($this->reload($first));
+
+    $second->delete();
+    $this->reload($workspace)?->delete();
+    $this->assertNull($this->reload($workspace));
+    $this->assertNull($this->reload($first));
+  }
+
 }

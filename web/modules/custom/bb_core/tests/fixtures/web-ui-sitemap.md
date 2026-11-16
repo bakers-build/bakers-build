@@ -89,6 +89,7 @@ table above.
 | Tickets | `view.tickets.team_tickets` | `/{ws}/team/{id}/tickets` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
 | Runs | `view.runs.team_runs` | `/{ws}/team/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Members | `bb_core.bb_team.members` | `/{ws}/team/{id}/members` | Controller (island) | `bb_team.view` | `_entity_access` |
+| Settings | `bb_core.bb_team.settings` | `/{ws}/team/{id}/settings` | Entity form | `bb_team.update` (→ `update any bb_team`, workspace lead) | `_entity_form` + `_entity_access` |
 
 ## Group detail — two tabs, Overview default
 

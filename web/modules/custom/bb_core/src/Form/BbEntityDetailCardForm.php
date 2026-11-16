@@ -43,8 +43,9 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
    * Card fields keyed by entity type and form operation.
    */
   private const CARDS = [
+    // Team Settings edit a team; its card only shows it.
     'bb_team' => [
-      'identity' => ['edit' => ['name'], 'show' => ['workspace_id', 'owner_user_id']],
+      'identity' => ['edit' => [], 'show' => ['name', 'workspace_id', 'owner_user_id']],
     ],
     // Group Settings edit a group; its detail cards only show it.
     'bb_group' => [

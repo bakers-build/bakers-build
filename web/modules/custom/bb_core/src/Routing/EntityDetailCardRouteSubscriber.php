@@ -22,7 +22,6 @@ final class EntityDetailCardRouteSubscriber extends RouteSubscriberBase {
    * Former product Settings routes, keyed by route name, valued by entity type.
    */
   private const RETIRED = [
-    'bb_core.bb_team.settings' => 'bb_team',
     'bb_core.bb_machine.settings' => 'bb_machine',
   ];
 

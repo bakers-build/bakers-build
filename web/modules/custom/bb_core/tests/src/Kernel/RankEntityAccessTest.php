@@ -412,7 +412,7 @@ final class RankEntityAccessTest extends KernelTestBase {
    *
    * Rewritten for BB-462 D7: `bb_project` is no longer an OG group, so
    * there is no project-granted `lead` rank left to test. Two ranks carry
-   * `edit bb_project` and `delete bb_project` — the workspace `lead`/admin
+   * `edit bb_project` — the workspace `lead`/admin
    * rank asserted here, which must reach every project of its own workspace
    * regardless of team membership (D4's admin see-all rule), and the team
    * `lead` rank, which reaches a project only through `bb_project.teams`
@@ -427,9 +427,9 @@ final class RankEntityAccessTest extends KernelTestBase {
       $project->access('update', $workspace_lead),
       'the workspace admin edits a project of its own workspace',
     );
-    self::assertTrue(
+    self::assertFalse(
       $project->access('delete', $workspace_lead),
-      'and can delete it — `delete bb_project` is on its rank',
+      'but deletes it only as its creator or the workspace owner',
     );
   }
 
@@ -453,8 +453,8 @@ final class RankEntityAccessTest extends KernelTestBase {
   /**
    * The team `lead` rank reaches the project of its team (BB-454 round 4).
    *
-   * This is the whole point of moving `edit bb_project` / `delete
-   * bb_project` off the workspace `contributor` rank and onto the team
+   * This is the whole point of moving `edit bb_project` off the workspace
+   * `contributor` rank and onto the team
    * `lead` rank, and until this test existed nothing said it worked: the
    * permission-level pin in BbRankAccessPolicyTest proves Layer A projects
    * the rank into the effective set, but a project is not the group that
@@ -487,9 +487,9 @@ final class RankEntityAccessTest extends KernelTestBase {
       $project->access('update', $team_lead),
       'the team lead edits the project that names its team',
     );
-    self::assertTrue(
+    self::assertFalse(
       $project->access('delete', $team_lead),
-      'and can delete it — `delete bb_project` moved onto the same rank',
+      'but deletes it only as its creator or the workspace owner',
     );
 
     $foreign = $this->fixture('a', 'bb_project');
