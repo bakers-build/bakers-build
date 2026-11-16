@@ -13,7 +13,7 @@ Choose how far the agent may go on a ticket. Without an automation label, a pers
 
 Pick one mode. If `auto` and one `human-*` label are both present, the human mode wins. Both `human-*` labels together stop with a question. Deployment and verification tickets support `auto` or no automation label, not the two human modes.
 
-Under the human modes, a criterion the agent cannot decide waits for the assignee (or the reviewer if the assignee is a bot). Any custom recipe gates still need a person. A change to dependencies, data models, public interfaces, authentication, permissions or build/deployment configuration counts as risky. An unplanned risky change stops automated work as a technical problem.
+Under the human modes, a criterion the agent cannot decide waits for the assignee. Currently, every assignee is treated as a person. Any custom recipe gates still need a person. A change to dependencies, data models, public interfaces, authentication, permissions or build/deployment configuration counts as risky. An unplanned risky change stops automated work as a technical problem.
 
 ## Example: approve every spec
 
