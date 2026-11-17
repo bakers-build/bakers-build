@@ -173,6 +173,7 @@ export const SIDEBAR = {
       ["Connection", "/configuration/connection"],
       ["Machine", "/configuration/machine"],
       ["Project", "/configuration/project"],
+      ["Slot catalogs", "/configuration/slot-catalogs"],
       ["Lifecycle hooks", "/configuration/project/hooks"],
       ["Conductors and variants", "/configuration/project/conductors"],
     ]),
