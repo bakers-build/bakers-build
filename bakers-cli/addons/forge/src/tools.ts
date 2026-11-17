@@ -32,6 +32,9 @@ import {
 export const FORGE_NEEDS_RUN =
   'forge tools act only for an agent run: the call carries no ticket branch_name and base_branch (an operator delivers by hand)';
 
+export const FORGE_NEEDS_ORIGIN =
+  "forge_issue_update acts only on the run ticket's origin issue, and this ticket has none";
+
 export interface ForgeToolDeps {
   backend(): Promise<ForgeBackend>;
   /** The forge entry's `with` (merge rules). */
@@ -78,6 +81,13 @@ async function currentBase(
   const target = t.targetBranch ?? t.baseBranch;
   if (!target) throw refuse('no target_branch or base_branch returned');
   return target;
+}
+
+/** The ticket's origin as the server returns it now, else the run's copy. */
+async function originOf(req: ToolRequest): Promise<string> {
+  const t = req.currentTicket ? await req.currentTicket() : req.ticket;
+  if (!t?.issueUrl) throw new Error(FORGE_NEEDS_ORIGIN);
+  return t.issueUrl;
 }
 
 function ownedBranch(req: ToolRequest, run: Run): string {
@@ -378,6 +388,45 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         max_bytes: maxBytes,
         log: log.text,
       });
+    },
+
+    forge_issue_update: async (req) => {
+      runOf(req);
+      const op = req.args.operation;
+      if (op === 'comment') {
+        const body = req.args.body;
+        if (typeof body !== 'string' || body.trim() === '')
+          throw new Error('comment needs a non-blank body');
+        const issueUrl = await originOf(req);
+        return json(await (await backend()).commentIssue(issueUrl, body));
+      }
+      if (op === 'list_labels') {
+        const issueUrl = await originOf(req);
+        const labels = await (await backend()).issueLabels(issueUrl);
+        return json({ issue_url: issueUrl, labels });
+      }
+      if (op !== 'update_labels')
+        throw new Error(
+          'operation must be list_labels, update_labels or comment',
+        );
+      const add = typeof req.args.add === 'string' ? req.args.add : '';
+      const remove = (req.args.remove as string[] | undefined) ?? [];
+      if (!add && remove.length === 0)
+        throw new Error('update_labels needs add or remove');
+      const issueUrl = await originOf(req);
+      const b = await backend();
+      // GitLab creates an unknown label it is sent: only listed names pass.
+      const known = new Set((await b.issueLabels(issueUrl)).map((l) => l.name));
+      const unknown = [add, ...remove].filter((n) => n && !known.has(n));
+      if (unknown.length > 0)
+        throw new Error(
+          `update_labels sends only existing labels, spelled exactly; not found: ${unknown.join(', ')}; nothing was sent`,
+        );
+      const labels = await b.updateIssueLabels(issueUrl, {
+        ...(add ? { add } : {}),
+        remove,
+      });
+      return json({ issue_url: issueUrl, labels });
     },
   };
   return Object.fromEntries(

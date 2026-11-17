@@ -76,8 +76,11 @@ const factory: ForgeBackendFactory = async (raw, context) => {
   }
   const basic = (t: string) => Buffer.from(`oauth2:${t}`).toString('base64');
   const doFetch = context.fetch ?? fetch;
-  const project = `${base}/api/v4/projects/${encodeURIComponent(s.project)}`;
-  const api = async (
+  const projectApi = (path: string) =>
+    `${base}/api/v4/projects/${encodeURIComponent(path)}`;
+  const project = projectApi(s.project);
+  const apiAt = async (
+    at: string,
     path: string,
     init: {
       method?: string;
@@ -86,7 +89,7 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       text?: boolean;
     } = {},
   ) =>
-    (init.text ? requestText : requestJson)(doFetch, `${project}${path}`, {
+    (init.text ? requestText : requestJson)(doFetch, `${at}${path}`, {
       method: init.method ?? 'GET',
       // Bearer takes access tokens and the OAuth token a `glab` login holds.
       headers: {
@@ -96,6 +99,50 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
       ...(init.allow404 ? { allow404: true } : {}),
     });
+  const api = (path: string, init?: Parameters<typeof apiAt>[2]) =>
+    apiAt(project, path, init);
+  // The origin may sit in another project, never on another host.
+  const root = new URL(base);
+  const prefix = root.pathname.replace(/\/+$/, '');
+  const issue = (issueUrl: string) => {
+    const u = URL.canParse(issueUrl) ? new URL(issueUrl) : undefined;
+    const m =
+      u &&
+      u.protocol === root.protocol &&
+      u.host === root.host &&
+      u.pathname.startsWith(`${prefix}/`)
+        ? /^\/(.+?)\/(?:-\/)?(?:issues|work_items)\/(\d+)\/?$/.exec(
+            u.pathname.slice(prefix.length),
+          )
+        : null;
+    if (!m)
+      throw new Error(
+        `origin ${issueUrl} is no issue on ${base}; nothing was sent`,
+      );
+    const [, path = '', iid = ''] = m;
+    return {
+      at: projectApi(decodeURIComponent(path)),
+      iid,
+      url: issueUrl.replace(/#.*$/, ''),
+    };
+  };
+  const labelsOf = async (at: string) => {
+    const all: { name: string; is_project_label: boolean }[] = [];
+    // shortcut: a full page means another one; switch to x-next-page if the API ever pages short.
+    for (let page = 1; ; page++) {
+      const batch = (await apiAt(
+        at,
+        `/labels?include_ancestor_groups=true&per_page=100&page=${page}`,
+      )) as { name: string; is_project_label: boolean }[];
+      all.push(
+        ...batch.map((l) => ({
+          name: l.name,
+          is_project_label: l.is_project_label,
+        })),
+      );
+      if (batch.length < 100) return all;
+    }
+  };
   const mr = async (iid: number) => (await api(`/merge_requests/${iid}`)) as Mr;
   const q = encodeURIComponent;
 
@@ -230,6 +277,26 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       if (log === undefined)
         throw new Error(`job ${jobId} is not a job of ${s.project}`);
       return tail(log, maxBytes);
+    },
+    issueLabels: async (issueUrl) => labelsOf(issue(issueUrl).at),
+    updateIssueLabels: async (issueUrl, { add, remove }) => {
+      const i = issue(issueUrl);
+      const updated = (await apiAt(i.at, `/issues/${i.iid}`, {
+        method: 'PUT',
+        body: {
+          ...(add ? { add_labels: add } : {}),
+          ...(remove.length > 0 ? { remove_labels: remove.join(',') } : {}),
+        },
+      })) as { labels: string[] };
+      return updated.labels;
+    },
+    commentIssue: async (issueUrl, body) => {
+      const i = issue(issueUrl);
+      const note = (await apiAt(i.at, `/issues/${i.iid}/notes`, {
+        method: 'POST',
+        body: { body },
+      })) as { id: number };
+      return { id: note.id, url: `${i.url}#note_${note.id}` };
     },
   };
   return backend;
