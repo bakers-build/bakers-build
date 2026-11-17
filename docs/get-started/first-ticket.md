@@ -23,7 +23,7 @@ Use the team's entry in the ticket's **Conductor** field and skip to [Create and
 
 ## Start your agents
 
-Project setup already started the conductor; `bakers conductor status` confirms it. For later sessions, in your local checkout, check the signed-in agent and the configured terminal host: herdr-cli's session, herdr-app's herdr-core host, or Orca's runtime. [Use your client](/get-started/use-your-client) explains each view. Start ticket execution:
+If you confirmed the start at the end of project setup, the conductor is already running; `bakers conductor status` confirms it. For later sessions, in your local checkout, check the signed-in agent and the configured terminal host: herdr-cli's session, herdr-app's herdr-core host, or Orca's runtime. [Use your client](/get-started/use-your-client) explains each view. Start ticket execution:
 
 ```sh
 bakers agents
