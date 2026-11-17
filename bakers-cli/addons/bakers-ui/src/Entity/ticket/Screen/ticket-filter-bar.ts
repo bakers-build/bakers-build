@@ -29,6 +29,11 @@ export interface TicketFilterBarHost {
    * does not implement it; MyWorkScreen does — `r` is a My-work-only affordance.
    */
   navigateToProjectFilter?(context: ScreenContext): boolean;
+  /**
+   * Optional: when set, the bar's `p` key calls this instead of opening
+   * `project.tickets.parent-filter`. MyWorkScreen opens its own parent picker.
+   */
+  navigateToParentFilter?(context: ScreenContext): boolean;
 }
 
 export class TicketFilterBar {
@@ -179,6 +184,8 @@ export class TicketFilterBar {
       return true;
     }
     if (!this.disable.has('parent') && input === 'p') {
+      if (this.host.navigateToParentFilter)
+        return this.host.navigateToParentFilter(context);
       context.navigate?.('project.tickets.parent-filter', context.params ?? {});
       return true;
     }
