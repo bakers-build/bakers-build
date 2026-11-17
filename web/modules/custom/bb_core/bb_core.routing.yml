@@ -525,3 +525,18 @@ bb_core.user.profile:
   options:
     _auth: ['cookie']
     _bb_user_area: TRUE
+
+# The project overview's favorite toggle, a plain link: the CSRF token guards
+# it, and only an account that may view the project reaches it.
+bb_core.project.favorite:
+  path: '/_workspace/{bb_workspace}/project/{bb_project}/favorite'
+  defaults:
+    _controller: '\Drupal\bb_core\Controller\ProjectFavoriteController::toggle'
+  requirements:
+    _entity_access: 'bb_project.view'
+    _csrf_token: 'TRUE'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_project:
+        type: 'entity:bb_project'

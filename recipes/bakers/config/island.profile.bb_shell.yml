@@ -197,6 +197,8 @@ placements:
                 source: {  }
               - source_id: bb_project_create_action
                 source: {  }
+              - source_id: bb_project_favorite_action
+                source: {  }
               - source_id: bb_ticket_template_create_action
                 source: {  }
               - source_id: bb_term_create_action
