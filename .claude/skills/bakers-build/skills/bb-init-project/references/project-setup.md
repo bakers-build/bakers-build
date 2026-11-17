@@ -20,12 +20,8 @@ For known blockers, report the required application changes and stop setup until
 perform repairs only within the authorized scope. Keep unknowns explicitly unverified.
 **Done when each requirement has an evidence-based assessment and no known blocker remains.**
 
-Explain why in one sentence: each ticket runs in its own worktree with its own runtime. Test it,
-reporting each line as `pass` or `fail — <reason>`:
-
-- Git: `git worktree add <tmp> HEAD`, then `git worktree remove <tmp>`; a failure quotes Git.
-- Location: worktrees inside the checkout fail when the runtime forbids one project inside another;
-  the Environment block's worktree-location row resolves it.
+Each ticket runs in its own worktree, so test `git worktree add <tmp> HEAD` and
+`git worktree remove <tmp>` and report `pass` or `fail — <reason>`.
 
 When the environment is available, verify the
 [two-worktree isolation check](https://bakers.build/provision/guide.md#verify-independent-operation).
