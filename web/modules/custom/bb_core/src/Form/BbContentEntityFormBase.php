@@ -141,9 +141,7 @@ class BbContentEntityFormBase extends ContentEntityForm {
    * arrives with no CSS or JS.
    */
   private function settingsUrl(): Url {
-    $query = $this->getRequest()->query->all();
-    unset($query['ajax_page_state'], $query['_wrapper_format'], $query['_triggering_element_name'], $query['_triggering_element_value']);
-    return Url::fromRoute('<current>', [], ['query' => $query]);
+    return HtmxTransport::currentUrl($this->getRequest());
   }
 
   /**

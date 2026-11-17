@@ -149,7 +149,7 @@ final class BbTicketTemplateForm extends BbContentEntityFormBase {
       $form['#attributes']['data-hx-boost'] = 'false';
       // Opened by a boosted link, core's action keeps `ajax_page_state`; a
       // page re-rendered after an error would then arrive without assets.
-      $form['#action'] = $this->cleanCurrentUrl()->toString();
+      $form['#action'] = HtmxTransport::currentUrl($this->getRequest())->toString();
       // The shell places no messages region, so the Settings tab's save
       // confirmation and errors lead the form, as other Settings screens do.
       $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000, '#picker_region' => 'lines'];
@@ -328,7 +328,7 @@ final class BbTicketTemplateForm extends BbContentEntityFormBase {
     }
     if ($settings) {
       // The Settings tab stays where it is, as other Settings screens do.
-      $form_state->setRedirectUrl($this->cleanCurrentUrl());
+      $form_state->setRedirectUrl(HtmxTransport::currentUrl($this->getRequest()));
       return $result;
     }
     $entity = $this->getEntity();
@@ -342,15 +342,6 @@ final class BbTicketTemplateForm extends BbContentEntityFormBase {
       $form_state->setRedirectUrl(Url::fromRoute('view.bb_ticket_templates.workspace_list', ['bb_workspace' => $workspace->getSlug()]));
     }
     return $result;
-  }
-
-  /**
-   * The current page, without the htmx keys a boosted link leaves on it.
-   */
-  private function cleanCurrentUrl(): Url {
-    $query = $this->getRequest()->query->all();
-    unset($query['ajax_page_state'], $query['_wrapper_format'], $query['_triggering_element_name'], $query['_triggering_element_value']);
-    return Url::fromRoute('<current>', [], ['query' => $query]);
   }
 
 }

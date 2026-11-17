@@ -28,6 +28,7 @@ permissions:
   - 'update any bb_term'
   - 'update any bb_ticket'
   - 'update own bb_machine'
+  - 'update own bb_project'
   - 'use bb_ticket_template'
   - 'use text format bb_rich'
   - 'view bakers figure project_flow'

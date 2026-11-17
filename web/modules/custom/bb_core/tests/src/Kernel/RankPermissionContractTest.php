@@ -228,6 +228,22 @@ final class RankPermissionContractTest extends KernelTestBase {
   }
 
   /**
+   * Only the workspace contributor rank grants own-project update.
+   *
+   * Lead ranks already edit through `edit bb_project`; the contributor edits
+   * just the projects it created.
+   */
+  public function testOnlyContributorGrantsOwnProjectUpdate(): void {
+    $holders = [];
+    foreach ($this->shippedRanks() as $id => $rank) {
+      if (in_array('update own bb_project', $rank['permissions'] ?? [], TRUE)) {
+        $holders[] = $id;
+      }
+    }
+    self::assertSame(['bb_workspace-bb_workspace-contributor'], $holders);
+  }
+
+  /**
    * The retired import permission is granted by no shipped rank.
    */
   public function testImportPermissionIsNotGranted(): void {
