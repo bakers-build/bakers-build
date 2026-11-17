@@ -47,7 +47,7 @@ Reuse working settings. Help me start its conductor and verify that it is online
 
 Follow these steps with either setup. If you already have a suitable ticket, reuse it.
 
-1. **[Create a ticket](/get-started/daily-work/create-a-ticket)** for a small documentation change. State the expected result and select the execution entry identified above.
+1. **[Create a ticket](/get-started/daily-work/create-a-ticket)** for a small documentation change. State the expected result and select the execution entry identified above. Project setup proposes one you can take as it is: "Document how to run the tests in README.md", which adds a *Running tests* section with the commands that run the test suite locally.
 2. **Open the ticket's Runs tab.** Inspect the latest run, then read its `summary` on the ticket. [Where to answer](/get-started/daily-work/follow-a-ticket#where-you-answer) explains how to respond during team and local work.
 3. **Check the first result.** Confirm the intended setup ran the ticket and its summary explains the outcome. This does not automatically approve the final implementation.
 

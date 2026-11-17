@@ -60,7 +60,7 @@ Return here after any changes. Before starting agents, install every skill the w
 
 ::: details What changes
 
-Each ticket runs in its own worktree, so the skill first adds and removes a temporary worktree and reports pass or fail with the reason. It resolves the server project, prepares `.bakers/project.config.js` and `WORKFLOW.md`, checks ignores and shows every written file back, secrets masked. Credentials and a project `.bakers/connection.config.js` stay private. [Configuration](/configuration/) explains file ownership and precedence.
+The skill first checks for a Git repository; outside one it offers to clone the northbakery sample project. Each ticket runs in its own worktree, so the skill then adds and removes a temporary worktree and reports pass or fail with the reason. It resolves the server project, prepares `.bakers/project.config.js` and `WORKFLOW.md`, checks ignores and shows every written file back, secrets masked. Credentials and a project `.bakers/connection.config.js` stay private. [Configuration](/configuration/) explains file ownership and precedence.
 :::
 
 ::: details Manual equivalent
@@ -93,6 +93,6 @@ The online check verifies sign-in; confirm project access separately. `conductor
 
 **Done when:** project and account are correct, required skills are available, private files are ignored and the project's readiness checks pass.
 
-With the checks green, the skill offers to start the session: it runs `bakers conductor start` in your client (herdr: a new tab) and offers a first trial ticket through `bakers:bb-create-ticket`.
+With the checks green, the skill offers to start the session: it runs `bakers conductor start` in your client (herdr: a new tab) and offers a first trial ticket through `bakers:bb-create-ticket` with an example you can accept as it is.
 
 **Next:** [Run the first ticket](/get-started/first-ticket).

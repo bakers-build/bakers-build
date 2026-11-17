@@ -9,8 +9,9 @@ Documentation owns choices and file ownership; the CLI planner owns supported ch
 defaults and existing files alone do not establish readiness.
 Upgrade, migrate or repair: follow [upgrade](references/upgrade.md).
 Read [setup checks](references/setup-checks.md) before checking/applying.
-For project/all, first [assess worktree compatibility](references/project-setup.md#check-worktree-compatibility-first)
-before configuration checks or setup changes.
+For project/all, first [check the repository](references/project-setup.md#check-the-repository-first) and
+[worktree compatibility](references/project-setup.md#check-worktree-compatibility-first)
+before other checks.
 
 ## Welcome
 

@@ -140,6 +140,17 @@ class SetupRulesTest(unittest.TestCase):
         session = project.split('## Start the session', 1)[1]
         self.assertIn('bakers conductor start', session)
         self.assertIn('bb-create-ticket', session)
+        # The first ticket is a concrete example to accept as it is.
+        self.assertIn('Title:', session)
+        self.assertIn('Description:', session)
+        # Setup first checks for a Git repository and, outside one, offers the northbakery sample.
+        repository = project.split('## Check the repository first', 1)[1].split('\n## ', 1)[0]
+        self.assertIn('git rev-parse --show-toplevel', repository)
+        self.assertIn('fail — not a Git repository', repository)
+        self.assertIn('Step 1 of m — Repository', repository)
+        self.assertIn('git clone https://github.com/bakers-build/northbakery.git', repository)
+        self.assertLess(project.index('## Check the repository first'), project.index('## Check worktree compatibility first'))
+        self.assertIn('#check-the-repository-first', project_skill)
 
     def test_setup_cases_stay_few(self):
         cases = [path for path in TAKE_ALL.parent.glob('*.json') if path.name != 'defaults.json']

@@ -8,6 +8,14 @@ The project being configured is an external repository; it needs no bakers.build
 If a required guide cannot be retrieved, report its URL and leave the affected choice unresolved
 instead of substituting a template.
 
+## Check the repository first
+
+Run `git rev-parse --show-toplevel` and report `pass — <top level>` or `fail — not a Git repository`.
+Outside a repository, ask `Step 1 of m — Repository` whether to start with the northbakery sample
+project: on yes, `git clone https://github.com/bakers-build/northbakery.git northbakery` and continue
+the setup inside `northbakery/`; on no, stop and say that setup needs the project's Git repository.
+**Done when the setup runs inside a Git repository or has stopped.**
+
 ## Check worktree compatibility first
 
 Before configuration checks, server-project lookup or client/integration choices, read the
@@ -160,6 +168,11 @@ is not proof that addons, provisioning or tunnels work.
 With project/all checks green, ask once whether to start working now. On yes, start the
 conductor with `bakers conductor start` through the configured client (herdr: a new tab), confirm
 it runs, and offer a first trial ticket through `@bakers-build/bb-create-ticket`; the conductor
-opens its agent session in that client. A no, a failed check or an unattended run ends with the
-start command as the next action.
+opens its agent session in that client. Propose this example, to accept as it is or change:
+
+- Title: Document how to run the tests in README.md
+- Description: Add a "Running tests" section to `README.md` with the commands that run the test
+  suite locally. Done when a fresh checkout passes its tests by following the section.
+
+A no, a failed check or an unattended run ends with the start command as the next action.
 **Done when the conductor runs or the person declined.**
