@@ -26,6 +26,7 @@ import {
   resolveCliVersion,
   resolveConfigPath,
   type Secrets,
+  secretsFilePath,
   setDefaultCommandRunner,
   signalVerifiedProcess,
   stemForConfigFile,
@@ -696,12 +697,37 @@ async function cmdStartForeground(
     deps.execve ?? (process as { execve?: Execve }).execve?.bind(process);
   let watcher: { close(): void } | undefined;
   const check = deps.checkConfig ?? defaultCheckConfig;
+  // The restart re-runs loadSecretsOrFail, which exits on a bad file: check first.
+  const reloadSecrets = (): Secrets | undefined => {
+    try {
+      return loadSecretsFile();
+    } catch (err) {
+      logger.error(
+        { path: secretsFilePath() },
+        `${(err as Error).message}; keeping the running conductor on its last good secrets`,
+      );
+      return undefined;
+    }
+  };
+  // Config changes a bad secrets file held back, re-checked on the next change.
+  const heldBack = new Set<string>();
   const restartNow = () => {
     restart = true;
     watcher?.close();
     clearInterval(versionTimer);
     controller.abort();
   };
+  // An upgrade replaces the installed files under this running process: once
+  // two polls read the same new version, migrate, check and come back on it.
+  const startVersion = resolveCliVersion();
+  const readVersion = deps.readCliVersion ?? readCliVersion;
+  const migrate = deps.migrateConfig ?? defaultMigrateConfig;
+  const prefix = process.env.BAKERS_CONDUCTOR
+    ? `bakers --conductor ${process.env.BAKERS_CONDUCTOR}`
+    : 'bakers';
+  let lastRead: string | undefined;
+  let settled: string | undefined; // the new version already handled or refused
+  let busy = false;
   if (config.restart_on_change !== false && config.watch_paths) {
     if (!execve) {
       logger.warn(
@@ -711,8 +737,35 @@ async function cmdStartForeground(
     } else {
       watcher = (deps.watchForRestart ?? watchForRestart)(
         config.watch_paths,
-        async (path) => {
+        async (paths) => {
           if (controller.signal.aborted) return;
+          const secretsPath = secretsFilePath();
+          for (const p of paths) if (p !== secretsPath) heldBack.add(p);
+          if (!reloadSecrets()) return;
+          const configPaths = [...heldBack];
+          heldBack.clear();
+          if (!configPaths.length) {
+            const read = readVersion();
+            if (read !== UNKNOWN_VERSION && read !== startVersion) {
+              // A new CLI starts only after migrate and check: retry the upgrade on the next poll.
+              settled = undefined;
+              logger.info(
+                { path: secretsPath, to: read },
+                'secrets file changed; the pending CLI upgrade restarts the conductor',
+              );
+              return;
+            }
+            logger.info(
+              { path: secretsPath },
+              'secrets file changed; restarting conductor',
+            );
+            restartNow();
+            return;
+          }
+          const path = [
+            ...configPaths,
+            ...paths.filter((p) => p === secretsPath),
+          ].join(', ');
           logger.info(
             { path },
             `restart_on_change: ${path} changed; checking config`,
@@ -733,17 +786,6 @@ async function cmdStartForeground(
       );
     }
   }
-  // An upgrade replaces the installed files under this running process: once
-  // two polls read the same new version, migrate, check and come back on it.
-  const startVersion = resolveCliVersion();
-  const readVersion = deps.readCliVersion ?? readCliVersion;
-  const migrate = deps.migrateConfig ?? defaultMigrateConfig;
-  const prefix = process.env.BAKERS_CONDUCTOR
-    ? `bakers --conductor ${process.env.BAKERS_CONDUCTOR}`
-    : 'bakers';
-  let lastRead: string | undefined;
-  let settled: string | undefined; // the new version already handled or refused
-  let busy = false;
   const versionTimer = setInterval(async () => {
     if (busy || controller.signal.aborted) return;
     const read = readVersion();
@@ -774,6 +816,7 @@ async function cmdStartForeground(
     );
     busy = true;
     try {
+      if (!reloadSecrets()) return;
       for (const [step, run] of [
         ['config upgrade', migrate],
         ['config check', check],
