@@ -8,12 +8,13 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\bb_core\Entity\BbProfileInterface;
 
 /**
- * Edits only a user's position and background (the `profile` form mode).
+ * Edits a profile's position and background in its workspace.
  *
- * Core's ProfileForm always adds name, mail and password, which a workspace
- * lead editing a service account must not reach.
+ * The form of `bb_profile`, shown on the user's Profile tab, so a workspace
+ * lead editing a service account never reaches name, mail or password.
  */
 final class UserProfileForm extends ContentEntityForm {
 
@@ -35,7 +36,12 @@ final class UserProfileForm extends ContentEntityForm {
     if (is_string($destination) && str_starts_with($destination, '/') && !UrlHelper::isExternal($destination)) {
       return Url::fromUserInput($destination);
     }
-    return Url::fromRoute('bb_core.user.profile', ['user' => $this->entity->id()]);
+    $profile = $this->entity;
+    assert($profile instanceof BbProfileInterface);
+    $workspace = $profile->get('workspace_id')->entity;
+    return Url::fromRoute('bb_core.user.profile', ['user' => $profile->getOwnerId()], [
+      'query' => $workspace === NULL ? [] : ['workspace' => $workspace->uuid()],
+    ]);
   }
 
 }

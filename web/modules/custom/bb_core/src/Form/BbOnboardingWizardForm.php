@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\Core\Cache\CacheableResponse;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -111,6 +112,7 @@ final class BbOnboardingWizardForm extends FormBase {
     protected BbWorkspaceReadScopeInterface $readScope,
     protected BbWorkspaceCreateAccess $createAccess,
     protected FirstProjectCreator $firstProject,
+    protected Profiles $profiles,
   ) {}
 
   /**
@@ -172,6 +174,7 @@ final class BbOnboardingWizardForm extends FormBase {
       $container->get('bb_core.workspace_read_scope'),
       $container->get('bb_core.workspace_create_access'),
       $container->get('bb_core.onboarding_first_project'),
+      $container->get(Profiles::class),
     );
   }
 
@@ -534,26 +537,42 @@ final class BbOnboardingWizardForm extends FormBase {
 
   /**
    * About-you fields: optional position and prior knowledge.
+   *
+   * Prefilled from the profile of the account's first workspace.
    */
   private function buildAboutFields(array &$form, UserInterface $user): void {
-    if (!$user->hasField('field_developer_title') || !$user->hasField('field_bb_background')) {
-      return;
-    }
-    $form['fields']['field_developer_title'] = [
+    $profile = $this->aboutProfiles($user)[0] ?? NULL;
+    $form['fields']['position'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Position'),
-      '#default_value' => (string) $user->get('field_developer_title')->value,
+      '#default_value' => $profile?->position() ?? '',
       '#required' => FALSE,
       '#maxlength' => 255,
       '#placeholder' => $this->t('e.g. Product Lead'),
     ];
-    $form['fields']['field_bb_background'] = [
+    $form['fields']['background'] = [
       '#type' => 'textarea',
       '#title' => $this->t('What should bakers.build know about your background?'),
-      '#default_value' => (string) $user->get('field_bb_background')->value,
+      '#default_value' => $profile?->background() ?? '',
       '#required' => FALSE,
       '#rows' => 3,
     ];
+  }
+
+  /**
+   * The account's profile in each of its workspaces, unsaved where new.
+   *
+   * The wizard has no workspace in context, so About you applies to all;
+   * without a workspace there is nowhere to keep it.
+   *
+   * @return list<\Drupal\bb_core\Entity\BbProfileInterface>
+   *   The profiles, by workspace id.
+   */
+  private function aboutProfiles(UserInterface $user): array {
+    return array_map(
+      fn (int $workspace_id) => $this->profiles->forAccount((int) $user->id(), $workspace_id),
+      array_values($this->readScope->workspaceIds($user)),
+    );
   }
 
   /**
@@ -777,19 +796,14 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
-   * Saves About-you fields from step 2.
+   * Saves About-you fields from step 2 into each workspace's profile.
    */
   private function saveAbout(FormStateInterface $form_state): void {
-    $user = $this->currentUserEntity();
-    // Guarded, because the About-you fields are configuration: a site — or a
-    // test fixture — that carries the module without them must still be able
-    // to finish onboarding rather than fatal on the last click.
-    foreach (['field_developer_title', 'field_bb_background'] as $field) {
-      if ($user->hasField($field)) {
-        $user->set($field, $this->optionalString($form_state, $field));
-      }
+    foreach ($this->aboutProfiles($this->currentUserEntity()) as $profile) {
+      $profile->setPosition($this->optionalString($form_state, 'position') ?? '')
+        ->setBackground($this->optionalString($form_state, 'background') ?? '')
+        ->save();
     }
-    $user->save();
   }
 
   /**

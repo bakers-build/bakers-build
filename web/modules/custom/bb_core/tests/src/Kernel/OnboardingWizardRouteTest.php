@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Url;
@@ -56,6 +57,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $this->installEntitySchema('bb_workspace');
     $this->installEntitySchema('bb_team');
     $this->installEntitySchema('bb_invite');
+    $this->installEntitySchema('bb_profile');
     $this->installSchema('user', ['users_data']);
     $this->installConfig(['system', 'user']);
     $this->installOgScopeFixture();
@@ -121,13 +123,19 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
   public function testStepTwoNextSavesAboutWithoutCompleting(): void {
     $account = $this->createUser();
     self::assertInstanceOf(UserInterface::class, $account);
+    $north = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create(['name' => 'North', 'slug' => 'north']);
+    $north->save();
+    $south = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create(['name' => 'South', 'slug' => 'south']);
+    $south->save();
+    $this->addMembership($north, $account, ['member']);
+    $this->addMembership($south, $account, ['member']);
     $this->container->get('current_user')->setAccount($account);
 
     $form_object = BbOnboardingWizardForm::create($this->container);
     $form_state = new FormState();
     $form_state->set('bb_onboarding_step', 2);
-    $form_state->setValue('field_developer_title', 'Product Lead');
-    $form_state->setValue('field_bb_background', 'I ship Drupal.');
+    $form_state->setValue('position', 'Product Lead');
+    $form_state->setValue('background', 'I ship Drupal.');
     $form_state->setTriggeringElement(['#name' => 'next']);
     $form = [];
     $form_object->submitForm($form, $form_state);
@@ -135,8 +143,11 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $destination = $this->container->get('bb_core.onboarding_destination');
     $account = $this->reloadAccount($account);
     self::assertFalse($destination->isComplete($account));
-    self::assertSame('Product Lead', (string) $account->get('field_developer_title')->value);
-    self::assertSame('I ship Drupal.', (string) $account->get('field_bb_background')->value);
+    // No workspace in context: each workspace's profile gets About you.
+    foreach ([$north, $south] as $workspace) {
+      $profile = $this->container->get(Profiles::class)->forAccount((int) $account->id(), (int) $workspace->id());
+      self::assertSame(['Product Lead', 'I ship Drupal.'], [$profile->position(), $profile->background()]);
+    }
     self::assertSame(3, (int) $this->userData()->get('bb_core', (int) $account->id(), 'onboarding_step'));
     self::assertSame(3, (int) $form_state->get('bb_onboarding_step'));
     self::assertTrue($form_state->isRebuilding());
@@ -417,7 +428,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
       'name' => 'rm -rf /',
     ]);
     self::assertInstanceOf(UserInterface::class, $account);
-    $account->set('field_developer_title', '$(reboot)')->save();
+    $this->container->get(Profiles::class)->forAccount((int) $account->id(), (int) $this->createWorkspaceFor($account)->id())->setPosition('$(reboot)')->save();
     $this->container->get('current_user')->setAccount($account);
     $form_state = new FormState();
     $form_state->set('bb_onboarding_step', 3);
@@ -486,6 +497,16 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
   }
 
   /**
+   * A workspace the account is a member of.
+   */
+  private function createWorkspaceFor(UserInterface $account): object {
+    $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create(['name' => 'Attack', 'slug' => 'attack']);
+    $workspace->save();
+    $this->addMembership($workspace, $account, ['member']);
+    return $workspace;
+  }
+
+  /**
    * Installs onboarding fields from config/sync.
    */
   private function installOnboardingFields(): void {
@@ -493,8 +514,6 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $storage = new FileStorage(dirname($this->root) . '/config/sync');
     foreach ([
       'field_full_name',
-      'field_developer_title',
-      'field_bb_background',
       'field_onboarding_completed',
     ] as $name) {
       $storageData = $storage->read("field.storage.user.$name");
