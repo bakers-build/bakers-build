@@ -6,12 +6,16 @@ namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Menu\MenuTreeParameters;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
+use Drupal\bb_core\Access\BbWorkspaceReadScope;
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Navigation\AccountWorkspaceContext;
 use Drupal\bb_core\Plugin\Menu\AmbientScopedMenuLinkInterface;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\Plugin\UiPatterns\Source\MenuSource;
 use Drupal\ui_patterns\SourcePluginBase;
@@ -30,7 +34,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   `full_page`, `at_end` come from link options);
  * - a link with the option `bb_children: teams` gets the ambient
  *   workspace's teams as children and the team create action, both resolved
- *   per request. Teams are not menu links.
+ *   per request. Teams are not menu links;
+ * - a link with the option `bb_children: favorites` gets the account's
+ *   favorite projects of the ambient workspace, and is skipped without any.
  *
  * ponytail: the ambient access step only runs here. Another renderer of these
  * menus (e.g. `system_menu_block`) would show headings and `<nolink>` rows.
@@ -54,6 +60,16 @@ final class BbMenuSource extends MenuSource {
   private SourcePluginManager $sourceManager;
 
   /**
+   * Finds the account's favorites.
+   */
+  private Profiles $profiles;
+
+  /**
+   * The account whose favorites are listed.
+   */
+  private AccountInterface $currentUser;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
@@ -61,6 +77,8 @@ final class BbMenuSource extends MenuSource {
     assert($plugin instanceof self);
     $plugin->workspaceContext = $container->get(AccountWorkspaceContext::class);
     $plugin->sourceManager = $container->get('plugin.manager.ui_patterns_source');
+    $plugin->profiles = $container->get(Profiles::class);
+    $plugin->currentUser = $container->get('current_user');
     return $plugin;
   }
 
@@ -105,7 +123,7 @@ final class BbMenuSource extends MenuSource {
       ->merge(CacheableMetadata::createFromRenderArray($action))
       // Team rows come from an access-checked query, and link access depends
       // on permissions and memberships.
-      ->addCacheTags(['bb_team_list', 'og_membership_list'])
+      ->addCacheTags(['bb_team_list', 'og_membership_list', 'bb_profile_list', 'bb_project_list'])
       ->addCacheContexts(['user', 'user.permissions', 'route']);
     $this->workspaceContext->resolve($cache);
     $cache->applyTo($element);
@@ -178,6 +196,12 @@ final class BbMenuSource extends MenuSource {
           continue;
         }
       }
+      if (($options['bb_children'] ?? NULL) === 'favorites') {
+        $entry['below'] = $this->favoriteItems();
+        if ($entry['below'] === []) {
+          continue;
+        }
+      }
       // A parent of the current entry is in the trail, so its panel opens.
       $entry['in_active_trail'] = in_array(TRUE, array_column([$entry, ...$entry['below']], 'in_active_trail'), TRUE);
       $result[] = $entry;
@@ -235,6 +259,50 @@ final class BbMenuSource extends MenuSource {
             'below' => [],
           ],
         ],
+      ];
+    }
+    return $items;
+  }
+
+  /**
+   * One item per viewable favorite project of the ambient workspace, by label.
+   *
+   * @return array<int, array<string, mixed>>
+   *   Link items in the `links` vocabulary.
+   */
+  private function favoriteItems(): array {
+    $workspace = $this->workspaceContext->resolve(new CacheableMetadata());
+    if (!$workspace instanceof BbWorkspaceInterface) {
+      return [];
+    }
+    $ids = $this->profiles->forAccount((int) $this->currentUser->id(), (int) $workspace->id())->favoriteProjectIds();
+    if ($ids === []) {
+      return [];
+    }
+    $current = $this->routeMatch->getParameter('bb_project');
+    $current_id = $current instanceof BbProjectInterface ? (int) $current->id() : NULL;
+    $storage = $this->entityTypeManager->getStorage('bb_project');
+    // Deleted, foreign and no longer viewable projects drop out here.
+    $ids = $storage->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('id', $ids, 'IN')
+      ->condition(BbWorkspaceReadScope::PROJECT_WORKSPACE_CONDITION, $workspace->id())
+      ->sort('name')
+      ->execute();
+    $items = [];
+    foreach ($storage->loadMultiple($ids) as $project) {
+      if (!$project instanceof BbProjectInterface || !$project->access('view')) {
+        continue;
+      }
+      $items[] = [
+        'title' => (string) $project->label(),
+        'url' => $project->toUrl()->toString(),
+        'in_active_trail' => (int) $project->id() === $current_id,
+        'mark' => [
+          'initials' => self::markInitials((string) $project->label()),
+          'color' => self::markColor((int) $project->id()),
+        ],
+        'below' => [],
       ];
     }
     return $items;
