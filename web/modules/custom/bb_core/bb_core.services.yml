@@ -548,3 +548,5 @@ services:
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_run_deriver', '@bb_core.conductor_owner_access']
   Drupal\bb_core\Ticket\TicketHealth:
     alias: bb_core.ticket_health
+  Drupal\bb_core\Profile\Profiles:
+    autowire: true
