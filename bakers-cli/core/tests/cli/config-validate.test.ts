@@ -285,6 +285,24 @@ describe('runtime.image: project additions to the run image', () => {
       'unknown_key runtime.image.tag',
     ]);
   });
+
+  it('refuses a package with whitespace or a leading dash', () => {
+    expect(
+      codes(
+        validateConfig('project', {
+          project: { name: 'demo' },
+          runtime: {
+            image: {
+              packages: { apt: ['jq\nUSER root'], npm: ['--prefix=/x'] },
+            },
+          },
+        }),
+      ),
+    ).toEqual([
+      'invalid_value runtime.image.packages.apt[0]',
+      'invalid_value runtime.image.packages.npm[0]',
+    ]);
+  });
 });
 
 describe('runtime.image.dockerfile: a fragment under .bakers/', () => {
@@ -343,11 +361,19 @@ describe('runtime.image.dockerfile: a fragment under .bakers/', () => {
     const { bakersDir } = setup();
     writeFileSync(
       join(bakersDir, 'bad.Dockerfile'),
-      'RUN true\n  user root\n# USER in a comment\nfrom node:22 AS x\n',
+      'RUN true\n  user root\n# USER in a comment\nfrom node:22 AS x\nONBUILD USER root\n',
     );
     expect(messages(bakersDir, 'bad.Dockerfile')).toEqual([
       'bad.Dockerfile:2: USER is not allowed in a run image fragment',
       'bad.Dockerfile:4: FROM is not allowed in a run image fragment',
+      'bad.Dockerfile:5: USER is not allowed in a run image fragment',
+    ]);
+  });
+
+  it('reports an unreadable fragment as a finding', () => {
+    const { root } = setup();
+    expect(messages(join(root, 'no-bakers'), 'run.Dockerfile')).toEqual([
+      'run.Dockerfile could not be read from .bakers/',
     ]);
   });
 });

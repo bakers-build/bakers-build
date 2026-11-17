@@ -16,7 +16,8 @@ runtime: {
 ```
 
 - `packages.apt` installs with `apt-get install --no-install-recommends`, `packages.npm` with
-  `npm install -g`.
+  `npm install -g`; `NODE_PATH` points at the global modules, so a script's `require` finds them.
+  A package is a name with an optional version: no whitespace, no leading dash.
 - `playwright@<v>` or `@playwright/test@<v>` also installs Chromium and its system libraries into
   `PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright`, readable under the host uid. That replaces an
   operator agent image built only to add Playwright.
@@ -26,12 +27,13 @@ runtime: {
 
 The base is `bakers-runtime:<version>-<agent hash>`, the layer
 `bakers-runtime:<version>-<agent hash>-<additions hash>`. The hash covers the base tag, both
-package lists and the fragment's text. A tag that exists is never rebuilt. A changed fragment builds
-on the next run. A changed package list builds after the conductor restarts. `with.image` on the
+package lists, the fragment's text and, with a fragment, every file in `.bakers/`. A tag that exists
+is never rebuilt. A changed fragment, or a changed file it may `COPY`, builds on the next run. A changed package list builds after the conductor restarts. `with.image` on the
 machine skips both builds and the additions.
 
 ## Agent version
 
 Claude's `installCommand` names the version that `claude --version` prints on the conductor's host,
 so the run image carries the host's Claude. Without a readable version it installs `@latest`. Each
-run logs its image tag and agent version, `unpinned` or `operator image`.
+run logs its image tag and agent version, or `operator image`; an `unpinned` version is a warning.
+Only an isolating runtime asks the agent for its install, so host runs never call `claude --version`.

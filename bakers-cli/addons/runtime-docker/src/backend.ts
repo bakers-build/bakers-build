@@ -3,8 +3,11 @@ import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
+  readFileSync,
   realpathSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
@@ -89,6 +92,22 @@ export const realExec: BackendDeps['exec'] = (file, args, opts) => {
   return p;
 };
 
+// Same as runtime.image.packages in the project schema: no whitespace, no option.
+const PACKAGE = /^[A-Za-z0-9@][A-Za-z0-9@/._+:=~-]*$/;
+
+/** The build context's files and contents, so a changed `COPY` source rebuilds the layer. */
+const contextDigest = (dir: string) =>
+  shortHash(
+    JSON.stringify(
+      readdirSync(dir, { recursive: true, encoding: 'utf8' })
+        .sort()
+        .filter((f) =>
+          statSync(join(dir, f), { throwIfNoEntry: false })?.isFile(),
+        )
+        .map((f) => [f, shortHash(readFileSync(join(dir, f), 'latin1'))]),
+    ),
+  );
+
 const PLAYWRIGHT = /^(?:@playwright\/test|playwright)(?:@|$)/;
 
 /** The layer on the shipped image: apt, npm, Playwright's Chromium, then the fragment. */
@@ -104,7 +123,11 @@ export function layerDockerfile(
       `RUN apt-get update && apt-get install -y --no-install-recommends ${apt.map(shellQuote).join(' ')} && rm -rf /var/lib/apt/lists/*`,
     );
   if (npm.length > 0)
-    lines.push(`RUN npm install -g ${npm.map(shellQuote).join(' ')}`);
+    lines.push(
+      `RUN npm install -g ${npm.map(shellQuote).join(' ')}`,
+      // Node does not search the global modules: without it require('playwright') fails.
+      'ENV NODE_PATH=/usr/local/lib/node_modules',
+    );
   // Runs start under the host uid: browsers go where any uid can read them.
   if (npm.some((p) => PLAYWRIGHT.test(p)))
     lines.push(
@@ -176,6 +199,9 @@ export function dockerRuntime(
     const { packages = {}, dockerfile } = additions.image;
     const apt = packages.apt ?? [];
     const npm = packages.npm ?? [];
+    for (const p of [...apt, ...npm])
+      if (!PACKAGE.test(p))
+        throw new Error(`runtime-docker: invalid package ${JSON.stringify(p)}`);
     let fragment = '';
     if (dockerfile) {
       const { text, problems } = runtimeFragment(
@@ -188,7 +214,7 @@ export function dockerRuntime(
     }
     if (apt.length + npm.length === 0 && !fragment.trim()) return undefined;
     return {
-      tag: `${base}-${shortHash(JSON.stringify([base, apt, npm, fragment]))}`,
+      tag: `${base}-${shortHash(JSON.stringify([base, apt, npm, fragment, fragment && contextDigest(additions.bakersDir)]))}`,
       dockerfile: layerDockerfile(base, apt, npm, fragment),
       context: additions.bakersDir,
     };
@@ -319,15 +345,15 @@ export function dockerRuntime(
           ),
         );
       const image = layer?.tag ?? base;
-      deps.logger.info(
-        {
-          image,
-          agentVersion: options.image
-            ? 'operator image'
-            : (/@(\d[\w.+-]*)\s*$/.exec(install)?.[1] ?? 'unpinned'),
-        },
-        'run image',
-      );
+      const agentVersion = options.image
+        ? 'operator image'
+        : (/@(\d[\w.+-]*)\s*$/.exec(install)?.[1] ?? 'unpinned');
+      if (agentVersion === 'unpinned')
+        deps.logger.warn(
+          { image, agentVersion },
+          'run image: the agent version is not pinned to the host',
+        );
+      else deps.logger.info({ image, agentVersion }, 'run image');
       if (allowlist) {
         if (!gateway || !toolsPort)
           throw new Error(

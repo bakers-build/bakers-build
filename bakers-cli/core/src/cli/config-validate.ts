@@ -490,15 +490,21 @@ export function runtimeFragment(
   bakersDir: string,
   dockerfile: string,
 ): { text?: string; problems: string[] } {
-  const root = realpathSync(bakersDir);
-  const path = resolve(root, dockerfile);
-  const inside = (p: string) => p.startsWith(root + sep);
   const outside = { problems: [`${dockerfile} must stay inside .bakers/`] };
-  if (isAbsolute(dockerfile) || !inside(path)) return outside;
-  if (!statSync(path, { throwIfNoEntry: false })?.isFile())
-    return { problems: [`${dockerfile} was not found in .bakers/`] };
-  if (!inside(realpathSync(path))) return outside;
-  const text = readFileSync(path, 'utf8');
+  if (isAbsolute(dockerfile)) return outside;
+  let text: string;
+  try {
+    const root = realpathSync(bakersDir);
+    const path = resolve(root, dockerfile);
+    const inside = (p: string) => p.startsWith(root + sep);
+    if (!inside(path)) return outside;
+    if (!statSync(path, { throwIfNoEntry: false })?.isFile())
+      return { problems: [`${dockerfile} was not found in .bakers/`] };
+    if (!inside(realpathSync(path))) return outside;
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return { problems: [`${dockerfile} could not be read from .bakers/`] };
+  }
   const problems: string[] = [];
   let continued = false;
   text.split('\n').forEach((line, i) => {
@@ -507,7 +513,7 @@ export function runtimeFragment(
     if (trimmed === '' || trimmed.startsWith('#')) return;
     const instruction = continued
       ? null
-      : /^(from|user)(?:\s|$)/i.exec(trimmed);
+      : /^(?:onbuild\s+)?(from|user)(?:\s|$)/i.exec(trimmed);
     if (instruction)
       problems.push(
         `${dockerfile}:${i + 1}: ${(instruction[1] as string).toUpperCase()} is not allowed in a run image fragment`,

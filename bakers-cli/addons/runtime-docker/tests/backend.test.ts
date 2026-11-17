@@ -524,16 +524,22 @@ describe('runtime-docker: project additions to the run image', () => {
   const base = `bakers-runtime:1.2.3-${shortHash('install-agent')}`;
   let bakersDir: string;
   let infos: object[];
+  let warns: object[];
   beforeEach(() => {
     bakersDir = join(root, 'project/.bakers');
     mkdirSync(bakersDir, { recursive: true });
     infos = [];
+    warns = [];
   });
   /** Images that exist start out as `present`; every build adds its tag. */
   const fakeDocker = (present: string[] = []) => {
     const images = new Set(present);
     return deps({
-      logger: { ...logger, info: (o: object) => infos.push(o) },
+      logger: {
+        ...logger,
+        info: (o: object) => infos.push(o),
+        warn: (o: object) => warns.push(o),
+      },
       exec: async (file, args, opts) => {
         calls.push([file, args, ...(opts?.input ? [opts.input] : [])]);
         if (args[0] === 'image' && !images.has(args[2] as string))
@@ -574,13 +580,14 @@ describe('runtime-docker: project additions to the run image', () => {
         `FROM ${base}`,
         "RUN apt-get update && apt-get install -y --no-install-recommends 'jq' && rm -rf /var/lib/apt/lists/*",
         "RUN npm install -g 'playwright@1.65.0'",
+        'ENV NODE_PATH=/usr/local/lib/node_modules',
         'ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright',
         'RUN playwright install --with-deps chromium && chmod -R a+rX /opt/ms-playwright',
         'RUN echo extra',
         '',
       ].join('\n'),
     );
-    expect(infos).toContainEqual({ image: tag, agentVersion: 'unpinned' });
+    expect(warns).toContainEqual({ image: tag, agentVersion: 'unpinned' });
     expect((await rt.wrap(launch())).command).toContain(`'${tag}'`);
   });
 
@@ -598,6 +605,34 @@ describe('runtime-docker: project additions to the run image', () => {
     await rt.wrap(launch());
     expect(builds()).toHaveLength(3);
     expect(builds()[2]?.[2]).toContain('RUN echo two');
+  });
+
+  it('rebuilds the layer after a file the fragment copies changed', async () => {
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'COPY tool.sh /opt/\n');
+    writeFileSync(join(bakersDir, 'tool.sh'), 'echo one\n');
+    const rt = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+    );
+    await rt.wrap(launch());
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(2);
+    writeFileSync(join(bakersDir, 'tool.sh'), 'echo two\n');
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(3);
+  });
+
+  it('refuses a package that is not a plain name before building anything', async () => {
+    await expect(
+      dockerRuntime(
+        {},
+        {
+          ...fakeDocker(),
+          ...additions({ packages: { apt: ['jq\nUSER root'] } }),
+        },
+      ).wrap(launch()),
+    ).rejects.toThrow('runtime-docker: invalid package');
+    expect(builds()).toEqual([]);
   });
 
   it('reuses a layer another conductor built', async () => {
@@ -620,6 +655,7 @@ describe('runtime-docker: project additions to the run image', () => {
     await dockerRuntime({}, { ...fakeDocker(), ...additions({}) }).wrap(
       launch({ installCommand: 'npm install -g agent@2.1.3' }),
     );
+    expect(warns).toEqual([]);
     expect(infos).toContainEqual({
       image: `bakers-runtime:1.2.3-${shortHash('npm install -g agent@2.1.3')}`,
       agentVersion: '2.1.3',

@@ -160,18 +160,24 @@ function recordingRuntime(
 const agent = (
   seen: { tools?: string; prompt?: string },
   extension: Record<string, unknown> = {},
-): BbAgent => ({
-  id: 'claude',
-  prepareRun: () => ({ env: {}, readPaths: [], writePaths: [] }),
-  ...extension,
-  launchCommand: (prompt, _run, _ws, tools) => {
-    seen.prompt = prompt;
-    if (tools) seen.tools = tools.url;
-    return 'claude --go';
-  },
-  getRunLog: async () => '',
-  parseFootprint: () => emptyAgentFootprint(),
-});
+): BbAgent => {
+  const base: BbAgent = {
+    id: 'claude',
+    prepareRun: () => ({ env: {}, readPaths: [], writePaths: [] }),
+    launchCommand: (prompt, _run, _ws, tools) => {
+      seen.prompt = prompt;
+      if (tools) seen.tools = tools.url;
+      return 'claude --go';
+    },
+    getRunLog: async () => '',
+    parseFootprint: () => emptyAgentFootprint(),
+  };
+  // Descriptors, not a spread: an extension's getter stays a getter.
+  return Object.defineProperties(
+    base,
+    Object.getOwnPropertyDescriptors(extension),
+  );
+};
 
 function setup(
   runtimeOf?: RuntimePlugin | ((order: string[]) => RuntimePlugin),
@@ -638,6 +644,23 @@ describe('secrets file hand-out', () => {
     );
     await s.run();
     expect(rec.wraps[0]?.secrets).toEqual({ DECLARED_KEY: 'shell-declared' });
+  });
+
+  it('never reads the agent install command for a host run', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const runtime: RuntimePlugin = {
+      ...recordingRuntime([], rec),
+      isolates: false,
+    };
+    const s = setup(runtime, false, {
+      prepareRun: undefined,
+      get installCommand(): string {
+        throw new Error('installCommand read');
+      },
+    });
+    await s.run();
+    expect(s.executor.started).toHaveLength(1);
+    expect(rec.wraps[0]).not.toHaveProperty('installCommand');
   });
 
   it('adds a file-only declared secret to a host run env, never an undeclared one', async () => {

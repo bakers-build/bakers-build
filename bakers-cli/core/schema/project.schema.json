@@ -197,6 +197,11 @@
       "minLength": 1,
       "pattern": "\\S"
     },
+    "runtimePackage": {
+      "type": "string",
+      "description": "A package name with an optional version: no whitespace, no leading dash.",
+      "pattern": "^[A-Za-z0-9@][A-Za-z0-9@/._+:=~-]*$"
+    },
     "permissions": {
       "type": "object",
       "description": "Shared run permissions for every agent.",
@@ -311,12 +316,12 @@
               "properties": {
                 "apt": {
                   "type": "array",
-                  "items": { "$ref": "#/$defs/nonempty" },
+                  "items": { "$ref": "#/$defs/runtimePackage" },
                   "description": "Debian packages, installed with apt-get install --no-install-recommends."
                 },
                 "npm": {
                   "type": "array",
-                  "items": { "$ref": "#/$defs/nonempty" },
+                  "items": { "$ref": "#/$defs/runtimePackage" },
                   "description": "npm packages, installed globally; playwright@<v> also installs Chromium."
                 }
               },

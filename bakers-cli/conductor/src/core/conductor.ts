@@ -1829,14 +1829,14 @@ export class Conductor {
     Object.assign(env, plugins.env);
     // Only the names the agent declares; a value exported in the shell wins.
     const secrets = pickSecrets(chosen.agent.secretEnv ?? [], this.secrets);
+    const isolates = this.config.runtime?.isolates === true;
+    // Read only for an isolating runtime: an agent may resolve it by running its host CLI.
+    const installCommand = isolates ? chosen.agent.installCommand : undefined;
     const agentInfo = {
-      ...(chosen.agent.installCommand
-        ? { installCommand: chosen.agent.installCommand }
-        : {}),
+      ...(installCommand ? { installCommand } : {}),
       ...(chosen.agent.modelApi ? { modelApi: chosen.agent.modelApi } : {}),
       secrets,
     };
-    const isolates = this.config.runtime?.isolates === true;
     // Without it the run starts in an empty private home and cannot sign in.
     if (isolates && !chosen.agent.prepareRun)
       throw new Error(
