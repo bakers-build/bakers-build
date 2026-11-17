@@ -179,6 +179,54 @@ it('removes the clone directory and its Git directory', async () => {
   expect(await workspace.remove('feat/gl-9', ws.path)).toBe('already_absent');
 });
 
+it('turns a run clone into a linked worktree when the next run does not isolate', async () => {
+  const workspace = new GitWorkspace({ root });
+  const cloned = await workspace.ensure('GL-9', 'feat/gl-9', undefined, {
+    clone: true,
+  });
+  const gitDir = cloned.clone?.gitDir as string;
+  const inClone = (...args: string[]) =>
+    git(
+      cloned.path,
+      `--git-dir=${gitDir}`,
+      `--work-tree=${cloned.path}`,
+      ...args,
+    );
+  writeFileSync(join(cloned.path, 'work'), 'done');
+  inClone('add', 'work');
+  inClone(...ident, 'commit', '-qm', 'run work');
+  const tip = inClone('rev-parse', 'HEAD');
+
+  const linked = await workspace.ensure('GL-9', 'feat/gl-9', undefined, {
+    clone: false,
+  });
+
+  expect(linked.path).toBe(cloned.path);
+  expect(linked.clone).toBeUndefined();
+  expect(loadRunClone(linked.path)).toBeUndefined();
+  expect(existsSync(gitDir)).toBe(false);
+  expect(git(root, 'rev-parse', 'feat/gl-9')).toBe(tip);
+  expect(git(linked.path, 'rev-parse', 'HEAD')).toBe(tip);
+  expect(git(linked.path, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe(
+    'feat/gl-9',
+  );
+  expect(readFileSync(join(linked.path, 'work'), 'utf8')).toBe('done');
+});
+
+it('refuses to turn a run clone with uncommitted work into a worktree', async () => {
+  const workspace = new GitWorkspace({ root });
+  const cloned = await workspace.ensure('GL-9', 'feat/gl-9', undefined, {
+    clone: true,
+  });
+  writeFileSync(join(cloned.path, 'pending'), 'unsaved');
+
+  await expect(
+    workspace.ensure('GL-9', 'feat/gl-9', undefined, { clone: false }),
+  ).rejects.toThrow(/uncommitted work/);
+  expect(readFileSync(join(cloned.path, 'pending'), 'utf8')).toBe('unsaved');
+  expect(loadRunClone(cloned.path)).toBeDefined();
+});
+
 it('clones only under an isolating runtime', async () => {
   const config = (isolates: boolean) =>
     ({

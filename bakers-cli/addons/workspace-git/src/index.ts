@@ -23,6 +23,7 @@ import { loadInstructions } from './instructions.js';
 import { removeGitWorktree, ticketWorktrees } from './remove-git-worktree.js';
 import {
   ensureRunClone,
+  leaveRunClone,
   removeRunCloneWorkspace,
   targetOf,
 } from './run-clone.js';
@@ -40,6 +41,7 @@ export {
 } from './remove-git-worktree.js';
 export {
   ensureRunClone,
+  leaveRunClone,
   removeRunCloneWorkspace,
   targetOf,
 } from './run-clone.js';
@@ -163,6 +165,7 @@ export class GitWorkspace implements BbWorkspace {
         ...extra,
       };
     }
+    leaveRunClone(path);
     // Reuse the branch's worktree wherever it lives: old `<root>-worktrees/`
     // checkouts keep working and are never moved.
     const listed = await this.runGit(
