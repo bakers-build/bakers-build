@@ -65,7 +65,7 @@ A label whose text before the first `:` is in `bb_core.settings:protected_label_
 
 - The check runs on every save (form, `bakers_ticket_update`, templates), as the current user. A run's session token acts as the human's account but holds `write bakers via session scope`, and any actor holding it is refused, so a run cannot lift its own sandbox. Administrator roles hold that permission too and are refused as well: use a non-admin lead account.
 - A ticket template is checked against its own conductor. A template run is checked as the trigger's owner, so a trigger fails when its owner lacks the grant. `bakers_ticket_create` takes no labels.
-- Changing a ticket's conductor drops its protected labels, because the grant was for the old conductor. A lead re-adds the label in a second save.
+- Changing a ticket's conductor drops its protected labels, because the grant was for the old conductor. Only protected labels already on the stored ticket are dropped; a protected label added in the same save is kept if the actor may set it for the new conductor. To carry a dropped label over, re-add it in a second save.
 - Reassigning tickets when a conductor is deactivated drops their `runtime:*` labels the same way.
 
 ## Origin labels

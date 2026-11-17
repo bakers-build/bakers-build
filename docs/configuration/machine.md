@@ -31,7 +31,7 @@ export default {
 | `schema_version` | `1`. The `// @bakers-schema-version 1` header and this field must agree. |
 | `machine_id` | Required. This host's key on the server, so each machine has its own. `bakers init` generates a UUID for a new machine; an existing machine keeps the id it already has. A UUID in any case loads lowercased. Conductor ids are derived from it, so two users cannot share a `machine_id`: the second one's `bakers conductor start` is refused; remove `machine_id` and run `bakers init` for a fresh UUID. |
 | `label` | Required display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. It names the machine on the server when the machine first registers, and a machine still named after its `machine_id` on its next start; rename it there afterwards. |
-| `addons` | This host's addons: a package name or `{ use, alias?, with? }`, the same shape as the project's `addons`. Agent harnesses go here and are the source of agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. `with` is checked against the addon's options schema. See [Configure addons](/addons/configure). |
+| `addons` | This host's addons: a package name or `{ use, alias?, with? }`, the same shape as the project's `addons`. Agent harnesses go here as agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. `with` is checked against the addon's options schema. See [Configure addons](/addons/configure). |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
 | `agents` | Object, described [below](#agents). An array is invalid. |
 | `agents.catalog` | Extra aliases `{ harness, alias?, with? }` built from installed harnesses. |
@@ -41,7 +41,7 @@ export default {
 | `agents.routes` | Named routes from workflow states (or `'*'`) to aliases. |
 | `agents.routes.default` | The automatic route, applied without a route label. `agents.routes.default['*']` is the default agent; without it the first enabled alias is. |
 | `agents.select` | Optional function `(candidates, ticket) => alias`; see [Slot catalogs](/configuration/slot-catalogs). |
-| `runtime` | Optional: one entry `{ use, with? }` or a [catalog](/configuration/slot-catalogs). |
+| `runtime` | Optional; the keys below only. Without a catalog, `addons[]` is the preset. |
 | `runtime.catalog`, `runtime.catalog[].alias`, `runtime.catalog[].use`, `runtime.catalog[].with` | Entries `{ alias, use, with? }`. |
 | `runtime.routes` | State (or `'*'`) to alias routes. |
 | `runtime.select` | Optional function `(candidates, ticket) => alias`. |
