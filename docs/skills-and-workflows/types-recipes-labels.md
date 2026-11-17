@@ -63,10 +63,11 @@ A label whose text before the first `:` is in `bb_core.settings:protected_label_
 
 "Own" means you own the ticket's assigned conductor, not the ticket. Members, guests and non-members have neither. Rules:
 
-- The check runs on every save (form, `bakers_ticket_update`, templates), as the current user. A run's session token acts as the human's account but holds `write bakers via session scope`, and any actor holding it is refused, so a run cannot lift its own sandbox. Administrator roles hold that permission too and are refused as well: use a non-admin lead account.
+- The check runs on every save (form, JSON:API, `bakers_ticket_update`, templates), as the current user. A run's session token acts as the human's account but holds `write bakers via session scope`, and any actor holding it is refused, so a run cannot lift its own sandbox. Administrator roles hold that permission too and are refused as well: use a non-admin lead account.
 - A ticket template is checked against its own conductor. A template run is checked as the trigger's owner, so a trigger fails when its owner lacks the grant. `bakers_ticket_create` takes no labels.
 - Changing a ticket's conductor drops its protected labels, because the grant was for the old conductor. Only protected labels already on the stored ticket are dropped; a protected label added in the same save is kept if the actor may set it for the new conductor. To carry a dropped label over, re-add it in a second save.
 - Reassigning tickets when a conductor is deactivated drops their `runtime:*` labels the same way.
+- Renaming a label term to a protected name, or from one protected name to another, needs the `any` permission, because every ticket carrying the term gets the new name. The same session-scope rule applies. Creating a new term with a protected name stays open; adding it to a ticket is checked.
 
 ## Origin labels
 

@@ -7,6 +7,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\og\Entity\OgRole;
 use Drupal\Tests\bb_core\Kernel\Tool\BakersToolTestBase;
 use Drupal\user\UserInterface;
@@ -161,6 +162,42 @@ final class ProtectedLabelTest extends BakersToolTestBase {
   }
 
   /**
+   * Renaming a label into a protected namespace needs `any` in the workspace.
+   */
+  public function testRenameIntoProtectedNamespace(): void {
+    $plain = $this->term('label', 'foo');
+    $sandbox = $this->term('label', 'runtime:sandbox');
+    // The default actor is a contributor: `own` does not cover a rename.
+    self::assertNotSame([], $this->nameViolations($plain->set('name', 'runtime:host')));
+    self::assertNotSame([], $this->nameViolations($sandbox->set('name', 'runtime:host')));
+    $this->actAs($this->member('session', ['lead'], ['write bakers via session scope']));
+    self::assertNotSame([], $this->nameViolations($plain->set('name', 'runtime:host')));
+    $this->actAs($this->member('admin', ['member'], ['administer bakers']));
+    self::assertNotSame([], $this->nameViolations($plain->set('name', 'runtime:host')));
+    $this->actAs($this->member('lead', ['lead']));
+    self::assertSame([], $this->nameViolations($plain->set('name', 'runtime:host')));
+    self::assertSame([], $this->nameViolations($sandbox->set('name', 'runtime:host')));
+  }
+
+  /**
+   * Unprotected renames, unchanged protected names and new terms pass.
+   */
+  public function testUnprotectedRenamesAndCreationPass(): void {
+    $plain = $this->term('label', 'foo');
+    self::assertSame([], $this->nameViolations($plain->set('name', 'bar')));
+    self::assertSame([], $this->nameViolations($this->system->set('description', 'Host')));
+    self::assertSame([], $this->nameViolations($this->system->set('name', 'nightly')));
+    // Attaching a new protected term to a ticket is checked there.
+    $created = $this->container->get('entity_type.manager')->getStorage('bb_term')
+      ->create(['vid' => 'label', 'name' => 'runtime:docker', 'workspace_id' => $this->workspace->id()]);
+    self::assertInstanceOf(ContentEntityInterface::class, $created);
+    self::assertSame([], $this->nameViolations($created));
+    // A system save (uid 0) passes.
+    $this->container->get('current_user')->setAccount(new AnonymousUserSession());
+    self::assertSame([], $this->nameViolations($plain->set('name', 'runtime:host')));
+  }
+
+  /**
    * The post-update grants lead `any` and contributor `own` on existing roles.
    */
   public function testPostUpdateGrantsRanks(): void {
@@ -249,6 +286,22 @@ final class ProtectedLabelTest extends BakersToolTestBase {
     $messages = [];
     foreach ($ticket->validate() as $violation) {
       if ($violation->getPropertyPath() === 'labels') {
+        $messages[] = (string) $violation->getMessage();
+      }
+    }
+    return $messages;
+  }
+
+  /**
+   * The messages of violations on a term's name field.
+   *
+   * @return array<string>
+   *   The messages.
+   */
+  private function nameViolations(ContentEntityInterface $term): array {
+    $messages = [];
+    foreach ($term->validate() as $violation) {
+      if ($violation->getPropertyPath() === 'name') {
         $messages[] = (string) $violation->getMessage();
       }
     }
