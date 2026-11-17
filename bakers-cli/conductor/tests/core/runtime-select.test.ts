@@ -54,14 +54,32 @@ afterEach(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-/** Every ticket gets its own run clone, as under an isolating default. */
+/** A run clone when the call asks for one, else a plain directory. */
 class Workspace implements BbWorkspace {
-  async ensure(identifier: string, branch: string): Promise<EnsuredWorkspace> {
+  readonly clones: Record<string, boolean | undefined> = {};
+  async ensure(
+    identifier: string,
+    branch: string,
+    _baseRef?: string,
+    options?: { clone?: boolean },
+  ): Promise<EnsuredWorkspace> {
+    this.clones[identifier] = options?.clone;
     const parent = join(root, 'parent');
-    git(parent, 'branch', '-f', branch);
     const workspace = join(root, identifier);
+    if (!options?.clone) {
+      mkdirSync(workspace, { recursive: true });
+      return { path: workspace, instructions: null, created: false };
+    }
+    git(parent, 'branch', '-f', branch);
     const clone = createRunClone({ parent, workspace, branch });
     return { path: workspace, instructions: null, created: false, clone };
+  }
+}
+
+/** A workspace whose ensure fails, after the runtime was chosen. */
+class BrokenWorkspace extends Workspace {
+  override async ensure(): Promise<EnsuredWorkspace> {
+    throw new Error('ensure failed');
   }
 }
 
@@ -118,6 +136,11 @@ function setup(
   tickets: Seed[],
   allowUnsandboxed?: boolean,
   agentSelect?: SlotCatalog<unknown>['select'],
+  opts: {
+    workspace?: Workspace;
+    agent?: BbAgent;
+    isolation?: Map<string, boolean>;
+  } = {},
 ) {
   const built: string[] = [];
   const remote = new FakeBbRemote({
@@ -165,6 +188,7 @@ function setup(
     config_path: `${root}/conductor.config.js`,
     marketplaces: [],
     runtime: box,
+    ...(opts.isolation ? { runtime_isolation: opts.isolation } : {}),
     ...(allowUnsandboxed !== undefined
       ? { allow_unsandboxed: allowUnsandboxed }
       : {}),
@@ -190,14 +214,16 @@ function setup(
       },
     },
   } as unknown as ConductorFileConfig;
+  const workspace = opts.workspace ?? new Workspace();
+  const a = opts.agent ?? agent;
   const conductor = new TestConductor(
     config,
     remote,
     executor,
-    new Workspace(),
+    workspace,
     [
-      { id: 'claude', alias: 'opus', permissions: 'sandbox', agent },
-      { id: 'claude', alias: 'fast', permissions: 'sandbox', agent },
+      { id: 'claude', alias: 'opus', permissions: 'sandbox', agent: a },
+      { id: 'claude', alias: 'fast', permissions: 'sandbox', agent: a },
     ],
     log,
     root,
@@ -211,7 +237,18 @@ function setup(
       ?.obj;
   const envOf = (identifier: string) =>
     executor.started.find((s) => s.ticket.identifier === identifier)?.env;
-  return { run, remote, logs, built, dispatched, envOf };
+  const runRuntimes = () =>
+    (conductor as unknown as { runRuntimes: Map<string, string> }).runRuntimes;
+  return {
+    run,
+    remote,
+    logs,
+    built,
+    dispatched,
+    envOf,
+    workspace,
+    runRuntimes,
+  };
 }
 
 describe('runtime chosen per ticket', () => {
@@ -283,7 +320,9 @@ describe('runtime chosen per ticket', () => {
     const warning = s.logs.find(
       (l) => typeof l.msg === 'string' && l.msg.includes("'system'"),
     );
-    expect(warning?.msg).toContain('BB-1');
+    expect(warning?.msg).toBe(
+      "BB-1: runtime label 'system' chooses runtime 'system', which does not isolate runs; ignored (set allow_unsandboxed to allow it)",
+    );
     expect(warning?.obj.ticket).toBe('BB-1');
 
     const allowed = setup(
@@ -340,5 +379,72 @@ describe('runtime chosen per ticket', () => {
     const plain = setup({ preset: 'box' }, [{ identifier: 'BB-1' }]);
     await plain.run();
     expect(plain.dispatched('BB-1')).toMatchObject({ alias: 'opus' });
+  });
+
+  it('clones the workspace per run when the run runtime isolates', async () => {
+    const hostDefault = setup({ default: 'system', fallback: 'system' }, [
+      { identifier: 'BB-1', labels: ['runtime:box'] },
+      { identifier: 'BB-2' },
+    ]);
+    await hostDefault.run();
+    expect(hostDefault.dispatched('BB-1')).toMatchObject({
+      runtimeAlias: 'box',
+    });
+    expect(hostDefault.workspace.clones).toEqual({
+      'BB-1': true,
+      'BB-2': false,
+    });
+
+    const boxDefault = setup(
+      { preset: 'box' },
+      [{ identifier: 'BB-1', labels: ['runtime:system'] }],
+      true,
+    );
+    await boxDefault.run();
+    expect(boxDefault.dispatched('BB-1')).toMatchObject({
+      runtimeAlias: 'system',
+    });
+    expect(boxDefault.workspace.clones).toEqual({ 'BB-1': false });
+  });
+
+  it('drops the run runtime choice when dispatch fails before the launch', async () => {
+    const s = setup(
+      { preset: 'box' },
+      [{ identifier: 'BB-1' }],
+      undefined,
+      undefined,
+      {
+        workspace: new BrokenWorkspace(),
+      },
+    );
+    await s.run();
+    expect(s.remote.calls.markFailed).toEqual([
+      expect.objectContaining({
+        errorLog: expect.stringContaining('ensure failed'),
+      }),
+    ]);
+    expect(s.runRuntimes().size).toBe(0);
+  });
+
+  it('drops the worktree isolation entry when the dispatch fails', async () => {
+    const isolation = new Map<string, boolean>();
+    const { prepareRun: _, ...noPrepare } = agent;
+    const s = setup(
+      { preset: 'box' },
+      [{ identifier: 'BB-1' }],
+      undefined,
+      undefined,
+      {
+        agent: noPrepare,
+        isolation,
+      },
+    );
+    await s.run();
+    expect(s.remote.calls.markFailed).toEqual([
+      expect.objectContaining({
+        errorLog: expect.stringContaining('no prepareRun'),
+      }),
+    ]);
+    expect(isolation.size).toBe(0);
   });
 });

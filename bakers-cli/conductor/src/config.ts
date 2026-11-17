@@ -414,6 +414,10 @@ async function loadRuntimeCatalog(
   const entries: Record<string, RuntimePlugin> = { system: hostRuntime };
   if (preset) entries[preset.id] = preset;
   for (const [index, entry] of (machine?.catalog ?? []).entries()) {
+    if (entry.alias === 'system')
+      throw new Error(
+        "runtime catalog: alias 'system' is reserved for the built-in host runtime",
+      );
     const found = narrowConductorContributions(
       await discoverAddons(
         [
@@ -434,12 +438,13 @@ async function loadRuntimeCatalog(
     entries[entry.alias] = found;
   }
   const routes = { ...(machine?.routes ?? {}) };
-  for (const [name, route] of Object.entries(routes))
-    for (const alias of Object.values(route))
-      if (!Object.hasOwn(entries, alias))
-        throw new Error(
-          `runtime.routes.${name} names unknown alias '${alias}'`,
-        );
+  const checkRoutes = (problem: (alias: string) => string) => {
+    for (const [name, route] of Object.entries(routes))
+      for (const alias of Object.values(route))
+        if (!Object.hasOwn(entries, alias))
+          throw new Error(`runtime.routes.${name} names ${problem(alias)}`);
+  };
+  checkRoutes((alias) => `unknown alias '${alias}'`);
   if (project?.enabled) {
     const unknown = project.enabled.find((a) => !Object.hasOwn(entries, a));
     if (unknown !== undefined)
@@ -448,6 +453,10 @@ async function loadRuntimeCatalog(
       if (!project.enabled.includes(alias)) delete entries[alias];
     if (Object.keys(entries).length === 0)
       throw new Error('runtime.enabled leaves no runtime');
+    checkRoutes(
+      (alias) =>
+        `alias '${alias}', which the project's runtime.enabled removes`,
+    );
   }
   const has = (alias: string | undefined): alias is string =>
     alias !== undefined && Object.hasOwn(entries, alias);

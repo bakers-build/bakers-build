@@ -112,6 +112,7 @@ export class GitWorkspace implements BbWorkspace {
     _identifier: string,
     branch?: string,
     baseRef?: string,
+    options?: { clone?: boolean },
   ): Promise<EnsuredWorkspace> {
     if (!branch) throw new Error('git workspace requires a branch name');
     // A ref git accepts has no `..`, leading `/`, `-` or `.`, so the path
@@ -133,7 +134,7 @@ export class GitWorkspace implements BbWorkspace {
       ? undefined
       : await runBranchGit(this.root, this.logger);
     const extra = env ? { env } : {};
-    if (this.clone) {
+    if (options?.clone ?? this.clone) {
       const created = !existsSync(path);
       await this.ensureBranch(branch);
       const target = targetOf(baseRef);

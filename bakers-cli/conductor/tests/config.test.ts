@@ -2334,6 +2334,33 @@ describe('slot catalogs for runtime, executor and workspace', () => {
     ).rejects.toThrow(/runtime\.default names unavailable alias 'system'/);
   });
 
+  it('refuses a machine route naming an alias the project disables', async () => {
+    const dir = writeMachine(
+      `runtime: { catalog: [{ alias: 'box', use: './box.js' }], routes: { default: { review: 'box' } } },`,
+    );
+    writeFileSync(join(dir, 'box.js'), runtimeModule('box', true));
+    await expect(load(`runtime: { enabled: ['preset'] },`)).rejects.toThrow(
+      "runtime.routes.default names alias 'box', which the project's runtime.enabled removes",
+    );
+  });
+
+  it('refuses an unknown alias in a machine route', async () => {
+    writeMachine(`runtime: { routes: { default: { '*': 'nope' } } },`);
+    await expect(load()).rejects.toThrow(
+      "runtime.routes.default names unknown alias 'nope'",
+    );
+  });
+
+  it('refuses a machine catalog entry with the reserved alias system', async () => {
+    const dir = writeMachine(
+      `runtime: { catalog: [{ alias: 'system', use: './box.js' }] },`,
+    );
+    writeFileSync(join(dir, 'box.js'), runtimeModule('box', true));
+    await expect(load()).rejects.toThrow(
+      "runtime catalog: alias 'system' is reserved for the built-in host runtime",
+    );
+  });
+
   it('refuses a project runtime select', async () => {
     writeMachine('');
     await expect(load(`runtime: { select: (c) => c[0] },`)).rejects.toThrow(

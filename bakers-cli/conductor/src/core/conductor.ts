@@ -817,6 +817,7 @@ export class Conductor {
       this.revokeRunTools(r.runUuid);
       await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
       this.runRuntimes.delete(r.runUuid);
+      if (r.worktreePath) this.config.runtime_isolation?.delete(r.worktreePath);
       this.signalUi(r.worktreePath);
       this.logger.info(
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
@@ -1597,6 +1598,9 @@ export class Conductor {
         { run: run.runUuid, err: String(err) },
         'dispatch failed',
       );
+      // A failed dispatch keeps no per-run runtime state behind.
+      this.runRuntimes.delete(run.runUuid);
+      if (at.worktree) this.config.runtime_isolation?.delete(at.worktree);
       try {
         await this.remote.markFailed(run.runUuid, String(err));
         this.signalUi(at.worktree);
@@ -1695,6 +1699,8 @@ export class Conductor {
       labelAllowed: (alias) =>
         this.runtimes.entries[alias]?.isolates === true ||
         this.config.allow_unsandboxed === true,
+      denied:
+        'does not isolate runs; ignored (set allow_unsandboxed to allow it)',
       warn: (message) => this.logger.warn({ ticket: t.identifier }, message),
     });
     this.runRuntimes.set(run.runUuid, runtime.alias);
@@ -1713,7 +1719,9 @@ export class Conductor {
       chosen.agent,
     );
     const ws = await this.serialGit(() =>
-      this.workspace.ensure(t.identifier, t.branchName, baseRef),
+      this.workspace.ensure(t.identifier, t.branchName, baseRef, {
+        clone: this.runtimePlugin(run.runUuid).isolates === true,
+      }),
     );
     at.worktree = ws.path;
     // The transfer checks the project's list; the record is the host's alone.

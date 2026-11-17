@@ -43,11 +43,16 @@ export interface BbWorkspace {
    * run (fresh worktree, or no recorded success for this one — BB-663).
    * Lifecycle-hook invocation is NOT a workspace responsibility — the
    * conductor runs all hooks.
+   *
+   * `options.clone`, when given, overrides the build-time clone mode for this
+   * call: the conductor passes whether the run's runtime isolates. A workspace
+   * without run clones may ignore it.
    */
   ensure(
     identifier: string,
     branch?: string,
     baseRef?: string,
+    options?: { clone?: boolean },
   ): Promise<EnsuredWorkspace>;
 
   /**

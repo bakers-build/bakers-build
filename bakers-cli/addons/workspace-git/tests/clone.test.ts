@@ -88,6 +88,25 @@ it('creates a run clone instead of a linked worktree and refreshes it on every e
   expect(second.clone?.gitDir).toBe(first.clone?.gitDir);
 });
 
+it('lets the call override the clone mode set at build time', async () => {
+  const cloned = await new GitWorkspace({ root }).ensure(
+    'GL-1',
+    'feat/gl-1',
+    undefined,
+    { clone: true },
+  );
+  expect(cloned.clone?.branch).toBe('feat/gl-1');
+
+  const linked = await new GitWorkspace({ root, clone: true }).ensure(
+    'GL-2',
+    'feat/gl-2',
+    undefined,
+    { clone: false },
+  );
+  expect(linked.clone).toBeUndefined();
+  expect(git(root, 'worktree', 'list', '--porcelain')).toContain('feat/gl-2');
+});
+
 it('keeps the ticket branch where it is when it already exists', async () => {
   git(root, 'checkout', '-qb', 'feat/gl-9');
   writeFileSync(join(root, 'work'), 'done');

@@ -34,6 +34,8 @@ export function selectSlot<P>(
   t: Ticket,
   o: {
     labelAllowed?: (alias: string) => boolean;
+    /** Why a refused label's entry is refused, ending the warning after "which". */
+    denied?: string;
     warn?: (m: string) => void;
   } = {},
 ): SlotChoice {
@@ -96,7 +98,9 @@ export function selectSlot<P>(
     }
     if (o.labelAllowed && !o.labelAllowed(alias)) {
       warn(
-        `${t.identifier}: ${c.slot} label '${name}' is not allowed; ignored`,
+        o.denied
+          ? `${t.identifier}: ${c.slot} label '${name}' chooses ${c.slot} '${alias}', which ${o.denied}`
+          : `${t.identifier}: ${c.slot} label '${name}' is not allowed; ignored`,
       );
       continue;
     }
