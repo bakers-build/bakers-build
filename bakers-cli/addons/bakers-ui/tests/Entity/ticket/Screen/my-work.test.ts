@@ -218,5 +218,7 @@ it('a click selects an unselected row, opens the selected one and rejects out-of
   expect(screen.present(context).selectedIndex).toBe(1);
 
   expect(screen.activate(1, context)).toBe(true);
-  expect(navigate).toHaveBeenCalledWith('ticket.detail', { ticketId: 'ticket-2' });
+  expect(navigate).toHaveBeenCalledWith('ticket.detail', {
+    ticketId: 'ticket-2',
+  });
 });
