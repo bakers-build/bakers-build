@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_track\Kernel;
 
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\bb_track\Form\WorklogFormLayout;
 use Drupal\bb_track\Form\WorkScheduleForm;
 use Drupal\bb_track\WorkTimeRules;
@@ -159,7 +160,7 @@ final class WorkScheduleTest extends WorkTimeTestBase {
   /**
    * Submits the schedule form for the current user.
    */
-  private function submitSchedule(array $days, string $cap): FormState {
+  private function submitSchedule(array $days, string $cap): FormStateInterface {
     $form_state = new FormState();
     $form_state->setValues(['days' => $days, 'cap' => $cap, 'op' => 'Save schedule']);
     $this->container->get('form_builder')->submitForm(WorkScheduleForm::class, $form_state);
