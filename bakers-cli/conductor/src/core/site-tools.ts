@@ -16,10 +16,10 @@ export const SITE_TOOLS: readonly string[] = [
   'bakers_ticket_classify',
   'bakers_ticket_transition',
   'bakers_run_cancel',
-  'bakers_comment_publish',
+  'bakers_comment_create',
   'bakers_metric_write',
   'bakers_ticket_list',
-  'bakers_ticket_runs_list',
+  'bakers_run_list',
   'bakers_label_list',
   'bakers_project_read',
   'bakers_user_read',
@@ -33,7 +33,7 @@ export const SITE_WRITE_TOOLS: readonly string[] = [
   'bakers_ticket_classify',
   'bakers_ticket_transition',
   'bakers_run_cancel',
-  'bakers_comment_publish',
+  'bakers_comment_create',
 ];
 
 const WIRE = 'tool_api__';

@@ -30,7 +30,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Lists the viewable activities of one ticket or project, newest first.
  */
 #[Tool(
-  id: 'bakers_ticket_activity_list',
+  id: 'bakers_activity_list',
   label: new TranslatableMarkup('List ticket activity'),
   description: new TranslatableMarkup('Lists the activity events of one ticket or of one project’s tickets, newest first, as the activity feed shows them. Give exactly one of ticket and project.'),
   operation: ToolOperation::Read,
@@ -113,7 +113,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
     ),
   ],
 )]
-final class TicketActivityList extends ToolBase {
+final class ActivityList extends ToolBase {
 
   use TicketInputTrait;
   use PagedQueryTrait;

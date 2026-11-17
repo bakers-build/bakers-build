@@ -33,7 +33,7 @@ function analyze(f, context) {
   const create = creates[0], created = payload(create);
   const ticket = { id: created?.id, identifier: created?.identifier };
   const initial = readAfter(trace, create, ticket);
-  const comments = allWrites.filter(c => c.name === tool('bakers_comment_publish') && c.result?.exit_code !== 4);
+  const comments = allWrites.filter(c => c.name === tool('bakers_comment_create') && c.result?.exit_code !== 4);
   const qualification = comments.find(c => arg(c, 'type') === 'qualification');
   const summary = comments.find(c => arg(c, 'type') === 'summary');
   const transitions = allWrites.filter(c => c.name === tool('bakers_ticket_transition') && arg(c, 'state'));
