@@ -180,6 +180,22 @@ final class ProtectedLabelTest extends BakersToolTestBase {
   }
 
   /**
+   * A lead of the target workspace cannot rename a foreign label and move it.
+   */
+  public function testRenameAndMoveNeedsAnyInStoredWorkspace(): void {
+    $other = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
+      ->create(['name' => 'other-workspace', 'slug' => 'other-workspace']);
+    self::assertInstanceOf(ContentEntityInterface::class, $other);
+    $other->save();
+    $mixed = $this->member('mixed', ['contributor']);
+    $this->addMembership($other, $mixed, ['lead']);
+    $this->actAs($mixed);
+    $plain = $this->term('label', 'foo');
+    $plain->set('name', 'runtime:system')->set('workspace_id', $other->id());
+    self::assertNotSame([], $this->nameViolations($plain));
+  }
+
+  /**
    * Unprotected renames, unchanged protected names and new terms pass.
    */
   public function testUnprotectedRenamesAndCreationPass(): void {

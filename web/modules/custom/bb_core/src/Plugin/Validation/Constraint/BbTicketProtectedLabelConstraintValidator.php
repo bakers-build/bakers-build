@@ -126,9 +126,16 @@ final class BbTicketProtectedLabelConstraintValidator extends ConstraintValidato
     if ($stored instanceof BbTermInterface && $stored->getName() === $name) {
       return;
     }
-    $workspace = $term->get('workspace_id')->entity;
-    if (!$this->mayAdd(strstr($name, ':', TRUE), $namespaces, $workspace instanceof BbWorkspaceInterface ? $workspace : NULL, NULL)) {
-      $this->context->addViolation($constraint->renameMessage, ['%label' => $name]);
+    // The permission must hold where the term lives now and where it ends up.
+    $workspaces = [$term->get('workspace_id')->entity];
+    if ($stored instanceof BbTermInterface) {
+      $workspaces[] = $stored->get('workspace_id')->entity;
+    }
+    foreach ($workspaces as $workspace) {
+      if (!$this->mayAdd(strstr($name, ':', TRUE), $namespaces, $workspace instanceof BbWorkspaceInterface ? $workspace : NULL, NULL)) {
+        $this->context->addViolation($constraint->renameMessage, ['%label' => $name]);
+        return;
+      }
     }
   }
 
