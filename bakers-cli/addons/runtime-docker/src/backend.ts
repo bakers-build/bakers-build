@@ -1,16 +1,17 @@
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  copyFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
-  readdirSync,
+  mkdtempSync,
   readFileSync,
   realpathSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
@@ -95,18 +96,30 @@ export const realExec: BackendDeps['exec'] = (file, args, opts) => {
 // Same as runtime.image.packages in the project schema: no whitespace, no option.
 const PACKAGE = /^[A-Za-z0-9@][A-Za-z0-9@/._+:=~-]*$/;
 
-/** The build context's files and contents, so a changed `COPY` source rebuilds the layer. */
-const contextDigest = (dir: string) =>
-  shortHash(
-    JSON.stringify(
-      readdirSync(dir, { recursive: true, encoding: 'utf8' })
-        .sort()
-        .filter((f) =>
-          statSync(join(dir, f), { throwIfNoEntry: false })?.isFile(),
-        )
-        .map((f) => [f, shortHash(readFileSync(join(dir, f), 'latin1'))]),
-    ),
-  );
+/**
+ * The build context: the regular files Git tracks under `dir`. The conductor's log and
+ * the operator's local config there are untracked; a symlink is never followed.
+ */
+const contextFiles = (dir: string) => {
+  let listed: string;
+  try {
+    listed = execFileSync('git', ['ls-files', '-z'], {
+      cwd: dir,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    throw new Error(
+      `runtime-docker: a run image fragment needs ${dir} in a Git checkout (${String(err)})`,
+    );
+  }
+  return listed
+    .split('\0')
+    .filter(
+      (f) => f && lstatSync(join(dir, f), { throwIfNoEntry: false })?.isFile(),
+    )
+    .sort();
+};
 
 const PLAYWRIGHT = /^(?:@playwright\/test|playwright)(?:@|$)/;
 
@@ -213,10 +226,17 @@ export function dockerRuntime(
       fragment = text ?? '';
     }
     if (apt.length + npm.length === 0 && !fragment.trim()) return undefined;
+    const dir = additions.bakersDir;
+    const files = fragment ? contextFiles(dir) : [];
+    const digest = files.map((f) => [
+      f,
+      shortHash(readFileSync(join(dir, f), 'latin1')),
+    ]);
     return {
-      tag: `${base}-${shortHash(JSON.stringify([base, apt, npm, fragment, fragment && contextDigest(additions.bakersDir)]))}`,
+      tag: `${base}-${shortHash(JSON.stringify([base, apt, npm, fragment, digest]))}`,
       dockerfile: layerDockerfile(base, apt, npm, fragment),
-      context: additions.bakersDir,
+      dir,
+      files,
     };
   };
 
@@ -337,13 +357,23 @@ export function dockerRuntime(
         ]),
       );
       if (layer)
-        await ensureImage(layer.tag, () =>
-          deps.exec(
-            docker,
-            ['build', '-t', layer.tag, '-f', '-', layer.context],
-            { input: layer.dockerfile },
-          ),
-        );
+        await ensureImage(layer.tag, async () => {
+          // Docker sends its whole context directory: hand it only the tracked files.
+          const context = mkdtempSync(join(tmpdir(), 'bb-runtime-context-'));
+          try {
+            for (const f of layer.files) {
+              mkdirSync(dirname(join(context, f)), { recursive: true });
+              copyFileSync(join(layer.dir, f), join(context, f));
+            }
+            await deps.exec(
+              docker,
+              ['build', '-t', layer.tag, '-f', '-', context],
+              { input: layer.dockerfile },
+            );
+          } finally {
+            rmSync(context, { recursive: true, force: true });
+          }
+        });
       const image = layer?.tag ?? base;
       const agentVersion = options.image
         ? 'operator image'

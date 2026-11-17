@@ -21,13 +21,14 @@ runtime: {
 - `playwright@<v>` or `@playwright/test@<v>` also installs Chromium and its system libraries into
   `PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright`, readable under the host uid. That replaces an
   operator agent image built only to add Playwright.
-- `dockerfile` is a fragment appended last, built as root with `.bakers/` as its context, so it
-  may `COPY` from there. It must resolve inside `.bakers/`; `FROM` and `USER` are refused.
+- `dockerfile` is a fragment appended last, built as root. Its context is the files Git tracks in
+  `.bakers/`, so it may `COPY` a committed or staged file; the conductor's log, local config and
+  symlinks stay out. It must resolve inside `.bakers/`; `FROM` and `USER` are refused.
   `bakers config check` reports both, and every build checks again.
 
 The base is `bakers-runtime:<version>-<agent hash>`, the layer
 `bakers-runtime:<version>-<agent hash>-<additions hash>`. The hash covers the base tag, both
-package lists, the fragment's text and, with a fragment, every file in `.bakers/`. A tag that exists
+package lists, the fragment's text and, with a fragment, every file of its context. A tag that exists
 is never rebuilt. A changed fragment, or a changed file it may `COPY`, builds on the next run. A changed package list builds after the conductor restarts. `with.image` on the
 machine skips both builds and the additions.
 

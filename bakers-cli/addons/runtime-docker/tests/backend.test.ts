@@ -3,8 +3,10 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -525,12 +527,19 @@ describe('runtime-docker: project additions to the run image', () => {
   let bakersDir: string;
   let infos: object[];
   let warns: object[];
+  /** The files each layer build was handed as its context. */
+  let contexts: string[][];
   beforeEach(() => {
     bakersDir = join(root, 'project/.bakers');
     mkdirSync(bakersDir, { recursive: true });
+    execFileSync('git', ['init', '-q'], { cwd: join(root, 'project') });
     infos = [];
     warns = [];
+    contexts = [];
   });
+  /** Stages files in `.bakers/`; only what Git tracks is the layer's context. */
+  const track = (...files: string[]) =>
+    execFileSync('git', ['add', '--', ...files], { cwd: bakersDir });
   /** Images that exist start out as `present`; every build adds its tag. */
   const fakeDocker = (present: string[] = []) => {
     const images = new Set(present);
@@ -545,6 +554,13 @@ describe('runtime-docker: project additions to the run image', () => {
         if (args[0] === 'image' && !images.has(args[2] as string))
           throw new Error('No such image');
         if (args[0] === 'build') images.add(args[2] as string);
+        if (args[0] === 'build' && args.includes('-f'))
+          contexts.push(
+            readdirSync(args.at(-1) as string, {
+              recursive: true,
+              encoding: 'utf8',
+            }).sort(),
+          );
         return { stdout: '' };
       },
     });
@@ -574,7 +590,14 @@ describe('runtime-docker: project additions to the run image', () => {
     expect(tag).toMatch(
       new RegExp(`^${base.replace(/[.]/g, '\\.')}-[0-9a-f]{12}$`),
     );
-    expect(layer?.[1]).toEqual(['build', '-t', tag, '-f', '-', bakersDir]);
+    expect(layer?.[1]).toEqual([
+      'build',
+      '-t',
+      tag,
+      '-f',
+      '-',
+      expect.any(String),
+    ]);
     expect(layer?.[2]).toBe(
       [
         `FROM ${base}`,
@@ -610,6 +633,7 @@ describe('runtime-docker: project additions to the run image', () => {
   it('rebuilds the layer after a file the fragment copies changed', async () => {
     writeFileSync(join(bakersDir, 'run.Dockerfile'), 'COPY tool.sh /opt/\n');
     writeFileSync(join(bakersDir, 'tool.sh'), 'echo one\n');
+    track('tool.sh');
     const rt = dockerRuntime(
       {},
       { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
@@ -620,6 +644,56 @@ describe('runtime-docker: project additions to the run image', () => {
     writeFileSync(join(bakersDir, 'tool.sh'), 'echo two\n');
     await rt.wrap(launch());
     expect(builds()).toHaveLength(3);
+  });
+
+  it('keeps the layer when only untracked runtime files in .bakers/ change', async () => {
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'COPY tool.sh /opt/\n');
+    writeFileSync(join(bakersDir, 'tool.sh'), 'echo one\n');
+    track('run.Dockerfile', 'tool.sh');
+    const rt = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+    );
+    await rt.wrap(launch());
+    writeFileSync(join(bakersDir, 'log.txt'), 'a log line\n');
+    writeFileSync(join(bakersDir, 'connection.config.js'), 'secret\n');
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(2);
+  });
+
+  it('hands the build only the tracked files of .bakers/', async () => {
+    mkdirSync(join(bakersDir, 'scripts'));
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'COPY scripts /opt/\n');
+    writeFileSync(join(bakersDir, 'scripts/tool.sh'), 'echo one\n');
+    writeFileSync(join(bakersDir, 'connection.config.js'), 'secret\n');
+    track('run.Dockerfile', 'scripts/tool.sh');
+    const rt = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+    );
+    await rt.wrap(launch());
+    expect(contexts).toEqual([
+      ['run.Dockerfile', 'scripts', join('scripts', 'tool.sh')],
+    ]);
+  });
+
+  it('follows no symlink in .bakers/', async () => {
+    const outside = join(root, 'outside');
+    mkdirSync(outside);
+    writeFileSync(join(outside, 'x'), 'one\n');
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'RUN echo one\n');
+    symlinkSync('.', join(bakersDir, 'loop'));
+    symlinkSync(outside, join(bakersDir, 'out'));
+    track('run.Dockerfile', 'loop', 'out');
+    const rt = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+    );
+    await rt.wrap(launch());
+    writeFileSync(join(outside, 'x'), 'two\n');
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(2);
+    expect(contexts).toEqual([['run.Dockerfile']]);
   });
 
   it('refuses a package that is not a plain name before building anything', async () => {
