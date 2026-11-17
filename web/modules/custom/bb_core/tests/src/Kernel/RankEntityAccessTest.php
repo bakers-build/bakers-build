@@ -529,6 +529,37 @@ final class RankEntityAccessTest extends KernelTestBase {
   }
 
   /**
+   * A contributor edits the project they own, inside its workspace only.
+   *
+   * The owner's `update own bb_project` is a workspace contributor grant, so
+   * the fence keeps it inside that workspace: a peer's project stays closed,
+   * and removing the owner's membership closes their own one too.
+   */
+  public function testContributorEditsOnlyTheProjectTheyOwn(): void {
+    $owner = $this->createAccount('project-owner');
+    $this->addMembership($this->fixture('b', 'bb_workspace'), $owner, ['contributor']);
+    $this->addMembership($this->fixture('b', 'bb_team'), $owner, []);
+    $own = $this->createEntity('bb_project', [
+      'name' => 'owned-project',
+      'group_id' => $this->fixture('b', 'bb_group')->id(),
+      'teams' => [$this->fixture('b', 'bb_team')->id()],
+      'owner_user_id' => $owner->id(),
+    ]);
+
+    self::assertTrue($own->access('update', $owner), 'the owner edits their own project');
+    self::assertFalse(
+      $this->fixture('b', 'bb_project')->access('update', $owner),
+      'but not a project of the same workspace someone else created',
+    );
+
+    $membership = Og::getMembership($this->fixture('b', 'bb_workspace'), $owner);
+    self::assertNotNull($membership);
+    $membership->delete();
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_project')->resetCache();
+    self::assertFalse($own->access('update', $owner), 'ownership grants nothing once the membership is gone');
+  }
+
+  /**
    * A site-wide role is not fenced — only the OG union is.
    *
    * The fence exists to bound what Layer A injected. A permission an operator

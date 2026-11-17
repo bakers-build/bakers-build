@@ -40,7 +40,7 @@
 #
 # The children are one file per permission, `simple_oauth.oauth2_scope.
 # bb_session_<slug>.yml`, and Oauth2ScopeProvider::getPermissions() returns
-# their union for this umbrella. There are 29 of them, and the set is pinned
+# their union for this umbrella. There are 32 of them, and the set is pinned
 # EXACTLY — not as a lower bound — by SiteWideRoleResidueTest, because a child
 # quietly deleted is a hard 403 on a shipped surface and a child quietly added
 # widens what every machine identity may do. Both install paths ship all 29
