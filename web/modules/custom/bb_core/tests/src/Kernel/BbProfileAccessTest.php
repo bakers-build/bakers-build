@@ -82,6 +82,26 @@ final class BbProfileAccessTest extends KernelTestBase {
   }
 
   /**
+   * The owner edits values but cannot move the profile to another owner.
+   */
+  public function testOwnerCannotReassignUserOrWorkspace(): void {
+    $north = $this->workspace('north');
+    $owner = $this->person();
+    $admin = $this->person(['administer bakers']);
+    $this->addMembership($north, $owner, ['member']);
+    $profile = $this->container->get(Profiles::class)->forAccount((int) $owner->id(), (int) $north->id());
+    $profile->save();
+
+    foreach (['uid', 'workspace_id'] as $field) {
+      self::assertFalse($profile->get($field)->access('edit', $owner), "owner edits $field");
+      self::assertTrue($profile->get($field)->access('edit', $admin), "admin edits $field");
+    }
+    foreach (['position', 'background', 'favorite_projects'] as $field) {
+      self::assertTrue($profile->get($field)->access('edit', $owner), "owner edits $field");
+    }
+  }
+
+  /**
    * A member who may not view the person does not read the profile either.
    */
   public function testMemberWithoutUserViewAccessIsDenied(): void {

@@ -10,6 +10,8 @@ use Drupal\Core\Entity\EntityAccessControlHandler;
 use Drupal\Core\Entity\EntityHandlerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbProfileInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -55,6 +57,21 @@ final class BbProfileAccessControlHandler extends EntityAccessControlHandler imp
       ->andIf($entity->getOwner()->access('view', $account, TRUE))
       ->addCacheTags(['og_membership_list'])
       ->inheritCacheability($own);
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Only an administrator moves a profile to another user or workspace; an
+   * owner doing so would plant text in another person's run context.
+   */
+  protected function checkFieldAccess($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items = NULL): AccessResultInterface {
+    $result = parent::checkFieldAccess($operation, $field_definition, $account, $items);
+    if ($operation === 'edit' && in_array($field_definition->getName(), ['uid', 'workspace_id'], TRUE)) {
+      return AccessResult::forbiddenIf(!$account->hasPermission('administer bakers'), 'Only an administrator reassigns a profile.')
+        ->cachePerPermissions()->orIf($result);
+    }
+    return $result;
   }
 
   /**
