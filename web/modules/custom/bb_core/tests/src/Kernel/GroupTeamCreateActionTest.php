@@ -47,7 +47,7 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    foreach (['user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_team', 'bb_project'] as $type) {
+    foreach (['user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_team', 'bb_project', 'bb_profile'] as $type) {
       $this->installEntitySchema($type);
     }
     $this->installConfig(['system', 'user', 'views']);
@@ -163,6 +163,7 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
         [
           'bb_ticket_create_action',
           'bb_project_create_action',
+          'bb_project_favorite_action',
           'bb_ticket_template_create_action',
           'bb_term_create_action',
           'bb_ticket_trigger_create_action',

@@ -8,9 +8,11 @@
 declare(strict_types=1);
 
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTermInterface;
 use Drupal\bb_core\Ticket\BranchName;
+use Drupal\field\Entity\FieldStorageConfig;
 
 /**
  * Removes the environments past deploys stamped onto the tickets they carried.
@@ -159,3 +161,59 @@ function bb_core_post_update_conductor_assignment(): void {
   \Drupal::entityTypeManager()->getStorage('bb_machine')->resetCache();
   \Drupal::entityTypeManager()->getStorage('bb_conductor')->resetCache();
 }
+
+/**
+ * Moves position and background from the account into per-workspace profiles.
+ *
+ * Every workspace the account belongs to, or a service account is bound to,
+ * gets a profile with both values; accounts without either value get none.
+ * Values of accounts in no workspace are logged, then both fields are deleted.
+ * bb_core_update_11003() installed the profile entity.
+ */
+function bb_core_post_update_user_profiles(array &$sandbox): string {
+  $fields = ['position' => 'field_developer_title', 'background' => 'field_bb_background'];
+  $definitions = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('user');
+  $fields = array_filter($fields, static fn (string $field): bool => isset($definitions[$field]));
+  if ($fields === []) {
+    $sandbox['#finished'] = 1;
+    return 'No position or background on accounts; nothing to move.';
+  }
+  $users = \Drupal::entityTypeManager()->getStorage('user');
+  $ids = $users->getQuery()->accessCheck(FALSE)->condition('uid', $sandbox['last'] ?? 0, '>')->sort('uid')->range(0, 100)->execute();
+  $messages = [];
+  foreach ($users->loadMultiple($ids) as $user) {
+    $values = array_map(static fn (string $field): string => trim((string) $user->get($field)->value), $fields);
+    if (implode('', $values) === '') {
+      continue;
+    }
+    // Every membership state: a blocked member's profile is kept too.
+    $workspaces = \Drupal::database()->select('og_membership', 'm')->fields('m', ['entity_id'])
+      ->condition('m.uid', $user->id())->condition('m.entity_type', 'bb_workspace')
+      ->execute()->fetchCol();
+    if ($user->hasField('bb_service_workspace') && !$user->get('bb_service_workspace')->isEmpty()) {
+      $workspaces[] = $user->get('bb_service_workspace')->target_id;
+    }
+    $workspaces = array_unique(array_map('intval', $workspaces));
+    if ($workspaces === []) {
+      $line = sprintf('uid %d: position "%s", background "%s"', $user->id(), $values['position'] ?? '', $values['background'] ?? '');
+      \Drupal::logger('bb_core')->notice('Profile not moved, the account is in no workspace: @line', ['@line' => $line]);
+      $messages[] = 'Not moved, in no workspace: ' . $line . '.';
+      continue;
+    }
+    foreach ($workspaces as $workspace_id) {
+      $profile = \Drupal::service(Profiles::class)->forAccount((int) $user->id(), $workspace_id);
+      $profile->setPosition($values['position'] ?? '')->setBackground($values['background'] ?? '')->save();
+    }
+  }
+  $sandbox['last'] = $ids === [] ? ($sandbox['last'] ?? 0) : max($ids);
+  if ($ids !== []) {
+    $sandbox['#finished'] = 0.5;
+    return implode(' ', $messages);
+  }
+  foreach ($fields as $field) {
+    FieldStorageConfig::loadByName('user', $field)?->delete();
+  }
+  $sandbox['#finished'] = 1;
+  return trim(implode(' ', $messages) . ' Position and background moved into profiles; the account fields are deleted.');
+}
+
