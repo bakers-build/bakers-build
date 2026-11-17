@@ -31,13 +31,13 @@ When('I open the device verification page for that code', async ({ page }) => {
 });
 
 When('I confirm the device sign-in', async ({ page }) => {
-  await page.getByLabel('Device code').fill(userCode);
+  // The link filled in the code; the person compares it and only decides.
   await page.getByRole('button', { name: 'Confirm sign-in' }).click();
   await page.waitForURL('**/oauth/device?done=*');
 });
 
 When('I deny the device sign-in', async ({ page }) => {
-  await page.getByLabel('Device code').fill(userCode);
+  // The link filled in the code; the person compares it and only decides.
   await page.getByRole('button', { name: 'Deny' }).click();
   await page.waitForURL('**/oauth/device?done=*');
 });
