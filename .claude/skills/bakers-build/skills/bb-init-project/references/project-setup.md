@@ -13,7 +13,8 @@ instead of substituting a template.
 Before configuration checks, server-project lookup or client/integration choices, read the
 [worktree requirements](https://bakers.build/provision/guide.md#make-the-project-worktree-compatible).
 Assess each requirement there against the repository's README, scripts and application configuration.
-Reuse existing evidence and ask the gaps as one block. Report concrete file/command
+Reuse existing evidence and ask the gaps as one block, `Step n of m — Worktree`, with m counted
+for the whole project setup. Report concrete file/command
 evidence for each finding. Git worktree support alone does not establish application compatibility.
 For known blockers, report the required application changes and stop setup until resolved;
 perform repairs only within the authorized scope. Keep unknowns explicitly unverified.
@@ -63,7 +64,7 @@ The group is an own decision, never derived.
 |---|---|---|---|---|---|
 | Client unknown | Client, and its executor and worktree | `addons`, or `executor` and `worktree`, in `.bakers/project.config.js` | — (an installed client is not a selection) | — | [Clients](https://bakers.build/get-started/use-your-client.md), [slots](https://bakers.build/addons/slots.md) |
 | Worktrees nest inside the checkout | Worktree location | A location option the worktree addon documents, or an `after_create` script that gives each worktree its own runtime name | `.ddev/` in the repository: nested DDEV projects conflict | — | [Worktree requirements](https://bakers.build/provision/guide.md#make-the-project-worktree-compatible) |
-| Lifecycle hooks unanswered | Each lifecycle hook by name: `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`; none is a valid value | `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume` in `.bakers/project.config.js` | Existing project scripts; the runtime addon's page | — | [Hooks](https://bakers.build/provision/hooks.md) |
+| Lifecycle hooks unanswered | Each lifecycle hook by name: `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`; none is a valid value | `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume` in `.bakers/project.config.js` | Existing project scripts; the runtime addon's page | — | [Hooks](https://bakers.build/configuration/project/hooks.md) |
 | Tests or previews need an environment | `provision_up` profiles and their commands | `hooks.provision_up` in `.bakers/project.config.js` | Existing provisioning scripts; `.ddev/` or another runtime's configuration | `provision_up` lets a sandboxed agent bring its environment up by naming a profile, never the command. | [Environment](https://bakers.build/provision/guide.md), [provision_up](https://bakers.build/configuration/project/hooks.md#provision-on-an-agent-s-request) |
 | A profile serves a site | Readiness check per profile | `WORKFLOW.md` `bb-phase-provision` hint | The base URL the profile prints | — | [provision_up](https://bakers.build/configuration/project/hooks.md#provision-on-an-agent-s-request) |
 | Agents run commands in the project's containers | `provision_exec` keys, one fixed command each | `hooks.provision_exec` in `.bakers/project.config.js` | Test and lint commands in the repository's scripts and CI | The sandboxed agent cannot call the environment's CLI; `provision_exec` keys are the controlled way in. | [Run a configured command](https://bakers.build/configuration/project/hooks.md#run-a-configured-command) |
@@ -74,7 +75,7 @@ Both rows are own decisions; recommend as the [machine matrix](../../bb-init/ref
 
 | When | Decide | Writes | Derive from | Explain | Read |
 |---|---|---|---|---|---|
-| Permissions unknown | Project permission mode and its effective source | `permissions.mode` in `.bakers/project.config.js` | `permissions` in project and machine configuration | — | [Execution security](https://bakers.build/provision/security/execution.md), [Isolation models](https://bakers.build/agents/isolation.md) |
+| Permissions unknown | Project permission mode and its effective source | `permissions.mode` in `.bakers/project.config.js` | `permissions` in project and machine configuration | — | [Execution security](https://bakers.build/provision/security/execution.md) |
 | The project needs access beyond the sandbox | Project grants: necessary write paths, trusted commands, network | `permissions.sandbox` in `.bakers/project.config.js` | The commands the environment block chose | A grant is a project setting that loosens the sandbox on every machine that accepts it. | [Shared settings](https://bakers.build/provision/security/shared-settings.md) |
 
 ### Delivery
@@ -92,7 +93,7 @@ Forge authentication and the merge policy are own decisions.
 
 | When | Decide | Writes | Derive from | Explain | Read |
 |---|---|---|---|---|---|
-| Workflow needs skills or recipes | `marketplaces` entries: plugins and pinned refs | `marketplaces` in `.bakers/project.config.js` | The installed `bb-recipe-*` skills and their entries in [shipped recipes](https://bakers.build/skills-and-workflows/recipes.md#shipped-recipes-and-their-plugins); a marketplace the agent already knows | — | [Marketplaces](https://bakers.build/configuration/project.md#agent-plugins), [skills](https://bakers.build/skills-and-workflows/skills.md) |
+| Workflow needs skills or recipes | `marketplaces` entries: plugins and pinned refs | `marketplaces` in `.bakers/project.config.js` | The installed `bb-recipe-*` skills and their entries in [shipped recipes](https://bakers.build/skills-and-workflows/recipes.md#shipped-recipes-and-their-plugins); a marketplace the agent already knows | — | [Marketplaces](https://bakers.build/configuration/project.md#agent-plugins) |
 | Agent known | Project settings its agent guide recommends | The file the agent guide names | The agent guide | — | [Agents](https://bakers.build/agents/index.md), then the agent's guide |
 | `WORKFLOW.md` absent or incomplete | Hints and origin labels | `WORKFLOW.md` hints and `bb-phase-transition` table | The environment block's profiles and keys; existing `WORKFLOW.md` | — | [Workflow file](https://bakers.build/skills-and-workflows/workflow-file.md) |
 
@@ -122,9 +123,10 @@ agents run in the project's containers; add `args: true` only where the command 
 validates. A declined or unanswered move stays unresolved; report
 the path and protection gap. Nested entries protect their entire top-level project folder against
 ancestor renames; explain this scope when obtaining consent.
-See [hook protection](https://bakers.build/provision/hooks.md#protect-host-executed-files).
 
-Use [addon ownership](https://bakers.build/addons/configure.md), the linked configuration guides and current CLI help. Initialization supplies a starting
+Place each addon in its owning file: agent harnesses in `~/.bakers/machine.config.js` only; herdr,
+server remote and Git workspace in `.bakers/project.config.js` only; ports, DDEV, herdr-core and
+others as their guide says. Use the linked configuration guides and current CLI help. Initialization supplies a starting
 configuration, not the user's choices. Read back every generated setting; reconcile defaults with
 the selected client and documented addon scopes. Preserve unrelated custom values and identities.
 

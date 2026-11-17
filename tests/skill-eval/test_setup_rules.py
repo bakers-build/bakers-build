@@ -98,6 +98,12 @@ class SetupRulesTest(unittest.TestCase):
                 with self.subTest(path=path.name, url=url):
                     self.assertTrue(url.split('#')[0].endswith('.md'), 'link the page source, not the rendered page')
 
+    def test_setup_loads_few_documentation_pages(self):
+        # Facts the setup needs are inlined; each linked page is one more load in a run.
+        pages = {url.split('#')[0] for path in {*SKILLS.glob('bb-init/**/*.md'), *SKILLS.glob('bb-init-project/**/*.md')}
+                 for url in re.findall(r'https://bakers\.build/[^)\s`]*', path.read_text()) if '<path>' not in url}
+        self.assertLessEqual(len(pages), 18, sorted(pages))
+
     def test_onboarding_flow_is_taught(self):
         init = (SKILLS / 'bb-init/SKILL.md').read_text()
         project_skill = (SKILLS / 'bb-init-project/SKILL.md').read_text()
@@ -119,6 +125,7 @@ class SetupRulesTest(unittest.TestCase):
         self.assertIn('git worktree add', project)
         self.assertIn('git worktree remove', project)
         self.assertIn('fail — <reason>', project)
+        self.assertIn('Step n of m — Worktree', project)
         # The private credentials file is explained where the harness is registered.
         harness = next(row for row in blocks(MATRICES[0])['Machine'] if row['Decide'] == 'Agent harness to register')
         self.assertIn('.bakers.env', harness['Explain'])
