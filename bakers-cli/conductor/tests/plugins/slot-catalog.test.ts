@@ -36,6 +36,7 @@ describe('selectSlot order (first hit wins)', () => {
     expect(selectSlot(c, ticket({ labels: ['runtime:a'] }))).toEqual({
       alias: 'a',
       reason: 'label',
+      label: 'runtime:a',
     });
   });
 
@@ -44,7 +45,10 @@ describe('selectSlot order (first hit wins)', () => {
     const t = ticket({
       labels: ['runtime:a', 'runtime:b@coding', 'runtime:c@plan'],
     });
-    expect(selectSlot(c, t).alias).toBe('b');
+    expect(selectSlot(c, t)).toMatchObject({
+      alias: 'b',
+      label: 'runtime:b@coding',
+    });
     expect(selectSlot(c, ticket({ labels: ['runtime:c@plan'] })).reason).toBe(
       'fallback',
     );
@@ -55,6 +59,7 @@ describe('selectSlot order (first hit wins)', () => {
     expect(selectSlot(c, ticket({ labels: ['runtime:fast'] }))).toEqual({
       alias: 'b',
       reason: 'label',
+      label: 'runtime:fast',
     });
     expect(
       selectSlot(c, ticket({ state: 'plan', labels: ['runtime:fast'] })).alias,
@@ -113,7 +118,7 @@ describe('selectSlot order (first hit wins)', () => {
     const c = catalog({ projectDefault: 'e' });
     const t = ticket({ labels: ['runtime:a', 'runtime:b'] });
     const got = selectSlot(c, t, { labelAllowed: (x) => x === 'b', warn });
-    expect(got).toEqual({ alias: 'b', reason: 'label' });
+    expect(got).toEqual({ alias: 'b', reason: 'label', label: 'runtime:b' });
     expect(warn).toHaveBeenCalledOnce();
     expect(warn.mock.calls[0]?.[0]).toContain('BB-1');
     expect(warn.mock.calls[0]?.[0]).toContain("'a'");
@@ -180,5 +185,18 @@ describe('SlotResolver', () => {
     await r.instance('agent', 'a', build);
     expect(x).toBe(y);
     expect(build).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries a build that failed', async () => {
+    const r = new SlotResolver();
+    const build = vi
+      .fn<() => Promise<object>>()
+      .mockRejectedValueOnce(new Error('daemon down'))
+      .mockResolvedValue({});
+    await expect(r.instance('runtime', 'a', build)).rejects.toThrow(
+      'daemon down',
+    );
+    await expect(r.instance('runtime', 'a', build)).resolves.toEqual({});
+    expect(build).toHaveBeenCalledTimes(2);
   });
 });

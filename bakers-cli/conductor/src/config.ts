@@ -9,6 +9,7 @@ import {
   discoverAddons,
   discoverScoped,
   findDefaultExportObject,
+  loadRunClone,
   type MachineContext,
   machineContextPath,
   matchDelimiter,
@@ -645,8 +646,11 @@ export async function loadConductorConfig(
       ...(config.hooks?.provision_exec
         ? { exec: config.hooks.provision_exec }
         : {}),
+      // A run dispatched before a restart is not in the map; an isolating
+      // run always has a run clone, a host run never.
       isolates: (worktreePath) =>
-        runtimeIsolation.get(worktreePath) ?? defaultRuntime.isolates,
+        runtimeIsolation.get(worktreePath) ??
+        loadRunClone(worktreePath) !== undefined,
     }),
   ];
   let agentCatalog: AgentCatalog | undefined;

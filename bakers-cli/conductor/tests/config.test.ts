@@ -9,6 +9,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { agentReport } from '@bakers-build/addon-agents';
+import {
+  type RunClone,
+  runCloneGitDir,
+  saveRunClone,
+} from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   composeConductorConfig,
@@ -2279,6 +2284,38 @@ describe('slot catalogs for runtime, executor and workspace', () => {
     expect(catalog?.entries.preset).toBe(cfg.runtime);
     expect(catalog?.entries.system?.id).toBe('host');
     expect(cfg.runtime?.isolates).toBe(true);
+  });
+
+  it('reads isolation from the run clone for a worktree this process did not dispatch', async () => {
+    writeMachine('');
+    vi.stubEnv('XDG_CACHE_HOME', mkdtempSync(join(tmpdir(), 'bakers-cache-')));
+    const cfg = await load(
+      `runtime: { read_only: ['.ddev'] }, hooks: { provision_exec: { show: 'bash .ddev/show.sh' } },`,
+    );
+    const isolates = async (cloned: boolean) => {
+      const ws = mkdtempSync(join(tmpdir(), 'bakers-run-ws-'));
+      mkdirSync(join(ws, '.ddev'));
+      writeFileSync(
+        join(ws, '.ddev/show.sh'),
+        'echo "$BAKERS_RUNTIME_ISOLATES"',
+      );
+      if (cloned) {
+        const gitDir = runCloneGitDir(ws);
+        mkdirSync(dirname(gitDir), { recursive: true });
+        saveRunClone({ gitDir } as RunClone);
+      }
+      return (
+        await cfg.tools?.call(
+          'provision_exec',
+          { key: 'show' },
+          { worktreePath: ws },
+        )
+      )?.text;
+    };
+    // After a restart the map is empty; the default `preset` isolates, but a
+    // run on the non-isolating `system` entry has no run clone.
+    expect(await isolates(false)).toBe('exit 0\n0\n');
+    expect(await isolates(true)).toBe('exit 0\n1\n');
   });
 
   it('falls back to the built-in system runtime when none is configured', async () => {

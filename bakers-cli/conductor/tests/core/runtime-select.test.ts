@@ -269,6 +269,7 @@ function setup(
     envOf,
     workspace,
     runRuntimes,
+    conductor,
     comments,
     failComments: () => {
       failComment = true;
@@ -490,6 +491,40 @@ describe('runtime chosen per ticket', () => {
   });
 });
 
+describe('after a conductor restart', () => {
+  it('reads an in-flight run isolation from its run clone, not the default runtime', async () => {
+    const s = setup(
+      { preset: 'box' },
+      [
+        { identifier: 'BB-1', labels: ['runtime:system'] },
+        { identifier: 'BB-2' },
+      ],
+      true,
+    );
+    await s.run();
+    // A restarted process knows no run's runtime.
+    s.runRuntimes().clear();
+    const isolates = async (identifier: string) => {
+      const ctx = await (
+        s.conductor as unknown as {
+          listenerContext(
+            ticketUuid: string,
+            worktreePath: string,
+            opts: { hook: string; run: { uuid: string } },
+          ): Promise<{ env: Record<string, string> } | undefined>;
+        }
+      ).listenerContext(
+        identifier,
+        String(s.envOf(identifier)?.BAKERS_WORKTREE_PATH),
+        { hook: 'after_run', run: { uuid: `run-${identifier}` } },
+      );
+      return ctx?.env.BAKERS_RUNTIME_ISOLATES;
+    };
+    expect(await isolates('BB-1')).toBe('0');
+    expect(await isolates('BB-2')).toBe('1');
+  });
+});
+
 describe('run record and unsandboxed comment', () => {
   it('notes agent, runtime and owner on the run and the dispatch log', async () => {
     const s = setup(
@@ -541,6 +576,18 @@ describe('run record and unsandboxed comment', () => {
     const body = String(s.comments[0]?.body);
     for (const part of ['system', 'unsandboxed', 'runtime:system', 'Ada'])
       expect(body).toContain(part);
+  });
+
+  it('names the route label that chose the unsandboxed runtime', async () => {
+    const s = setup(
+      { preset: 'box', routes: { host: { '*': 'system' } } },
+      [{ identifier: 'BB-1', labels: ['runtime:host'] }],
+      true,
+    );
+    await s.run();
+    expect(String(s.comments[0]?.body)).toContain(
+      "runtime 'system', chosen by the label runtime:host;",
+    );
   });
 
   it('does not comment on a host-default run or a label-chosen isolating run', async () => {

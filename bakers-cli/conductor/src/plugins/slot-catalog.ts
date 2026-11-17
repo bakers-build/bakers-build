@@ -26,6 +26,8 @@ export type SlotChoice = {
     | 'project'
     | 'preset'
     | 'fallback';
+  /** The ticket label that chose the entry, for reason `label`. */
+  label?: string;
 };
 
 /** Order, first hit wins: label (alias or named route), machine route for the state, default route (`*`), project, preset, fallback. */
@@ -65,18 +67,18 @@ export function selectSlot<P>(
   }
 
   const prefix = `${c.slot}:`;
-  const scoped: string[] = [];
-  const general: string[] = [];
+  const scoped: Array<[string, string]> = [];
+  const general: Array<[string, string]> = [];
   for (const label of t.labels.filter((l) => l.startsWith(prefix))) {
     const [alias, state, extra] = label.slice(prefix.length).split('@');
     if (!alias || extra !== undefined) {
       throw new Error(`${t.identifier}: malformed ${c.slot} label '${label}'`);
     }
-    if (state === t.state) scoped.push(alias);
-    else if (state === undefined) general.push(alias);
+    if (state === t.state) scoped.push([alias, label]);
+    else if (state === undefined) general.push([alias, label]);
   }
   const warn = o.warn ?? console.warn;
-  for (const name of [...scoped, ...general]) {
+  for (const [name, label] of [...scoped, ...general]) {
     let alias = name;
     if (!Object.hasOwn(c.entries, name)) {
       const route =
@@ -104,7 +106,7 @@ export function selectSlot<P>(
       );
       continue;
     }
-    return { alias, reason: 'label' };
+    return { alias, reason: 'label', label };
   }
 
   const machine = c.routes.default?.[t.state];
@@ -133,6 +135,8 @@ export class SlotResolver {
     if (!p) {
       p = build();
       this.cache.set(key, p);
+      // A failed build (e.g. a daemon not up yet) is retried by the next run.
+      p.catch(() => this.cache.delete(key));
     }
     return p as Promise<I>;
   }

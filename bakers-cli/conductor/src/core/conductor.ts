@@ -478,6 +478,17 @@ export class Conductor {
   }
 
   /**
+   * Whether the run isolates. A run this process did not dispatch (before a
+   * restart) is read from its worktree: an isolating run always has a run
+   * clone, a host run never.
+   */
+  private runIsolates(runUuid?: string, worktreePath?: string): boolean {
+    if (worktreePath && !(runUuid && this.runRuntimes.has(runUuid)))
+      return loadRunClone(worktreePath) !== undefined;
+    return this.runtimePlugin(runUuid).isolates === true;
+  }
+
+  /**
    * Best-effort, like the tab close: logged, never thrown. A run of unknown
    * runtime (dispatched before a restart) is cleaned in every entry.
    */
@@ -1020,6 +1031,7 @@ export class Conductor {
           opts.run?.uuid,
           opts.state ?? ticket.state,
           opts.agent,
+          worktreePath,
         ),
         ...(opts.run ? { run: opts.run } : {}),
       };
@@ -1506,6 +1518,7 @@ export class Conductor {
     runUuid: string | undefined,
     state: string,
     agent?: BbAgent,
+    worktreePath?: string,
   ): Promise<Record<string, string>> {
     // BB-495: the agent names the workspace on its own calls now (the
     // dropsh transport stamps none), so it has to know which one it is
@@ -1540,7 +1553,9 @@ export class Conductor {
       ...(t.branchName ? { BAKERS_BRANCH_NAME: t.branchName } : {}),
       BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
       // Host scripts skip what an isolated run does in its own container.
-      BAKERS_RUNTIME_ISOLATES: this.runtimePlugin(runUuid).isolates ? '1' : '0',
+      BAKERS_RUNTIME_ISOLATES: this.runIsolates(runUuid, worktreePath)
+        ? '1'
+        : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
       ...(t.projectName ? { BAKERS_PROJECT: t.projectName } : {}),
@@ -2130,7 +2145,7 @@ export class Conductor {
       await this.remote.siteTools.call('bakers_comment_create', {
         ticket: t.identifier,
         type: 'comment',
-        body: `Run ${runUuid} uses runtime '${runtime.alias}', chosen by the label runtime:${runtime.alias}; it is unsandboxed (does not isolate the run). ${owner}.`,
+        body: `Run ${runUuid} uses runtime '${runtime.alias}', chosen by the label ${runtime.label ?? `runtime:${runtime.alias}`}; it is unsandboxed (does not isolate the run). ${owner}.`,
       });
     } catch (err) {
       this.logger.warn(
