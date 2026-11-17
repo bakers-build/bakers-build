@@ -109,7 +109,7 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     'update any bb_ticket',
     'update any bb_workspace',
     'update own bb_machine',
-    // The project creator fixes its settings over the session (bakers_project_update).
+    // A project's creator fixes its settings over the session.
     'update own bb_project',
     'use text format bb_rich',
     // Membership is the model's central relation and the source of every rank,
