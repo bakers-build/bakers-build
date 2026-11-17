@@ -717,6 +717,17 @@ async function cmdStartForeground(
     clearInterval(versionTimer);
     controller.abort();
   };
+  // An upgrade replaces the installed files under this running process: once
+  // two polls read the same new version, migrate, check and come back on it.
+  const startVersion = resolveCliVersion();
+  const readVersion = deps.readCliVersion ?? readCliVersion;
+  const migrate = deps.migrateConfig ?? defaultMigrateConfig;
+  const prefix = process.env.BAKERS_CONDUCTOR
+    ? `bakers --conductor ${process.env.BAKERS_CONDUCTOR}`
+    : 'bakers';
+  let lastRead: string | undefined;
+  let settled: string | undefined; // the new version already handled or refused
+  let busy = false;
   if (config.restart_on_change !== false && config.watch_paths) {
     if (!execve) {
       logger.warn(
@@ -731,9 +742,19 @@ async function cmdStartForeground(
           const secretsPath = secretsFilePath();
           for (const p of paths) if (p !== secretsPath) heldBack.add(p);
           if (!reloadSecrets()) return;
-          const path = [...heldBack].join(', ');
+          const configPaths = [...heldBack];
           heldBack.clear();
-          if (!path) {
+          if (!configPaths.length) {
+            const read = readVersion();
+            if (read !== UNKNOWN_VERSION && read !== startVersion) {
+              // A new CLI starts only after migrate and check: retry the upgrade on the next poll.
+              settled = undefined;
+              logger.info(
+                { path: secretsPath, to: read },
+                'secrets file changed; the pending CLI upgrade restarts the conductor',
+              );
+              return;
+            }
             logger.info(
               { path: secretsPath },
               'secrets file changed; restarting conductor',
@@ -741,6 +762,10 @@ async function cmdStartForeground(
             restartNow();
             return;
           }
+          const path = [
+            ...configPaths,
+            ...paths.filter((p) => p === secretsPath),
+          ].join(', ');
           logger.info(
             { path },
             `restart_on_change: ${path} changed; checking config`,
@@ -761,17 +786,6 @@ async function cmdStartForeground(
       );
     }
   }
-  // An upgrade replaces the installed files under this running process: once
-  // two polls read the same new version, migrate, check and come back on it.
-  const startVersion = resolveCliVersion();
-  const readVersion = deps.readCliVersion ?? readCliVersion;
-  const migrate = deps.migrateConfig ?? defaultMigrateConfig;
-  const prefix = process.env.BAKERS_CONDUCTOR
-    ? `bakers --conductor ${process.env.BAKERS_CONDUCTOR}`
-    : 'bakers';
-  let lastRead: string | undefined;
-  let settled: string | undefined; // the new version already handled or refused
-  let busy = false;
   const versionTimer = setInterval(async () => {
     if (busy || controller.signal.aborted) return;
     const read = readVersion();

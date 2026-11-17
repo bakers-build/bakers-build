@@ -1,7 +1,8 @@
 // The foreground conductor restarts itself when a file it loaded changes:
-// its config files, the machine config, or a configured addon's build. This
-// module only watches, debounces and serializes; the caller decides whether a
-// change becomes a restart (config check, drain, execve).
+// its config files, the machine config, the secrets file, or a configured
+// addon's build. This module only watches, debounces and serializes; the
+// caller decides whether a change becomes a restart (config check, drain,
+// execve).
 
 import { type FSWatcher, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';

@@ -280,7 +280,9 @@ describe('bakers conductor start --foreground self-restart', () => {
 
       expect(h.checks).toBe(1);
       expect(h.execve).toHaveBeenCalledTimes(1);
-      expect(log()).toContain(`${CHANGED} changed; checking config`);
+      expect(log()).toContain(
+        `${CHANGED}, ${secrets} changed; checking config`,
+      );
     });
 
     it('does not restart for a new CLI version while the secrets file fails to load', async () => {
@@ -302,6 +304,60 @@ describe('bakers conductor start --foreground self-restart', () => {
       expect(h.execve).not.toHaveBeenCalled();
       expect(log()).toContain(
         'keeping the running conductor on its last good secrets',
+      );
+    });
+
+    it('during a pending CLI upgrade, a valid write restarts only after migrate and check', async () => {
+      writeSecrets(`TOKEN=${OLD}\n`);
+      const remote = new TickRemote();
+      const calls: string[] = [];
+      let reads = 0;
+      const h = harness(
+        remote,
+        async () => {
+          calls.push('check');
+          return undefined;
+        },
+        {},
+        true,
+        {
+          readCliVersion: () => {
+            reads += 1;
+            // Read 2 refuses the upgrade on the broken file; read 3 fixes it.
+            if (reads === 1) writeSecrets(`TOKEN ${NEW}\n`);
+            if (reads === 3) {
+              writeSecrets(`TOKEN=${NEW}\n`);
+              void h.change([secrets]);
+            }
+            if (reads === 10) process.emit('SIGTERM');
+            return '99.0.0';
+          },
+          migrateConfig: async () => {
+            calls.push('migrate');
+            return undefined;
+          },
+        },
+      );
+      h.execve.mockImplementation(() => calls.push('execve'));
+
+      await h.run();
+
+      expect(calls).toEqual(['migrate', 'check', 'execve']);
+    });
+
+    it('names the secrets file beside a config change in the same window', async () => {
+      writeSecrets(`TOKEN=${OLD}\n`);
+      const remote = new TickRemote();
+      const h = harness(remote, async () => undefined);
+      remote.onTick = (n) => {
+        if (n === 1) void h.change([CHANGED, secrets]);
+      };
+
+      await h.run();
+
+      expect(h.execve).toHaveBeenCalledTimes(1);
+      expect(log()).toContain(
+        `${CHANGED}, ${secrets} changed; checking config`,
       );
     });
   });
