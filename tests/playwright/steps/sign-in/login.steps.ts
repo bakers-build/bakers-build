@@ -131,8 +131,8 @@ Then('login navigation stayed on the test origin', async ({ page }) => {
   expect(new URL(page.url()).origin).toBe(origin);
   expect(foreignRequests).toEqual([]);
 });
-Then('the login destination is {string} with status {int}', async ({ page }, path: string, status: number) => {
-  expect(new URL(page.url()).pathname).toBe(path);
+Then('the login destination is {string} with status {int}', async ({ page, apiClient }, path: string, status: number) => {
+  expect(new URL(page.url()).pathname).toBe(apiClient.resolve(path));
   expect(lastResponse?.status()).toBe(status);
 });
 When('I open the anonymous protected login return route', async ({ page }) => {
@@ -141,11 +141,12 @@ When('I open the anonymous protected login return route', async ({ page }) => {
   expect(new URL(page.url()).pathname).toBe('/user/login');
   expect(new URL(page.url()).searchParams.get('destination')).toBe('/admin/config');
 });
-When('I check anonymous workspace privacy', async ({ page }) => {
-  await page.context().clearCookies();
-  const response = await page.goto('/other/tickets');
-  expect(response?.status()).toBe(404);
-  expect(new URL(page.url()).pathname).toBe('/other/tickets');
+When('I open the signed-out deep link {string}', async ({ page, apiClient }, path: string) => {
+  await openLogin(page);
+  const target = apiClient.resolve(path);
+  await page.goto(target);
+  expect(new URL(page.url()).pathname).toBe('/user/login');
+  expect(new URL(page.url()).searchParams.get('destination')).toBe(target);
 });
 When('I open anonymous login at width {int} and zoom {int}', async ({ page }, width: number, zoom: number) => {
   await page.setViewportSize({ width, height: 900 });
