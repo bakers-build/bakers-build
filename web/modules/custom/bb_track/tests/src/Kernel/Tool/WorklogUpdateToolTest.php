@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_track\Kernel\Tool;
 
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Tests\bb_track\Kernel\LegacyWorklogFixture;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_track\Entity\Worklog;
+use Drupal\simple_oauth\Authentication\TokenAuthUserInterface;
+use Drupal\simple_oauth\Entity\Oauth2TokenInterface;
+use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -214,6 +218,44 @@ final class WorklogUpdateToolTest extends TimeToolTestBase {
     $this->assertFailure($result, 'You may not change this worklog: only its owner may, while it is recorded or proposed, with record own worklog in its project’s workspace.');
     self::assertStringNotContainsString('peer', (string) $result->getMessage());
     self::assertSame($foreign->version(), $this->stored($foreign));
+  }
+
+  /**
+   * An owner's delegated session token needs record own worklog in its ceiling.
+   */
+  public function testSessionTokenNeedsRecordOwnWorklog(): void {
+    $entry = $this->recorded('own');
+    $this->container->get('current_user')->setAccount($this->delegatedSessionAccount($this->employee, []));
+    $this->assertFailure($this->runTool('bakers_worklog_update', ['worklog' => $entry->uuid(), 'version' => $entry->version(), 'description' => 'Changed']), 'You may not change this worklog');
+    self::assertSame($entry->version(), $this->stored($entry));
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_track_worklog')->resetCache();
+    $this->container->get('current_user')->setAccount($this->delegatedSessionAccount($this->employee, ['record own worklog']));
+    $row = $this->outputs($this->runTool('bakers_worklog_update', ['worklog' => $entry->uuid(), 'version' => $entry->version(), 'description' => 'Changed']));
+    self::assertSame('Changed', $row['description']);
+  }
+
+  /**
+   * A user-bound session token whose ceiling holds the given permissions.
+   *
+   * @param \Drupal\user\UserInterface $user
+   *   The token's user.
+   * @param array<string> $permissions
+   *   The token's permissions.
+   */
+  private function delegatedSessionAccount(UserInterface $user, array $permissions): TokenAuthUserInterface {
+    $auth_user_id = $this->createMock(FieldItemListInterface::class);
+    $auth_user_id->method('isEmpty')->willReturn(FALSE);
+    $token = $this->createMock(Oauth2TokenInterface::class);
+    $token->method('get')->willReturn($auth_user_id);
+    $account = $this->createMock(TokenAuthUserInterface::class);
+    $account->method('id')->willReturn((int) $user->id());
+    // Permission-granularity scopes leave only authenticated.
+    $account->method('getRoles')->willReturn(['authenticated']);
+    $account->method('isAuthenticated')->willReturn(TRUE);
+    $account->method('isAnonymous')->willReturn(FALSE);
+    $account->method('getToken')->willReturn($token);
+    $account->method('hasPermission')->willReturnCallback(static fn(string $permission): bool => in_array($permission, $permissions, TRUE));
+    return $account;
   }
 
   /**

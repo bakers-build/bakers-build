@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_track\Plugin\tool\Tool;
 
 use Drupal\Component\Uuid\Uuid;
+use Drupal\Core\Entity\EntityStorageException;
 use Drupal\bb_track\Entity\Worklog;
 
 /**
@@ -46,6 +47,27 @@ trait WorklogReferenceTrait {
       throw new \DomainException('Assignment unavailable.');
     }
     return (int) $entity->id();
+  }
+
+  /**
+   * Runs a worklog write; the domain's own refusals become input errors.
+   *
+   * @throws \InvalidArgumentException
+   */
+  private function write(callable $write): void {
+    try {
+      $write();
+    }
+    catch (\DomainException $error) {
+      throw new \InvalidArgumentException($error->getMessage(), 0, $error);
+    }
+    catch (EntityStorageException $error) {
+      // Only the storage's own refusals; wrapped database errors stay hidden.
+      if ($error->getPrevious() !== NULL) {
+        throw $error;
+      }
+      throw new \InvalidArgumentException($error->getMessage(), 0, $error);
+    }
   }
 
 }

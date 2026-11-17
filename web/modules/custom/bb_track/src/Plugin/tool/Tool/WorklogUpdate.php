@@ -8,7 +8,6 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\EntityConstraintViolationListInterface;
 use Drupal\Core\Entity\EntityRepositoryInterface;
-use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -105,29 +104,20 @@ final class WorklogUpdate extends ToolBase {
     if ($changes === []) {
       throw new \InvalidArgumentException('Nothing to update.');
     }
-    try {
+    $this->write(function () use ($entry, $changes, $values): void {
       $this->apply($entry, $changes);
       // Always set: storage skips the lock without an expected version.
       $entry->expectedVersion = (string) $values['version'];
       $violations = $entry->validate();
       if ($violations instanceof EntityConstraintViolationListInterface) {
+        // As in the form: apply() checked these; the storage guard re-checks.
         $violations->filterByFields(['owner_user_id', 'project_id', 'ticket_id']);
       }
       foreach ($violations as $violation) {
         throw new \InvalidArgumentException((string) $violation->getMessage());
       }
       $entry->save();
-    }
-    catch (\DomainException $error) {
-      throw new \InvalidArgumentException($error->getMessage(), 0, $error);
-    }
-    catch (EntityStorageException $error) {
-      // Only the storage's own refusals; wrapped database errors stay hidden.
-      if ($error->getPrevious() !== NULL) {
-        throw $error;
-      }
-      throw new \InvalidArgumentException($error->getMessage(), 0, $error);
-    }
+    });
     $saved = $this->entities->getStorage('bb_track_worklog')->loadUnchanged($entry->id());
     assert($saved instanceof Worklog);
     $omitted = FALSE;
