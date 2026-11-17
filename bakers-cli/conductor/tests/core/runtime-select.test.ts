@@ -132,7 +132,12 @@ const agent: BbAgent = {
   parseFootprint: () => emptyAgentFootprint(),
 };
 
-type Seed = { identifier: string; state?: string; labels?: string[] };
+type Seed = {
+  identifier: string;
+  state?: string;
+  labels?: string[];
+  conductorOwner?: string;
+};
 
 function setup(
   catalog: Partial<SlotCatalog<RuntimePlugin>>,
@@ -157,6 +162,7 @@ function setup(
           state: t.state ?? 'working',
           branchName: `bakers/${t.identifier.toLowerCase()}`,
           labels: t.labels ?? [],
+          ...(t.conductorOwner ? { conductorOwner: t.conductorOwner } : {}),
         },
       ]),
     ),
@@ -170,6 +176,17 @@ function setup(
       handler: 'code' as const,
     })),
   );
+  const comments: Array<Record<string, unknown>> = [];
+  let failComment = false;
+  remote.siteTools = {
+    list: async () => [],
+    call: async (name, args) => {
+      if (failComment) throw new Error('comment down');
+      comments.push({ name, ...args });
+      return { content: [] };
+    },
+    close: async () => {},
+  };
   const executor = new Executor();
   const logs: Array<{ obj: Record<string, unknown>; msg?: string }> = [];
   const mk = (obj: object, msg?: string) =>
@@ -252,6 +269,10 @@ function setup(
     envOf,
     workspace,
     runRuntimes,
+    comments,
+    failComments: () => {
+      failComment = true;
+    },
   };
 }
 
@@ -466,5 +487,82 @@ describe('runtime chosen per ticket', () => {
       }),
     ]);
     expect(isolation.size).toBe(0);
+  });
+});
+
+describe('run record and unsandboxed comment', () => {
+  it('notes agent, runtime and owner on the run and the dispatch log', async () => {
+    const s = setup(
+      { preset: 'box' },
+      [{ identifier: 'BB-1', conductorOwner: 'Ada' }],
+      undefined,
+      () => 'fast',
+    );
+    await s.run();
+    expect(s.remote.calls.appendRunNote).toContainEqual({
+      runUuid: 'run-BB-1',
+      note: 'agent fast (function); runtime box (preset); conductor owner Ada',
+    });
+    expect(s.dispatched('BB-1')).toMatchObject({
+      agentReason: 'function',
+      conductorOwner: 'Ada',
+    });
+  });
+
+  it('writes conductor owner unknown and derives the agent reason without a select', async () => {
+    const s = setup({ preset: 'box' }, [
+      { identifier: 'BB-1', labels: ['agent:fast'] },
+    ]);
+    await s.run();
+    expect(s.remote.calls.appendRunNote[0]?.note).toBe(
+      'agent fast (label); runtime box (preset); conductor owner unknown',
+    );
+  });
+
+  it('comments once on a label-chosen unsandboxed run', async () => {
+    const s = setup(
+      { preset: 'box' },
+      [
+        {
+          identifier: 'BB-1',
+          labels: ['runtime:system'],
+          conductorOwner: 'Ada',
+        },
+      ],
+      true,
+    );
+    await s.run();
+    expect(s.comments).toHaveLength(1);
+    expect(s.comments[0]).toMatchObject({
+      name: 'bakers_comment_create',
+      ticket: 'BB-1',
+      type: 'comment',
+    });
+    const body = String(s.comments[0]?.body);
+    for (const part of ['system', 'unsandboxed', 'runtime:system', 'Ada'])
+      expect(body).toContain(part);
+  });
+
+  it('does not comment on a host-default run or a label-chosen isolating run', async () => {
+    const s = setup({ fallback: 'system', default: 'system' }, [
+      { identifier: 'BB-1' },
+      { identifier: 'BB-2', labels: ['runtime:box'] },
+    ]);
+    await s.run();
+    expect(s.comments).toEqual([]);
+  });
+
+  it('logs a failed comment and still dispatches the run', async () => {
+    const s = setup(
+      { preset: 'box' },
+      [{ identifier: 'BB-1', labels: ['runtime:system'] }],
+      true,
+    );
+    s.failComments();
+    await s.run();
+    expect(s.dispatched('BB-1')).toBeDefined();
+    expect(s.logs.some((l) => l.msg === 'unsandboxed comment failed')).toBe(
+      true,
+    );
   });
 });

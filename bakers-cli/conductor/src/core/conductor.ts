@@ -30,7 +30,11 @@ import type {
   HookResult,
   WorktreeTeardown,
 } from '../plugins/executor.js';
-import { type ResolvedAgent, resolveAgent } from '../plugins/plugins.js';
+import {
+  agentReason,
+  type ResolvedAgent,
+  resolveAgent,
+} from '../plugins/plugins.js';
 import type {
   BbRemote,
   ClaimedRun,
@@ -1683,16 +1687,26 @@ export class Conductor {
     // Persist the package id below so finalize can choose its transcript parser.
     // The project's select_agent wins; then the machine's agents select.
     const agentCatalog = this.config.catalogs?.agent;
-    const chosen =
-      !this.config.selectAgent && agentCatalog?.select
-        ? this.agentFor(selectSlot(agentCatalog, t).alias)
-        : resolveAgent(this.agents, t, {
-            selectAgent: this.config.selectAgent,
-            routes: this.config.routes,
-            defaultAgent: this.config.default_agent,
-            warn: (message) =>
-              this.logger.warn({ ticket: t.identifier }, message),
-          });
+    let agentWhy: SlotChoice['reason'] = 'function';
+    let chosen: ResolvedAgent;
+    if (!this.config.selectAgent && agentCatalog?.select) {
+      const pick = selectSlot(agentCatalog, t);
+      agentWhy = pick.reason;
+      chosen = this.agentFor(pick.alias);
+    } else {
+      chosen = resolveAgent(this.agents, t, {
+        selectAgent: this.config.selectAgent,
+        routes: this.config.routes,
+        defaultAgent: this.config.default_agent,
+        warn: (message) => this.logger.warn({ ticket: t.identifier }, message),
+      });
+      if (!this.config.selectAgent)
+        agentWhy = agentReason(
+          t,
+          chosen.alias ?? chosen.id,
+          this.config.routes,
+        );
+    }
     // An unknown alias throws and fails the run. A label may choose a
     // runtime that does not isolate only where the machine allows it.
     const runtime = selectSlot(this.runtimes, t, {
@@ -1760,7 +1774,7 @@ export class Conductor {
     };
     const launch = { started: false };
     try {
-      await this.launch(run, t, chosen, runtime, ws, ctx, launch);
+      await this.launch(run, t, chosen, runtime, agentWhy, ws, ctx, launch);
     } catch (err) {
       await this.unwindDispatch(ctx, launch.started);
       throw err;
@@ -1776,6 +1790,7 @@ export class Conductor {
     t: Ticket,
     chosen: ResolvedAgent,
     runtimeChoice: SlotChoice,
+    agentWhy: SlotChoice['reason'],
     ws: EnsuredWorkspace,
     ctx: HookListenerContext,
     launch: { started: boolean },
@@ -2059,10 +2074,20 @@ export class Conductor {
         runtime: runtime.id,
         runtimeAlias: runtimeChoice.alias,
         runtimeReason: runtimeChoice.reason,
+        agentReason: agentWhy,
+        conductorOwner: t.conductorOwner ?? 'unknown',
         // The launch with its options; the prompt is long and in the ticket.
         launch: command.replace(shellQuote(prompt), "'<prompt>'"),
       },
       'dispatched run',
+    );
+    await this.recordChoices(
+      run.runUuid,
+      t,
+      chosen.alias ?? chosen.id,
+      agentWhy,
+      runtimeChoice,
+      this.runtimePlugin(run.runUuid).isolates === true,
     );
     // The conductor — not the agent — knows the per-run git worktree path, so
     // it persists `worktree_path` to bb_run here alongside the running state.
@@ -2074,6 +2099,45 @@ export class Conductor {
       startedAt: dispatchedAt,
     });
     this.signalUi(ws.path);
+  }
+
+  /** The run's slot choices as a run note, and a ticket comment when a label put it on a runtime that does not isolate. Never fails the run. */
+  private async recordChoices(
+    runUuid: string,
+    t: Ticket,
+    agent: string,
+    agentWhy: SlotChoice['reason'],
+    runtime: SlotChoice,
+    isolates: boolean,
+  ): Promise<void> {
+    const owner = t.conductorOwner
+      ? `conductor owner ${t.conductorOwner}`
+      : 'conductor owner unknown';
+    try {
+      await this.remote.appendRunNote(
+        runUuid,
+        `agent ${agent} (${agentWhy}); runtime ${runtime.alias} (${runtime.reason}); ${owner}`,
+      );
+    } catch (err) {
+      this.logger.warn(
+        { ticket: t.identifier, err: String(err) },
+        'run note write failed',
+      );
+    }
+    if (isolates || runtime.reason !== 'label' || !this.remote.siteTools)
+      return;
+    try {
+      await this.remote.siteTools.call('bakers_comment_create', {
+        ticket: t.identifier,
+        type: 'comment',
+        body: `Run ${runUuid} uses runtime '${runtime.alias}', chosen by the label runtime:${runtime.alias}; it is unsandboxed (does not isolate the run). ${owner}.`,
+      });
+    } catch (err) {
+      this.logger.warn(
+        { ticket: t.identifier, err: String(err) },
+        'unsandboxed comment failed',
+      );
+    }
   }
 
   /**
