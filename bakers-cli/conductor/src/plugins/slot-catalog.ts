@@ -28,7 +28,7 @@ export type SlotChoice = {
     | 'fallback';
 };
 
-/** Order, first hit wins: label, named route, default route, project, preset, fallback. */
+/** Order, first hit wins: label (alias or named route), machine route for the state, default route (`*`), project, preset, fallback. */
 export function selectSlot<P>(
   c: SlotCatalog<P>,
   t: Ticket,
@@ -39,7 +39,7 @@ export function selectSlot<P>(
 ): SlotChoice {
   const aliases = Object.keys(c.entries);
   const known = (alias: string, where: string): string => {
-    if (!(alias in c.entries)) {
+    if (!Object.hasOwn(c.entries, alias)) {
       throw new Error(
         `${t.identifier}: ${c.slot} ${where} names unknown alias '${alias}'`,
       );
@@ -75,31 +75,38 @@ export function selectSlot<P>(
   }
   const warn = o.warn ?? console.warn;
   for (const name of [...scoped, ...general]) {
-    if (name in c.entries) {
-      if (o.labelAllowed && !o.labelAllowed(name)) {
+    let alias = name;
+    if (!Object.hasOwn(c.entries, name)) {
+      const route =
+        name !== 'default' && Object.hasOwn(c.routes, name)
+          ? c.routes[name]
+          : undefined;
+      if (!route)
+        throw new Error(
+          `${t.identifier}: ${c.slot} label names unknown alias '${name}'`,
+        );
+      const viaRoute = route[t.state] ?? route['*'];
+      if (viaRoute === undefined) {
         warn(
-          `${t.identifier}: ${c.slot} label '${name}' is not allowed; ignored`,
+          `${t.identifier}: ${c.slot} route '${name}' has no entry for '${t.state}' or '*'; ignored`,
         );
         continue;
       }
-      return { alias: name, reason: 'label' };
+      alias = known(viaRoute, `route '${name}'`);
     }
-    const route = name !== 'default' ? c.routes[name] : undefined;
-    if (!route)
-      throw new Error(
-        `${t.identifier}: ${c.slot} label names unknown alias '${name}'`,
-      );
-    const alias = route[t.state] ?? route['*'];
-    if (alias === undefined) {
+    if (o.labelAllowed && !o.labelAllowed(alias)) {
       warn(
-        `${t.identifier}: ${c.slot} route '${name}' has no entry for '${t.state}' or '*'; ignored`,
+        `${t.identifier}: ${c.slot} label '${name}' is not allowed; ignored`,
       );
       continue;
     }
-    return { alias: known(alias, `route '${name}'`), reason: 'route' };
+    return { alias, reason: 'label' };
   }
 
-  const dflt = c.routes.default?.[t.state] ?? c.routes.default?.['*'];
+  const machine = c.routes.default?.[t.state];
+  if (machine !== undefined)
+    return { alias: known(machine, "route 'default'"), reason: 'route' };
+  const dflt = c.routes.default?.['*'];
   if (dflt !== undefined)
     return { alias: known(dflt, "route 'default'"), reason: 'default-route' };
   if (c.projectDefault !== undefined)

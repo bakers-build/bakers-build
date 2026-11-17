@@ -54,23 +54,40 @@ describe('selectSlot order (first hit wins)', () => {
     const c = catalog({ routes: { fast: { coding: 'b', '*': 'c' } } });
     expect(selectSlot(c, ticket({ labels: ['runtime:fast'] }))).toEqual({
       alias: 'b',
-      reason: 'route',
+      reason: 'label',
     });
     expect(
       selectSlot(c, ticket({ state: 'plan', labels: ['runtime:fast'] })).alias,
     ).toBe('c');
   });
 
-  it('3. routes.default by state then *', () => {
+  it('2b. a label route resolving to a disallowed alias warns and continues', () => {
+    const warn = vi.fn();
+    const c = catalog({ routes: { fast: { '*': 'b' } }, projectDefault: 'e' });
+    const got = selectSlot(c, ticket({ labels: ['runtime:fast'] }), {
+      labelAllowed: (x) => x !== 'b',
+      warn,
+    });
+    expect(got).toEqual({ alias: 'e', reason: 'project' });
+    expect(warn).toHaveBeenCalledOnce();
+  });
+
+  it('2c. inherited keys are unknown aliases', () => {
+    expect(() =>
+      selectSlot(catalog(), ticket({ labels: ['runtime:toString'] })),
+    ).toThrow(/unknown alias 'toString'/);
+  });
+
+  it('3. machine route for the state, then default-route *', () => {
     const c = catalog({
       routes: { default: { '*': 'c', coding: 'd' } },
       projectDefault: 'e',
     });
-    expect(selectSlot(c, ticket())).toEqual({
-      alias: 'd',
+    expect(selectSlot(c, ticket())).toEqual({ alias: 'd', reason: 'route' });
+    expect(selectSlot(c, ticket({ state: 'plan' }))).toEqual({
+      alias: 'c',
       reason: 'default-route',
     });
-    expect(selectSlot(c, ticket({ state: 'plan' })).alias).toBe('c');
   });
 
   it('4. project default', () => {
