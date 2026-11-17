@@ -64,6 +64,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_project_read` | `project` (key or UUID) | One project: group, teams, repository, coder configuration, environments |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
 | `bakers_project_update` | `project`, `repository` (`url`, `default_branch`, `branch_convention`) | Change a project's repository, keeping omitted keys; needs `edit bb_project` |
+| `bakers_environment_create`, `_update`, `_delete` | `project`, `environment`, `name`, `branch`, `base_url` | Manage environments |
 | `bakers_conductor_list` | `project` | A project's conductors and their status, with each conductor's `machine` (machine_id), `owner` and `assignment` |
 | `bakers_machine_list` | optional `workspace` (UUID), `conductor_uuid` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel`, `current_load` and `assignment` |
 | `bakers_label_list` | `workspace`; optional `query` | A workspace's labels |
@@ -90,7 +91,7 @@ The list printed by `bakers tools` is what your identity may call on this server
 
 `reviewers_add` and `reviewers_remove` take user UUIDs of active accounts eligible in the ticket’s workspace. Adding a present reviewer or removing an eligible account that is not a reviewer changes nothing. Unknown, blocked and ineligible accounts receive the same refusal; the whole update rolls back. A user in both lists is refused.
 
-`links_add` takes `[{uri, title?}]`: an exact stored URI updates its title in place; omitted `title` preserves it and `""` clears it. A new URI appends a link; duplicate URIs collapse and the server derives their kind. `links_remove` takes exact URIs; absent URIs are ignored. A URI in both lists or an invalid link refuses the whole update. Omitted/null operation lists and `[]` are no-ops. There is no clear-all: remove each reviewer or URI explicitly. Unaddressed values stay unchanged. Existing update calls keep their meaning.
+`links_add` takes `[{uri, title?}]`: an exact stored URI updates its title in place; omitted `title` preserves it and `""` clears it. A new URI appends a link; duplicate URIs collapse and the server derives their kind. `links_remove` takes exact URIs; absent URIs are ignored. A URI in both lists or an invalid link refuses the whole update. Omitted/null operation lists and `[]` are no-ops. There is no clear-all: remove each reviewer or URI explicitly. Unaddressed values stay unchanged.
 
 Read, create and update return `reviewers: [{uuid, name, mail}]` and `assignee: {uuid, name, mail} | null`; `mail` is null without permission to view that user’s mail. Unreadable ticket fields are not disclosed. Update also returns saved `links: [{uri, title}]`. Read/list return the canonical absolute `url` and stored `origin` (null when absent or not readable); these tools never write origin. Use update to maintain links without changing state; transition’s `links` attach links alongside a state change (its existing links-only mode remains compatible).
 
