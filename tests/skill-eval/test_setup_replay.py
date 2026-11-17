@@ -60,6 +60,13 @@ const hookRow = (text, key) => checkOutput(hooks, JSON.stringify({...saved,turns
 assert.equal(hookRow('after_create: .bakers/scripts/prepare.sh — recommended\\non_resume: none — recommended', 'on_resume'), true);
 // A preview that omits a hook leaves it unresolved, even when the prose mentions it.
 assert.equal(hookRow('after_create: .bakers/scripts/prepare.sh — recommended\\nThe on_resume hook stays unset.', 'on_resume'), false);
+// Each read or fetch of a documentation page counts toward the budget; skill and config reads do not.
+const budget = {input:{expected_files:{},preserved_files:{},max_doc_loads:8}};
+const loads = tools => checkOutput(budget, JSON.stringify({...saved,tools})).find(r=>r.id==='max-doc-loads').met;
+const page = n => n % 2 ? {action:{type:'read',path:`docs/page-${n}.md`}} : {action:{type:'command',argv:['curl','-fsSL',`https://bakers.build/page-${n}.md`]}};
+const others = [{action:{type:'read',path:'.claude/skills/bakers-build/skills/bb-init/SKILL.md'}}, {action:{type:'read',path:'project/WORKFLOW.md'}}];
+assert.equal(loads([...others, ...Array.from({length:8}, (_, n) => page(n))]), true);
+assert.equal(loads([...others, ...Array.from({length:9}, (_, n) => page(n))]), false);
 '''
         result = subprocess.run(['node', '--input-type=module', '-e', script],
                                 cwd=Path(__file__).resolve().parents[2], capture_output=True, text=True)

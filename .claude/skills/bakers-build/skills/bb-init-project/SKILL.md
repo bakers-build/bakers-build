@@ -12,6 +12,12 @@ Read [setup checks](references/setup-checks.md) before checking/applying.
 For project/all, first [assess worktree compatibility](references/project-setup.md#check-worktree-compatibility-first)
 before configuration checks or setup changes. Resolve known application blockers before continuing.
 
+## Welcome
+
+Called directly rather than from `@bakers-build/bb-init`: open with one message naming the steps
+ahead (worktree check, server project, the project's blocks, workflow, checks, conductor start)
+and the files written after confirmation: `.bakers/project.config.js` and `WORKFLOW.md`.
+
 ## Select and check the scope
 
 Reuse caller choices. Repository setup uses `project` when prerequisites are ready; `all`
@@ -55,6 +61,16 @@ inapplicable; other scopes require authentication, not a workspace. Offline chec
 
 For project/all, read the configured project and confirm its `WORKFLOW.md` starts with the entry
 line and names only installed skills.
+Show each written configuration back under the
+[conversation rules](../bb-init/references/setup-conversation.md#show-what-was-written).
 Report paths, scope, resolved executor and worktree (herdr-app: `@bakers-build/addon-workspace-git`),
 local validation, online readiness and remaining actions separately.
-Stop after setup; do not start ticket work.
+
+## Start the session
+
+With project/all checks green, ask once whether to start working now. On yes, start the
+conductor with `bakers conductor start` through the configured client (herdr: a new tab), confirm
+it runs, and offer a first trial ticket through `@bakers-build/bb-create-ticket`; the conductor
+opens its agent session in that client. A no, a failed check or an unattended run ends with the
+start command as the next action.
+**Done when the conductor runs or the person declined.**

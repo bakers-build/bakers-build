@@ -98,6 +98,44 @@ class SetupRulesTest(unittest.TestCase):
                 with self.subTest(path=path.name, url=url):
                     self.assertTrue(url.split('#')[0].endswith('.md'), 'link the page source, not the rendered page')
 
+    def test_onboarding_flow_is_taught(self):
+        init = (SKILLS / 'bb-init/SKILL.md').read_text()
+        project_skill = (SKILLS / 'bb-init-project/SKILL.md').read_text()
+        machine = MATRICES[0].read_text()
+        project = MATRICES[1].read_text()
+        rules = CONVERSATION.read_text()
+        # Welcome names the steps and the files written.
+        welcome = init.split('## Welcome', 1)[1].split('\n## ', 1)[0]
+        for written in ['machine.config.js', 'connections/default.js', '.bakers/project.config.js', 'WORKFLOW.md']:
+            self.assertIn(written, welcome)
+        self.assertIn('## Welcome', project_skill)
+        # Every block question carries its step; configs are shown back masked.
+        self.assertIn('Step n of m', rules)
+        self.assertIn('***', rules)
+        # Sign-in defaults to the hosted server.
+        sign_in = blocks(MATRICES[0])['Sign-in'][0]
+        self.assertIn('https://app.bakers.build', sign_in['Recommend'])
+        # The worktree check runs and reports pass or fail with a reason.
+        self.assertIn('git worktree add', project)
+        self.assertIn('git worktree remove', project)
+        self.assertIn('fail — <reason>', project)
+        # The private credentials file is explained where the harness is registered.
+        harness = next(row for row in blocks(MATRICES[0])['Machine'] if row['Decide'] == 'Agent harness to register')
+        self.assertIn('.bakers.env', harness['Explain'])
+        # Both sandbox runtimes are offered with their prerequisites.
+        mode = next(row for row in blocks(MATRICES[0])['Permissions'] if 'Permission mode' in row['Decide'])
+        for runtime, check in [('runtime-bwrap', 'bwrap'), ('runtime-docker', 'docker info')]:
+            self.assertIn(runtime, mode['Recommend'])
+            self.assertIn(check, mode['Derive from'])
+        # The flow ends by starting the conductor and offering a first ticket.
+        self.assertNotIn('do not start ticket work', project_skill)
+        self.assertIn('bakers conductor start', project_skill)
+        self.assertIn('bb-create-ticket', project_skill)
+
+    def test_setup_cases_stay_few(self):
+        cases = [path for path in TAKE_ALL.parent.glob('*.json') if path.name != 'defaults.json']
+        self.assertLessEqual(len(cases), 10)
+
 
 if __name__ == '__main__':
     unittest.main()
