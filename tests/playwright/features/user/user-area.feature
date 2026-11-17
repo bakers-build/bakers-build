@@ -105,7 +105,7 @@ Feature: The user area is split into a view route and an edit route
     Then I am on the canonical route of "site-admin"
 
   Scenario: An account without a full name falls back to its name
-    Given the account "no-bakery" has no full name
+    Given the account "no-bakery" has its full name cleared
     And I am logged in as the account "no-bakery"
     When I visit the user area of "no-bakery"
     Then the user overview shows the name "no-bakery"

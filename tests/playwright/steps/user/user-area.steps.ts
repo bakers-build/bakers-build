@@ -102,7 +102,7 @@ Given('the account {string} has full name {string}', async ({}, name: string, fu
   );
 });
 
-Given('the account {string} has no full name', async ({}, name: string) => {
+Given('the account {string} has its full name cleared', async ({}, name: string) => {
   php(
     `$u = \\Drupal\\user\\Entity\\User::load(${uidOf(name)}); ` +
       '$u->set("field_full_name", NULL); $u->save();',
