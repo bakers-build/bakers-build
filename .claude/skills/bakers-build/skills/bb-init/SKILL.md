@@ -25,7 +25,7 @@ substituting a remembered tool list.
 ## Sandbox prerequisites
 
 Follow [sandbox prerequisites](references/sandbox-prerequisites.md) before any question.
-**Done when they pass or are declined, or the run stops after the hand-over.**
+**Done when they pass, are skipped or declined, or the session restarts.**
 
 ## Ask and explain
 

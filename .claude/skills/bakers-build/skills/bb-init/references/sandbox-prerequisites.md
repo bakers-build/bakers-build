@@ -26,7 +26,7 @@ Anything missing: send **one** message that names
   session has no `sudo`;
 - that the agent session must be restarted afterwards, because a running session does not find the
   new tools;
-- that `bb-init` then resumes at *Sandbox prerequisites* in the new session;
+- that they then re-run `bb-init` in the new session, which rechecks at *Sandbox prerequisites*;
 - [Sandbox prerequisites](https://bakers.build/provision/security/execution.md#sandbox-prerequisites);
 - that replying *continue without the sandbox* goes on, offering neither `sandbox` nor
   `runtime-bwrap`.
