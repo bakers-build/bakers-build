@@ -47,7 +47,9 @@ const overviewWith = (
       if (path === 'og_membership/default')
         return { data: [{ relationships: { uid: { data: { id: 'u1' } } } }] };
       if (path === 'bb_profile/bb_profile')
-        return { data: workspaceProfile ? [{ attributes: workspaceProfile }] : [] };
+        return {
+          data: workspaceProfile ? [{ attributes: workspaceProfile }] : [],
+        };
       return { data: { id: 'u1', type: 'user--user', attributes: { name } } };
     }),
   } as unknown as DropshClient;
@@ -77,9 +79,10 @@ it('shows an active member’s username, position and About me', async () => {
   expect(body).toContain('Drupal and PHP.');
   expect(body).toContain('Little DevOps.');
   expect(client.get).toHaveBeenCalledWith('user/user/u1');
-  const [, params] = vi
-    .mocked(client.get)
-    .mock.calls.find(([path]) => path === 'bb_profile/bb_profile') ?? [];
+  const [, params] =
+    vi
+      .mocked(client.get)
+      .mock.calls.find(([path]) => path === 'bb_profile/bb_profile') ?? [];
   const query = decodeURIComponent(String(params?.getQueryString()));
   expect(query).toContain('filter[uid.id]=u1');
   expect(query).toContain('filter[workspace_id.id]=workspace-1');
