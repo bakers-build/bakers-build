@@ -349,6 +349,28 @@ final class TicketReadToolTest extends BakersToolTestBase {
   }
 
   /**
+   * Lists the readable blockers with identifier, title and state.
+   */
+  public function testReturnsReadableBlockers(): void {
+    $open = $this->ticket('TR-B1', ['title' => 'Open blocker']);
+    $done = $this->ticket('TR-B2', ['title' => 'Done blocker', 'state' => 'done']);
+    $foreign = $this->entity('bb_workspace', [
+      'name' => 'foreign',
+      'slug' => 'foreign',
+      'owner_user_id' => $this->account('stranger')->id(),
+    ]);
+    $group = $this->entity('bb_group', ['name' => 'foreign-group', 'workspace_id' => $foreign->id()]);
+    $project = $this->entity('bb_project', ['name' => 'foreign-project', 'group_id' => $group->id()]);
+    $hidden = $this->ticket('TR-B3', ['project_id' => $project->id()]);
+    $ticket = $this->ticket('TR-B', ['blocked_by' => [$open->id(), $hidden->id(), $done->id()]]);
+    self::assertSame([
+      ['identifier' => 'TR-B1', 'title' => 'Open blocker', 'state' => 'qualification'],
+      ['identifier' => 'TR-B2', 'title' => 'Done blocker', 'state' => 'done'],
+    ], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]))['blocked_by']);
+    self::assertSame([], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $open->getIdentifier()]))['blocked_by']);
+  }
+
+  /**
    * An unknown or unreadable ticket is an input error naming it.
    */
   public function testUnreadableTicketFails(): void {

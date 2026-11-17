@@ -185,6 +185,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
       'frozen' => FALSE,
       'environments' => [],
       'referenced_tickets' => [],
+      'blocked_by' => [],
     ], $out);
     $stored = $this->reload($ticket);
     self::assertSame('Clarified title', $stored->label());
@@ -443,6 +444,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     self::assertSame([
       'ticket', 'title', 'description', 'conductor', 'assignee', 'labels_add', 'labels_remove', 'frozen',
       'environments_add', 'referenced_tickets_add', 'reviewers_add', 'reviewers_remove', 'links_add', 'links_remove',
+      'blocked_by_add', 'blocked_by_remove',
     ], array_keys($definition->getInputDefinitions()));
   }
 
@@ -664,6 +666,131 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     }
     $ids = array_column($this->reload($deployment)->get('referenced_tickets')->getValue(), 'target_id');
     self::assertSame([(string) $t1->id()], array_map('strval', $ids));
+  }
+
+  /**
+   * Blockers are added by identifier or UUID; existing ones stay.
+   */
+  public function testAddsBlockersKeepingExisting(): void {
+    $kept = $this->ticket('TU-B1', ['title' => 'Kept']);
+    $byId = $this->ticket('TU-B2', ['title' => 'By identifier']);
+    $byUuid = $this->ticket('TU-B3', ['title' => 'By UUID']);
+    $ticket = $this->ticket('TU-B', ['blocked_by' => [$kept->id()]]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'blocked_by_add' => ['TU-B2', $byUuid->uuid(), 'TU-B1'],
+    ]));
+    self::assertSame([
+      ['identifier' => 'TU-B1', 'title' => 'Kept', 'state' => 'qualification'],
+      ['identifier' => 'TU-B2', 'title' => 'By identifier', 'state' => 'qualification'],
+      ['identifier' => 'TU-B3', 'title' => 'By UUID', 'state' => 'qualification'],
+    ], $out['blocked_by']);
+    self::assertSame([$kept->id(), $byId->id(), $byUuid->id()], $this->blockerIds($ticket));
+  }
+
+  /**
+   * Named blockers are removed; others stay and unknown names are ignored.
+   */
+  public function testRemovesNamedBlockersIgnoringUnknown(): void {
+    $keep = $this->ticket('TU-B4');
+    $drop = $this->ticket('TU-B5');
+    $other = $this->ticket('TU-B6');
+    $ticket = $this->ticket('TU-B7', ['blocked_by' => [$keep->id(), $drop->id()]]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'blocked_by_remove' => [$drop->uuid(), 'NOPE-1', $other->getIdentifier()],
+    ]));
+    self::assertSame(['TU-B4'], array_column($out['blocked_by'], 'identifier'));
+    self::assertSame([$keep->id()], $this->blockerIds($ticket));
+  }
+
+  /**
+   * One ticket in both lists is refused, also when named two ways.
+   */
+  public function testSameBlockerAddedAndRemovedIsRefused(): void {
+    $blocker = $this->ticket('TU-B8');
+    $ticket = $this->ticket('TU-B9', ['blocked_by' => [$blocker->id()]]);
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'blocked_by_add' => ['TU-B8'],
+      'blocked_by_remove' => [$blocker->uuid()],
+    ]), 'A blocker is both added and removed.');
+    self::assertSame([$blocker->id()], $this->blockerIds($ticket));
+  }
+
+  /**
+   * A cycle or the ticket itself is refused; nothing of the call is saved.
+   */
+  public function testBlockerCycleRollsBack(): void {
+    $first = $this->ticket('TU-C1');
+    $second = $this->ticket('TU-C2', ['blocked_by' => [$first->id()]]);
+    $this->ticket('TU-C3');
+    foreach (['TU-C2', 'TU-C1'] as $blocker) {
+      $this->assertFailure($this->runTool('bakers_ticket_update', [
+        'ticket' => 'TU-C1',
+        'title' => 'Not saved',
+        'blocked_by_add' => ['TU-C3', $blocker],
+      ]), 'would create a blocked_by cycle');
+    }
+    self::assertSame('TU-C1', $this->reload($first)->label());
+    self::assertSame([], $this->blockerIds($first));
+    self::assertSame([$first->id()], $this->blockerIds($second));
+  }
+
+  /**
+   * Blockers of another project, closed or unreadable ones are refused.
+   */
+  public function testIneligibleBlockersAreRefused(): void {
+    $kept = $this->ticket('TU-E0');
+    $ticket = $this->ticket('TU-E', ['blocked_by' => [$kept->id()]]);
+    $project = $this->entity('bb_project', [
+      'name' => 'other-project',
+      'group_id' => $this->project->get('group_id')->target_id,
+      'teams' => [$this->project->get('teams')->target_id],
+    ]);
+    $this->ticket('TU-OTHER', ['project_id' => $project->id()]);
+    $this->ticket('TU-DONE', ['state' => 'done']);
+    [$workspace] = $this->foreignWorkspace();
+    $group = $this->entity('bb_group', ['name' => 'foreign-group', 'workspace_id' => $workspace->id()]);
+    $foreignProject = $this->entity('bb_project', ['name' => 'foreign-project', 'group_id' => $group->id()]);
+    $this->ticket('FX-B', ['project_id' => $foreignProject->id()]);
+    $this->container->get('current_user')->setAccount($this->actor);
+    foreach ([
+      'TU-OTHER' => "Choose open blocking tickets from this ticket's project.",
+      'TU-DONE' => "Choose open blocking tickets from this ticket's project.",
+      'FX-B' => 'Ticket FX-B does not exist or is not readable.',
+      'NOPE-2' => 'Ticket NOPE-2 does not exist or is not readable.',
+    ] as $blocker => $message) {
+      $this->assertFailure($this->runTool('bakers_ticket_update', [
+        'ticket' => 'TU-E',
+        'blocked_by_add' => [$blocker],
+      ]), $message);
+    }
+    self::assertSame([$kept->id()], $this->blockerIds($ticket));
+  }
+
+  /**
+   * A reader without update access may not change blockers.
+   */
+  public function testReaderCannotSetBlockers(): void {
+    $blocker = $this->ticket('TU-R-B1');
+    $ticket = $this->ticket('TU-R-B2', ['blocked_by' => [$blocker->id()]]);
+    $id = $ticket->getIdentifier();
+    $this->actAsReader();
+    foreach (['blocked_by_add' => ['TU-R-B1'], 'blocked_by_remove' => ['TU-R-B1']] as $input => $value) {
+      $this->assertFailure($this->runTool('bakers_ticket_update', ['ticket' => $id, $input => $value]), "You may not change blocked_by of ticket $id");
+    }
+    self::assertSame([$blocker->id()], $this->blockerIds($ticket));
+  }
+
+  /**
+   * The stored blocker ids of a ticket, in order.
+   *
+   * @return array<string>
+   *   Ticket ids as strings.
+   */
+  private function blockerIds(BbTicketInterface $ticket): array {
+    return array_map('strval', array_column($this->reload($ticket)->get('blocked_by')->getValue(), 'target_id'));
   }
 
   /**

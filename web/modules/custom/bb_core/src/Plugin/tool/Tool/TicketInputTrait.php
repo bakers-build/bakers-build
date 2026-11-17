@@ -43,6 +43,58 @@ trait TicketInputTrait {
   }
 
   /**
+   * Appends readable, open blockers the ticket lacks, keeping the rest.
+   *
+   * Project and cycle rules stay with the field's constraints; the open rule
+   * mirrors the form's picker, which offers open tickets only.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed or created.
+   * @param array<string> $values
+   *   Ticket identifiers or UUIDs.
+   *
+   * @throws \InvalidArgumentException
+   */
+  protected function addBlockers(BbTicketInterface $ticket, array $values): void {
+    $present = array_map('strval', $ticket->getBlockedByIds());
+    foreach (array_unique($values) as $value) {
+      $blocker = $this->readableTicket($value);
+      if (in_array((string) $blocker->id(), $present, TRUE)) {
+        continue;
+      }
+      if ($blocker->isClosed()) {
+        throw new \InvalidArgumentException(sprintf("blocked_by: %s is closed. Choose open blocking tickets from this ticket's project.", $value));
+      }
+      $ticket->get('blocked_by')->appendItem($blocker->id());
+      $present[] = (string) $blocker->id();
+    }
+  }
+
+  /**
+   * The readable blockers as the read and update tools return them.
+   *
+   * @return array<array{identifier: string, title: string, state: string}>
+   *   Each blocker's identifier, title and state, in stored order.
+   */
+  protected function blockers(BbTicketInterface $ticket): array {
+    $items = $ticket->get('blocked_by');
+    if (!$items->access('view', $this->currentUser)) {
+      return [];
+    }
+    $rows = [];
+    foreach ($items->referencedEntities() as $blocker) {
+      if ($blocker instanceof BbTicketInterface && $blocker->access('view', $this->currentUser)) {
+        $rows[] = [
+          'identifier' => $blocker->getIdentifier(),
+          'title' => $blocker->getTitle(),
+          'state' => (string) $blocker->get('state')->value,
+        ];
+      }
+    }
+    return $rows;
+  }
+
+  /**
    * A comment as the read tools return it.
    *
    * @return array{id: string|null, type: string, body: string, created: string, author: string}
