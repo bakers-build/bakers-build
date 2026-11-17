@@ -1,4 +1,12 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { claudeAgent } from '@bakers-build/addon-claude';
@@ -43,7 +51,17 @@ describe('bakers conductor start --foreground self-restart', () => {
     home = mkdtempSync(join(tmpdir(), 'bakers-fg-restart-'));
     process.env.BAKERS_HOME = join(home, '.bakers');
     process.env.BAKERS_CONDUCTOR_LOG = 'file';
+    mkdirSync(process.env.BAKERS_HOME);
+    secrets = join(process.env.BAKERS_HOME, '.bakers.env');
   });
+
+  let secrets: string;
+  const OLD = 'old-secret-value';
+  const NEW = 'new-secret-value';
+  function writeSecrets(text: string, mode = 0o600): void {
+    writeFileSync(secrets, text);
+    chmodSync(secrets, mode);
+  }
 
   afterEach(() => {
     rmSync(home, { recursive: true, force: true });
@@ -166,6 +184,182 @@ describe('bakers conductor start --foreground self-restart', () => {
     expect(
       log().match(/restart_on_change needs process\.execve/g),
     ).toHaveLength(1);
+  });
+
+  describe('when the secrets file changes', () => {
+    it('on any write that loads, drains without offline and re-execs without a config check, logging no value', async () => {
+      writeSecrets(`TOKEN=${OLD}\nGONE=${OLD}\n`);
+      const remote = new TickRemote();
+      const h = harness(remote, async () => undefined);
+      remote.onTick = (n) => {
+        if (n === 1) {
+          writeSecrets(`TOKEN=${NEW}\nADDED=${NEW}\n`);
+          void h.change([secrets]);
+        }
+      };
+
+      await h.run();
+
+      expect(h.execve).toHaveBeenCalledTimes(1);
+      expect(h.checks).toBe(0);
+      expect(remote.statusWrites).toEqual([]);
+      expect(log()).toContain('secrets file changed; restarting conductor');
+      expect(log()).not.toContain(OLD);
+      expect(log()).not.toContain(NEW);
+    });
+
+    it('keeps serving on a file that fails to load, logs the file and fix without values, and restarts on the next valid write', async () => {
+      writeSecrets(`TOKEN=${OLD}\n`);
+      const remote = new TickRemote();
+      const h = harness(remote, async () => undefined);
+      remote.onTick = (n) => {
+        if (n === 1) {
+          writeSecrets(`TOKEN ${NEW}\n`);
+          void h.change([secrets]);
+        }
+        if (n === 3) {
+          writeSecrets(`TOKEN=${NEW}\n`, 0o644);
+          void h.change([secrets]);
+        }
+        if (n === 5) {
+          writeSecrets(`TOKEN=${NEW}\n`);
+          void h.change([secrets]);
+        }
+      };
+
+      await h.run();
+
+      expect(remote.ticks).toBeGreaterThanOrEqual(5);
+      expect(h.execve).toHaveBeenCalledTimes(1);
+      const kept = 'keeping the running conductor on its last good secrets';
+      expect(log()).toContain(
+        `${secrets}: line 1: expected KEY=value; ${kept}`,
+      );
+      expect(log()).toContain(`chmod 600 ${secrets}; ${kept}`);
+      expect(log()).not.toContain(OLD);
+      expect(log()).not.toContain(NEW);
+    });
+
+    it('does not restart for a config change while the secrets file fails to load', async () => {
+      writeSecrets(`TOKEN=${OLD}\n`);
+      const remote = new TickRemote();
+      const h = harness(remote, async () => undefined);
+      remote.onTick = (n) => {
+        if (n === 1) {
+          writeSecrets(`TOKEN ${NEW}\n`);
+          void h.change([CHANGED, secrets]);
+        }
+        if (n === 3) process.emit('SIGTERM');
+      };
+
+      await h.run();
+
+      expect(h.execve).not.toHaveBeenCalled();
+      expect(log()).toContain(
+        'keeping the running conductor on its last good secrets',
+      );
+    });
+
+    it('re-checks a held-back config change once the secrets file loads again', async () => {
+      writeSecrets(`TOKEN=${OLD}\n`);
+      const remote = new TickRemote();
+      const h = harness(remote, async () => undefined);
+      remote.onTick = (n) => {
+        if (n === 1) {
+          writeSecrets(`TOKEN ${OLD}\n`);
+          void h.change([CHANGED, secrets]);
+        }
+        if (n === 3) {
+          writeSecrets(`TOKEN=${OLD}\n`);
+          void h.change([secrets]);
+        }
+        if (n === 6) process.emit('SIGTERM');
+      };
+
+      await h.run();
+
+      expect(h.checks).toBe(1);
+      expect(h.execve).toHaveBeenCalledTimes(1);
+      expect(log()).toContain(
+        `${CHANGED}, ${secrets} changed; checking config`,
+      );
+    });
+
+    it('does not restart for a new CLI version while the secrets file fails to load', async () => {
+      writeSecrets(`TOKEN=${OLD}\n`);
+      const remote = new TickRemote();
+      const versions = ['99.0.0', '99.0.0'];
+      const h = harness(remote, async () => undefined, {}, true, {
+        readCliVersion: () => {
+          const next = versions.shift();
+          if (next === undefined) process.emit('SIGTERM');
+          else writeSecrets(`TOKEN ${NEW}\n`);
+          return next ?? resolveCliVersion();
+        },
+        migrateConfig: async () => undefined,
+      });
+
+      await h.run();
+
+      expect(h.execve).not.toHaveBeenCalled();
+      expect(log()).toContain(
+        'keeping the running conductor on its last good secrets',
+      );
+    });
+
+    it('during a pending CLI upgrade, a valid write restarts only after migrate and check', async () => {
+      writeSecrets(`TOKEN=${OLD}\n`);
+      const remote = new TickRemote();
+      const calls: string[] = [];
+      let reads = 0;
+      const h = harness(
+        remote,
+        async () => {
+          calls.push('check');
+          return undefined;
+        },
+        {},
+        true,
+        {
+          readCliVersion: () => {
+            reads += 1;
+            // Read 2 refuses the upgrade on the broken file; read 3 fixes it.
+            if (reads === 1) writeSecrets(`TOKEN ${NEW}\n`);
+            if (reads === 3) {
+              writeSecrets(`TOKEN=${NEW}\n`);
+              void h.change([secrets]);
+            }
+            if (reads === 10) process.emit('SIGTERM');
+            return '99.0.0';
+          },
+          migrateConfig: async () => {
+            calls.push('migrate');
+            return undefined;
+          },
+        },
+      );
+      h.execve.mockImplementation(() => calls.push('execve'));
+
+      await h.run();
+
+      expect(calls).toEqual(['migrate', 'check', 'execve']);
+    });
+
+    it('names the secrets file beside a config change in the same window', async () => {
+      writeSecrets(`TOKEN=${OLD}\n`);
+      const remote = new TickRemote();
+      const h = harness(remote, async () => undefined);
+      remote.onTick = (n) => {
+        if (n === 1) void h.change([CHANGED, secrets]);
+      };
+
+      await h.run();
+
+      expect(h.execve).toHaveBeenCalledTimes(1);
+      expect(log()).toContain(
+        `${CHANGED}, ${secrets} changed; checking config`,
+      );
+    });
   });
 
   describe('after the installed CLI version changes', () => {
@@ -311,13 +505,14 @@ describe('bakers conductor start --foreground self-restart', () => {
     injectExecve = true,
     extra: Partial<BbCliDeps> = {},
   ) {
-    let trigger: ((path: string) => Promise<void>) | undefined;
+    let trigger: ((paths: string[]) => Promise<void>) | undefined;
     const h = {
       checks: 0,
       watched: false,
       closed: false,
       execve: vi.fn(),
-      change: () => (trigger ? trigger(CHANGED) : Promise.resolve()),
+      change: (paths = [CHANGED]) =>
+        trigger ? trigger(paths) : Promise.resolve(),
       run: async () => {
         const deps: BbCliDeps = {
           remote,
