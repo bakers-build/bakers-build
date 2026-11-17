@@ -20,6 +20,7 @@ import type {
 } from './plugins/plugins.js';
 import type { Ticket } from './plugins/remote.js';
 import type { RuntimePlugin } from './plugins/runtime.js';
+import type { SlotCatalog } from './plugins/slot-catalog.js';
 import type {
   ProvisionHook,
   ProvisionRuns,
@@ -132,6 +133,7 @@ export interface ConductorFileConfig extends ConductorSettings {
   disabled_agents: string[];
   default_agent: string;
   routes: AgentRoutes;
+  catalogs: { agent: SlotCatalog<AgentCandidate> };
   /** Replaces the shipped label/default resolution for this project. */
   selectAgent?: (candidates: ResolvedAgent[], ticket: Ticket) => ResolvedAgent;
   workspace: WorkspacePlugin;

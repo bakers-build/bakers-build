@@ -1744,6 +1744,48 @@ export default {
     expect(cfg.routes).toEqual({ default: { '*': 'codex' } });
   });
 
+  it('exposes the agent slot catalog beside the existing fields', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    const cfg = await loadConductorConfig(writeConfig(slotConfig));
+
+    expect(cfg.catalogs.agent.slot).toBe('agent');
+    expect(Object.keys(cfg.catalogs.agent.entries)).toEqual(
+      cfg.agents.map((candidate) => candidate.alias),
+    );
+    expect(cfg.catalogs.agent.entries.codex).toBe(
+      cfg.agents.find((candidate) => candidate.alias === 'codex'),
+    );
+    expect(cfg.catalogs.agent.default).toBe(cfg.default_agent);
+    expect(cfg.catalogs.agent.routes).toBe(cfg.routes);
+  });
+
+  it('warns once per load that project select_agent is deprecated', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      await loadConductorConfig(writeConfig(slotConfig));
+      expect(warn).not.toHaveBeenCalledWith(
+        expect.stringContaining('select_agent'),
+      );
+      const cfg = await loadConductorConfig(
+        writeConfig(
+          slotConfig.replace(
+            'export default {',
+            'export default {\n select_agent: (c) => c[0],',
+          ),
+        ),
+      );
+      const calls = warn.mock.calls.filter((c) =>
+        String(c[0]).includes('select_agent'),
+      );
+      expect(calls).toHaveLength(1);
+      expect(String(calls[0]?.[0])).toContain('select');
+      expect(typeof cfg.selectAgent).toBe('function');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('selects a published variant and applies deny-after-allow filtering', async () => {
     writeMachine(`export default {
       addons: ['@bakers-build/addon-codex'],

@@ -757,6 +757,10 @@ export async function loadConductorConfig(
     default_agent: defaultAgent,
     routes,
   };
+  if (typeof config.select_agent === 'function')
+    console.warn(
+      "select_agent in the project config is deprecated; the machine config's select replaces it.",
+    );
   return {
     ...(remote ? { remote } : {}),
     slot_sources: slotSources,
@@ -767,6 +771,16 @@ export async function loadConductorConfig(
     disabled_agents: disabled,
     default_agent: defaultAgent,
     routes,
+    catalogs: {
+      agent: {
+        slot: 'agent',
+        entries: Object.fromEntries(
+          candidates.map((candidate) => [candidate.alias as string, candidate]),
+        ),
+        default: defaultAgent,
+        routes,
+      },
+    },
     ...(typeof config.select_agent === 'function'
       ? {
           selectAgent: config.select_agent as NonNullable<
