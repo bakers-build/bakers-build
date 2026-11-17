@@ -1,7 +1,7 @@
 import { arg, callRecovery, calls, check, commonChecks, names, payload, succeeded, tool, toolCalls, uuid, validateTools, writes } from '../call-utils.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 import { priorArtSearched } from './create-ticket-calls.mjs';
-const NINE = ['bakers_user_read', 'bakers_ticket_create', 'bakers_ticket_read', 'bakers_ticket_search', 'bakers_comment_publish',
+const NINE = ['bakers_user_read', 'bakers_ticket_create', 'bakers_ticket_read', 'bakers_ticket_search', 'bakers_comment_create',
   'bakers_ticket_transition', 'bakers_ticket_update', 'bakers_ticket_classify', 'bakers_conductor_list'].map(tool);
 export function validate(f) {
   validateTools(f, 'bb-create-ticket');
@@ -20,7 +20,7 @@ function analyze(f, context) {
   const created = payload(toolCalls(trace, 'bakers_ticket_create')[0]);
   const ticket = f.simulation.ticket ?? { id: created?.id, identifier: created?.identifier };
   const is = (c, id) => c?.name === tool(id) && names(c, ticket);
-  const published = (c, type) => is(c, 'bakers_comment_publish') && arg(c, 'type') === type;
+  const published = (c, type) => is(c, 'bakers_comment_create') && arg(c, 'type') === type;
   const body = c => String(arg(c, 'body') ?? '');
   const acts = e.start || e.bug || e.hand_over;
   const common = [
@@ -46,7 +46,7 @@ function analyze(f, context) {
     ] };
   }
   if (e.bug) {
-    const comments = sent.filter(c => is(c, 'bakers_comment_publish'));
+    const comments = sent.filter(c => is(c, 'bakers_comment_create'));
     const classify = sent.find(c => is(c, 'bakers_ticket_classify')), last = sent.at(-1);
     return { diagnostics, checks: [...common,
       check('bug-order', sent.length === 4 && comments.map(c => arg(c, 'type')).join() === 'qualification,summary' &&

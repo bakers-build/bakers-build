@@ -36,7 +36,7 @@ const file = (path: string, exit_code = 0): Row => ({
 });
 const comment = (type: string, body = `${type} body`) =>
   call(
-    'bakers_comment_publish',
+    'bakers_comment_create',
     { ticket, type, body },
     { id: '22222222-2222-4222-8222-000000000001', type },
   );
@@ -367,7 +367,7 @@ describe('bb-label-auto profile', () => {
         verdict('Not OK'),
         transition('done'),
       ]),
-    ).toEqual(['auto-review-status']);
+    ).toEqual(['auto-verdict-status']);
     // Any other run merges nothing; an undeclared command leaves the call surface too.
     expect(
       await judge(notOk, 'Back.', [
@@ -439,9 +439,11 @@ describe('bb-label-auto profile', () => {
   });
   it('a third Not OK still goes back to working', async () => {
     // Two earlier Not OK verdicts: no loop limit, so no technical problem.
-    expect(await judge('auto-review-third-not-ok', 'Back.', back)).toEqual([]);
+    expect(await judge('auto-in-review-third-not-ok', 'Back.', back)).toEqual(
+      [],
+    );
     expect(
-      await judge('auto-review-third-not-ok', 'Stopped.', [
+      await judge('auto-in-review-third-not-ok', 'Stopped.', [
         ...back.slice(0, 3),
         problem,
         reported,
@@ -506,7 +508,7 @@ describe('bb-label-auto profile', () => {
     ).toEqual(['auto-decision']);
   });
   it('merges an OK verdict whose handoff holds no acceptance due', async () => {
-    const id = 'auto-review-ok-no-acceptance-due';
+    const id = 'auto-in-review-ok-no-acceptance-due';
     const f = await loadFixture(id);
     const argv = f.simulation.commands.glab.find(
       (r: { argv: string[] }) => r.argv[2] === 'merge',
@@ -525,6 +527,121 @@ describe('bb-label-auto profile', () => {
       'auto-no-stop',
       'auto-transition',
       'auto-merge',
+    ]);
+  });
+  it('runs the human-review and human-accept skills only beside their own label', async () => {
+    const { validate } = await loadProfile(fixture({ stop: 'question' }));
+    const q = {
+      ...fixture({ stop: 'question' }),
+      skill: 'bb-label-human-review',
+    };
+    expect(() => validate(q)).toThrow(/human-review/);
+    const labelled = {
+      ...q.simulation.ticket,
+      labels: ['human-review', 'ticket-question'],
+    };
+    expect(() =>
+      validate({ ...q, simulation: { ...q.simulation, ticket: labelled } }),
+    ).not.toThrow();
+    expect(() => validate({ ...q, skill: 'bb-label-other' })).toThrow();
+  });
+  const mergeOf = async (id: string): Promise<Row> => {
+    const f = await loadFixture(id);
+    const argv = f.simulation.commands.glab.find(
+      (r: { argv: string[] }) => r.argv[2] === 'merge',
+    ).argv;
+    return { tool: 'glab', arguments: { argv }, result: ok('Merged MR 61\n') };
+  };
+  const reviewer = comment(
+    'comment',
+    `# Question\n\n1. Confirm the verdict OK and authorize the merge (recommended)\n2. Reject\n\n${answer}`,
+  );
+  it('human-review moves a GREEN working pass to review without asking', async () => {
+    const handedOff = [readTicket(), comment('coding'), summary];
+    const id = 'label-human-review-working';
+    expect(
+      await judge(id, 'Moved.', [...handedOff, transition('review')]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...handedOff, shown, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+    ]);
+  });
+
+  it('human-review moves a GREEN working pass without a reviewer to review', async () => {
+    const handedOff = [readTicket(), comment('coding'), summary];
+    const id = 'label-human-review-working-no-reviewer';
+    expect(
+      await judge(id, 'Moved.', [...handedOff, transition('review')]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...handedOff, shown, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+    ]);
+  });
+  const askOf = (name: string) =>
+    comment(
+      'comment',
+      `# Question\n\n${name}: 1. Confirm the verdict OK and authorize the merge (recommended)\n2. Reject\n\n${answer}`,
+    );
+  it.each([
+    ['label-human-review-ok', 'rita', 'ana'],
+    ['label-human-review-ok-assignee', 'ana', 'rita'],
+    ['label-human-review-ok-service-assignee', 'reviewer', 'service-ci'],
+    ['label-human-accept-review-risky', 'rita', 'ana'],
+    ['label-human-accept-review-risky-assignee', 'ana', 'rita'],
+  ])('%s asks %s, not %s, to confirm the verdict', async (id, person, other) => {
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(
+      await judge(id, 'Asked.', [...passed, askOf(person), asked]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...passed, askOf(other), asked])).toEqual(
+      ['auto-asks'],
+    );
+    expect(
+      await judge(id, 'Merged.', [
+        ...passed,
+        await mergeOf(id),
+        transition('done'),
+      ]),
+    ).toEqual(['auto-question', 'auto-transition', 'auto-merge', 'auto-asks']);
+  });
+  it('human-accept asks for the acceptance at a GREEN working pass', async () => {
+    const handedOff = [readTicket(), comment('coding'), summary];
+    const id = 'label-human-accept-working';
+    expect(await judge(id, 'Asked.', [...handedOff, shown, asked])).toEqual([]);
+    expect(
+      await judge(id, 'Moved.', [...handedOff, transition('review')]),
+    ).toEqual(['auto-question', 'auto-transition', 'auto-link']);
+  });
+  it('human-accept merges an accepted OK verdict on its own', async () => {
+    const id = 'label-human-accept-review-ok';
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(
+      await judge(id, 'Merged.', [
+        ...passed,
+        await mergeOf(id),
+        transition('done'),
+      ]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...passed, reviewer, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+      'auto-merge',
+    ]);
+  });
+  it.each([
+    'label-human-review-criterion',
+    'label-human-accept-criterion',
+  ])('%s stops a criterion for a person and moves nothing', async (id) => {
+    const read = [readTicket()];
+    expect(await judge(id, 'Asked.', [...read, shown, asked])).toEqual([]);
+    expect(await judge(id, 'Moved.', [...read, transition('review')])).toEqual([
+      'auto-question',
+      'auto-transition',
     ]);
   });
 });
@@ -756,6 +873,27 @@ Do these criteria fit?
           .replace('fit?', 'fit.'),
       ),
     ).toEqual(['all-criteria', 'asks-fit']);
+  });
+  it('records the passed gates under ### Gates without a label', async () => {
+    const out = `### 🎯 Outcome
+EVAL-42 review: Not OK.
+
+### Gates
+- verdict: passed — by rita (comment 77777777) — recommendation Not OK, followed yes
+
+### 🧪 Manual review
+MR 42, no login needed.
+
+### ➡️ Next action
+Fix AC-2 in working.
+`;
+    expect(await judge('outtake-gates-unlabelled', out)).toEqual([]);
+    expect(
+      await judge(
+        'outtake-gates-unlabelled',
+        out.replace(/### Gates\n.*\n/, ''),
+      ),
+    ).toEqual(['gates']);
   });
   it('shows an unrecorded value as not recorded and keeps a missing persona', async () => {
     const out = working

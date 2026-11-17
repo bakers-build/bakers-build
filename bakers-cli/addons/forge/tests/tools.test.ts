@@ -4,11 +4,21 @@ import type { ToolRequest } from '@bakers-build/conductor/contract';
 import { createRunClone, loadRunClone, saveRunClone } from '@bakers-build/core';
 import { validateArgs } from '@bakers-build/message';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ForgeBackend, ForgeCheck, ForgePr } from '../src/backend.js';
+import {
+  type ForgeBackend,
+  type ForgeCheck,
+  type ForgePr,
+  tail,
+} from '../src/backend.js';
 import { mergeRule } from '../src/config.js';
 import { tools as presetTools } from '../src/preset.js';
 import { FORGE_TOOL_DEFINITIONS } from '../src/tool-definitions.js';
-import { FORGE_NEEDS_RUN, forgeTools, toolsFor } from '../src/tools.js';
+import {
+  FORGE_NEEDS_RUN,
+  forgeTools,
+  overall,
+  toolsFor,
+} from '../src/tools.js';
 import { git, gitFixture, markerRan } from './git-fixture.js';
 
 const SECRET = 'tok-SECRET-123';
@@ -19,6 +29,7 @@ function fakeBackend(options: {
   checks?: ForgeCheck[];
   blocker?: string;
   failWith?: string;
+  log?: string;
 }) {
   const calls: string[] = [];
   const prs = [...(options.prs ?? [])];
@@ -47,13 +58,15 @@ function fakeBackend(options: {
       prs.push(pr);
       return pr;
     },
-    updatePr: async (pr, { title }) => {
-      calls.push(`update:${pr.number}:${title}`);
-      return { ...pr, title };
+    updatePr: async (pr, { title, base }) => {
+      calls.push(`update:${pr.number}->${base}:${title}`);
+      const updated = { ...pr, title, base };
+      prs[prs.findIndex((p) => p.number === pr.number)] = updated;
+      return updated;
     },
     openPrsWithBase: async (base) => prs.filter((p) => p.base === base),
-    checks: async (ref, base) => {
-      calls.push(`checks:${ref}:${base}`);
+    checks: async (ref, base, opts) => {
+      calls.push(`checks:${ref}:${base}${opts?.allRuns ? ':all' : ''}`);
       return options.checks ?? [];
     },
     mergeBlocker: async () => options.blocker,
@@ -63,6 +76,10 @@ function fakeBackend(options: {
       );
     },
     isMerged: async () => true,
+    jobLog: async (jobId, maxBytes) => {
+      calls.push(`log:${jobId}:${maxBytes}`);
+      return tail(options.log ?? '', maxBytes);
+    },
   };
   return { backend, calls };
 }
@@ -77,10 +94,13 @@ function request(
   args: Record<string, unknown>,
   worktreePath = '/nonexistent',
   ticket: ToolRequest['ticket'] = RUN,
+  // The server copy at call time; by default it matches the run copy.
+  current: ToolRequest['currentTicket'] | null = async () => ticket!,
 ): ToolRequest {
   return {
     worktreePath,
     ...(ticket ? { ticket } : {}),
+    ...(current ? { currentTicket: current } : {}),
     args,
     signal: new AbortController().signal,
     logger: { debug() {}, info() {}, warn() {}, error() {} },
@@ -98,19 +118,37 @@ const pr = (over: Partial<ForgePr> = {}): ForgePr => ({
   ...over,
 });
 
+const row = (
+  name: string,
+  status: ForgeCheck['status'],
+  required: boolean,
+  over: Partial<ForgeCheck> = {},
+): ForgeCheck => ({
+  name,
+  status,
+  required,
+  conclusion: null,
+  run_id: null,
+  job_id: null,
+  run_started_at: null,
+  ...over,
+});
+
 const green: ForgeCheck[] = [
-  { name: 'required', status: 'success', required: true },
-  { name: 'optional', status: 'failure', required: false },
+  row('required', 'success', true),
+  row('optional', 'failure', false),
 ];
 
 describe('forge tools', () => {
-  it('serves the five tools through the preset', () => {
+  it('serves the seven tools through the preset', () => {
     expect(Object.keys(presetTools!.tools).sort()).toEqual([
       'forge_checks',
       'forge_fetch',
+      'forge_job_log',
       'forge_merge',
       'forge_pr_upsert',
       'forge_push',
+      'forge_update_branch',
     ]);
   });
 
@@ -216,7 +254,7 @@ describe('forge tools', () => {
     expect(calls.filter((c) => c.startsWith('create'))).toEqual([
       'create:feat/bb-7-work-2->feat/bb-7-work:feat: x',
     ]);
-    expect(calls).toContain('update:1:feat(cli)!: y');
+    expect(calls).toContain('update:1->feat/bb-7-work:feat(cli)!: y');
   });
 
   it("a deployment run opens and merges its branch into target_branch by that target's rule", async () => {
@@ -256,10 +294,97 @@ describe('forge tools', () => {
     );
   });
 
+  it("opens and merges into the ticket's target_branch as the server returns it at call time, not the run copy", async () => {
+    // The run started without an environment; `prod` (branch main) was added mid-run.
+    const atStart = {
+      identifier: 'BB-9',
+      branchName: 'release/bb-9',
+      baseBranch: 'next',
+      targetBranch: 'next',
+    };
+    const server = async () => ({ ...atStart, targetBranch: 'main' });
+    const { backend, calls } = fakeBackend({ checks: green });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const opened = JSON.parse(
+      (
+        await tools.forge_pr_upsert!(
+          request(
+            { title: 'chore(release): 1.2.3' },
+            '/nonexistent',
+            atStart,
+            server,
+          ),
+        )
+      ).text,
+    );
+    expect(opened).toMatchObject({ target: 'main', created: true });
+    expect(calls).toContain('create:release/bb-9->main:chore(release): 1.2.3');
+    const merged = JSON.parse(
+      (await tools.forge_merge!(request({}, '/nonexistent', atStart, server)))
+        .text,
+    );
+    expect(merged.into).toBe('main');
+  });
+
+  it("forge_merge refuses a PR into the run copy's target once the server target moved", async () => {
+    const { backend, calls } = fakeBackend({ prs: [pr()], checks: green });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    await expect(
+      tools.forge_merge!(
+        request({}, '/nonexistent', RUN, async () => ({
+          ...RUN,
+          targetBranch: 'main',
+        })),
+      ),
+    ).rejects.toThrow(/targets 'next', but .* merges into 'main'/);
+    expect(calls.some((c) => c.startsWith('merge:'))).toBe(false);
+  });
+
+  it('forge_pr_upsert retargets a PR still open into the old target, then forge_merge merges it', async () => {
+    const { backend, calls } = fakeBackend({ prs: [pr()], checks: green });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const server = async () => ({ ...RUN, targetBranch: 'main' });
+    const updated = JSON.parse(
+      (
+        await tools.forge_pr_upsert!(
+          request({ title: 'feat: x' }, '/nonexistent', RUN, server),
+        )
+      ).text,
+    );
+    expect(updated).toMatchObject({ target: 'main', created: false });
+    expect(calls).toContain('update:1->main:feat: x');
+    const merged = JSON.parse(
+      (await tools.forge_merge!(request({}, '/nonexistent', RUN, server))).text,
+    );
+    expect(merged.into).toBe('main');
+  });
+
+  it('forge_pr_upsert and forge_merge refuse when the current ticket cannot be read, sending nothing', async () => {
+    for (const current of [
+      async () => {
+        throw new Error('HTTP 503');
+      },
+      null,
+    ]) {
+      const { backend, calls } = fakeBackend({ prs: [pr()], checks: green });
+      const tools = forgeTools({ backend: async () => backend, settings: {} });
+      for (const call of [
+        tools.forge_pr_upsert!(
+          request({ title: 'feat: x' }, '/nonexistent', RUN, current),
+        ),
+        tools.forge_merge!(request({}, '/nonexistent', RUN, current)),
+      ])
+        await expect(call).rejects.toThrow(
+          /current target_branch could not be read from the server.*nothing was sent/,
+        );
+      expect(calls).toEqual([]);
+    }
+  });
+
   it('forge_checks reports rows, required flags and the overall status of the PR head', async () => {
     const { backend, calls } = fakeBackend({
       prs: [pr()],
-      checks: [...green, { name: 'e2e', status: 'pending', required: true }],
+      checks: [...green, row('e2e', 'pending', true)],
     });
     const tools = forgeTools({ backend: async () => backend, settings: {} });
     const out = JSON.parse((await tools.forge_checks!(request({}))).text);
@@ -270,6 +395,8 @@ describe('forge tools', () => {
       (await tools.forge_checks!(request({ ref: 'main' }))).text,
     );
     expect(any.ref).toBe('main');
+    await tools.forge_checks!(request({ all_runs: true }));
+    expect(calls).toContain('checks:abc:next:all');
   });
 
   it('forge_merge refuses: not owned, no PR, wrong target, bad title, conflict, required check not green', async () => {
@@ -290,7 +417,7 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'pending', required: true }],
+          checks: [row('required', 'pending', true)],
         },
         {},
         /required \(pending\)/,
@@ -298,7 +425,7 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'failure', required: true }],
+          checks: [row('required', 'failure', true)],
         },
         {},
         /required \(failure\)/,
@@ -306,10 +433,34 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'missing', required: true }],
+          checks: [row('required', 'missing', true)],
         },
         {},
         /required \(missing\)/,
+      ],
+      [
+        {
+          prs: [pr()],
+          checks: [row('required', 'success', true, { conclusion: 'skipped' })],
+        },
+        {},
+        /required \(skipped\)/,
+      ],
+      [
+        { prs: [pr()], checks: [row('build', 'failure', false)] },
+        {},
+        /no required checks reported/,
+      ],
+      [
+        {
+          prs: [pr()],
+          checks: [
+            row('ci', 'success', true),
+            row('required', 'failure', false, { conclusion: 'failure' }),
+          ],
+        },
+        {},
+        /required \(failure\)/,
       ],
     ];
     for (const [options, args, error] of cases) {
@@ -414,6 +565,126 @@ describe('forge tools', () => {
       (e: Error) => e.message,
     );
     expect(err).toBe('401 for token [redacted]');
+  });
+});
+
+describe('forge_job_log', () => {
+  it('reads 16384 bytes by default, clamps a larger ask to 262144 and reports it', async () => {
+    const { backend, calls } = fakeBackend({ log: 'step 1\nexit code 2\n' });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const first = JSON.parse(
+      (await tools.forge_job_log!(request({ job_id: 9 }))).text,
+    );
+    expect(first).toEqual({
+      job_id: 9,
+      bytes: 19,
+      truncated: false,
+      max_bytes: 16384,
+      log: 'step 1\nexit code 2\n',
+    });
+    const big = JSON.parse(
+      (await tools.forge_job_log!(request({ job_id: 9, max_bytes: 1e7 }))).text,
+    );
+    expect(big.max_bytes).toBe(262144);
+    expect(calls).toEqual(['log:9:16384', 'log:9:262144']);
+  });
+
+  it('refuses a job_id that is no positive integer before asking the forge', async () => {
+    const { backend, calls } = fakeBackend({});
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    for (const job_id of [undefined, 0, -3, 1.5, '9'])
+      await expect(tools.forge_job_log!(request({ job_id }))).rejects.toThrow(
+        /job_id/,
+      );
+    expect(calls).toEqual([]);
+  });
+
+  it('redacts a token inside the log', async () => {
+    const { backend } = fakeBackend({ log: `curl -H "token ${SECRET}"\n` });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const text = (await tools.forge_job_log!(request({ job_id: 9 }))).text;
+    expect(text).toContain('[redacted]');
+    expect(text).not.toContain(SECRET);
+  });
+});
+
+describe('tail', () => {
+  it('keeps a log within the limit unchanged', () => {
+    expect(tail('a\nb\n', 10)).toEqual({
+      text: 'a\nb\n',
+      bytes: 4,
+      truncated: false,
+    });
+  });
+
+  it('keeps the last bytes from the first whole line', () => {
+    expect(tail('first line\nsecond\nthird\n', 14)).toEqual({
+      text: 'second\nthird\n',
+      bytes: 24,
+      truncated: true,
+    });
+  });
+
+  it('keeps a whole line that starts exactly at the cut', () => {
+    expect(tail('first line\nsecond\nthird\n', 13).text).toBe(
+      'second\nthird\n',
+    );
+  });
+
+  it('returns nothing rather than half a character', () => {
+    expect(tail('a€', 1)).toEqual({ text: '', bytes: 4, truncated: true });
+  });
+
+  it('never starts inside a multi-byte character', () => {
+    const out = tail('äöü€€€', 7);
+    expect(out.truncated).toBe(true);
+    expect(out.text).toBe('€€');
+    expect(Buffer.byteLength(out.text)).toBeLessThanOrEqual(7);
+  });
+});
+
+describe('overall', () => {
+  it.each([
+    [
+      'failure',
+      row('ci', 'failure', true, { conclusion: 'failure' }),
+      'failure',
+    ],
+    [
+      'cancelled',
+      row('ci', 'failure', true, { conclusion: 'cancelled' }),
+      'failure',
+    ],
+    [
+      'timed_out',
+      row('ci', 'failure', true, { conclusion: 'timed_out' }),
+      'failure',
+    ],
+    [
+      'skipped',
+      row('ci', 'success', true, { conclusion: 'skipped' }),
+      'failure',
+    ],
+    ['pending', row('ci', 'pending', true), 'pending'],
+    ['missing', row('ci', 'missing', true), 'pending'],
+  ] as const)('a required %s check is never success', (_, check, want) => {
+    expect(overall([row('lint', 'success', true), check])).toBe(want);
+  });
+
+  it('reports no_required_checks, not success, when no check is required', () => {
+    expect(overall([])).toBe('no_required_checks');
+    expect(overall([row('build', 'success', false)])).toBe(
+      'no_required_checks',
+    );
+  });
+
+  it('counts a check named required as required even when unflagged', () => {
+    expect(overall([row('required', 'failure', false)])).toBe('failure');
+    expect(overall([row('required', 'success', false)])).toBe('success');
+  });
+
+  it('is success when every required check is green, whatever the others say', () => {
+    expect(overall(green)).toBe('success');
   });
 });
 
@@ -534,5 +805,254 @@ describe('forge tools for a run clone', () => {
 
     expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
     expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+  });
+
+  /** A new commit on the remote's `next`, as another merged ticket would add it. */
+  function moveTarget(f: ReturnType<typeof gitFixture>, path = 'moved') {
+    const seed = join(f.root, 'seed');
+    git(seed, 'checkout', '-q', 'next');
+    mkdirSync(join(seed, path, '..'), { recursive: true });
+    writeFileSync(join(seed, path), `${path}\n`);
+    git(seed, 'add', path);
+    git(seed, 'commit', '-qm', path);
+    git(seed, 'push', '-q', `file://${f.remote}`, 'next');
+    return git(seed, 'rev-parse', 'HEAD');
+  }
+
+  const update = async (
+    tools: ReturnType<typeof forgeTools>,
+    workspace: string,
+    current?: ToolRequest['currentTicket'],
+  ) =>
+    JSON.parse(
+      (
+        await tools.forge_update_branch!(
+          request({}, workspace, RUN, current ?? (async () => RUN)),
+        )
+      ).text,
+    );
+
+  it('forge_update_branch merges the fetched target into the ticket branch and the run syncs in place', async () => {
+    const { f, workspace, run, commit, tools } = cloned();
+    const target = moveTarget(f);
+    const tip = commit('feature.txt');
+    const { backend, calls } = fakeBackend({ remote: f.remote });
+    const live = forgeTools({ backend: async () => backend, settings: {} });
+
+    const result = await update(live, workspace);
+
+    expect(result).toMatchObject({
+      branch: RUN.branchName,
+      target_branch: 'next',
+      previous: tip,
+      target,
+      noop: false,
+      sync: 'in_place',
+    });
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(result.resulting);
+    expect(
+      git(f.clone, 'rev-list', '--parents', '-n1', result.resulting).split(' '),
+    ).toEqual([result.resulting, tip, target]);
+    expect(f.remoteSha('next')).toBe(target);
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+    expect(calls).toEqual([]);
+    expect(result.next).toContain(`git merge --ff-only ${result.resulting}`);
+
+    run('merge', '--ff-only', '-q', result.resulting);
+    expect(run('show', 'HEAD:moved')).toBe('moved');
+    expect(run('show', 'HEAD:feature.txt')).toBe('run work');
+    const pushed = JSON.parse(
+      (await tools.forge_push!(request({}, workspace))).text,
+    );
+    expect(pushed.sha).toBe(result.resulting);
+    expect(f.remoteSha(RUN.branchName)).toBe(result.resulting);
+  });
+
+  it('forge_update_branch is an explicit no-op when the target is already contained', async () => {
+    const { f, workspace, record, run, tools } = cloned();
+
+    const result = await update(tools, workspace);
+
+    expect(result).toMatchObject({
+      previous: record.expected,
+      target: f.remoteSha('next'),
+      resulting: record.expected,
+      noop: true,
+      sync: 'none',
+    });
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
+    expect(run('rev-parse', 'HEAD')).toBe(record.expected);
+  });
+
+  it("forge_update_branch merges the ticket's target as the server returns it at call time", async () => {
+    const { f, workspace, tools } = cloned();
+    const main = f.remoteSha('main');
+
+    const result = await update(tools, workspace, async () => ({
+      ...RUN,
+      targetBranch: 'main',
+    }));
+
+    expect(result).toMatchObject({ target_branch: 'main', target: main });
+    expect(f.remoteSha('next')).toBe(git(f.clone, 'rev-parse', 'origin/next'));
+  });
+
+  it('forge_update_branch refuses a conflict, naming the paths, sends it to the developers and changes nothing', async () => {
+    const { f, workspace, run, commit, tools } = cloned();
+    moveTarget(f, 'clash.txt');
+    const tip = commit('clash.txt');
+
+    const refusal = await update(tools, workspace).catch((e: Error) => e);
+    expect(String(refusal)).toMatch(
+      /conflicts in clash\.txt; nothing changed\. The run cannot resolve this: stop and report it to the developers\. A developer with write access merges origin\/next into 'feat\/bb-7-work' outside the run/,
+    );
+
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(tip);
+    expect(run('rev-parse', 'HEAD')).toBe(tip);
+    expect(run('status', '--porcelain')).toBe('');
+    expect(loadRunClone(workspace)?.expected).toBe(tip);
+  });
+
+  it.each([
+    ['changed', 'work'],
+    ['untracked', 'new.txt'],
+  ])('forge_update_branch refuses %s work and changes nothing', async (_, path) => {
+    const { f, workspace, record, tools } = cloned();
+    moveTarget(f);
+    writeFileSync(join(workspace, path), 'uncommitted');
+
+    await expect(update(tools, workspace)).rejects.toThrow(
+      new RegExp(`uncommitted work in the run \\(${path}\\)`),
+    );
+
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
+  });
+
+  it('forge_update_branch refuses a ticket branch pushed elsewhere or moved since the run started', async () => {
+    const { f, workspace, record, tools } = cloned();
+    moveTarget(f);
+    git(f.clone, 'push', '-q', `file://${f.remote}`, RUN.branchName);
+    const elsewhere = join(f.root, 'elsewhere');
+    git(f.root, 'clone', '-q', `file://${f.remote}`, elsewhere);
+    git(elsewhere, 'checkout', '-q', RUN.branchName);
+    f.commit(elsewhere, 'foreign');
+    git(elsewhere, 'push', '-q', 'origin', RUN.branchName);
+
+    await expect(update(tools, workspace)).rejects.toThrow(
+      /has commits .* lacks .*nothing changed/,
+    );
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
+
+    git(
+      f.clone,
+      'update-ref',
+      `refs/heads/${RUN.branchName}`,
+      f.remoteSha(RUN.branchName)!,
+    );
+    const moved = git(f.clone, 'rev-parse', RUN.branchName);
+    await expect(update(tools, workspace)).rejects.toThrow(
+      /moved to .* since the run last synced .*nothing changed/,
+    );
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(moved);
+  });
+
+  it('forge_update_branch merges protected target changes, then the run must restart; a fresh run clone pushes them', async () => {
+    const { f, workspace, record, tools } = cloned();
+    moveTarget(f, '.bakers/provision.sh');
+
+    const result = await update(tools, workspace);
+
+    expect(result.sync).toBe('restart');
+    expect(result.next).toMatch(/\.bakers\/provision\.sh.*bakers_run_cancel/);
+    expect(git(f.clone, 'show', `${RUN.branchName}:.bakers/provision.sh`)).toBe(
+      '.bakers/provision.sh',
+    );
+    expect(loadRunClone(workspace)?.restartPending).toBe(result.resulting);
+    for (const call of [
+      tools.forge_push!(request({}, workspace)),
+      update(tools, workspace),
+    ])
+      await expect(call).rejects.toThrow(/bakers_run_cancel/);
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+
+    const fresh = createRunClone({
+      parent: f.clone,
+      workspace,
+      branch: RUN.branchName,
+      target: 'next',
+    });
+    saveRunClone({ ...fresh, protectedPaths: ['.bakers'] });
+    expect(fresh.expected).toBe(result.resulting);
+    expect(fresh.restartPending).toBeUndefined();
+    const pushed = JSON.parse(
+      (await tools.forge_push!(request({}, workspace))).text,
+    );
+    expect(pushed.sha).toBe(result.resulting);
+    expect(record.gitDir).toBe(fresh.gitDir);
+  });
+
+  it('forge_push still rejects an agent edit of a protected path after an update', async () => {
+    const { f, workspace, run, commit, tools } = cloned();
+    moveTarget(f);
+    const result = await update(tools, workspace);
+    run('merge', '--ff-only', '-q', result.resulting);
+    commit('.bakers/provision.sh');
+
+    await expect(tools.forge_push!(request({}, workspace))).rejects.toThrow(
+      /protected path/,
+    );
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+  });
+
+  it('forge_push refuses a run that has not synced an in-place update', async () => {
+    const { f, workspace, tools } = cloned();
+    moveTarget(f);
+    const result = await update(tools, workspace);
+
+    await expect(tools.forge_push!(request({}, workspace))).rejects.toThrow(
+      `git merge --ff-only ${result.resulting}`,
+    );
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+  });
+
+  it('forge_update_branch runs no run-planted hook, config or merge driver and never returns the token', async () => {
+    const { f, workspace, commit, plant, tools } = cloned();
+    moveTarget(f, 'driven.txt');
+    writeFileSync(
+      join(workspace, '.gitattributes'),
+      '* merge=evil filter=evil\n',
+    );
+    commit('driven.txt');
+    plant();
+    git(
+      f.clone,
+      'config',
+      'merge.evil.driver',
+      `sh -c 'echo ran >> ${f.marker}'`,
+    );
+
+    const text = await tools.forge_update_branch!(request({}, workspace))
+      .then((r) => r.text)
+      .catch((e: Error) => e.message);
+
+    expect(text).not.toContain(SECRET);
+    expect(markerRan(f)).toBe(false);
+  });
+
+  it('forge_update_branch refuses a checkout that is no run clone and a call without the run binding', async () => {
+    const f = gitFixture();
+    const { backend, calls } = fakeBackend({ remote: f.remote });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const refs = git(f.clone, 'show-ref');
+    await expect(
+      tools.forge_update_branch!(request({}, f.worktree)),
+    ).rejects.toThrow(
+      /serves isolated run clones.*merge origin\/<target> locally/,
+    );
+    await expect(
+      tools.forge_update_branch!(request({}, f.clone, { identifier: 'BB-7' })),
+    ).rejects.toThrow(FORGE_NEEDS_RUN);
+    expect(git(f.clone, 'show-ref')).toBe(refs);
+    expect(calls).toEqual([]);
   });
 });

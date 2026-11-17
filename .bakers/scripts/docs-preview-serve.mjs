@@ -1,7 +1,7 @@
 // Serves a built docs/ directory on 127.0.0.1 for .bakers/scripts/docs-preview.sh under an isolating
 // runtime: the run can write the files, so the host only reads them and never runs docs code.
 //   node docs-preview-serve.mjs <dir> --port <port>
-import { createReadStream, realpathSync, statSync } from 'node:fs';
+import { closeSync, constants, createReadStream, fstatSync, openSync, realpathSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 
@@ -23,32 +23,36 @@ const types = {
   '.xml': 'application/xml',
 };
 
-/** The file a URL path names inside `root`, or undefined; a link leading out of it is refused. */
-function resolveFile(urlPath) {
+/** An open fd for the file a URL path names inside `root`, or undefined. Checked on the open fd, so
+ * a link swapped in between check and read cannot lead out of it. */
+function openFile(urlPath) {
   const path = decodeURIComponent(urlPath.split('?')[0]);
   for (const candidate of [path, `${path}.html`, join(path, 'index.html')]) {
+    let fd;
     try {
-      const real = realpathSync(join(root, candidate));
-      if ((real === root || real.startsWith(root + sep)) && statSync(real).isFile()) return real;
+      fd = openSync(join(root, candidate), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+      const real = realpathSync(`/proc/self/fd/${fd}`);
+      if (real.startsWith(root + sep) && fstatSync(fd).isFile()) return fd;
     } catch {
       // Try the next spelling.
     }
+    if (fd !== undefined) closeSync(fd);
   }
   return undefined;
 }
 
 createServer((req, res) => {
-  let file;
+  let fd;
   try {
-    file = resolveFile(req.url ?? '/');
+    fd = openFile(req.url ?? '/');
   } catch {
     // A malformed escape is a miss.
   }
-  if (!file) {
+  if (fd === undefined) {
     res.statusCode = 404;
     res.end('Not found');
     return;
   }
-  res.setHeader('content-type', types[extname(file)] ?? 'application/octet-stream');
-  createReadStream(file).pipe(res);
+  res.setHeader('content-type', types[extname(req.url.split('?')[0])] ?? 'text/html; charset=utf-8');
+  createReadStream(null, { fd }).pipe(res);
 }).listen(port, '127.0.0.1');

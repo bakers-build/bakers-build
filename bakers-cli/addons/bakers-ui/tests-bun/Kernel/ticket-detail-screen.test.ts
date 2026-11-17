@@ -974,7 +974,7 @@ describe('BB-255 AC-11 — the run detail screen honours only what it advertises
   it('S14: the hint row names exactly the keys the README’s Run detail row names', async () => {
     const tui = await boot(RUN_OLD_ROUTE);
     // BB-375 — kernel owns ↑↓ / Esc / q basics; a terminal run publishes no
-    // action ladder of its own. BB-536 — a claimed/running run now does: `e`.
+    // action ladder of its own. BB-536 — a claimed/running run now does: `x`.
     const frame = drawnRows(tui).join('\n');
     expect(frame).toMatch(/↑↓/);
     expect(frame).toMatch(/Esc:back|Esc back/);
@@ -982,14 +982,16 @@ describe('BB-255 AC-11 — the run detail screen honours only what it advertises
     expect(
       frame,
       'a terminal run must not advertise an activation key',
-    ).not.toMatch(/Enter open|Space expand|↑↓ scroll|e:Edit/);
+    ).not.toMatch(/Enter open|Space expand|↑↓ scroll|e:Edit|x:Cancel run/);
     await quit(tui);
 
     const cancellable = await boot(RUN_ROUTE);
     const cancellableFrame = drawnRows(cancellable).join('\n');
-    expect(cancellableFrame, 'a claimed/running run advertises e:Edit').toMatch(
-      /e:Edit/,
-    );
+    expect(
+      cancellableFrame,
+      'a claimed/running run advertises x:Cancel run',
+    ).toMatch(/x:Cancel run/);
+    expect(cancellableFrame).not.toMatch(/e:Edit/);
     await quit(cancellable);
 
     const readme = readFileSync(
@@ -1009,7 +1011,7 @@ describe('BB-255 AC-11 — the run detail screen honours only what it advertises
     if (/↑↓/.test(frame)) rendered.add('↑↓');
     if (/Esc:back|Esc back/.test(frame)) rendered.add('Esc');
     if (frame.includes('q:quit')) rendered.add('q');
-    if (/e:Edit/.test(cancellableFrame)) rendered.add('e');
+    if (/x:Cancel run/.test(cancellableFrame)) rendered.add('x');
 
     expect(
       [...documented].sort(),

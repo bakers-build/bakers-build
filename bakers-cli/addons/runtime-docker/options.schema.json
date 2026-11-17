@@ -33,6 +33,11 @@
       "items": { "type": "string", "minLength": 1 },
       "default": [],
       "description": "Allowlist mode: hosts the run may reach, exact or *.suffix."
+    },
+    "shared": {
+      "type": "boolean",
+      "default": false,
+      "description": "Run clones borrow the parent repository's objects (git clone --shared) instead of copying them, for every workspace addon. Faster and smaller, but never prune or repack the parent with -d while a run is open."
     }
   }
 }

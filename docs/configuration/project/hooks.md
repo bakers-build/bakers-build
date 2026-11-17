@@ -43,6 +43,7 @@ The successful preparation record survives conductor restarts and is cleared dur
 |---|---|
 | `BAKERS_URL` | Server URL of the selected connection |
 | `BAKERS_ID` | Ticket UUID |
+| `BAKERS_CONDUCTOR_ID` | The run's conductor_id, as `bakers_user_read` lists it |
 | `BAKERS_TICKET_IDENTIFIER` | Ticket identifier |
 | `BAKERS_STATE` | Run's start state; current state for freeze hooks |
 | `BAKERS_RUN_UUID` | Current run UUID; unset for freeze hooks |
@@ -97,13 +98,18 @@ At 30 minutes, ticket teardown or conductor shutdown, the conductor sends `SIGTE
 
 ## Run a configured command
 
-`hooks.provision_exec` maps keys (letters, digits, `_`, `-`) to command strings and offers the tool `provision_exec(key, args?)`. The agent picks a key and passes `args`, a list of strings. They reach the command as separate arguments after `--`, never through a shell; an unknown key is refused. The result carries the exit code and the output tail, and a non-zero exit is a tool error.
+`hooks.provision_exec` maps keys (letters, digits, `_`, `-`) to commands and offers the tool `provision_exec(key, args?)`. A string is a fixed command: the run picks the key, never the command, and `args` are refused. `{ command, args: true }` also passes `args`, a list of strings, as separate arguments after `--`, never through a shell; the script must validate them. An unknown key is refused. The result carries the exit code and the output tail, and a non-zero exit is a tool error.
 
 ```js
-hooks: { provision_exec: { web: 'bash .bakers/provision.sh exec web' } },
+hooks: {
+  provision_exec: {
+    phpcs: 'bash .bakers/provision.sh exec phpcs',
+    uli: { command: 'bash .bakers/provision.sh exec uli', args: true },
+  },
+},
 ```
 
-With a script that runs its arguments in a site container, `provision_exec('web', ['drush', 'uli'])` runs `drush uli` there. The command runs on the host like `provision_up`, with the same environment and limit.
+Prefer one fixed key per command. A key that runs any argument list in a site container hands the run a shell there, for example root through `sudo` in a DDEV web container. The command runs on the host like `provision_up`, with the same environment and limit.
 
 ## Verify
 

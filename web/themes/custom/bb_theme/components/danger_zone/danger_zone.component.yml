@@ -1,0 +1,36 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Danger Zone
+status: stable
+group: Layout
+description: >-
+  The irreversible action of a settings surface, set apart the way GitHub and
+  GitLab do it: a heading, then a box framed in the danger role holding one row —
+  what the action does on the left, its button on the right. The frame is the
+  separation; the row says nothing until its caller fills it. A caller that may
+  not perform the action does not render this component at all.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    heading:
+      type: string
+      title: Heading
+      description: The heading above the frame. Defaults to "Danger zone".
+    title:
+      type: string
+      title: Title
+      description: What the action is, e.g. "Delete this workspace".
+    description:
+      type: string
+      title: Description
+      description: One sentence on what the action removes or blocks it.
+  required:
+    - title
+slots:
+  action:
+    title: Action
+    description: The control that performs the action, normally a `button` with variant `danger`.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

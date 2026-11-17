@@ -12,7 +12,7 @@ starting each run in a container at host paths. Machine scope:
 ## Before the first run
 
 - The agent declares `installCommand`; its first run builds the versioned image. `with.image` supplies an installed agent instead.
-- Export the agent credential for the conductor: Claude uses `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`. A container cannot use the host login.
+- Set the agent credential in the [secrets file](/configuration/machine#secrets-file): Claude uses `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`. A container cannot use the host login.
 
 ## Options
 
@@ -23,7 +23,7 @@ starting each run in a container at host paths. Machine scope:
 Container `bb-run-<run uuid>`, under your uid, mounts:
 
 - the workspace: a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket branch at the worktree path, made at every run start;
-- the run's Git directory as `.git`. It lives in the conductor's cache; the parent repository is not mounted. The workspace option `shared` adds the parent's `objects`, read-only;
+- the run's Git directory as `.git`. It lives in the conductor's cache; the parent repository is not mounted. The option `shared` adds the parent's `objects`, read-only;
 - `.bakers/` and the project's [`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) paths, read-only;
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;
@@ -32,6 +32,10 @@ Container `bb-run-<run uuid>`, under your uid, mounts:
 - with `network: host` and no API credential, the host's Claude login file, read-write inside the run home, so a token refresh reaches the host and every other run.
 
 No `~/.ssh`, `~/.bakers` or Docker socket. Secrets use `-e KEY`, never values in argv.
+
+Hook scripts are not copied; unreachable ones fail open. Grant them via `mounts`; automatic mounts
+expose host files.
+
 Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
 See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes the container and home.

@@ -1,4 +1,4 @@
-// The forge addon: five conductor tools a sandboxed run delivers through,
+// The forge addon: six conductor tools a sandboxed run delivers through,
 // while the token stays with the conductor. Without a forge entry no tool is
 // served and runs deliver as before.
 

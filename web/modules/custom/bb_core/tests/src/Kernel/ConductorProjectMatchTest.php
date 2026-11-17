@@ -150,6 +150,8 @@ final class ConductorProjectMatchTest extends KernelTestBase {
       'status' => 'online',
       'project_id' => $projectId,
       'states' => ['diagnose', 'coding'],
+      // Any actor may set it; ConductorOwnerAccessTest covers the setting.
+      'assignment' => 'allow',
       'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
     ]);
     $this->assertInstanceOf(BbConductorInterface::class, $conductor);

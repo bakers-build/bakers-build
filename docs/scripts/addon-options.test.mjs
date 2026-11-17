@@ -2,11 +2,11 @@
 // (docs/.vitepress/addon-options.mjs), and every schema-bearing addon page carries the directive.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { addonCoverage, expandOptions } from '../.vitepress/addon-options.mjs'
+import { addonCoverage, expandOptions, writeMarkdownSources } from '../.vitepress/addon-options.mjs'
 
 const HARNESS = 'https://bakers.build/schema/harness-options.schema.json'
 
@@ -213,4 +213,24 @@ test('a directive on an empty schema fails, naming its page', () => {
 
 test('the repository has no addon coverage failures', () => {
   assert.deepEqual(addonCoverage(), { failures: [] })
+})
+
+// Skills read a page's full text at `<page>.md`, never through a summarising fetch.
+test('each page is published as Markdown at its output path with options expanded', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'markdown-sources-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  mkdirSync(join(root, 'src/addons'), { recursive: true })
+  writeFileSync(join(root, 'src/addons/demo.md'), `# Demo\n\n${directive()}\n`)
+  writeFileSync(join(root, 'src/index.md'), '# Manual\n')
+  const schema = { type: 'object', properties: { zone: { type: 'string', description: 'Domain.' } } }
+  writeMarkdownSources({
+    srcDir: join(root, 'src'), outDir: join(root, 'dist'), pages: ['addons/demo.md', 'index.md'],
+    rewrite: (page) => ({ 'index.md': 'manual.md' })[page] ?? page,
+    load: (ref) => ({ '@bakers-build/addon-demo': schema })[ref],
+  })
+  const demo = readFileSync(join(root, 'dist/addons/demo.md'), 'utf8')
+  assert.match(demo, /^# Demo\n/)
+  assert.ok(demo.includes('| `zone` | string | — |  | Domain. |'))
+  assert.ok(!demo.includes('@options'))
+  assert.equal(readFileSync(join(root, 'dist/manual.md'), 'utf8'), '# Manual\n')
 })

@@ -187,6 +187,10 @@
     "uuid": "ed6f78b2-8b4f-5a49-9f6d-65d812c2f991",
     "entityType": "bb_conductor"
   },
+  "conductor.forbidden": {
+    "uuid": "dbc00000-0000-4000-8000-000000000003",
+    "entityType": "bb_conductor"
+  },
   "group.edit": {
     "uuid": "d7f1b5e3-4082-4d06-cf54-9b1e3a7c0d42",
     "entityType": "bb_group"

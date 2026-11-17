@@ -48,8 +48,10 @@ is a rounded **BORDER** frame with **no** fill (content scrolls inside);
 active/selection wash **237**, ordinary text / borders **245**, highlight /
 border emphasis **231**, active / selection fg **15** (full white). Header, tab bar and
 footer have **no** background fill. No cyan slots. Interactive TTY boots show a
-timed **bakers** ASCIIFont splash (`SPLASH_MS = 500`); piped / non-TTY runs never
-enter it, and injected-renderer harnesses skip it by default.
+timed **bakers.build** splash (`SPLASH_MS = 500`); piped / non-TTY runs never
+enter it, and injected-renderer harnesses skip it by default. The wordmark uses
+the `block` ASCIIFont from 125 columns, `tiny` from 70 and plain text below, so
+the frame never wraps or clips.
 
 Each ticket tab is an independent screen and route. Switching tabs performs
 router navigation without adding a back-history entry. Each screen retains its
@@ -80,8 +82,8 @@ member routes use workspace-wide user lists.
 | Workspace Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | Projects | `↑↓` select · `Enter` open project · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | Project | `↑↓` select · `Enter` open ticket · `Tab`/`Shift-Tab` cycle tabs · `/` search · `s` status filter · `t` type filter · `p` parent filter · `x` closed filter · `c` clear · `R` reload · `←`/`→` previous/next page · `Esc` back |
-| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · cancel); on Runs, `e` edits the selected claimed or running run · `Esc` back |
-| Run detail | `↑↓` scroll · `e` cancel a claimed/running run · `Esc` back to the ticket's Runs tab · `q` quit |
+| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · parent · labels) · `x` cancel the ticket (Overview, Planning, History) or, on Runs, the selected claimed or running run · `r` restart run while the ticket has a claimed or running run · each cancel and restart asks in a confirmation dialog with **Confirm** and **Close** buttons (`←→`/`Tab` button · `Enter` press · `Esc` close, writes nothing) · `Esc` back |
+| Run detail | `↑↓` scroll · `x` cancel a claimed/running run (confirmation dialog) · `Esc` back to the ticket's Runs tab · `q` quit |
 | Runs | `↑↓` select · `Enter` open the run's ticket (Runs sub-tab) · `Tab`/`Shift-Tab` cycle tabs · `x` closed filter · `R` reload · `←`/`→` previous/next page · `Esc` back |
 
 ### Auto-refresh (`.bakers/ui-refresh`)

@@ -2,7 +2,7 @@
 
 ## references
 
-Read in order at the consuming step; skip unmet conditions.
+Step order; skip unmet conditions.
 
 always: read-ticket.md, tools.md, qualification.md
 if ticket read fails: read-ticket-troubleshooting.md

@@ -37,11 +37,18 @@ export interface RuntimeDockerOptions {
   network?: 'host' | 'allowlist';
   /** Allowlist mode: hosts the run may reach, exact or `*.suffix`. */
   allow?: string[];
+  /** Run clones borrow the parent's objects (`git clone --shared`). */
+  shared?: boolean;
 }
 
 export interface BackendDeps {
-  exec(file: string, args: string[]): Promise<{ stdout: string }>;
-  /** The conductor's own environment (the model credential lives here). */
+  /** `opts.env` is merged over the conductor's env for that one command. */
+  exec(
+    file: string,
+    args: string[],
+    opts?: { env?: Record<string, string> },
+  ): Promise<{ stdout: string }>;
+  /** The conductor's own environment; the credential source without `agent.secrets`. */
   env: Record<string, string | undefined>;
   logger: ConductorLogger;
   /** The bakers CLI build, mounted read-only at its host path. */
@@ -60,7 +67,8 @@ export const shortHash = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
 const run = promisify(execFile);
-export const realExec: BackendDeps['exec'] = (file, args) => run(file, args);
+export const realExec: BackendDeps['exec'] = (file, args, opts) =>
+  run(file, args, opts?.env ? { env: { ...process.env, ...opts.env } } : {});
 
 export function dockerRuntime(
   options: RuntimeDockerOptions,
@@ -130,7 +138,7 @@ export function dockerRuntime(
   // shortcut: one model API per sidecar; agents of different APIs on one conductor recreate it, give each its own when that is needed.
   const startProxy = async (
     hash: string,
-    credentials: string[],
+    credentials: Record<string, string>,
     api: AgentModelApi,
     image: string,
   ) => {
@@ -147,30 +155,35 @@ export function dockerRuntime(
       );
     if (current === hash) return;
     if (current !== undefined) await deps.exec(docker, ['rm', '-f', proxyName]);
-    await deps.exec(docker, [
-      'run',
-      '-d',
-      '--restart',
-      'unless-stopped',
-      '--name',
-      proxyName,
-      '--label',
-      `build.bakers.proxy=${hash}`,
-      '--network',
-      EGRESS_NETWORK,
-      ...credentials.flatMap((k) => ['-e', k]),
-      '-e',
-      `BB_ALLOW=${(options.allow ?? []).join(',')}`,
-      '-e',
-      `BB_TOOLS=${gateway}:${toolsPort}`,
-      '-e',
-      `BB_API_TARGET=${api.target}`,
-      '-e',
-      `BB_API_AUTH=${JSON.stringify(api.auth)}`,
-      image,
-      'node',
-      '/opt/bb-runtime/proxy.mjs',
-    ]);
+    // Names in argv, values in the docker CLI's env: argv is visible in ps.
+    await deps.exec(
+      docker,
+      [
+        'run',
+        '-d',
+        '--restart',
+        'unless-stopped',
+        '--name',
+        proxyName,
+        '--label',
+        `build.bakers.proxy=${hash}`,
+        '--network',
+        EGRESS_NETWORK,
+        ...Object.keys(credentials).flatMap((k) => ['-e', k]),
+        '-e',
+        `BB_ALLOW=${(options.allow ?? []).join(',')}`,
+        '-e',
+        `BB_TOOLS=${gateway}:${toolsPort}`,
+        '-e',
+        `BB_API_TARGET=${api.target}`,
+        '-e',
+        `BB_API_AUTH=${JSON.stringify(api.auth)}`,
+        image,
+        'node',
+        '/opt/bb-runtime/proxy.mjs',
+      ],
+      { env: credentials },
+    );
     await deps.exec(docker, ['network', 'connect', opts.runNetwork, proxyName]);
   };
 
@@ -180,8 +193,11 @@ export function dockerRuntime(
       throw new Error(
         'runtime-docker: allowlist mode requires model API metadata',
       );
-    const credentials = Object.keys(api?.auth ?? {}).filter((k) => deps.env[k]);
-    if (api && credentials.length === 0)
+    const source = agent.secrets ?? deps.env;
+    const credentials: Record<string, string> = {};
+    for (const k of Object.keys(api?.auth ?? {}))
+      if (source[k]) credentials[k] = source[k] as string;
+    if (api && Object.keys(credentials).length === 0)
       throw new Error(`runtime-docker: ${api.credentialHint}`);
     return credentials;
   };
@@ -194,9 +210,7 @@ export function dockerRuntime(
       mkdirSync(homePath, { recursive: true, mode: 0o700 });
       const env = allowlist
         ? { [(agent.modelApi as AgentModelApi).keyEnv]: API_KEY_PLACEHOLDER }
-        : Object.fromEntries(
-            credentials.map((k) => [k, deps.env[k] as string]),
-          );
+        : credentials;
       return { homePath, env };
     },
     async wrap(launch: RuntimeLaunch) {
@@ -316,8 +330,7 @@ export function dockerRuntime(
       }
       const env = { ...launch.env };
       // Allowlist mode: the credential stays with the proxy sidecar.
-      if (!allowlist)
-        for (const k of credentials) env[k] = deps.env[k] as string;
+      if (!allowlist) Object.assign(env, credentials);
       const { argv, env: runEnv } = dockerArgs(
         { ...launch, env },
         { ...opts, image },

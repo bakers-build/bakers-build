@@ -33,3 +33,7 @@ default:
   last_seen:
     -
       value: 1781278580
+  # Machine-less: its own setting lets fixture tickets be assigned to it.
+  assignment:
+    -
+      value: allow

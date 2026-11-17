@@ -13,6 +13,7 @@ use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\user\EntityOwnerInterface;
 
 /**
  * Fences the rank permission union back to the granting group.
@@ -147,7 +148,8 @@ final class BbRankEntityFence {
    *
    * @return \Drupal\Core\Access\AccessResultInterface
    *   Forbidden when the permission is not held inside the entity's chain,
-   *   neutral otherwise — the fence never grants.
+   *   neutral otherwise — the fence grants only the workspace owner's
+   *   project and group delete (ownedWorkspace()).
    */
   public function check(EntityInterface $entity, string $operation, AccountInterface $account): AccessResultInterface {
     $key = sprintf('%s:%s:%s:%s', $entity->getEntityTypeId(), (string) $entity->id(), $operation, (string) $account->id());
@@ -163,6 +165,11 @@ final class BbRankEntityFence {
       // carries none; a row whose anchor is absent or dangling is left to
       // the ordinary checks (see referenced()).
       return AccessResult::neutral();
+    }
+
+    $owned = $this->ownedWorkspace($groups, $entity, $operation, $account);
+    if ($owned !== NULL) {
+      return AccessResult::allowed()->addCacheableDependency($owned)->addCacheContexts(['user']);
     }
 
     // Outside the project's teams no rank counts, only a site-wide grant.
@@ -201,6 +208,36 @@ final class BbRankEntityFence {
       ->addCacheableDependency($allowed)
       ->addCacheContexts(['user'])
       ->addCacheTags(['og_membership_list']);
+  }
+
+  /**
+   * The workspace whose owner deletes this project or group, if it is theirs.
+   *
+   * The one grant of the fence: a workspace owner deletes any project or group
+   * of their workspace, which no rank permission can express.
+   *
+   * @param array<\Drupal\Core\Entity\EntityInterface> $groups
+   *   The entity's chain.
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity being accessed.
+   * @param string $operation
+   *   The operation.
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The account.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   The workspace the account owns, NULL when the rule does not apply.
+   */
+  private function ownedWorkspace(array $groups, EntityInterface $entity, string $operation, AccountInterface $account): ?EntityInterface {
+    if ($operation !== 'delete' || !in_array($entity->getEntityTypeId(), ['bb_project', 'bb_group'], TRUE) || $account->isAnonymous()) {
+      return NULL;
+    }
+    foreach ($groups as $group) {
+      if ($group instanceof EntityOwnerInterface && $group->getEntityTypeId() === 'bb_workspace') {
+        return (int) $group->getOwnerId() === (int) $account->id() ? $group : NULL;
+      }
+    }
+    return NULL;
   }
 
   /**

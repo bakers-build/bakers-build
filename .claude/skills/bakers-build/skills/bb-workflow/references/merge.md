@@ -14,7 +14,9 @@ Supply [remote base check](prior-art-build.md) context.
 1. Resolvable MR link present. Its title is a Conventional Commits subject; invalid title blocks with a conforming retitle.
 2. **Pipeline green:** latest MR pipeline succeeded, including required manual jobs.
    Red, running or pending required jobs block. For GitHub, require checks at the expected head;
-   skipped required checks also block.
+   skipped required checks also block. With forge tools: `forge_checks` `overall` is `success`;
+   `no_required_checks` blocks. A row's `conclusion` tells `cancelled`/`timed_out` from failure;
+   superseded runs are left out unless `all_runs`.
 3. No merge conflict; MR mergeable against its target.
    Verify the MR target equals the ticket's resolved `base_branch`; a target mismatch blocks.
    After these preconditions and source-branch safety checks, immediately before the merge mutation,

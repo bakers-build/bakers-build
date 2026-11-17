@@ -50,6 +50,17 @@ export default {
 
 Unknown keys fail. The run budget (**Max parallel**) is set on the machine in the backend; a new machine starts with 5. Every conductor on this host shares it and picks up a change on its next tick.
 
+## Who may assign this conductor
+
+Assigning means setting a conductor on a ticket or template. The machine's **Assignment** decides it for every conductor on the machine that follows the machine:
+
+| Value | Who may assign |
+|---|---|
+| `allow` | The owner and anyone who can view the conductor. |
+| `forbid` | The owner only; nobody else, administrators included. |
+
+A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`, so switch one to `forbid` on its Identity card to restrict it. Only the owner changes it, in the web UI on the machine's Identity card; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
+
 ## Preview-link tunnels
 
 `tunnel: true` tells workflow agents to share addon-claimed HTTP(S) services through [Ports](/addons/ports), using this machine's configured transport. The flag does not install or start a transport. Agents receive `BAKERS_TUNNEL` (`1` or `0`); omitted or `false` means share local URLs only. Unknown policy or a failed share must be reported as local-only. Public URLs are reachable from the internet while the tunnel is active. `bakers config check --scope machine` reports the effective policy and its source.
@@ -71,6 +82,39 @@ Top-level `addons` supplies harnesses; the sibling `agents` object holds the cat
 `agents.routes` maps workflow states to catalog aliases; its `default` route applies without a route label, and its `'*'` entry is the default agent. Ticket labels can select an alias or named route. See [selection fields](/agents/reference#configure-selection) and [the complete precedence order](/agents/reference#which-agent-runs-a-state).
 
 [Harness configuration](/agents/reference#harnesses) links package-specific options; [Execution security](/provision/security/execution) owns sandbox modes and prerequisites.
+
+### Agent plugins
+
+The plugins a run installs are the project's [`marketplaces`](/configuration/project#agent-plugins); the key fails loading here. A harness entry turns them off for this machine with `plugins: false` ([Claude](/addons/claude#options), [Codex](/addons/codex#options)):
+
+```js
+addons: [{ use: '@bakers-build/addon-claude', with: { plugins: false } }],
+```
+
+## Secrets file
+
+The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start: foreground, detached, the restart after a config change or an update, and `bakers conductor once`. Never put it in the project's committed `.bakers/`.
+
+```sh
+# ~/.bakers/.bakers.env
+CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
+export OPENAI_API_KEY='sk-...'
+```
+
+| Rule | Behavior |
+|---|---|
+| Format | One `KEY=value` per line; a leading `export ` is accepted, `#` starts a comment line, blank lines are skipped. A value in matching `'…'` or `"…"` loses the quotes. No expansion and no escapes: `$(…)`, backticks and `$VAR` stay literal text, and the file is never run as shell. |
+| Bad line | The start stops and names the line number, never its text. |
+| Permissions | Only you may read it. A file group or others can read stops the start with `chmod 600 ~/.bakers/.bakers.env` as the fix. A missing file is no error. |
+| Shell wins | A variable exported in the shell that starts the conductor overrides the file, so `( . ~/.bakers/.backer.env; bakers conductor start )` keeps working. To switch, rename that file to `.bakers.env` and `chmod 600` it. |
+| Hand-out | A run receives a value only when its agent addon declares the variable. Every other value stays in the conductor, under every runtime, the host included. |
+| Redaction | Logs name the loaded variables, never values. `bakers agents` shows each declared variable as `set` or `unset`. |
+
+| Addon | Declared variables |
+|---|---|
+| [Claude](/addons/claude) | `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` |
+| [Codex](/addons/codex) | `CODEX_API_KEY`, `OPENAI_API_KEY` |
+| [Grok](/addons/grok) | `XAI_API_KEY` |
 
 ## Verify
 

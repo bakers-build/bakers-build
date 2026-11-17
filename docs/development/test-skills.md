@@ -133,8 +133,14 @@ and conductor startup are unavailable. These restrictions can block
 a scenario and must not be reported as skill defects. `completed` means the conversation reached
 a final report, not that setup succeeded. Read the final report and file assertions separately.
 
+Evidence commands answer only from a fixture's `commands`: exactly, or for `gh` and `glab` by
+argv prefix, since their read flags vary. Any other command is blocked, which the setup must treat
+as missing evidence.
+
 Replay uses independently maintained expectations from `fixtures/setup/`, actual file snapshots
-and the existing provenance checks. Repeat replay to another unused output and compare named
+and the existing provenance checks. Besides file expectations, a fixture may set `max_questions`
+(questions asked), `derived_sources` (each named in some question's preview) and `asked_values`
+(each shown open as `<key>: ?`). Repeat replay to another unused output and compare named
 checks. Inspect recommendations, authorization, delegation and readiness claims separately;
 file checks cannot prove them. Preserve failed attempts and state the reason before any rerun.
 

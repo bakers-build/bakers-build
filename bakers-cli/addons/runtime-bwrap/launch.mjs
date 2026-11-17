@@ -3,11 +3,15 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 
 const planPath = process.argv[2];
 const plan = JSON.parse(readFileSync(planPath, 'utf8'));
-// The executor's shell can carry unrelated secrets; only declared run keys enter bwrap.
+// The executor's shell can carry unrelated secrets; only declared run keys and the
+// pane's terminal and locale variables (no secrets, needed for colour and redraw) enter bwrap.
+const TERMINAL =
+  /^(TERM|COLORTERM|TERM_PROGRAM|TERM_PROGRAM_VERSION|LANG|LANGUAGE|LC_[A-Z_]+|NO_COLOR|FORCE_COLOR)$/;
 const env = Object.fromEntries(
-  plan.envKeys
-    .filter((key) => process.env[key] !== undefined)
-    .map((key) => [key, process.env[key]]),
+  Object.entries(process.env).filter(
+    ([key, value]) =>
+      value !== undefined && (plan.envKeys.includes(key) || TERMINAL.test(key)),
+  ),
 );
 writeFileSync(`${planPath}.pid`, String(process.pid), { mode: 0o600 });
 const child = spawn(plan.bwrap, plan.argv, { env, stdio: 'inherit' });

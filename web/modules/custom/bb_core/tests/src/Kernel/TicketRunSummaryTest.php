@@ -7,9 +7,11 @@ namespace Drupal\Tests\bb_core\Kernel;
 use Drupal\Core\Database\Database;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use Drupal\bb_core\Access\WorkspaceResolverInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Run\RunSummary;
 use Drupal\bb_core\Run\TicketRunSummary;
+use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -20,6 +22,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 final class TicketRunSummaryTest extends KernelTestBase {
 
+  use OgScopeFixtureTrait;
   use UserCreationTrait;
   use WorkspaceFixtureTrait;
 
@@ -40,7 +43,7 @@ final class TicketRunSummaryTest extends KernelTestBase {
     parent::setUp();
     foreach ([
       'bb_workspace', 'bb_group', 'bb_project', 'bb_ticket', 'bb_run',
-      'bb_conductor', 'file', 'user', 'og_membership',
+      'bb_conductor', 'bb_team', 'file', 'user', 'og_membership',
     ] as $type) {
       $this->installEntitySchema($type);
     }
@@ -123,6 +126,48 @@ final class TicketRunSummaryTest extends KernelTestBase {
   }
 
   /**
+   * A workspace guest counts its workspace's runs and none of another's.
+   */
+  public function testGuestCountsTheRunsOfItsWorkspaceOnly(): void {
+    $this->installOgScopeFixture();
+    $north = $this->ticketWithRun('failed', $this->now());
+    $south = $this->ticketWithRun('done', $this->now());
+    $guest = $this->guestOf($north);
+
+    $this->setCurrentUser($guest);
+    $summaries = $this->service()->forTickets([(int) $north->id(), (int) $south->id()]);
+    self::assertSame(1, $summaries[(int) $north->id()]->count);
+    self::assertSame('failed', $summaries[(int) $north->id()]->latestState);
+    self::assertSame(0, $summaries[(int) $south->id()]->count);
+    self::assertNull($this->service()->forTicket($south->id()));
+  }
+
+  /**
+   * A reader who may view every run of a run-less ticket is told so.
+   */
+  public function testGuestOnRunLessTicketIsToldNoRunsYet(): void {
+    $this->installOgScopeFixture();
+    $empty = $this->ticketWithRun('done', $this->now());
+    $this->container->get('entity_type.manager')->getStorage('bb_run')
+      ->delete($empty->get('runs')->referencedEntities());
+    $this->setCurrentUser($this->guestOf($empty));
+
+    self::assertSame('No runs yet', $this->service()->forTicket($empty->id())?->text());
+  }
+
+  /**
+   * A conductor owner sees only its own runs, so it is never told "none".
+   */
+  public function testConductorOwnerWithoutViewPermissionGetsNoEmptyClaim(): void {
+    $empty = $this->ticketWithRun('done', $this->now());
+    $this->container->get('entity_type.manager')->getStorage('bb_run')
+      ->delete($empty->get('runs')->referencedEntities());
+    $this->setUpCurrentUser(['name' => 'owner'], ['register bakers conductor']);
+
+    self::assertNull($this->service()->forTicket($empty->id()));
+  }
+
+  /**
    * One ticket is summed up once per request, per reader.
    */
   public function testOneTicketIsSummedUpOncePerRequestAndReader(): void {
@@ -195,6 +240,19 @@ final class TicketRunSummaryTest extends KernelTestBase {
       'state' => $state,
       'created' => $created,
     ])->save();
+  }
+
+  /**
+   * A guest of the ticket's workspace, seated on its project's team.
+   */
+  private function guestOf(BbTicketInterface $ticket): UserInterface {
+    $guest = $this->createUser([]);
+    self::assertInstanceOf(UserInterface::class, $guest);
+    $workspace = $this->container->get(WorkspaceResolverInterface::class)->resolve($ticket);
+    self::assertNotNull($workspace);
+    $this->addMembership($workspace, $guest, ['guest']);
+    $this->seatOnProjectTeam($ticket->getProject(), $guest);
+    return $guest;
   }
 
   /**

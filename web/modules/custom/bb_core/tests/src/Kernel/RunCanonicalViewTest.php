@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Component\Serialization\Yaml;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Datetime\Entity\DateFormat;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Routing\RouteObjectInterface;
@@ -19,6 +20,7 @@ use Drupal\bb_core\Routing\BbRunRouteProvider;
 use Drupal\bb_core\Run\BbRunInspectorRows;
 use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\bb_core\RunLog\RunLogStore;
+use Drupal\file\FileInterface;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
@@ -380,6 +382,59 @@ final class RunCanonicalViewTest extends KernelTestBase {
   }
 
   /**
+   * The reason and every Log follow the log files that exist.
+   */
+  public function testLogActionsFollowTheStoredFiles(): void {
+    $this->assignConductors();
+    $this->run->set('state', 'failed')->save();
+    $this->assertLogSurfaces('No reason and no log were recorded.', FALSE);
+
+    // The error log's size stays recorded, but its file is gone.
+    $this->run->set('error_log', 'Error: boom')->save();
+    $file = $this->run->get('error_log_file')->entity;
+    self::assertInstanceOf(FileInterface::class, $file);
+    unlink((string) $file->getFileUri());
+    self::assertNotNull($this->run->get('error_log_bytes')->value);
+    $this->assertLogSurfaces('No reason and no log were recorded.', FALSE);
+
+    // A run log only.
+    $this->run->set('error_log_file', NULL)
+      ->set('error_log_bytes', NULL)
+      ->set('log', "step 1\nstep 2\n")
+      ->save();
+    $this->assertLogSurfaces('No reason was recorded. Open the log for details.', TRUE);
+  }
+
+  /**
+   * Asserts the reason and the Log of the inspector and the run row.
+   */
+  private function assertLogSurfaces(string $reason, bool $log): void {
+    $status = $this->renderBuild($this->inspector()->status($this->run));
+    self::assertStringContainsString($reason, $status);
+    self::assertSame($log, in_array('Log', $this->buttonLabels($status), TRUE), 'Inspector Log button.');
+    $downloads = $this->inspector()->downloads($this->run);
+    if ($log) {
+      self::assertStringContainsString('Run log', $this->renderBuild($downloads));
+    }
+    else {
+      self::assertSame([], $downloads, 'No Downloads zone.');
+    }
+
+    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
+      ->getDefinition('unknown')['schema'] ?? ['type' => 'array'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_run_row', SourcePluginBase::buildConfiguration('items', $definition, ['source' => []], []));
+    self::assertInstanceOf(BbRunRowSource::class, $source);
+    $source->setContextValue('entity', $this->run);
+    $item = $source->getPropValue()[0];
+    self::assertSame($reason, $item['detail']);
+    self::assertSame($log, isset($item['cells']['log']), 'Run row Log cell.');
+    if ($log) {
+      self::assertTrue($item['cells']['log']['full_load'], 'The Log downloads as a whole document, outside the boost.');
+    }
+  }
+
+  /**
    * A reason cut at 140 characters carries its full line on hover.
    */
   public function testCutReasonCarriesTheFullLineOnHover(): void {
@@ -448,6 +503,61 @@ final class RunCanonicalViewTest extends KernelTestBase {
       'data-component-id="bb_theme:log-viewer"',
       $this->renderMode('full'),
     );
+  }
+
+  /**
+   * A run viewer who may not edit the ticket reads the reason, never a log.
+   */
+  public function testRunViewerSeesTheReasonButNoLog(): void {
+    $this->run->set('state', 'failed')
+      ->set('log', 'transcript body')
+      ->set('error_log', "Error: dispatch exploded\nstack trace")
+      ->save();
+    $viewer = $this->createUser(['view bb_ticket', 'view bb_run']);
+    self::assertInstanceOf(UserInterface::class, $viewer);
+    $this->setCurrentUser($viewer);
+    self::assertTrue($this->run->access('view'));
+
+    $status = $this->renderBuild($this->inspector()->status($this->run));
+    self::assertStringContainsString('dispatch exploded', $status);
+    self::assertSame([], $this->buttonLabels($status));
+    self::assertSame([], $this->inspector()->downloads($this->run));
+    $overlay = $this->renderMode('overlay');
+    self::assertStringNotContainsString('data-component-id="bb_theme:log-viewer"', $overlay);
+    self::assertStringNotContainsString('stack trace', $overlay);
+
+    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
+      ->getDefinition('unknown')['schema'] ?? ['type' => 'array'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_run_row', SourcePluginBase::buildConfiguration('items', $definition, ['source' => []], []));
+    self::assertInstanceOf(BbRunRowSource::class, $source);
+    $source->setContextValue('entity', $this->run);
+    $item = $source->getPropValue()[0];
+    self::assertSame('dispatch exploded', $item['detail']);
+    self::assertArrayNotHasKey('log', $item['cells']);
+    $operations = $this->container->get('module_handler')
+      ->invokeAll('entity_operation', [$this->run, new CacheableMetadata()]);
+    self::assertArrayNotHasKey('log', $operations);
+    self::assertArrayNotHasKey('error_log', $operations);
+  }
+
+  /**
+   * The overlay varies with everything that decides who may read its log.
+   */
+  public function testOverlayCarriesTheLogAccessCacheability(): void {
+    $this->run->set('error_log', 'dispatch exploded')->save();
+    $editor = $this->createUser(['view bb_ticket', 'view bb_run', 'update any bb_ticket']);
+    self::assertInstanceOf(UserInterface::class, $editor);
+    $this->setCurrentUser($editor);
+    $access = CacheableMetadata::createFromObject($this->run->access('view_log', NULL, TRUE));
+    self::assertNotSame([], $access->getCacheTags());
+
+    $build = $this->container->get('entity_type.manager')->getViewBuilder('bb_run')->view($this->run, 'overlay');
+    $this->container->get('renderer')->renderInIsolation($build);
+    $cache = CacheableMetadata::createFromRenderArray($build);
+    foreach ($access->getCacheTags() as $tag) {
+      self::assertContains($tag, $cache->getCacheTags());
+    }
   }
 
   /**

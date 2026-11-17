@@ -14,7 +14,7 @@ Run inside a configured project, or pass `--config <path>` for its project confi
 
 ## Check it works
 
-The command prints JSON with each alias, its harness and model, plus `permissions`, `enabled_agents`, `disabled_agents`, `default_agent` and `routes`.
+The command prints JSON with each alias, its harness and model, plus `permissions`, `secret_env` (each variable the harness declares for the [secrets file](/configuration/machine#secrets-file), `set` or `unset`, never its value), `enabled_agents`, `disabled_agents`, `default_agent` and `routes`.
 
 ::: details Per CLI
 ```sh

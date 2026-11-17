@@ -65,7 +65,7 @@ class ToolServerTests(unittest.TestCase):
             trace = directory / 'trace.jsonl'
             fixture.write_text(json.dumps({'input': {'project_uuid': '55555555-5555-4555-8555-555555555555', 'workspace_uuid': '66666666-6666-4666-8666-666666666666'},
                 'simulation': {'ticket': {'id': ticket, 'identifier': 'EVAL-20', 'title': 'T', 'workflow': 'bb_work', 'state': 'coding'}, 'files': {'/fixture/body.md': body}}}))
-            argv = TOOL + ['tool_api__bakers_comment_publish', '--data', '@/tmp/args.json']
+            argv = TOOL + ['tool_api__bakers_comment_create', '--data', '@/tmp/args.json']
             call = lambda i, name, arguments: {'jsonrpc': '2.0', 'id': i, 'method': 'tools/call', 'params': {'name': name, 'arguments': arguments}}
             requests = [
                 {'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': {'protocolVersion': '2024-11-05'}},

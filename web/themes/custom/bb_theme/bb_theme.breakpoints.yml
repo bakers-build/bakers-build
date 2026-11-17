@@ -1,0 +1,9 @@
+# The `lg` width where the canvas stops stacking (Tailwind `lg`). Better Exposed
+# Filters auto-submits only from here up, so a facet ticked in the phone filter
+# sheet waits for "Show results" instead of reloading the list under the sheet.
+bb_theme.lg:
+  label: 'Large (lg)'
+  mediaQuery: 'all and (min-width: 1024px)'
+  weight: 0
+  multipliers:
+    - 1x

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\UserInterface;
@@ -49,12 +50,13 @@ final class BbProjectAccessTest extends KernelTestBase {
    * Verifies granular per-operation permissions for bb_project.
    *
    * A user with 'create bb_project' + 'view bb_project' may view but not
-   * delete. A user with 'delete bb_project' may delete. A user with no
-   * permissions is denied. A user with 'administer bakers' bypasses all.
+   * delete. Only the owner with 'delete own bb_project' may delete. A user
+   * with no permissions is denied. 'administer bakers' bypasses all.
    */
   public function testGranularProjectAccess(): void {
     $project = \Drupal::entityTypeManager()->getStorage('bb_project')
       ->create(['name' => 'p1']);
+    $this->assertInstanceOf(ContentEntityInterface::class, $project);
     $project->save();
 
     $creator = $this->createUser(['create bb_project', 'view bb_project']);
@@ -64,8 +66,11 @@ final class BbProjectAccessTest extends KernelTestBase {
     // view-only user must not be able to update.
     $this->assertFalse($project->access('update', $creator));
 
-    $deleter = $this->createUser(['delete bb_project']);
+    $deleter = $this->createUser(['delete own bb_project']);
     $this->assertInstanceOf(UserInterface::class, $deleter);
+    $this->assertFalse($project->access('delete', $deleter), 'delete own needs the project to be theirs');
+    $project->set('owner_user_id', $deleter->id())->save();
+    \Drupal::entityTypeManager()->getAccessControlHandler('bb_project')->resetCache();
     $this->assertTrue($project->access('delete', $deleter));
 
     $nobody = $this->createUser([]);

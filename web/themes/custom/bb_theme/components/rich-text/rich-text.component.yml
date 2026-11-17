@@ -26,7 +26,9 @@ description: >-
   not a slot, because a processed field value is one field's value rather than
   composed structure, and it is printed WITHOUT `|raw`: Drupal's autoescape
   passes the filter's Markup object through and escapes a plain string. Markdown
-  is never parsed here; detecting a table only reads the processed string.
+  is never parsed here; detecting a table only reads the processed string. PHONE
+  TOUCH DELTA (AC-15): below md, the Show more/less button is at least the
+  `touch` size (44px); md and up are unchanged.
 provider: bb_theme
 props:
   type: object

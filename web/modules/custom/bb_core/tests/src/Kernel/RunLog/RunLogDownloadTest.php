@@ -549,6 +549,45 @@ final class RunLogDownloadTest extends KernelTestBase {
   }
 
   /**
+   * A workspace guest views the run but neither of its logs, on both routes.
+   */
+  public function testGuestViewsRunButNotItsLogs(): void {
+    $run = $this->createRunInWorkspace();
+    $run->set('log', 'transcript body');
+    $run->set('error_log', 'boom');
+    $run->save();
+    $workspace = $this->container->get(WorkspaceResolverInterface::class)->resolve($run);
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
+    $guest = $this->createAccount('guest', []);
+    $this->addMembership($workspace, $guest, ['guest']);
+    $this->seatOnProjectTeam($run->getTicket()?->getProject(), $guest);
+
+    self::assertTrue($run->access('view', $guest));
+    foreach (['log', 'error_log'] as $kind) {
+      self::assertSame(403, $this->requestAs($guest, $this->downloadUrl($run, $workspace, $kind))->getStatusCode());
+      $api = Url::fromRoute('bb_core.run_log_download_api', ['bb_run' => $run->uuid(), 'kind' => $kind]);
+      self::assertSame(403, $this->requestAs($guest, $api->toString())->getStatusCode());
+    }
+  }
+
+  /**
+   * Contributing in another workspace opens no log in the guest's one.
+   */
+  public function testGuestHereContributorElsewhereGetsNoLog(): void {
+    $run = $this->createRunInWorkspace();
+    $workspace = $this->container->get(WorkspaceResolverInterface::class)->resolve($run);
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
+    $guest = $this->memberOfAnotherWorkspace();
+    $this->addMembership($workspace, $guest, ['guest']);
+    $this->seatOnProjectTeam($run->getTicket()?->getProject(), $guest);
+    $run->set('log', 'transcript body');
+    $run->save();
+
+    self::assertTrue($run->access('view', $guest));
+    self::assertSame(403, $this->requestAs($guest, $this->downloadUrl($run, $workspace, 'log'))->getStatusCode());
+  }
+
+  /**
    * Creates an account that belongs to an unrelated workspace only.
    */
   private function memberOfAnotherWorkspace(): UserInterface {

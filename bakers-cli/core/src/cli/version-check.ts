@@ -22,23 +22,31 @@ export function defaultUpdateCachePath(): string {
 
 let cachedCliVersion: string | undefined;
 
+/** The version this process started with: the first read, cached. */
 export function resolveCliVersion(): string {
-  if (cachedCliVersion) return cachedCliVersion;
-  let dir = dirname(fileURLToPath(import.meta.url));
+  cachedCliVersion ??= readCliVersion();
+  return cachedCliVersion;
+}
+
+/**
+ * The `@bakers-build/core` version installed on disk now, read uncached, so a
+ * long-running process sees an upgrade that replaced its files.
+ */
+export function readCliVersion(
+  from: string = dirname(fileURLToPath(import.meta.url)),
+): string {
+  let dir = from;
   for (let i = 0; i < 7; i++) {
     try {
       const pkg = JSON.parse(
         readFileSync(join(dir, 'package.json'), 'utf8'),
       ) as { name?: string; version?: string };
-      if (pkg.name === '@bakers-build/core') {
-        cachedCliVersion = pkg.version ?? UNKNOWN_VERSION;
-        return cachedCliVersion;
-      }
+      if (pkg.name === '@bakers-build/core')
+        return pkg.version ?? UNKNOWN_VERSION;
     } catch {}
     dir = dirname(dir);
   }
-  cachedCliVersion = UNKNOWN_VERSION;
-  return cachedCliVersion;
+  return UNKNOWN_VERSION;
 }
 
 export async function fetchLatestVersion(

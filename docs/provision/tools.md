@@ -10,7 +10,7 @@ Tools let a restricted agent perform the work it needs without granting its shel
 |---|---|---|
 | Prepare or reuse the application | `provision_up(profile)` | The configured provisioning command and its host access |
 | Push, prepare a PR, inspect checks | [Forge tools](/addons/forge) | The conductor's forge credential |
-| Run application checks | `provision_exec(key, args)` | The project-configured command, for example in the web container with that container's mounts and rights |
+| Run application checks | `provision_exec(key, args?)` | The project-configured command, for example in the web container with that container's mounts and rights |
 | Share a preview | `ports_up(service)` | The configured tunnel integration |
 
 For example, an agent can edit its worktree, request the `test` provisioning profile, run application checks through `provision_exec` and prepare a PR through Forge. It needs access to those tools, not a blanket `docker`, `git` or `bakers` shell exemption. The selected tool must be available and permitted by the harness; isolation alone grants no tool access.
@@ -21,7 +21,7 @@ The tool is an explicit path **across** a boundary, not an extension of the agen
 - **Execution authority:** where the implementation runs, which files it mounts and which credentials it holds. Keep credentials with the integration when the agent does not need their values.
 - **Returned data and editable code:** results enter the agent/model context. A host-side tool loading agent-editable scripts can execute that code with host rights.
 
-A fixed tool name or profile does not itself make execution safe. `ddev_status()` is a status query; `provision_exec('web', [...])` runs the project's configured command with the agent's arguments, which for a site container can mean any command there. Their authority differs. Scope the tool implementation and its environment to the intended job.
+A fixed tool name or profile does not itself make execution safe. `ddev_status()` is a status query; a `provision_exec` key that takes `args` passes the agent's arguments to its command, which for a site container can mean any command there; prefer fixed keys. Their authority differs. Scope the tool implementation and its environment to the intended job.
 
 ## Where tools come from
 

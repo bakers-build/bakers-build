@@ -9,6 +9,7 @@ For the next reader: open thread, why, next. Cite comment/AC IDs, MR/commit/arti
 Per line: unneeded → drop; recorded → link; fits one line → one line; else minimum.
 Keep failures, risks, assumptions, decisions/why, deviations. Mark unverified claims.
 Put not checked / risk in *Problems*. State formats apply; full ACs only in qualification.
+Handoffs carry `### Gates` ([record](gates.md#record)).
 
 | Type | Reader: content | UTF-8 bytes |
 |---|---|---:|
@@ -29,12 +30,12 @@ Logs/transcripts/manifests stay in artifacts. Measure before writing. Oversize: 
 ## Publish a comment
 
 Require authorized ticket/type and readable populated body file. Send unchanged to
-`bakers_comment_publish`, trailing newlines included. Whitespace-only: no call.
+`bakers_comment_create`, trailing newlines included. Whitespace-only: no call.
 Result id confirms: retain/return, no read/search or other mutation.
 
 ## Rejected or uncertain writes
 
-Budget rejection saved nothing: shorten/retry. Exit 4: fix schema/retry. Report other failures
-with ticket/type/cause. Timeout/lost response: no second call; reconcile by UUID/unique context.
+Exit 4: fix schema/retry. Report other failures with ticket/type/cause.
+Timeout/lost response: no second call; reconcile by UUID/unique context.
 Verify state readback; rejection keeps state, best-effort restores mapped origin while authorized.
 Reconcile uncertainty first; report mismatches.

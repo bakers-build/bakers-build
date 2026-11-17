@@ -8,15 +8,18 @@ import type {
   ToolResult,
 } from '@bakers-build/conductor/contract';
 import {
+  changedProtectedPaths,
   homeBbDir,
   loadRunClone,
+  type RunClone,
   refreshRunTarget,
+  runCloneTip,
   saveRunClone,
   transferIsolatedCommit,
 } from '@bakers-build/core';
 import type { ForgeBackend, ForgeCheck } from './backend.js';
 import { FORGE_NEEDS_BACKEND, loadForgeBackend, mergeRule } from './config.js';
-import { fetchBranches, pushBranch } from './git.js';
+import { fetchBranches, pushBranch, updateBranch } from './git.js';
 import {
   derivedBase,
   isConventionalTitle,
@@ -53,6 +56,30 @@ function runOf(req: ToolRequest): Run {
   };
 }
 
+/**
+ * Where `branch` merges: a variant into the ticket branch, the ticket branch into
+ * the ticket's current target as the server returns it now. A failed read refuses;
+ * the run copy may predate an environment added during the run.
+ */
+async function currentBase(
+  req: ToolRequest,
+  branch: string,
+  run: Run,
+): Promise<string> {
+  if (branch !== run.branchName) return derivedBase(branch, run);
+  const refuse = (why: string) =>
+    new Error(
+      `forge: the ticket's current target_branch could not be read from the server (${why}); nothing was sent`,
+    );
+  if (!req.currentTicket) throw refuse('no server read for this call');
+  const t = await req.currentTicket().catch((err: unknown) => {
+    throw refuse(err instanceof Error ? err.message : String(err));
+  });
+  const target = t.targetBranch ?? t.baseBranch;
+  if (!target) throw refuse('no target_branch or base_branch returned');
+  return target;
+}
+
 function ownedBranch(req: ToolRequest, run: Run): string {
   const branch = (req.args.branch as string | undefined) ?? run.branchName;
   if (!isOwned(branch, run.branchName))
@@ -60,14 +87,48 @@ function ownedBranch(req: ToolRequest, run: Run): string {
   return branch;
 }
 
+const restartRefusal = (sha: string) =>
+  `forge: the branch was updated to ${sha} with protected changes this run cannot see; stop and cancel this run with bakers_run_cancel on its ticket, the next run starts there`;
+
+/**
+ * Bring the run's commits into the parent. A run behind its branch (an update
+ * it has not synced) or awaiting a restart is refused: it would act on stale files.
+ */
+function transferRun(clone: RunClone): RunClone {
+  if (clone.restartPending)
+    throw new Error(restartRefusal(clone.restartPending));
+  const tip = runCloneTip(clone);
+  const expected = transferIsolatedCommit(clone, tip);
+  if (expected !== tip)
+    throw new Error(
+      `forge: the run is behind its branch at ${expected}; run git merge --ff-only ${expected} and validate first`,
+    );
+  const saved = { ...clone, expected };
+  saveRunClone(saved);
+  return saved;
+}
+
+export const LOG_DEFAULT_BYTES = 16_384;
+export const LOG_MAX_BYTES = 262_144;
+
 const json = (value: unknown): ToolResult => ({
   text: JSON.stringify(value, null, 2),
 });
 
-/** Failure first, then pending, over the required checks. */
-export function overall(checks: readonly ForgeCheck[]): ForgeCheck['status'] {
-  const required = checks.filter((c) => c.required);
-  if (required.some((c) => c.status === 'failure')) return 'failure';
+export type Overall = 'success' | 'failure' | 'pending' | 'no_required_checks';
+
+/** Required by the forge, or the aggregate check a workflow names `required`. */
+export const isRequired = (c: ForgeCheck): boolean =>
+  c.required || c.name === 'required';
+
+const isRed = (c: ForgeCheck): boolean =>
+  c.status === 'failure' || c.conclusion === 'skipped';
+
+/** Failure first, then pending, over the required checks; none required is never green. */
+export function overall(checks: readonly ForgeCheck[]): Overall {
+  const required = checks.filter(isRequired);
+  if (required.length === 0) return 'no_required_checks';
+  if (required.some(isRed)) return 'failure';
   if (required.some((c) => c.status !== 'success')) return 'pending';
   return 'success';
 }
@@ -120,8 +181,7 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const b = await backend();
       const clone = loadRunClone(req.worktreePath);
       // Only checked commits leave the run: transfer first, push from the parent.
-      if (clone && branch === clone.branch)
-        saveRunClone({ ...clone, expected: transferIsolatedCommit(clone) });
+      if (clone && branch === clone.branch) transferRun(clone);
       const sha = await pushBranch(
         clone?.parentGitDir ?? req.worktreePath,
         await b.gitAuth(),
@@ -137,6 +197,65 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       return json({ branch, sha });
     },
 
+    forge_update_branch: async (req) => {
+      const run = runOf(req);
+      const loaded = loadRunClone(req.worktreePath);
+      if (!loaded)
+        throw new Error(
+          'forge_update_branch serves isolated run clones; in this checkout run forge_fetch, then merge origin/<target> locally',
+        );
+      if (loaded.restartPending)
+        throw new Error(restartRefusal(loaded.restartPending));
+      const target = await currentBase(req, run.branchName, run);
+      const auth = await (await backend()).gitAuth();
+      const tip = runCloneTip(loaded);
+      // Run commits first, so the merge keeps them; a run behind its branch keeps its tip.
+      const clone = {
+        ...loaded,
+        expected: transferIsolatedCommit(loaded, tip),
+      };
+      saveRunClone(clone);
+      await fetchBranches(clone.parentGitDir, auth, [target, run.branchName]);
+      refreshRunTarget(clone, [target]);
+      const u = await updateBranch(clone.parentGitDir, auth, {
+        branch: run.branchName,
+        target,
+        expected: clone.expected,
+        workspace: { path: clone.workspace, clean: tip },
+      });
+      const protectedPaths =
+        u.resulting === tip
+          ? []
+          : changedProtectedPaths(clone, tip, u.resulting);
+      const sync =
+        u.resulting === tip
+          ? 'none'
+          : protectedPaths.length > 0
+            ? 'restart'
+            : 'in_place';
+      if (sync === 'in_place') refreshRunTarget(clone, [target], [u.resulting]);
+      saveRunClone({
+        ...clone,
+        expected: u.resulting,
+        ...(sync === 'restart' ? { restartPending: u.resulting } : {}),
+      });
+      const next = {
+        none: `nothing to do: '${run.branchName}' already contains ${u.target}`,
+        in_place: `run git merge --ff-only ${u.resulting} before any further work, then validate and forge_push`,
+        restart: `protected paths changed (${protectedPaths.join(', ')}): do no further work or publication; cancel this run with bakers_run_cancel on its ticket, the next run starts at ${u.resulting}`,
+      }[sync];
+      return json({
+        branch: run.branchName,
+        target_branch: target,
+        previous: u.previous,
+        target: u.target,
+        resulting: u.resulting,
+        noop: u.noop,
+        sync,
+        next,
+      });
+    },
+
     forge_pr_upsert: async (req) => {
       const title = String(req.args.title);
       // Refused before any request reaches the forge.
@@ -144,13 +263,14 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const run = runOf(req);
       const branch = ownedBranch(req, run);
       const body = (req.args.body as string | undefined) ?? '';
+      const base = await currentBase(req, branch, run);
       const b = await backend();
       const open = await b.findOpenPr(branch);
       const pr = open
-        ? await b.updatePr(open, { title, body })
+        ? await b.updatePr(open, { title, body, base })
         : await b.createPr({
             head: branch,
-            base: derivedBase(branch, run),
+            base,
             title,
             body,
           });
@@ -175,14 +295,16 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         ref = pr?.headSha ?? branch;
         base = pr?.base ?? derivedBase(branch, run);
       }
-      const checks = await b.checks(ref, base);
+      const checks = await b.checks(ref, base, {
+        allRuns: req.args.all_runs === true,
+      });
       return json({ ref, base, overall: overall(checks), checks });
     },
 
     forge_merge: async (req) => {
       const run = runOf(req);
       const branch = ownedBranch(req, run);
-      const base = derivedBase(branch, run);
+      const base = await currentBase(req, branch, run);
       const b = await backend();
       const pr = await b.findOpenPr(branch);
       if (!pr)
@@ -200,12 +322,16 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const blocker = await b.mergeBlocker(pr);
       if (blocker) throw new Error(`PR/MR ${pr.url} cannot merge: ${blocker}`);
       const checks = await b.checks(pr.headSha, pr.base);
+      if (overall(checks) === 'no_required_checks')
+        throw new Error(
+          `PR/MR ${pr.url} cannot merge: no required checks reported`,
+        );
       const notGreen = checks.filter(
-        (c) => c.required && c.status !== 'success',
+        (c) => isRequired(c) && (isRed(c) || c.status !== 'success'),
       );
       if (notGreen.length > 0)
         throw new Error(
-          `PR/MR ${pr.url} has required checks that are not green: ${notGreen.map((c) => `${c.name} (${c.status})`).join(', ')}`,
+          `PR/MR ${pr.url} has required checks that are not green: ${notGreen.map((c) => `${c.name} (${c.conclusion ?? c.status})`).join(', ')}`,
         );
       const rule = mergeRule(deps.settings, base);
       const dependents = (await b.openPrsWithBase(branch)).filter(
@@ -231,6 +357,26 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         ...(dependents.length > 0
           ? { source_kept_for: dependents.map((p) => p.url) }
           : {}),
+      });
+    },
+
+    forge_job_log: async (req) => {
+      runOf(req);
+      const jobId = req.args.job_id;
+      if (typeof jobId !== 'number' || !Number.isInteger(jobId) || jobId <= 0)
+        throw new Error('job_id must be a job_id from forge_checks');
+      const asked = req.args.max_bytes;
+      const maxBytes =
+        typeof asked === 'number' && asked >= 1
+          ? Math.min(Math.floor(asked), LOG_MAX_BYTES)
+          : LOG_DEFAULT_BYTES;
+      const log = await (await backend()).jobLog(jobId, maxBytes);
+      return json({
+        job_id: jobId,
+        bytes: log.bytes,
+        truncated: log.truncated,
+        max_bytes: maxBytes,
+        log: log.text,
       });
     },
   };

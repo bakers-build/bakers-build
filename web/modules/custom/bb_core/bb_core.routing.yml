@@ -454,7 +454,7 @@ bb_core.bb_workspace.members:
       bb_workspace:
         type: 'entity:bb_workspace'
 
-# Run log retrieval. `_entity_access: bb_run.view` is the whole gate — see
+# Run log retrieval. `_entity_access: bb_run.view_log` is the whole gate — see
 # RunLogController's docblock for why that is deliberate.
 #
 # The workspace prefix makes BbWorkspaceRouteSubscriber require the run's
@@ -465,7 +465,7 @@ bb_core.run_log_download:
   defaults:
     _controller: 'Drupal\bb_core\Controller\RunLogController::download'
   requirements:
-    _entity_access: 'bb_run.view'
+    _entity_access: 'bb_run.view_log'
     kind: 'log|error_log'
   options:
     parameters:
@@ -476,7 +476,7 @@ bb_core.run_log_download:
 
 # The same retrieval without a workspace slug, for the bakers-cli conductor
 # (which has a run uuid but not its workspace). Outside the workspace prefix;
-# access is `bb_run.view` only. `_bakers-api` starts with an underscore, which
+# access is `bb_run.view_log` only. `_bakers-api` starts with an underscore, which
 # the slug pattern forbids, so no workspace slug (e.g. the default `bakers`) can
 # capture it.
 bb_core.run_log_download_api:
@@ -484,7 +484,7 @@ bb_core.run_log_download_api:
   defaults:
     _controller: 'Drupal\bb_core\Controller\RunLogController::download'
   requirements:
-    _entity_access: 'bb_run.view'
+    _entity_access: 'bb_run.view_log'
     kind: 'log|error_log'
   options:
     # Conductor downloads send Basic or OAuth on this route; without _auth,

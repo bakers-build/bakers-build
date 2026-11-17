@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'bun:test';
-import { BoxRenderable, type VNode } from '@opentui/core';
+import {
+  ASCIIFontRenderable,
+  BoxRenderable,
+  h,
+  type VNode,
+} from '@opentui/core';
 import { createTestRenderer } from '@opentui/core/testing';
 import {
   type ChromeInput,
@@ -177,10 +182,51 @@ describe('the status footer is styled keys without inverse (BB-375)', () => {
 });
 
 it('renders the bread-slice logo intact', async () => {
-  const { rows } = await render(splashTree(), 80, 24);
+  const { rows } = await render(splashTree(80), 80, 24);
   const top = rows.findIndex((row) => row.includes('▄███████████▀▄'));
   expect(top).toBeGreaterThan(0);
   const left = rows[top]!.indexOf('▄███████████▀▄');
   expect(rows[top + 3]!.slice(left, left + 14)).toBe('█████▀██▀█████');
   expect(rows[top + 6]!.slice(left, left + 14)).toBe('▀████████████▀');
+});
+
+describe('the splash fits the terminal at every size', () => {
+  // The wordmark as the renderer draws it alone, wide enough never to clip.
+  const glyphRows = async (font: 'block' | 'tiny'): Promise<string[]> => {
+    const { rows } = await render(
+      h(ASCIIFontRenderable, { id: 'glyphs', text: 'bakers.build', font }),
+      200,
+      10,
+    );
+    return rows.map((row) => row.trimEnd()).filter((row) => row !== '');
+  };
+
+  it.each([
+    [80, 24, 'tiny'],
+    [60, 24, 'text'],
+    [200, 50, 'block'],
+  ] as const)('at %i×%i draws an intact frame with the full %s wordmark', async (width, height, tier) => {
+    const { rows } = await render(splashTree(width), width, height);
+    for (const row of rows) expect(row.length).toBeLessThanOrEqual(width);
+    const top = rows.findIndex((row) => row.includes('╭'));
+    const bottom = rows.findIndex((row) => row.includes('╰'));
+    expect(top).toBeGreaterThan(0);
+    expect(bottom).toBeGreaterThan(top);
+    const left = rows[top]!.indexOf('╭');
+    const right = rows[top]!.indexOf('╮');
+    expect(right).toBeGreaterThan(left);
+    expect(rows[bottom]!.indexOf('╰')).toBe(left);
+    expect(rows[bottom]!.indexOf('╯')).toBe(right);
+    for (let y = top + 1; y < bottom; y += 1) {
+      expect(rows[y]![left]).toBe('│');
+      expect(rows[y]![right]).toBe('│');
+    }
+    // Centred: the margins differ by at most one column.
+    expect(Math.abs(left - (width - 1 - right))).toBeLessThanOrEqual(1);
+    const inside = rows.slice(top + 1, bottom).join('\n');
+    expect(inside).toContain('▄███████████▀▄');
+    const expected = tier === 'text' ? ['bakers.build'] : await glyphRows(tier);
+    expect(expected.length).toBeGreaterThan(0);
+    for (const line of expected) expect(inside).toContain(line.trim());
+  });
 });

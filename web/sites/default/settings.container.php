@@ -47,6 +47,8 @@ if (getenv('DB_HOST')) {
     'namespace' => 'Drupal\\mysql\\Driver\\Database\\mysql',
     'autoload' => 'core/modules/mysql/src/Driver/Database/mysql/',
     'prefix' => '',
+    // Core's recommendation (default.settings.php); REPEATABLE READ deadlocks parallel writers.
+    'init_commands' => ['isolation_level' => 'SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED'],
   ];
 
   // Private files live on their OWN mounted volume, OUTSIDE the docroot

@@ -24,6 +24,8 @@ Feature: A conductor owner edits and disables a conductor on its Overview
     And the "Identity" card offers "Label" with Save
     And the "Identity" card shows "Conductor ID" as "bdd-properties-conductor"
     And the "Identity" card offers "States" with Save
+    And the "Identity" card offers "Assignment" with Save
+    And the "Identity" card shows "Effective assignment" as "forbid (machine)"
     When I set "Label" to "Owner renamed conductor" in the "Identity" card
     And I choose "plan, working" for "States" in the "Identity" card
     And I save the "Identity" card

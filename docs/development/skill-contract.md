@@ -6,7 +6,7 @@ bakers.build ships no workflow engine and no loader. It ships skills, which are 
 
 ## Skills and references
 
-A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships fifteen:
+A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships sixteen:
 
 | Skill | Chosen by |
 |---|---|
@@ -17,8 +17,10 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-recipe-verify` | the ticket's `recipe` field; for `verification` tickets |
 | `bb-verdict` | the review state, as its subagent's start |
 | `bb-label-auto` | the `bb-workflow` frame, for a ticket labelled `auto`, in any state |
+| `bb-label-human-review` | the `bb-workflow` frame, for a ticket labelled `human-review`, in any state |
+| `bb-label-human-accept` | the `bb-workflow` frame, for a ticket labelled `human-accept`, in any state |
 | `bb-label-ticket-question` | the `bb-workflow` frame, for a ticket labelled `ticket-question`, in any state |
-| `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
+| `bb-init`, `bb-init-project`, `bb-create-project` | a person, for setup |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person or a host, for a ticket or time proposals |
 
 Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, read-ticket (including the run frame), ticket-writes (including comment publication), provisioning, verification, the browser surface, outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
@@ -46,7 +48,7 @@ Every ticket runs the one workflow `bb_work`: `qualification → plan → workin
 
 ## Recipes
 
-A recipe is one skill named `bb-recipe-<method>` per engineering method, free of domain and runtime. Its description names the method and the ticket types it covers and carries no selection rule; qualification loads every installed recipe completely and chooses by fit, optionally guided by `WORKFLOW.md`. Its sections are `## bb-state-<state>` and, where a type differs, `## <type>:bb-state-<state>`; each holds `### bb-phase-<phase>` slots only where the method adds something. Per phase the type slot wins, then the general one, else none. A slot supplies method; where it names its own deliverable, comment, merge or check, that replaces the state file's default. Approval, the coding gate, the verdict and every readback stay, and a transition slot only picks among the gate's destinations. A recipe names the method's original skills, links no `bb-workflow` reference, calls no other bakers.build skill, and leaves domain, runtime and project commands to guides and hints. A recipe may live in any plugin. The shipped recipes are `bb-recipe-matt`, `bb-recipe-superpowers`, `bb-recipe-deploy-and-release` and `bb-recipe-verify`.
+A recipe is one skill named `bb-recipe-<method>` per engineering method, free of domain and runtime. Its description names the method and the ticket types it covers and carries no selection rule; qualification loads every installed recipe completely and chooses by fit, optionally guided by `WORKFLOW.md`. Its sections are `## bb-gates` (one row per declared type: `default`, added gates, or the own type's gates; a missing row for an own type stops the run, see the frame's `references/gates.md`), `## bb-state-<state>` and, where a type differs, `## <type>:bb-state-<state>`; each holds `### bb-phase-<phase>` slots only where the method adds something. Per phase the type slot wins, then the general one, else none. A slot supplies method; where it names its own deliverable, comment, merge or check, that replaces the state file's default. Approval, the coding gate, the verdict and every readback stay, and a transition slot only picks among the gate's destinations. A recipe names the method's original skills, links no `bb-workflow` reference, calls no other bakers.build skill, and leaves domain, runtime and project commands to guides and hints. A recipe may live in any plugin. The shipped recipes are `bb-recipe-matt`, `bb-recipe-superpowers`, `bb-recipe-deploy-and-release` and `bb-recipe-verify`.
 
 The ticket's `recipe` field names the recipe, without the `bb-recipe-` prefix; it is empty until qualification chooses, and an empty field after qualification sends the ticket back there. Its `ticket_type` field selects the type slots.
 

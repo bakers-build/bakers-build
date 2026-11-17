@@ -12,8 +12,8 @@
   },
   "tools": [
     {
-      "name": "tool_api__bakers_comment_publish",
-      "title": "Publish a ticket comment",
+      "name": "tool_api__bakers_comment_create",
+      "title": "Create a ticket comment",
       "description": "Stores a Markdown comment of the given type (plan, spec, summary, …) on a ticket. The create response is the confirmation.",
       "inputSchema": {
         "type": "object",
@@ -555,7 +555,7 @@
                     "type": "null"
                   }
                 ],
-                "description": "The branch work bases on; main when omitted.",
+                "description": "The branch work bases on, the repository’s integration branch; main when omitted.",
                 "title": "Default branch"
               },
               "branch_convention": {
@@ -658,15 +658,8 @@
                 "title": "URL"
               },
               "default_branch": {
-                "oneOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "The default branch; null means main.",
+                "type": "string",
+                "description": "The branch work bases on.",
                 "title": "Default branch"
               },
               "branch_convention": {
@@ -698,6 +691,381 @@
             "properties": {},
             "description": "The coder configuration map; null when unset or not viewable.",
             "title": "Coder config"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_project_update",
+      "title": "Update a project",
+      "description": "Changes a project’s repository settings; keys not given are kept. Needs edit bb_project on the project. Returns the saved project.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project key, e.g. BAKERS, or UUID.",
+            "title": "Project"
+          },
+          "repository": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The clone URL, HTTPS or SSH.",
+                "title": "URL"
+              },
+              "default_branch": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The branch work bases on, the repository’s integration branch.",
+                "title": "Default branch"
+              },
+              "branch_convention": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The branch naming convention.",
+                "title": "Branch convention"
+              }
+            },
+            "description": "The repository keys to change; url is required when the project has no repository yet.",
+            "title": "Repository"
+          }
+        },
+        "required": [
+          "project",
+          "repository"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The project UUID.",
+            "title": "UUID"
+          },
+          "key": {
+            "type": "string",
+            "description": "The ticket identifier prefix, e.g. BAKERS.",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "description": "The project name.",
+            "title": "Name"
+          },
+          "description": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The description as Markdown source.",
+            "title": "Description"
+          },
+          "group": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The group UUID.",
+            "title": "Group"
+          },
+          "teams": {
+            "type": "array",
+            "description": "The UUIDs of the project’s teams.",
+            "items": {
+              "type": "string",
+              "description": "One team UUID.",
+              "title": "Team"
+            },
+            "title": "Teams"
+          },
+          "repository": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "url": {
+                "type": "string",
+                "description": "The clone URL.",
+                "title": "URL"
+              },
+              "default_branch": {
+                "type": "string",
+                "description": "The branch work bases on.",
+                "title": "Default branch"
+              },
+              "branch_convention": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The branch naming convention.",
+                "title": "Branch convention"
+              }
+            },
+            "required": [
+              "url",
+              "default_branch",
+              "branch_convention"
+            ],
+            "description": "The repository; null when unset or not viewable.",
+            "title": "Repository"
+          },
+          "coder_config": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {},
+            "description": "The coder configuration map; null when unset or not viewable.",
+            "title": "Coder config"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_environment_create",
+      "title": "Create an environment",
+      "description": "Creates an environment on a project: a name unique in the project, the branch it deploys and its base URL. Needs create bb_environment in the project’s workspace. Afterwards bakers_ticket_update environments_add takes its name. Returns the saved environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project key, e.g. BAKERS, or UUID.",
+            "title": "Project"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The environment name, unique in the project, e.g. prod.",
+            "title": "Name"
+          },
+          "branch": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The branch it deploys, e.g. main; a deployment ticket with this environment targets it.",
+            "title": "Branch"
+          },
+          "base_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The environment URL.",
+            "title": "Base URL"
+          }
+        },
+        "required": [
+          "project",
+          "name",
+          "branch"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The environment UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "The environment name.",
+            "title": "Name"
+          },
+          "branch": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The branch it deploys.",
+            "title": "Branch"
+          },
+          "base_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The environment URL.",
+            "title": "Base URL"
+          },
+          "project": {
+            "type": "string",
+            "description": "The project key.",
+            "title": "Project"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_environment_update",
+      "title": "Update an environment",
+      "description": "Changes a project’s environment, addressed by name or UUID: its name, branch or base URL; keys not given are kept. Needs update bb_environment in the project’s workspace. Returns the saved environment.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project key, e.g. BAKERS, or UUID.",
+            "title": "Project"
+          },
+          "environment": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The environment name or UUID within the project.",
+            "title": "Environment"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The new name, unique in the project.",
+            "title": "Name"
+          },
+          "branch": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The new branch it deploys; a deployment ticket with this environment targets it.",
+            "title": "Branch"
+          },
+          "base_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The new environment URL.",
+            "title": "Base URL"
+          }
+        },
+        "required": [
+          "project",
+          "environment"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The environment UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "The environment name.",
+            "title": "Name"
+          },
+          "branch": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The branch it deploys.",
+            "title": "Branch"
+          },
+          "base_url": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The environment URL.",
+            "title": "Base URL"
+          },
+          "project": {
+            "type": "string",
+            "description": "The project key.",
+            "title": "Project"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_environment_delete",
+      "title": "Delete an environment",
+      "description": "Removes a project’s environment, addressed by name or UUID; tickets that referenced it keep everything else. Needs delete bb_environment in the project’s workspace. Returns the removed environment’s UUID and name.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The project key, e.g. BAKERS, or UUID.",
+            "title": "Project"
+          },
+          "environment": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The environment name or UUID within the project.",
+            "title": "Environment"
+          }
+        },
+        "required": [
+          "project",
+          "environment"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "description": "The removed environment’s UUID.",
+            "title": "UUID"
+          },
+          "name": {
+            "type": "string",
+            "description": "The removed environment’s name.",
+            "title": "Name"
           }
         }
       }
@@ -785,15 +1153,8 @@
                 "title": "URL"
               },
               "default_branch": {
-                "oneOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "The default branch; null means main.",
+                "type": "string",
+                "description": "The branch work bases on.",
                 "title": "Default branch"
               },
               "branch_convention": {
@@ -1243,6 +1604,35 @@
             },
             "title": "Links"
           },
+          "reviewers": {
+            "type": "array",
+            "description": "The readable reviewers.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The display name.",
+                  "title": "Name"
+                },
+                "mail": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The e-mail address, null without mail view access.",
+                  "title": "Mail"
+                }
+              },
+              "description": "The saved account.",
+              "title": "Reviewer"
+            },
+            "title": "Reviewers"
+          },
           "project": {
             "oneOf": [
               {
@@ -1386,7 +1776,7 @@
       }
     },
     {
-      "name": "tool_api__bakers_ticket_runs_list",
+      "name": "tool_api__bakers_run_list",
       "title": "List ticket runs",
       "description": "Lists the runs of a ticket you can view, newest first: state, the ticket state the run started in, agent, conductor, start time and whether the run is closed.",
       "inputSchema": {
@@ -2042,7 +2432,7 @@
       }
     },
     {
-      "name": "tool_api__bakers_time_propose",
+      "name": "tool_api__bakers_worklog_propose",
       "title": "Propose time",
       "description": "Stores activities as proposed worklogs of one new proposed submission owned by the caller, for review in the week sheet. Any failing entry stores nothing; the message names it by 1-based position and source_key.",
       "inputSchema": {

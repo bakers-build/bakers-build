@@ -4,7 +4,7 @@
 // fixture is changed and the suite stays re-runnable.
 import { Given, When, Then } from '../../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { test } from '../../bdd.fixtures';
 import { markDocument } from '../../support/shell';
 import {
@@ -53,17 +53,26 @@ When('I open {string} on the disposable run\'s own row', async ({ page }, name: 
     .and(page.locator(`[href*="run=${run}"]`)).click();
 });
 
+/** The disposable run's row, found by its canonical link, which every reader gets. */
+function disposableRunRow(page: Page) {
+  const { runId } = subject(page);
+  return page.locator('[data-list-item]').filter({ has: page.locator(`[href$="/run/${runId}"]`) });
+}
+
 Then('the disposable run\'s row says why it failed: {string}', async ({ page }, reason: string) => {
-  const { run } = subject(page);
-  const row = page.locator('[data-list-item]').filter({ has: page.locator(`[href*="run=${run}"]`) });
+  const row = disposableRunRow(page);
   await expect(row.locator('[data-cell="state"]')).toContainText('failed');
   await expect(row.locator('[data-list-detail]')).toHaveText(reason);
 });
 
 Then('the disposable run\'s row offers {string}', async ({ page }, name: string) => {
-  const { run } = subject(page);
-  const row = page.locator('[data-list-item]').filter({ has: page.locator(`[href*="run=${run}"]`) });
-  await expect(row.getByRole('link', { name, exact: true })).toBeVisible();
+  await expect(disposableRunRow(page).getByRole('link', { name, exact: true })).toBeVisible();
+});
+
+Then('the disposable run\'s row does not offer {string}', async ({ page }, name: string) => {
+  const row = disposableRunRow(page);
+  await expect(row.locator('[data-cell="state"]')).toBeVisible();
+  await expect(row.getByRole('link', { name, exact: true })).toHaveCount(0);
 });
 
 When('the ticket\'s conductor claims the disposable ticket on its next check', async ({ page }) => {

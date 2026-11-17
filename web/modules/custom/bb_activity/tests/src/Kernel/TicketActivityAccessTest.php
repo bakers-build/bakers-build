@@ -208,7 +208,9 @@ final class TicketActivityAccessTest extends KernelTestBase {
   public function testRelatedFieldsHideUnreadableAndMissingTargets(): void {
     $claimed = $this->claimedActivity('a');
     $run = $this->fixture('a', 'bb_run');
-    self::assertFalse($claimed->get('run_id')->access('view', $this->memberA));
+    self::assertTrue($claimed->get('run_id')->access('view', $this->memberA), 'A workspace guest reads runs.');
+    $noRuns = $this->scopeMember('a', 'no-runs-a', ['member']);
+    self::assertFalse($claimed->get('run_id')->access('view', $noRuns));
     self::assertFalse($claimed->get('conductor_id')->access('view', $this->memberA));
     self::assertFalse($claimed->get('actor')->access('view', $this->memberA));
 

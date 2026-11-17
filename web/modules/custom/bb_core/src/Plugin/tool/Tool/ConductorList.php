@@ -17,6 +17,7 @@ use Drupal\tool\TypedData\InputDefinition;
 use Drupal\tool\TypedData\ListOutputDefinition;
 use Drupal\tool\TypedData\MapOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
+use Drupal\user\UserInterface;
 
 /**
  * Lists the viewable conductors of one readable project.
@@ -87,6 +88,33 @@ use Drupal\tool\TypedData\OutputDefinition;
             description: new TranslatableMarkup("The machine_id (host key) of the conductor's machine, or null when it has none; details via bakers_machine_list."),
             nullable: TRUE,
           ),
+          'owner' => new MapOutputDefinition(
+            label: new TranslatableMarkup('Owner'),
+            description: new TranslatableMarkup('The user who owns the conductor, or null when it cannot be loaded.'),
+            property_definitions: [
+              'uuid' => new OutputDefinition(
+                data_type: 'string',
+                label: new TranslatableMarkup('UUID'),
+                description: new TranslatableMarkup('The owner UUID.'),
+              ),
+              'name' => new OutputDefinition(
+                data_type: 'string',
+                label: new TranslatableMarkup('Name'),
+                description: new TranslatableMarkup('The owner display name.'),
+              ),
+            ],
+            nullable: TRUE,
+          ),
+          'assignment_setting' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Assignment setting'),
+            description: new TranslatableMarkup("The conductor's own setting: machine, allow or forbid."),
+          ),
+          'assignment' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Assignment'),
+            description: new TranslatableMarkup('allow or forbid in force: whether others may assign this conductor; the owner always may.'),
+          ),
         ],
       ),
     ),
@@ -121,6 +149,7 @@ final class ConductorList extends ToolBase {
       if (!$conductor->access('view', $this->currentUser)) {
         continue;
       }
+      $owner = $conductor->get('owner_user_id')->entity;
       $conductors[] = [
         'uuid' => $conductor->uuid(),
         'conductor_id' => (string) $conductor->get('conductor_id')->value,
@@ -128,6 +157,9 @@ final class ConductorList extends ToolBase {
         'active' => (bool) $conductor->get('active')->value,
         'status' => (string) $conductor->get('status')->value,
         'machine' => $conductor->getMachine()?->getHostKey(),
+        'owner' => $owner instanceof UserInterface ? ['uuid' => $owner->uuid(), 'name' => $owner->getDisplayName()] : NULL,
+        'assignment_setting' => $conductor->getAssignment(),
+        'assignment' => $conductor->getEffectiveAssignment()['value'],
       ];
     }
     return ExecutableResult::success(new TranslatableMarkup('@count conductors found.', ['@count' => count($conductors)]), [

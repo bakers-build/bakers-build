@@ -1,0 +1,51 @@
+{
+ "source": {
+  "kind": "figma",
+  "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv/bakers-build",
+  "revision": null
+ },
+ "role": "reference",
+ "elements": [
+  {
+   "id": "members",
+   "locator": {
+    "kind": "figma-node",
+    "value": "71:4410"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 1440,
+     "height": 900
+    }
+   ]
+  },
+  {
+   "id": "my-time",
+   "locator": {
+    "kind": "figma-node",
+    "value": "72:4801"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 1440,
+     "height": 900
+    }
+   ]
+  }
+ ],
+ "assets_dir": "assets"
+}

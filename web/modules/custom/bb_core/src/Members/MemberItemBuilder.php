@@ -78,12 +78,15 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   Whether the acting account currently holds this group's ownership, and
    *   so may hand it to another active member. No default: every caller
    *   states it explicitly.
+   * @param array<int, string>|null $teams
+   *   Each member's team names keyed by user id, for a roster with a Team
+   *   column; NULL for a roster without one.
    *
    * @return array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>}
-   *   The items for the component's `items` prop, and the control render
-   *   arrays keyed by item index and then by cell key.
+   *   The table rows, and the control render arrays keyed by row index and
+   *   then by cell key.
    */
-  public function items(array $memberships, ContentEntityInterface $group, bool $may_write, bool $may_transfer): array {
+  public function items(array $memberships, ContentEntityInterface $group, bool $may_write, bool $may_transfer, ?array $teams = NULL): array {
     $items = [];
     $controls = [];
     $roles = $this->assignableRoles($group);
@@ -99,6 +102,9 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
       // which grants every right.
       $show_transfer = $may_transfer && count($row_roles) === count($roles) && $this->isTransferTarget($group, $membership);
       $items[$index] = ['cells' => $this->cells($membership, $row_roles, $may_write, $show_transfer)];
+      if ($teams !== NULL) {
+        $items[$index]['cells']['team'] = ['kind' => 'text', 'value' => $teams[(int) $membership->getOwnerId()] ?? '-'];
+      }
       $controls[$index] = $this->controls($membership, $group, $row_roles, $may_write, $show_transfer);
     }
     return ['items' => $items, 'controls' => $controls];
@@ -131,7 +137,10 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   }
 
   /**
-   * Renders every deferred cell into the item it belongs to.
+   * Renders every deferred control into the row it belongs to.
+   *
+   * A control with a cell of its own (the role picker) fills that cell; the
+   * row's actions (transfer, remove, revoke) share its `controls` cell.
    *
    * STATIC, AND THE RENDERER COMES FROM THE CONTAINER. A `#pre_render` callback
    * is serialised with the render array when the element is cached, so a
@@ -147,16 +156,57 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    */
   public static function renderControls(array $element): array {
     $renderer = \Drupal::service('renderer');
-    $deferred = $element['#bb_member_controls'] ?? [];
-    foreach ($deferred as $index => $controls) {
-      foreach ($controls as $key => $control) {
-        if (isset($element['list']['#props']['items'][$index]['cells'][$key])) {
-          $element['list']['#props']['items'][$index]['cells'][$key]['markup']
-            = $renderer->render($control);
-        }
+    foreach ($element['#bb_member_controls'] ?? [] as $index => $controls) {
+      $cells = &$element['list']['#props']['rows'][$index]['cells'];
+      $own = array_intersect_key($controls, $cells);
+      foreach ($own as $key => $control) {
+        $cells[$key]['markup'] = $renderer->render($control);
       }
+      $actions = array_diff_key($controls, $own);
+      if ($actions !== [] && isset($cells['controls'])) {
+        $cells['controls']['markup'] = $renderer->render($actions);
+      }
+      unset($cells);
     }
     return $element;
+  }
+
+  /**
+   * The columns of the pending invitations table.
+   *
+   * @return array<int, array{key: string, label: string}>
+   *   The columns, in render order.
+   */
+  public function inviteColumns(): array {
+    return [
+      ['key' => 'person', 'label' => (string) $this->t('Email')],
+      ['key' => 'team', 'label' => (string) $this->t('Team')],
+      ['key' => 'role', 'label' => (string) $this->t('Role')],
+      ['key' => 'state', 'label' => (string) $this->t('Status')],
+      ['key' => 'joined', 'label' => (string) $this->t('Invited')],
+      ['key' => 'controls', 'label' => ''],
+    ];
+  }
+
+  /**
+   * The roster table's columns.
+   *
+   * @param bool $with_team
+   *   Whether to show each member's teams; a team's own roster has no Team
+   *   column, because every row is that team.
+   *
+   * @return array<int, array{key: string, label: string}>
+   *   The columns, in render order.
+   */
+  public function columns(bool $with_team): array {
+    $team = $with_team ? [['key' => 'team', 'label' => (string) $this->t('Team')]] : [];
+    return [
+      ['key' => 'person', 'label' => (string) $this->t('Name')],
+      ...$team,
+      ['key' => 'role', 'label' => (string) $this->t('Role')],
+      ['key' => 'joined', 'label' => (string) $this->t('Joined')],
+      ['key' => 'controls', 'label' => ''],
+    ];
   }
 
   /**
@@ -246,28 +296,24 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   private function cells(OgMembershipInterface $membership, array $roles, bool $may_write, bool $show_transfer): array {
     $cells = ['person' => $this->personCell($membership)];
     $cells += $this->rankCell($membership, $roles, $may_write);
-    // The date keeps its WORD, because it is no longer under a column heading
-    // that named it. A bare date beside a role would be a fact with no subject.
+    // The Joined column header names the date.
     $cells['joined'] = [
       'kind' => 'text',
-      'value' => $this->t('joined @date', ['@date' => $this->date->date($membership->getCreatedTime())]),
+      'value' => $this->date->date($membership->getCreatedTime()),
+      'emphasis' => 'faint',
     ];
-    if ($show_transfer) {
-      $cells['transfer'] = ['kind' => 'rendered'];
-    }
-    if ($may_write) {
-      $cells['remove'] = ['kind' => 'rendered'];
+    if ($show_transfer || $may_write) {
+      $cells['controls'] = ['kind' => 'rendered'];
     }
     return $cells;
   }
 
   /**
-   * The one cell that differs between the two arms, as a single-entry map.
+   * The Role column's cell, as a single-entry map.
    *
-   * RETURNED AS A MAP RATHER THAN CHOSEN BY AN `else`, so the caller merges one
-   * key without knowing which. The two arms are never both present: an item
-   * that carries a role carries no state and the other way round, exactly as
-   * the membership mapping produces them.
+   * The role picker, the role badge, or, where the group type ships no role
+   * to assign, the membership state, so a blocked or pending membership is
+   * not read as an active one.
    *
    * @param \Drupal\og\OgMembershipInterface $membership
    *   The membership.
@@ -277,7 +323,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   Whether the acting account may change this group's crew.
    *
    * @return array<string, array<string, mixed>>
-   *   Either a `role` cell or a `state` cell.
+   *   The `role` cell.
    */
   private function rankCell(OgMembershipInterface $membership, array $roles, bool $may_write): array {
     if ($roles === []) {
@@ -287,7 +333,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
       // carries instead is its membership state, so a blocked or pending
       // membership is not read as an active one.
       return [
-        'state' => [
+        'role' => [
           'kind' => 'badge',
           'label' => $membership->getState(),
           'tone' => 'neutral',

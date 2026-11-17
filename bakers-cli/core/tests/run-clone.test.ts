@@ -13,9 +13,11 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
+import { transferIsolatedCommit } from '../src/core/isolated-git.js';
 import {
   createRunClone,
   loadRunClone,
+  registerRunCloneWorktree,
   removeRunClone,
   runCloneGitDir,
   saveRunClone,
@@ -283,5 +285,143 @@ it('turns a clean linked worktree into a run clone and drops the parent worktree
   expect(existsSync(join(workspace, 'node_modules/kept'))).toBe(true);
   expect(git(parent, 'worktree', 'list', '--porcelain')).not.toContain(
     workspace,
+  );
+});
+
+it('registers the run clone as a linked worktree of the parent on the ticket branch until it is removed', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  const list = () => git(parent, 'worktree', 'list', '--porcelain');
+
+  registerRunCloneWorktree(
+    createRunClone({ parent, workspace, branch: 'ticket', env }),
+  );
+
+  expect(list()).toContain(
+    `worktree ${workspace}\nHEAD ${git(parent, 'rev-parse', 'ticket')}\nbranch refs/heads/ticket`,
+  );
+  git(parent, 'worktree', 'prune');
+  expect(list()).toContain(`worktree ${workspace}`);
+  // Host Git in the workspace sees the parent repository on the ticket branch.
+  expect(git(workspace, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe('ticket');
+  // ...and a clean checkout, so a host commit there can't delete every file.
+  expect(git(workspace, 'status', '--porcelain')).toBe('');
+
+  removeRunClone(workspace, env);
+  expect(list()).not.toContain(workspace);
+});
+
+it('runs no hook the run wrote when the host commits in a registered run clone', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  git(parent, 'config', 'core.hooksPath', '.husky');
+  registerRunCloneWorktree(
+    createRunClone({ parent, workspace, branch: 'ticket', env }),
+  );
+  const marker = join(root, 'hook-ran');
+  mkdirSync(join(workspace, '.husky'));
+  writeFileSync(
+    join(workspace, '.husky/pre-commit'),
+    `#!/bin/sh\ntouch ${marker}\n`,
+    { mode: 0o755 },
+  );
+
+  writeFileSync(join(workspace, 'file'), 'host change');
+  git(workspace, 'add', 'file');
+  commit(workspace, 'host commit');
+
+  expect(existsSync(marker)).toBe(false);
+});
+
+it('runs no filter or diff driver the run wrote when the host reads status and diff in a registered run clone', () => {
+  const { root, parent, workspace, create } = fixture();
+  const marker = join(root, 'driver-ran');
+  for (const [key, value] of [
+    ['filter.x.clean', './driver.sh'],
+    ['filter.x.smudge', './driver.sh'],
+    ['filter.x.process', './driver.sh'],
+    ['filter.x.required', 'true'],
+    ['diff.x.textconv', './driver.sh'],
+    ['diff.y.command', './driver.sh'],
+    ['diff.external', './driver.sh'],
+    ['merge.x.driver', './driver.sh'],
+  ])
+    git(parent, 'config', key, value);
+  registerRunCloneWorktree(create());
+  writeFileSync(
+    join(workspace, 'driver.sh'),
+    `#!/bin/sh\ntouch ${marker}\ncat "$@"\n`,
+    { mode: 0o755 },
+  );
+  for (const [attribute, file] of [
+    ['filter=x', 'filtered'],
+    ['diff=x', 'converted'],
+    ['diff=y', 'external'],
+  ]) {
+    writeFileSync(join(workspace, file), 'run change');
+    git(workspace, 'add', file);
+    writeFileSync(join(workspace, file), 'second run change');
+    writeFileSync(join(workspace, '.gitattributes'), `${file} ${attribute}\n`, {
+      flag: 'a',
+    });
+  }
+  writeFileSync(join(workspace, 'file'), 'run change');
+
+  expect(git(workspace, 'status', '--porcelain')).toContain('M file');
+  expect(git(workspace, 'diff', '--no-ext-diff')).toContain(
+    '+second run change',
+  );
+  // Git has no pass-through value for an external diff: it fails closed.
+  expect(() => git(workspace, 'diff')).toThrow(/external diff died/);
+  git(workspace, 'checkout', '--', 'filtered');
+
+  expect(existsSync(marker)).toBe(false);
+  expect(git(workspace, 'config', 'merge.x.driver')).toBe('false');
+  expect(git(parent, 'config', 'filter.x.clean')).toBe('./driver.sh');
+});
+
+it('keeps host Git clean in a registered run clone after the run transfers a commit', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  const record = createRunClone({ parent, workspace, branch: 'ticket', env });
+  registerRunCloneWorktree(record);
+  const run = (...args: string[]) =>
+    git(
+      workspace,
+      '--git-dir',
+      record.gitDir,
+      '--work-tree',
+      workspace,
+      ...args,
+    );
+  writeFileSync(join(workspace, 'file'), 'changed by the run');
+  writeFileSync(join(workspace, 'added'), 'new');
+  run('add', '.');
+  run(
+    '-c',
+    'user.name=test',
+    '-c',
+    'user.email=test@test',
+    'commit',
+    '-qm',
+    'run',
+  );
+
+  transferIsolatedCommit(record);
+
+  expect(git(parent, 'rev-parse', 'ticket')).toBe(run('rev-parse', 'HEAD'));
+  expect(git(workspace, 'status', '--porcelain')).toBe('');
+});
+
+it('registers a run clone whose host index is locked', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  const record = createRunClone({ parent, workspace, branch: 'ticket', env });
+  writeFileSync(join(workspace, '.git/index.lock'), '');
+
+  registerRunCloneWorktree(record);
+
+  expect(git(parent, 'worktree', 'list', '--porcelain')).toContain(
+    `worktree ${workspace}`,
   );
 });

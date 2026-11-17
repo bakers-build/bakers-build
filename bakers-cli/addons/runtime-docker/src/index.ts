@@ -55,6 +55,7 @@ export function runtimeDocker(
     kind: 'runtime',
     id: 'docker',
     isolates: true,
+    ...(options.shared !== undefined ? { shared: options.shared } : {}),
     requiredModules: [],
     createRuntime: async (config, { logger }) => {
       const { cliRoot, packageDir } = pluginPaths();

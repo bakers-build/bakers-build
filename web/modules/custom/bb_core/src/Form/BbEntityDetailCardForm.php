@@ -43,8 +43,9 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
    * Card fields keyed by entity type and form operation.
    */
   private const CARDS = [
+    // Team Settings edit a team; its card only shows it.
     'bb_team' => [
-      'identity' => ['edit' => ['name'], 'show' => ['workspace_id', 'owner_user_id']],
+      'identity' => ['edit' => [], 'show' => ['name', 'workspace_id', 'owner_user_id']],
     ],
     // Group Settings edit a group; its detail cards only show it.
     'bb_group' => [
@@ -53,7 +54,7 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
     ],
     'bb_machine' => [
       'identity' => [
-        'edit' => ['name', 'max_parallel'],
+        'edit' => ['name', 'max_parallel', 'assignment'],
         'show' => ['host_key', 'owner_user_id', 'current_load', 'connection_url'],
       ],
     ],
@@ -61,8 +62,8 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
     // registration and edited here.
     'bb_conductor' => [
       'identity' => [
-        'edit' => ['label', 'states'],
-        'show' => ['conductor_id', 'project_id', 'machine', 'owner_user_id'],
+        'edit' => ['label', 'states', 'assignment'],
+        'show' => ['conductor_id', 'project_id', 'machine', 'owner_user_id', 'assignment_effective'],
       ],
     ],
     // Project Settings edit a project; its detail cards only show it.

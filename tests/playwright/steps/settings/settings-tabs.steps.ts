@@ -17,7 +17,7 @@ import { test, expect } from '../../bdd.fixtures';
 
 const { Given, When, Then, After } = createBdd(test);
 
-type Surface = 'workspace' | 'project' | 'group';
+type Surface = 'workspace' | 'project' | 'group' | 'team';
 
 interface SettingsWorld {
   slug: string;
@@ -109,13 +109,14 @@ Given('I lead a disposable workspace world', async ({ page, authProvider, apiCli
       '\\Drupal::service("cache.static")->deleteAll();',
       'print json_encode([',
       '"uid" => $lead->id(),',
-      '"ids" => ["workspace" => $w->id(), "project" => $p->id(), "group" => $g->id()],',
+      '"ids" => ["workspace" => $w->id(), "project" => $p->id(), "group" => $g->id(), "team" => $t->id()],',
       '"projectPage" => $p->toUrl()->toString(),',
-      '"names" => ["workspace" => $w->label(), "project" => $p->label(), "group" => $g->label()],',
+      '"names" => ["workspace" => $w->label(), "project" => $p->label(), "group" => $g->label(), "team" => $t->label()],',
       '"urls" => [',
       '"workspace" => \\Drupal\\Core\\Url::fromRoute("bb_core.bb_workspace.settings", ["bb_workspace" => $w->getSlug()])->toString(),',
       '"project" => \\Drupal\\Core\\Url::fromRoute("bb_core.bb_project.settings", $p->toUrl()->getRouteParameters())->toString(),',
       '"group" => \\Drupal\\Core\\Url::fromRoute("bb_core.bb_group.settings", $g->toUrl()->getRouteParameters())->toString(),',
+      '"team" => \\Drupal\\Core\\Url::fromRoute("bb_core.bb_team.settings", $t->toUrl()->getRouteParameters())->toString(),',
       ']]);',
     ].join(' '),
   );

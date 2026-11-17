@@ -6,7 +6,7 @@ export function validate(f) {
 }
 function analyze(f, context) {
   const trace = calls(context, f.simulation.files), allWrites = writes(trace);
-  const publications = toolCalls(trace, 'bakers_comment_publish').filter(c => c.result?.exit_code !== 4);
+  const publications = toolCalls(trace, 'bakers_comment_create').filter(c => c.result?.exit_code !== 4);
   const write = publications[0];
   const body = f.simulation.files[f.input.body_file];
   const { recovered, diagnostics } = callRecovery(trace);
@@ -22,7 +22,7 @@ function analyze(f, context) {
     check('comment-write', publications.length === 1 && arg(write, 'body') === body && arg(write, 'type') === f.input.comment_type &&
       [f.input.ticket_uuid, f.simulation.ticket.identifier].includes(arg(write, 'ticket')),
       'Publish exactly one caller-authorized comment with the exact Markdown body, type and ticket'),
-    check('comment-mutation-scope', allWrites.every(c => c.name === tool('bakers_comment_publish')),
+    check('comment-mutation-scope', allWrites.every(c => c.name === tool('bakers_comment_create')),
       'Mutate no other entity: no ticket create, transition or measurement'),
     check('comment-input', trace.some(c => write && c.index < write.index && c.tool === 'read_file' && c.arguments.path === f.input.body_file && succeeded(c)),
       'Read the supplied body file before publishing'),

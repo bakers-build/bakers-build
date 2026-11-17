@@ -15,7 +15,7 @@ function normPath(path: string): string {
  * checkout, and `root` are never one). A `prunable` entry still carries its
  * `worktree <path>` line, so it parses too.
  */
-function ticketWorktrees(
+export function ticketWorktrees(
   output: string,
   root: string | undefined,
 ): { path: string; branch: string | null }[] {

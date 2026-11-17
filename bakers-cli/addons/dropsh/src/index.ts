@@ -10,6 +10,7 @@ import {
 import { toolPlugin } from '@dropsh/plugin-tool';
 import { type Command, Help } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
+import { registerAuthTokenCommand } from './auth-token.js';
 import { registerTemplateCommand } from './template.js';
 import { hideUnpublishedComments } from './unpublished-comments.js';
 
@@ -184,6 +185,23 @@ export async function dispatchBbDropsh(
         }
       : {}),
   });
+  const deps = {
+    contextFactory: () => {
+      if (!connection) throw new Error('no connection loaded');
+      return createBbConnectionContext(connection, {
+        ...opts,
+        ...(args.profile ? { profile: args.profile } : {}),
+        wrapHttp: hideUnpublishedComments,
+      });
+    },
+    stdout: options.stdout ?? ((s: string) => process.stdout.write(s)),
+    stderr: options.stderr ?? ((s: string) => process.stderr.write(s)),
+    setExitCode: (code: number) => {
+      process.exitCode = code;
+    },
+  };
+  // Registered even for --help, which loads no connection, so help lists it.
+  registerAuthTokenCommand(program, deps);
   if (options.publicCommand) {
     program.name('bakers');
     const command = program.commands.find(
@@ -201,21 +219,7 @@ export async function dispatchBbDropsh(
       });
     }
   }
-  if (connection) {
-    registerTemplateCommand(program, {
-      contextFactory: () =>
-        createBbConnectionContext(connection, {
-          ...opts,
-          ...(args.profile ? { profile: args.profile } : {}),
-          wrapHttp: hideUnpublishedComments,
-        }),
-      stdout: options.stdout ?? ((s: string) => process.stdout.write(s)),
-      stderr: options.stderr ?? ((s: string) => process.stderr.write(s)),
-      setExitCode: (code) => {
-        process.exitCode = code;
-      },
-    });
-  }
+  if (connection) registerTemplateCommand(program, deps);
   // Auth commands perform their own reload; bind it explicitly to the same path.
   const forwarded = connection
     ? ['--config', connection.config_path, ...args.forwarded]

@@ -5,7 +5,9 @@ import {
   killRunProcesses,
   loadRunClone,
   type MachineContext,
+  pickSecrets,
   protectedProjectPaths,
+  type Secrets,
   saveRunClone,
   shellQuote,
   stemForConfigFile,
@@ -307,6 +309,8 @@ export class Conductor {
     ),
     /** Re-reads machine.config.js per run; absent, `config.tunnel` stays. */
     private readonly readMachine?: () => Promise<Partial<MachineContext>>,
+    /** `~/.bakers/.bakers.env`, loaded at start; runs get declared names only. */
+    private readonly secrets: Secrets = {},
   ) {
     this.tunnel = config.tunnel === true;
     this.inboxAddons = new InboxRuntime(
@@ -408,6 +412,7 @@ export class Conductor {
       ...(siteTools ? { siteTools } : {}),
       ...(hosts.length > 0 ? { hosts } : {}),
       onSiteWrite: (b) => this.signalUi(b.worktreePath),
+      readTicket: (uuid) => this.remote.getTicket(uuid),
     });
     this.logger.info(
       { conductorId: this.config.conductor_id, url: this.toolServer.url },
@@ -1457,6 +1462,10 @@ export class Conductor {
     const core: Record<string, string> = {
       BAKERS_URL: this.config.site.base_url,
       BAKERS_ID: t.uuid,
+      // The agent finds its own conductor in bakers_user_read by this id.
+      ...(this.config.conductor_id
+        ? { BAKERS_CONDUCTOR_ID: this.config.conductor_id }
+        : {}),
       // BB-569: lets a launch wrapper key off the ticket and the run's
       // start state without parsing the prompt (addon-claude `measure`).
       ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),
@@ -1769,7 +1778,7 @@ export class Conductor {
         'Commit before you end: uncommitted work is not carried over. ' +
         'forge_fetch refreshes the origin refs and forge_push transfers and pushes your commits. ' +
         `Read-only here: ${['.bakers', ...(this.config.readOnly ?? [])].filter((path, index, all) => all.indexOf(path) === index).join(', ')}. ` +
-        'If merging the target fails on one of them, report it: a maintainer merges the target outside the run.';
+        'forge_update_branch merges the target into your branch; follow its sync: in_place, run the returned git merge --ff-only before further work; restart, stop and cancel this run with bakers_run_cancel; a conflict, stop and report it to the developers.';
     // BB-473 review round 2 (Critical 1): pinning the run's own UUID
     // unconditionally makes a re-dispatch of the same run — an existing,
     // supported path (see the cleanupRun comment above) — fail to launch,
@@ -1818,12 +1827,21 @@ export class Conductor {
       : undefined;
     const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
+    // Only the names the agent declares; a value exported in the shell wins.
+    const secrets = pickSecrets(chosen.agent.secretEnv ?? [], this.secrets);
     const agentInfo = {
       ...(chosen.agent.installCommand
         ? { installCommand: chosen.agent.installCommand }
         : {}),
       ...(chosen.agent.modelApi ? { modelApi: chosen.agent.modelApi } : {}),
+      secrets,
     };
+    const isolates = this.config.runtime?.isolates === true;
+    // Without it the run starts in an empty private home and cannot sign in.
+    if (isolates && !chosen.agent.prepareRun)
+      throw new Error(
+        `agent ${chosen.alias ?? chosen.id}: the runtime isolates runs, but the agent has no prepareRun to prepare its login and configuration`,
+      );
     const runtimeContext = await runtime.prepareRun?.(
       {
         uuid: run.runUuid,
@@ -1837,10 +1855,14 @@ export class Conductor {
           ...runtimeContext,
           workspacePath: ws.path,
           env,
+          secrets,
         })
       : undefined;
     if (preparation) Object.assign(env, preparation.env);
-    const isolates = this.config.runtime?.isolates === true;
+    // A host run inherits the shell's values; it lacks only the file's.
+    if (!runtimeContext)
+      for (const [name, value] of Object.entries(secrets))
+        if (!process.env[name]) env[name] = value;
     // An isolated run without its own clone would share the parent's Git data.
     if (isolates && !ws.clone)
       throw new Error(

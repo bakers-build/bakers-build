@@ -20,9 +20,7 @@ Feature: Deleting an entity where it is managed
 
     Examples:
       | kind        | named                          |
-      | project     | This action cannot be undone   |
       | team        | This action cannot be undone   |
-      | group       | This action cannot be undone   |
       | environment | This action cannot be undone   |
       | label       | will be detached from it       |
       | template    | This action cannot be undone   |
@@ -31,15 +29,31 @@ Feature: Deleting an entity where it is managed
       | comment     | This action cannot be undone   |
       | invite      | This action cannot be undone   |
 
+  Scenario Outline: Its creator deletes a <kind> after confirming
+    Given a disposable "<kind>" created by "north-lead" exists in the Northside workspace
+    And I am logged in as the account "north-lead"
+    When I open the page where the disposable entity is managed
+    Then the disposable entity offers its Delete action
+    When I open the Delete action of the disposable entity
+    Then the delete page is titled after the disposable entity
+    When I confirm the deletion
+    Then the page confirms the disposable entity was deleted
+    And the disposable entity no longer exists
+
+    Examples:
+      | kind    |
+      | project |
+      | group   |
+
   Scenario: A project that still has tickets cannot be deleted
-    Given a disposable "busy project" exists in the Northside workspace
+    Given a disposable "busy project" created by "north-lead" exists in the Northside workspace
     And I am logged in as the account "north-lead"
     When I open the Delete action of the disposable entity
     Then the delete page names "can't be deleted"
     And the delete page offers no confirm button
 
   Scenario: A project's conductor is deleted with the project
-    Given a disposable "conductor project" exists in the Northside workspace
+    Given a disposable "conductor project" created by "north-lead" exists in the Northside workspace
     And I am logged in as the account "north-lead"
     When I open the Delete action of the disposable entity
     Then the delete page names "This also deletes"
@@ -55,28 +69,32 @@ Feature: Deleting an entity where it is managed
     And the disposable entity still exists
 
     Examples:
-      | account     | kind        |
-      | north-guest | project     |
-      | north-guest | group       |
-      | north-guest | environment |
-      | north-guest | label       |
-      | north-guest | template    |
-      | north-guest | trigger     |
-      | north-guest | ticket      |
-      | south-lead  | project     |
-      | south-lead  | team        |
-      | south-lead  | label       |
-      | south-lead  | invite      |
-      | south-lead  | trigger     |
-      | north-lead  | machine     |
-      | north-lead  | conductor   |
-      | north-lead  | workspace   |
+      | account      | kind        |
+      | north-guest  | project     |
+      | north-guest  | group       |
+      | north-guest  | environment |
+      | north-guest  | label       |
+      | north-guest  | template    |
+      | north-guest  | trigger     |
+      | north-guest  | ticket      |
+      | north-lead   | project     |
+      | north-lead   | group       |
+      | north-member | project     |
+      | north-member | group       |
+      | south-lead   | project     |
+      | south-lead   | team        |
+      | south-lead   | label       |
+      | south-lead   | invite      |
+      | south-lead   | trigger     |
+      | north-lead   | machine     |
+      | north-lead   | conductor   |
+      | north-lead   | workspace   |
 
-  Scenario: A guest sees the team but no Delete action on it
+  Scenario: A guest gets neither the team Settings nor its Delete
     Given a disposable "team" exists in the Northside workspace
     And I am logged in as the account "north-guest"
-    When I open the page where the disposable entity is managed
-    Then the disposable entity offers no Delete action
+    Then the page where the disposable entity is managed answers 403
+    And the delete page of the disposable entity answers 403
 
   Scenario Outline: A site administrator deletes a <kind> after confirming
     Given a disposable "<kind>" exists in the Northside workspace
@@ -92,4 +110,3 @@ Feature: Deleting an entity where it is managed
       | kind      |
       | machine   |
       | conductor |
-      | workspace |

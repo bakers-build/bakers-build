@@ -5,7 +5,7 @@ import unittest
 import json
 import subprocess
 
-from setup_support import safe_path, config_args, init_blocked, parse_action, validate_config_write
+from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, validate_config_write
 
 
 class SetupBoundaryTest(unittest.TestCase):
@@ -61,6 +61,15 @@ class SetupBoundaryTest(unittest.TestCase):
             self.assertEqual((root / 'machine/custom.js').read_text(), saved)
             self.assertFalse((root / 'machine/machine.config.js').exists())
 
+    def test_declared_evidence_matches_forge_cli_by_prefix_and_others_exactly(self):
+        commands = {json.dumps(argv, separators=(',', ':')): argv[-1] for argv in [
+            ['gh', 'pr', 'list', '--state', 'merged'], ['git', 'remote', 'get-url', 'origin'], ['bakers', 'info']]}
+        self.assertEqual(declared_output(commands, ['gh', 'pr', 'list', '--state', 'merged', '--json', 'baseRefName']), 'merged')
+        self.assertEqual(declared_output(commands, ['git', 'remote', 'get-url', 'origin']), 'origin')
+        for argv in [['gh', 'pr', 'list'], ['git', 'remote', 'get-url', 'origin', 'x'], ['bakers', 'info', '--all'], ['gh', 'auth', 'status']]:
+            with self.subTest(argv=argv):
+                self.assertIsNone(declared_output(commands, argv))
+
     def test_paths_cannot_escape_including_symlinks(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / 'case'
@@ -83,6 +92,8 @@ class SetupBoundaryTest(unittest.TestCase):
                 ['bakers', 'config', 'init', '--scope', 'connection', '--secret-env', 'REAL_TOKEN'],
                 ['bakers', 'config', 'init', '--scope', 'connection', '--base-url', 'https://production.example'],
                 ['bakers', 'config', 'check', '--online'],
+                ['gh', 'auth', 'status'],
+                ['git', 'remote', 'get-url', 'origin'],
             ]:
                 with self.subTest(argv=argv), self.assertRaises(ValueError):
                     config_args(root, argv)

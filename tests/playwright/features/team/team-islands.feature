@@ -78,16 +78,17 @@ Feature: The team screen's five tabs are routes inside one island
     And the tab "Overview" is current
     And the tab body shows the Projects relation
 
-  # The row is plain links with a thin underline on the current one. On a narrow
-  # viewport it wraps onto further lines instead of scrolling or hiding tabs
-  # behind a menu, so every destination stays visible and one tap away.
+  # The row is plain links with a thin underline on the current one. On a phone
+  # it stays one line and scrolls inside itself (BAKERS-57, requester decision
+  # 2026-11-14), so a long row never pushes the content down and the page never
+  # scrolls sideways; the current tab is scrolled into view.
   # The viewport is narrow BEFORE the page loads, as on a phone: the rail opens
   # only from 768px up and remembers its state, so shrinking an already loaded
   # desktop page keeps a 232px rail and leaves the row about 50px.
-  Scenario Outline: The tab row wraps on a narrow viewport and keeps every tab visible
+  Scenario Outline: The tab row scrolls inside itself on a narrow viewport
     Given I view the page <width> pixels wide
     And I visit the team "Platform Crew"
-    Then every tab fits within the viewport
+    Then the tab row is one line that scrolls inside itself
     And exactly one tab is marked as the current page
     When I click the tab "Members"
     Then the document was not reloaded
@@ -95,7 +96,8 @@ Feature: The team screen's five tabs are routes inside one island
     When I click the tab "Runs"
     Then the document was not reloaded
     And the tab "Runs" is current
-    And every tab fits within the viewport
+    And the current tab is in view
+    And the tab row is one line that scrolls inside itself
     And the tab row rests on the header rule
 
     Examples:
@@ -375,13 +377,11 @@ Feature: The team screen's five tabs are routes inside one island
     Then the remove control names "Revokes their access."
     And no remove control names "no access is revoked"
 
-  # BB-435 — CRITERION 5 on this call site. The team roster was a
-  # `bb_theme:table` with three column headers; the settings section says a
-  # member list is a LIST, and the rule now reaches both screens rather than one.
-  Scenario: The team member list is a list and not a table
+  # The roster is a table: Name, Role and Joined line up from row to row. A
+  # team's own roster has no Team column, because every row is that team.
+  Scenario: The team member list is a table with Name, Role and Joined columns
     When I visit the team "Platform Crew" tab "Members"
-    Then the members list has no columns and no header row
-    And consecutive member rows are separated comfortably
+    Then the members table has the columns "Name, Role, Joined"
 
   # BB-435 — CRITERION 9 on this call site, REWRITTEN BY BB-456. This used to
   # assert an absence: a team granted no permissions, so an item carried its
@@ -403,7 +403,7 @@ Feature: The team screen's five tabs are routes inside one island
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
-    And the member "both-bakeries" shows their initial and joined date on the left, role and remove control right-aligned
+    And the member "both-bakeries" shows their initial, role, joined date and remove control in their row
     When I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
     And the document was not reloaded
@@ -414,3 +414,10 @@ Feature: The team screen's five tabs are routes inside one island
     Then the member "both-bakeries" shows the role "Member"
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
+
+  # Only the ticket's folded Details move above the body on a phone; an
+  # inspector without a disclosure stays after the main content (BAKERS-57).
+  Scenario: A team page keeps its body before the inspector on a phone
+    Given I view the page 390 pixels wide
+    And I visit the team "Platform Crew"
+    Then the main region comes before the inspector

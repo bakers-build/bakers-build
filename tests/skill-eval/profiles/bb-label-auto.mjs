@@ -1,25 +1,30 @@
 import { arg, callRecovery, calls, check, commonChecks, succeeded, tool, uuid, validateTools, writes } from '../call-utils.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 
-// A auto run: where it stops (user question, technical problem, transition or not at
+// An auto, human-review or human-accept run: where it stops (user question, technical problem, transition or not at
 // all), that a technical problem never reaches the user, that only done merges, and that nothing
 // follows the stop.
 const STOPS = ['none', 'question', 'technical-problem', 'transition'];
+const SKILLS = ['bb-label-auto', 'bb-label-human-review', 'bb-label-human-accept'];
 // The user reads only this note; the error and its output go into an earlier comment.
 const NOTE = '# Technical problem\n\nPlease contact the developers.';
 
 export function validate(f) {
-  validateTools(f, 'bb-label-auto');
+  requireValue(SKILLS.includes(f.skill), `Expected skill as one of ${SKILLS.join(', ')}`);
+  validateTools(f, f.skill);
   const e = f.expect;
+  const label = f.skill.slice('bb-label-'.length);
+  requireValue(f.simulation.ticket?.labels?.includes(label), `Expected the ${label} label on the ticket`);
   requireValue(uuid(f.input.ticket_uuid) && f.simulation.ticket?.id === f.input.ticket_uuid, 'Expected the simulated ticket');
   requireValue(STOPS.includes(e?.stop), `Expected expect.stop as one of ${STOPS.join(', ')}`);
   // The question, technical problem and freeze forms live in the ticket-question skill.
   requireValue(f.simulation.ticket.labels?.includes('ticket-question') && f.references?.includes('bb-label-ticket-question/SKILL.md'),
-    'Expected the ticket-question label and skill beside auto');
+    `Expected the ticket-question label and skill beside ${label}`);
   requireValue((e.stop === 'transition') === ['working', 'review', 'done'].includes(e.state) && (e.stop === 'transition' || e.state === undefined),
     'Expected expect.state working, review or done exactly for a transition');
   requireValue((e.stop === 'technical-problem') === nonempty(e.cause), 'Expected expect.cause exactly for a technical problem');
   requireValue(e.link === undefined || (e.stop === 'question' && nonempty(e.link)), 'Expected expect.link only for a user question');
+  requireValue(e.asks === undefined || (e.stop === 'question' && nonempty(e.asks)), 'Expected expect.asks only for a user question');
   requireValue(e.hidden === undefined || (e.link !== undefined && Array.isArray(e.hidden) && e.hidden.every(nonempty)),
     'Expected expect.hidden as technical terms of an acceptance question');
   requireValue(e.stop !== 'none' || nonempty(e.decision), 'Expected expect.decision for a run that does not stop');
@@ -33,7 +38,7 @@ function analyze(f, output, context) {
   const { recovered, diagnostics } = callRecovery(trace);
   const sent = writes(trace).filter(c => c.result?.exit_code !== 4);
   const of = id => sent.filter(c => c.name === tool(id));
-  const comments = of('bakers_comment_publish'), updates = of('bakers_ticket_update');
+  const comments = of('bakers_comment_create'), updates = of('bakers_ticket_update');
   const states = of('bakers_ticket_transition').filter(c => arg(c, 'state'));
   // The heading is the comment's whole first line: `# Technical problem details` is an ordinary comment.
   const headed = heading => comments.filter(c => new RegExp(`^\\s*# ${heading}[ \\t]*(\\n|$)`).test(arg(c, 'body') ?? ''));
@@ -75,7 +80,7 @@ function analyze(f, output, context) {
   if (e.review_status) {
     const reviews = comments.filter(c => arg(c, 'type') === 'review');
     // Merge's caller handoff may append its evidence as a further verdict; each keeps the status.
-    checks.push(check('auto-review-status', reviews.length > 0 &&
+    checks.push(check('auto-verdict-status', reviews.length > 0 &&
       reviews.every(r => String(arg(r, 'body')).split('\n').some(l => l.trim() === `Status: **${e.review_status}**`)),
     `Publish the review verdict with Status: **${e.review_status}**`));
   }
@@ -96,6 +101,10 @@ function analyze(f, output, context) {
   if (e.link) {
     checks.push(check('auto-link', String(arg(headed('Question')[0], 'body')).includes(e.link),
       `Put the tunnel link (${e.link}) in the user question`));
+  }
+  if (e.asks) {
+    checks.push(check('auto-asks', String(arg(headed('Question')[0], 'body')).includes(e.asks),
+      `Address the user question to ${e.asks}`));
   }
   if (e.hidden) {
     const body = String(arg(headed('Question')[0], 'body'));

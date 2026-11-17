@@ -59,11 +59,21 @@ describe('hooks.provision_exec', () => {
     expect(() =>
       assertValidConfig(
         'project',
-        withExec({ drush: 'bash .bakers/provision.sh exec drush' }),
+        withExec({
+          phpcs: 'bash .bakers/provision.sh exec phpcs',
+          uli: { command: 'bash .bakers/provision.sh exec uli', args: true },
+        }),
         'c',
       ),
     ).not.toThrow();
-    for (const bad of ['bash x.sh', { drush: 1 }, { 'bad key': 'x' }])
+    for (const bad of [
+      'bash x.sh',
+      { drush: 1 },
+      { 'bad key': 'x' },
+      { uli: { command: '' } },
+      { uli: { command: 'x', args: 'yes' } },
+      { uli: { command: 'x', shell: true } },
+    ])
       expect(() => assertValidConfig('project', withExec(bad), 'c')).toThrow(
         /provision_exec/,
       );

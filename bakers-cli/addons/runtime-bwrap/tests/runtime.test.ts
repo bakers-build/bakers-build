@@ -236,6 +236,69 @@ echo isolated`;
   },
 );
 
+it.skipIf(!canBwrap)(
+  "forwards the pane's terminal and locale variables and no other host variable",
+  async () => {
+    const runtime = make();
+    const context = await runtime.prepareRun!(run);
+    const launch = await runtime.wrap({
+      command: 'env',
+      env: {},
+      workspacePath: ws,
+      gitDir: clone.gitDir,
+      run,
+      harness: 'any',
+      ...context,
+    });
+    const result = spawnSync('sh', ['-c', launch.command], {
+      env: {
+        ...process.env,
+        ...launch.env,
+        TERM: 'xterm-256color',
+        COLORTERM: 'truecolor',
+        TERM_PROGRAM: 'herdr',
+        LANG: 'C.UTF-8',
+        LC_CTYPE: 'C.UTF-8',
+        NO_COLOR: '1',
+        LANGUAGE: undefined,
+        FORCE_COLOR: undefined,
+        HOST_SECRET: 'hidden',
+        XLC_FOO: 'look-alike',
+        TERMINFO_SECRET: 'look-alike',
+      },
+      encoding: 'utf8',
+      timeout: 15000,
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const inside = Object.fromEntries(
+      result.stdout
+        .trim()
+        .split('\n')
+        .map((line) => [
+          line.slice(0, line.indexOf('=')),
+          line.slice(line.indexOf('=') + 1),
+        ]),
+    );
+    expect(inside).toMatchObject({
+      TERM: 'xterm-256color',
+      COLORTERM: 'truecolor',
+      TERM_PROGRAM: 'herdr',
+      LANG: 'C.UTF-8',
+      LC_CTYPE: 'C.UTF-8',
+      NO_COLOR: '1',
+    });
+    for (const key of [
+      'LANGUAGE',
+      'FORCE_COLOR',
+      'HOST_SECRET',
+      'XLC_FOO',
+      'TERMINFO_SECRET',
+    ])
+      expect(inside).not.toHaveProperty(key);
+    await runtime.cleanup(run);
+  },
+);
+
 it('rejects relative grants and writable aliases of the run Git directory', async () => {
   const runtime = make();
   const context = await runtime.prepareRun!(run);
@@ -332,6 +395,58 @@ it('mounts the run Git directory as .git, no parent Git, and protected paths rea
     mounts.findIndex(([, , mounted]) => mounted === target);
   expect(at(readPath)).toBeGreaterThan(at(ws));
   expect(at(join(ws, '.git'))).toBeGreaterThan(at(ws));
+  await runtime.cleanup(run);
+});
+
+it.skipIf(!existsSync('/etc/alternatives'))(
+  'mounts the host alternatives read-only so links like /usr/bin/awk resolve',
+  async () => {
+    const runtime = make();
+    const context = await runtime.prepareRun!(run);
+    await runtime.wrap({
+      command: 'true',
+      env: {},
+      workspacePath: ws,
+      gitDir: clone.gitDir,
+      run,
+      harness: 'any',
+      ...context,
+    });
+    expect(mountsOf()).toContainEqual([
+      '--ro-bind',
+      '/etc/alternatives',
+      '/etc/alternatives',
+    ]);
+    await runtime.cleanup(run);
+  },
+);
+
+it('mounts the whole package of a linked program so it can load its own modules', async () => {
+  const pkg = join(root, 'node/lib/node_modules/@scope/tool');
+  mkdirSync(join(pkg, 'bin'), { recursive: true });
+  writeFileSync(join(pkg, 'bin/cli.js'), '', { mode: 0o755 });
+  const bin = join(root, 'node/bin');
+  mkdirSync(bin);
+  symlinkSync(join(pkg, 'bin/cli.js'), join(bin, 'tool'));
+  const runtime = bwrapRuntime(
+    { readPaths: [] },
+    {
+      cachePath: join(root, 'cache'),
+      cliRoot: join(root, 'cli'),
+      env: { ...process.env, PATH: bin },
+    },
+  );
+  const context = await runtime.prepareRun!(run);
+  await runtime.wrap({
+    command: 'true',
+    env: {},
+    workspacePath: ws,
+    gitDir: clone.gitDir,
+    run,
+    harness: 'any',
+    ...context,
+  });
+  expect(mountsOf()).toContainEqual(['--ro-bind', pkg, pkg]);
   await runtime.cleanup(run);
 });
 

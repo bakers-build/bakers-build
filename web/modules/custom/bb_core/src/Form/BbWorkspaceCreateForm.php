@@ -8,12 +8,16 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
+use Drupal\Core\Entity\EntityConstraintViolationListInterface;
 use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Plugin\Validation\Constraint\BbWorkspaceSlugConstraint;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\bb_core\Workspace\WorkspaceSlugDeriver;
+use Drupal\bb_core\Workspace\WorkspaceSlugTakenException;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -158,13 +162,42 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
   public function buildEntity(array $form, FormStateInterface $form_state): ContentEntityInterface {
     $entity = parent::buildEntity($form, $form_state);
     assert($entity instanceof BbWorkspaceInterface);
-    // The same deriver the provisioner uses, so the validated slug matches
-    // the saved one except possibly in a uniqueness suffix.
+    // The same deriver the provisioner uses, so the validated slug is the
+    // saved one.
     $entity->setSlug($this->slugDeriver->derive($entity->getName()));
     if ($entity->get('owner_user_id')->isEmpty()) {
       $entity->set('owner_user_id', $this->currentUser()->id());
     }
     return $entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * The derived slug is validated too, though no widget shows it.
+   */
+  protected function getEditedFieldNames(FormStateInterface $form_state): array {
+    return [...parent::getEditedFieldNames($form_state), 'slug'];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * A slug violation is the name's: the customer chose the name, not the
+   * address. The derived slug always matches the pattern, so a violation means
+   * reserved or taken.
+   */
+  protected function flagViolations(EntityConstraintViolationListInterface $violations, array $form, FormStateInterface $form_state): void {
+    if ($violations->getByField('slug')->count() > 0) {
+      // Derived again: the validated entity is a clone `$this->entity` is not.
+      $slug = $this->slugDeriver->derive((string) $form_state->getValue(['name', 0, 'value']));
+      $message = in_array($slug, BbWorkspaceSlugConstraint::RESERVED, TRUE)
+        ? $this->t('The address /@slug is reserved. Choose a different name.', ['@slug' => $slug])
+        : $this->takenMessage($slug);
+      $form_state->setError($form['name']['widget'][0]['value'], $message);
+      $violations->filterByFields(['slug']);
+    }
+    parent::flagViolations($violations, $form, $form_state);
   }
 
   /**
@@ -188,10 +221,20 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // An unexpected failure becomes a 500 with the rollback already done, which
     // is honest; a caught throwable rendered as "something went wrong" beside a
     // half-provisioned workspace would not be.
-    $workspace = $this->provisioner->provision($entity->getName(), $account, trim((string) $form_state->getValue('team_name')), [
-      'description' => $entity->get('description')->getValue(),
-      'image' => $entity->get('image')->getValue(),
-    ]);
+    try {
+      $workspace = $this->provisioner->provision($entity->getName(), $account, trim((string) $form_state->getValue('team_name')), [
+        'description' => $entity->get('description')->getValue(),
+        'image' => $entity->get('image')->getValue(),
+      ]);
+    }
+    catch (WorkspaceSlugTakenException $taken) {
+      // Validation passed, so a concurrent creation took the slug. Field
+      // errors cannot be set after validation; the form's messages show it.
+      $this->messenger()->addError($this->takenMessage($taken->slug));
+      $form_state->setRebuild();
+      // Nothing was saved.
+      return 0;
+    }
     // The form's own entity now stands for the SAVED one, so a caller reading
     // `$this->getEntity()` after submission sees the real, persisted row
     // rather than the discarded draft `buildEntity()` produced.
@@ -204,6 +247,19 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     $form_state->setRedirect('bb_core.first_project', ['bb_workspace' => $workspace->getSlug()]);
 
     return SAVED_NEW;
+  }
+
+  /**
+   * The message for a name whose address another workspace holds.
+   *
+   * @param string $slug
+   *   The taken slug.
+   *
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup
+   *   The message.
+   */
+  private function takenMessage(string $slug): TranslatableMarkup {
+    return $this->t('A workspace with the address /@slug already exists. Choose a different name.', ['@slug' => $slug]);
   }
 
 }

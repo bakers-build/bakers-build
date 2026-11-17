@@ -25,6 +25,22 @@ const git = (cwd: string, ...args: string[]) =>
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
 
+/**
+ * Set a registered run clone's host index to its branch tip, so host Git there
+ * shows no changes. Best effort: the index only feeds host status, and a host
+ * Git holding its lock must not fail a run start or a transfer.
+ */
+export function refreshRunCloneIndex({ workspace }: RunClone): void {
+  const stub = join(workspace, '.git');
+  // Only a registered stub links to the parent; a plain one has no HEAD commit.
+  if (!existsSync(join(stub, 'commondir'))) return;
+  try {
+    git(workspace, '--git-dir', stub, 'read-tree', 'HEAD');
+  } catch {
+    // Stale index, see above.
+  }
+}
+
 function normalizeProtectedPaths(paths: readonly string[]): string[] {
   return [
     ...new Set(
@@ -45,6 +61,45 @@ function normalizeProtectedPaths(paths: readonly string[]): string[] {
       }),
     ),
   ];
+}
+
+/** Protected paths `to` changes against `from`, NUL-separated; empty when none. */
+function protectedDiff(
+  run: (...args: string[]) => string,
+  record: RunClone,
+  from: string,
+  to: string,
+): string {
+  return run(
+    'diff-tree',
+    '-r',
+    '--name-only',
+    '-z',
+    '--no-renames',
+    from,
+    to,
+    '--',
+    ...normalizeProtectedPaths(record.protectedPaths ?? []).map(
+      (path) => `:(literal)${path}`,
+    ),
+  );
+}
+
+/** Protected paths `to` changes against `from`, both commits of the parent. */
+export function changedProtectedPaths(
+  record: RunClone,
+  from: string,
+  to: string,
+): string[] {
+  return protectedDiff(
+    (...args) =>
+      git(record.parentGitDir, `--git-dir=${record.parentGitDir}`, ...args),
+    record,
+    from,
+    to,
+  )
+    .split('\0')
+    .filter(Boolean);
 }
 
 function rejectGitlinks(entries: string): void {
@@ -202,19 +257,23 @@ function writeRunRef(record: RunClone, ref: string, tip: string): void {
 
 /**
  * Give the run the parent's current `origin/<branch>` refs (default: its
- * target): objects as one new pack, each ref as a plain file. Nothing here
- * runs Git inside the run's directory.
+ * target) and the objects of `commits`, which get no ref: objects as one new
+ * pack, each ref as a plain file. Nothing here runs Git inside the run's directory.
  */
 export function refreshRunTarget(
   record: RunClone,
   branches: readonly string[] = record.target ? [record.target] : [],
+  commits: readonly string[] = [],
 ): void {
   const tips = branches.flatMap((branch) => {
     git(record.parentGitDir, 'check-ref-format', `refs/heads/${branch}`);
     const tip = parentOrigin(record, branch);
     return tip ? [{ branch, tip }] : [];
   });
-  if (tips.length === 0) return;
+  if (commits.some((commit) => !HASH.test(commit)))
+    throw new Error('isolated Git: hand-off requires full commit hashes');
+  const wanted = [...tips.map(({ tip }) => tip), ...commits];
+  if (wanted.length === 0) return;
   // pack-objects renames its pack from the parent's objects dir; /tmp may be another filesystem (EXDEV).
   const scratch = mkdtempSync(join(record.parentGitDir, 'bb-target-refresh-'));
   try {
@@ -228,7 +287,7 @@ export function refreshRunTarget(
         join(scratch, 'pack'),
       ],
       {
-        input: `${tips.map(({ tip }) => tip).join('\n')}\n^${record.expected}\n`,
+        input: `${wanted.join('\n')}\n^${record.expected}\n`,
         stdio: ['pipe', 'ignore', 'pipe'],
       },
     );
@@ -268,6 +327,13 @@ export function transferIsolatedCommit(
   if (commit === record.expected) return commit;
   const parent = (...args: string[]) =>
     git(record.parentGitDir, `--git-dir=${record.parentGitDir}`, ...args);
+  // A run still at a tip the host moved its branch past (forge_update_branch) has nothing to bring.
+  try {
+    parent('merge-base', '--is-ancestor', commit, record.expected);
+    return record.expected;
+  } catch {
+    // Not an ancestor, or not in the parent yet: transfer it.
+  }
   const scratch = mkdtempSync(join(tmpdir(), 'bb-commit-transfer-'));
   try {
     git(
@@ -292,19 +358,11 @@ export function transferIsolatedCommit(
     git(scratch, 'merge-base', '--is-ancestor', record.expected, commit);
     // Against the tip the run started from, so a merge of the target passes.
     if (
-      git(
-        scratch,
-        'diff-tree',
-        '-r',
-        '--name-only',
-        '-z',
-        '--no-renames',
+      protectedDiff(
+        (...args) => git(scratch, ...args),
+        record,
         record.expected,
         commit,
-        '--',
-        ...normalizeProtectedPaths(record.protectedPaths ?? []).map(
-          (path) => `:(literal)${path}`,
-        ),
       )
     )
       throw new Error(
@@ -326,6 +384,7 @@ export function transferIsolatedCommit(
       commit,
       record.expected,
     );
+    refreshRunCloneIndex(record);
     return commit;
   } finally {
     rmSync(scratch, { recursive: true, force: true });

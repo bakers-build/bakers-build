@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\bb_core\Form\BbContentEntityDeleteForm;
+use Drupal\bb_core\Form\BbWorkspaceDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -16,6 +16,7 @@ use Drupal\entity\Routing\DefaultHtmlRouteProvider;
 use Drupal\bb_core\Form\BbWorkspaceForm;
 use Drupal\bb_core\ListBuilder\BbWorkspaceListBuilder;
 use Drupal\bb_core\RunLog\RunLogPolicy;
+use Drupal\bb_core\Storage\BbWorkspaceStorageSchema;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
 
@@ -44,13 +45,14 @@ use Drupal\user\EntityOwnerTrait;
     // WorkspaceReadScopeSubscriber.
     'query_access' => QueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
+    'storage_schema' => BbWorkspaceStorageSchema::class,
     'list_builder' => BbWorkspaceListBuilder::class,
     'form' => [
       'default' => BbWorkspaceForm::class,
       // The Settings surface: exists so `EntityForm::init()` picks the
       // `settings` form mode of the same name.
       'settings' => BbWorkspaceForm::class,
-      'delete' => BbContentEntityDeleteForm::class,
+      'delete' => BbWorkspaceDeleteForm::class,
     ],
     // Only the delete route: /home lists and creates workspaces, Settings
     // edits one.

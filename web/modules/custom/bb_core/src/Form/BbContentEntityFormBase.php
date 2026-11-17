@@ -54,6 +54,10 @@ class BbContentEntityFormBase extends ContentEntityForm {
       // confirmation and validation errors render inside the form.
       $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
       unset($form['created'], $form['changed']);
+      $text = $this->dangerZoneText();
+      if ($text !== []) {
+        $form += static::dangerZone($this->entity, ...$text);
+      }
       return $form;
     }
 
@@ -159,7 +163,21 @@ class BbContentEntityFormBase extends ContentEntityForm {
   protected function actions(array $form, FormStateInterface $form_state): array {
     $actions = parent::actions($form, $form_state);
     unset($actions['delete']);
+    // Settings with a danger zone offer Delete there instead.
+    if ($this->getOperation() === 'settings' && $this->dangerZoneText() !== []) {
+      return $actions;
+    }
     return $actions + static::deleteAction($this->getEntity());
+  }
+
+  /**
+   * The label and description of the Settings danger zone, if it has one.
+   *
+   * @return array{}|array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: \Drupal\Core\StringTranslation\TranslatableMarkup}
+   *   Empty keeps Delete in the action row.
+   */
+  protected function dangerZoneText(): array {
+    return [];
   }
 
   /**
@@ -186,6 +204,37 @@ class BbContentEntityFormBase extends ContentEntityForm {
           'attributes' => new Attribute(OverlayTrigger::attributes($url)),
         ],
         '#weight' => 100,
+      ],
+    ];
+  }
+
+  /**
+   * A saved entity's Delete set apart in a danger zone, for who may delete.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity.
+   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $label
+   *   The row title and button label, e.g. "Delete workspace".
+   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $description
+   *   What the delete removes, and what still blocks it.
+   *
+   * @return array<string, array<string, mixed>>
+   *   The `danger_zone` element, or nothing without delete access.
+   */
+  public static function dangerZone(EntityInterface $entity, TranslatableMarkup $label, TranslatableMarkup $description): array {
+    $delete = static::deleteAction($entity)['delete'] ?? NULL;
+    if ($delete === NULL) {
+      return [];
+    }
+    $delete['#props']['label'] = (string) $label;
+    $delete['#props']['variant'] = 'danger';
+    return [
+      'danger_zone' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:danger_zone',
+        '#props' => ['title' => $label, 'description' => $description],
+        '#slots' => ['action' => ['delete' => $delete]],
+        '#weight' => 1000,
       ],
     ];
   }

@@ -323,7 +323,10 @@ describe('loadTools', () => {
 });
 
 describe('provision_exec', () => {
-  const exec = (commands: Record<string, string>, isolates = false) =>
+  const exec = (
+    commands: Record<string, string | { command: string; args: true }>,
+    isolates = false,
+  ) =>
     loadTools(
       provisionTools(undefined, undefined, { exec: commands, isolates }),
     );
@@ -334,7 +337,9 @@ describe('provision_exec', () => {
       join(dir, 'show.sh'),
       'for arg in "$@"; do echo "<$arg>"; done\n',
     );
-    const registry = await exec({ show: 'sh show.sh' });
+    const registry = await exec({
+      show: { command: 'sh show.sh', args: true },
+    });
     expect(registry.list().map((t) => t.name)).toEqual(['provision_exec']);
     const { text } = await registry.call(
       'provision_exec',
@@ -345,6 +350,28 @@ describe('provision_exec', () => {
       'exit 0\n<-->\n<$(touch planted)>\n<--service=db>\n<a b>\n<;id>\n',
     );
     await expect(stat(join(dir, 'planted'))).rejects.toThrow();
+  });
+
+  it('runs a plain key as its fixed command and refuses arguments for it', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bb-provision-fixed-'));
+    const registry = await exec({ fixed: 'echo "[$#]"; touch ran' });
+    await expect(
+      registry.call(
+        'provision_exec',
+        { key: 'fixed', args: ['sudo', 'id'] },
+        { worktreePath: dir },
+      ),
+    ).rejects.toThrow(/fixed takes no arguments/);
+    await expect(stat(join(dir, 'ran'))).rejects.toThrow();
+    expect(
+      (
+        await registry.call(
+          'provision_exec',
+          { key: 'fixed', args: [] },
+          { worktreePath: dir },
+        )
+      ).text,
+    ).toBe('exit 0\n[0]\n');
   });
 
   it('refuses an unknown key and reports a failing command', async () => {
@@ -373,7 +400,7 @@ describe('provision_exec', () => {
       ).toBe(expected);
       expect(
         (await registry.call('provision_exec', { key: 'show' }, binding)).text,
-      ).toBe(`${expected.trimEnd()} --\n`);
+      ).toBe(expected);
     }
   });
 });

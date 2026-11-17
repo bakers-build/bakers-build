@@ -8,6 +8,16 @@ description: Test recipe for tickets of type feature, bug or chore — never shi
 A test-only recipe for skill evaluations. Each slot names its marker; a run that applies the slot
 shows the marker in its intake or outtake.
 
+## bb-gates
+
+Gates per type, as the frame defines them.
+
+| Type | Gates |
+|---|---|
+| feature | default |
+| bug | default |
+| chore | default |
+
 ## bb-state-qualification
 
 ### bb-phase-work

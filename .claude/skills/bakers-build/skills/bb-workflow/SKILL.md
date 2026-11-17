@@ -47,7 +47,7 @@ user request replaces a required skill; the outtake names the replacement and wh
 ## Stop rule
 
 **If the recipe, its section for this state, the ticket's type among the recipe's declared types,
-or a required skill cannot be resolved or read, stop and report the
+an own type's `## bb-gates` row, or a required skill cannot be resolved or read, stop and report the
 identifier that failed**, *before* any file edit, commit, comment, confirmation or transition.
 
 

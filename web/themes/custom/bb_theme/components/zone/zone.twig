@@ -94,7 +94,8 @@
     center` centres the heading, the copy and the cells: a short result (a
     heading, a sentence, one action) standing alone in a card. #}
 {% set centered = align|default('start') == 'center' %}
-{% set zone_classes = ['flex', 'flex-col', 'min-w-0', 'gap-stack', (inset_map[inset|default('md')] ?? inset_map['md'])]|merge(centered ? ['items-center', 'text-center'] : []) %}
+{#- `measure: narrow` caps the zone at the narrow measure (960px); `full` fills its container. #}
+{% set zone_classes = ['flex', 'flex-col', 'min-w-0', 'gap-stack', (inset_map[inset|default('md')] ?? inset_map['md'])]|merge(centered ? ['items-center', 'text-center'] : [])|merge(measure|default('full') == 'narrow' ? ['max-w-narrow'] : []) %}
 {#- `fill` is ONE row for a field and its submit: the first cell takes the
     remaining width, every later cell keeps its intrinsic width on one line, and
     all of them sit on the bottom edge so the button lines up with the input

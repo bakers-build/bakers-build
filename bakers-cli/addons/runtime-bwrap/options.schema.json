@@ -9,6 +9,11 @@
       "items": { "type": "string", "pattern": "^/" },
       "default": [],
       "description": "Additional absolute host paths exposed read-only for coding tools. Never grant the host root or the operator home."
+    },
+    "shared": {
+      "type": "boolean",
+      "default": false,
+      "description": "Run clones borrow the parent repository's objects (git clone --shared) instead of copying them, for every workspace addon. Faster and smaller, but never prune or repack the parent with -d while a run is open."
     }
   }
 }

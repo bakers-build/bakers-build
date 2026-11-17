@@ -6,9 +6,10 @@
 // `for-each-ref` and `update-ref` run, with hooks and fsmonitor disabled.
 
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { UI_REFRESH_FILE } from '@bakers-build/core';
 
 export interface GitAuth {
   /** The configured repository URL, never the clone's `origin`. */
@@ -48,7 +49,12 @@ function run(
       { env, maxBuffer: 16 * 1024 * 1024 },
       (err, stdout, stderr) => {
         if (err)
-          reject(new Error(`git failed: ${stderr.trim() || err.message}`));
+          reject(
+            Object.assign(
+              new Error(`git failed: ${stderr.trim() || err.message}`),
+              { code: err.code, stdout },
+            ),
+          );
         else resolve(stdout.trim());
       },
     );
@@ -96,7 +102,12 @@ async function withScratch<T>(
   body: (ctx: {
     common: string;
     env: NodeJS.ProcessEnv;
-    remote: (args: string[], input?: string) => Promise<string>;
+    home: string;
+    remote: (
+      args: string[],
+      input?: string,
+      extra?: NodeJS.ProcessEnv,
+    ) => Promise<string>;
   }) => Promise<T>,
 ): Promise<T> {
   const home = await mkdtemp(join(tmpdir(), 'bakers-forge-'));
@@ -137,7 +148,9 @@ async function withScratch<T>(
     return await body({
       common,
       env,
-      remote: (args, input) => run(args, remoteEnv, input),
+      home,
+      remote: (args, input, extra) =>
+        run(args, { ...remoteEnv, ...extra }, input),
     });
   } finally {
     await rm(home, { recursive: true, force: true });
@@ -263,5 +276,136 @@ export async function pushBranch(
       sha,
     );
     return sha;
+  });
+}
+
+export interface BranchUpdate {
+  /** The branch tip before the update. */
+  previous: string;
+  /** The fetched target tip that was merged. */
+  target: string;
+  /** The branch tip after the update; `previous` for a no-op. */
+  resulting: string;
+  noop: boolean;
+}
+
+/**
+ * Merge the clone's `origin/<target>` into `refs/heads/<branch>` without a
+ * checkout: merge-tree and commit-tree in the scratch, so no partial merge,
+ * hook, driver or repository config can run, then compare-and-swap the branch.
+ * Refuses a branch moved past `expected`, uncommitted work in `workspace`
+ * against `clean`, a remote branch the local one lacks, and conflicts (naming their paths). Pushes nothing.
+ */
+export async function updateBranch(
+  worktree: string,
+  auth: GitAuth,
+  opts: {
+    branch: string;
+    target: string;
+    /** The tip the caller last saw; a branch moved past it is refused. */
+    expected?: string;
+    workspace?: { path: string; clean: string };
+  },
+): Promise<BranchUpdate> {
+  const { branch, target, expected, workspace } = opts;
+  return withScratch(worktree, auth, async ({ common, env, home, remote }) => {
+    const previous = await readRef(common, env, `refs/heads/${branch}`);
+    if (!previous) throw new Error(`no local branch '${branch}' to update`);
+    if (expected && previous !== expected)
+      throw new Error(
+        `'${branch}' moved to ${previous} since the run last synced at ${expected}; nothing changed`,
+      );
+    const merged = await readRef(common, env, `refs/remotes/origin/${target}`);
+    if (!merged)
+      throw new Error(`target '${target}' was not fetched; nothing changed`);
+    const isAncestor = (a: string, b: string) =>
+      remote(['merge-base', '--is-ancestor', a, b]).then(
+        () => true,
+        () => false,
+      );
+    if (workspace) {
+      // A throwaway index and only the scratch's clean config: status runs no filter or fsmonitor.
+      await mkdir(join(home, 'scratch.git', 'info'), { recursive: true });
+      await writeFile(
+        join(home, 'scratch.git', 'info', 'exclude'),
+        `/.bakers/${UI_REFRESH_FILE}\n`,
+      );
+      const tree = {
+        GIT_WORK_TREE: workspace.path,
+        GIT_INDEX_FILE: join(home, 'index'),
+      };
+      await remote(['update-ref', '--no-deref', 'HEAD', workspace.clean]);
+      await remote(['read-tree', 'HEAD'], undefined, tree);
+      const dirty = await remote(
+        ['status', '--porcelain', '--untracked-files=all', '--no-renames'],
+        undefined,
+        tree,
+      );
+      if (dirty)
+        throw new Error(
+          `uncommitted work in the run (${dirty
+            .split('\n')
+            .map((l) => l.replace(/^[ MADRCU?!]{1,2} /, ''))
+            .join(
+              ', ',
+            )}); commit or remove it, then call forge_update_branch again; nothing changed`,
+        );
+    }
+    const pushed = await readRef(common, env, `refs/remotes/origin/${branch}`);
+    if (pushed && !(await isAncestor(pushed, previous)))
+      throw new Error(
+        `origin/${branch} has commits '${branch}' lacks (pushed elsewhere); integrate them first; nothing changed`,
+      );
+    if (await isAncestor(merged, previous))
+      return { previous, target: merged, resulting: previous, noop: true };
+    let tree: string;
+    try {
+      tree = await remote([
+        'merge-tree',
+        '--write-tree',
+        '--name-only',
+        '--no-messages',
+        previous,
+        merged,
+      ]);
+    } catch (err) {
+      const { code, stdout } = err as { code?: unknown; stdout?: string };
+      if (code !== 1) throw err;
+      const paths = [...new Set(String(stdout).split('\n').slice(1))].filter(
+        Boolean,
+      );
+      throw new Error(
+        `merging '${target}' into '${branch}' conflicts in ${paths.join(', ')}; nothing changed. The run cannot resolve this: stop and report it to the developers. A developer with write access merges origin/${target} into '${branch}' outside the run, resolves those paths and pushes; the next run starts there`,
+      );
+    }
+    const resulting = await remote(
+      [
+        'commit-tree',
+        tree,
+        '-p',
+        previous,
+        '-p',
+        merged,
+        '-m',
+        `Merge ${target} into ${branch}`,
+      ],
+      undefined,
+      {
+        GIT_AUTHOR_NAME: 'bakers.build',
+        GIT_AUTHOR_EMAIL: 'noreply@bakers.build',
+        GIT_COMMITTER_NAME: 'bakers.build',
+        GIT_COMMITTER_EMAIL: 'noreply@bakers.build',
+      },
+    );
+    // Compare-and-swap: a branch that moved meanwhile is refused, never overwritten.
+    await inClone(
+      common,
+      env,
+      'update-ref',
+      `refs/heads/${branch}`,
+      resulting,
+      previous,
+    );
+    return { previous, target: merged, resulting, noop: false };
   });
 }

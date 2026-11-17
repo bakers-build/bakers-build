@@ -78,8 +78,8 @@ final class TicketRunSummary {
   /**
    * One ticket's runs summary for the reader, once per request.
    *
-   * "No runs yet" is true only for a reader who may view every run (the run
-   * admin permission). Any other reader who sees no run gets no summary.
+   * "No runs yet" is true only for a reader who may view every run of the
+   * ticket. Any other reader who sees no run gets no summary.
    *
    * @return \Drupal\bb_core\Run\RunSummary|null
    *   The summary, or NULL when it would claim runs the reader cannot see
@@ -89,10 +89,21 @@ final class TicketRunSummary {
     $key = $this->currentUser->id() . ':' . $ticket_id;
     if (!array_key_exists($key, $this->memo)) {
       $summary = $this->forTickets([$ticket_id])[(int) $ticket_id];
-      $admin = (string) $this->entityTypeManager->getDefinition('bb_run')->getAdminPermission();
-      $this->memo[$key] = $summary->count > 0 || $this->currentUser->hasPermission($admin) ? $summary : NULL;
+      $this->memo[$key] = $summary->count > 0 || $this->mayViewEveryRun($ticket_id) ? $summary : NULL;
     }
     return $this->memo[$key];
+  }
+
+  /**
+   * Whether the reader may view any run of the ticket, not only their own.
+   *
+   * Probes an unsaved run, so the real access handler decides: run view in
+   * the ticket's workspace passes, a conductor owner's own-run grant does not.
+   */
+  private function mayViewEveryRun(int|string $ticket_id): bool {
+    return $this->entityTypeManager->getStorage('bb_run')
+      ->create(['ticket_id' => $ticket_id])
+      ->access('view', $this->currentUser);
   }
 
 }

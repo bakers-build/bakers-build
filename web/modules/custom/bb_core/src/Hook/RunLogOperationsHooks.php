@@ -31,6 +31,11 @@ final class RunLogOperationsHooks {
       return [];
     }
     $cacheability->addCacheableDependency($entity);
+    $log_access = $entity->access('view_log', NULL, TRUE);
+    $cacheability->addCacheableDependency($log_access);
+    if (!$log_access->isAllowed()) {
+      return [];
+    }
     $operations = [];
     foreach (['log' => 'Log', 'error_log' => 'Error log'] as $field => $label) {
       if ($entity->get($field . '_bytes')->value === NULL || $entity->get($field . '_bytes')->value === '') {
@@ -39,7 +44,7 @@ final class RunLogOperationsHooks {
       // `run_log_download_api`, not the workspace-prefixed route (review
       // finding C2/CR1): an operations link has the run entity but no
       // resolved workspace slug in hand, and the API route's gate —
-      // `bb_run.view` — is identical.
+      // `bb_run.view_log` — is identical.
       $operations[$field] = [
         'title' => $label,
         'url' => Url::fromRoute('bb_core.run_log_download_api', [

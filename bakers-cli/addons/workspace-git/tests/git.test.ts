@@ -1,142 +1,146 @@
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { GitWorkspace } from '../src/index.js';
 
-// Fake git runner: records argv and emulates `worktree add` creating the leaf dir.
+// Fake git runner: records argv, echoes the checked ref name and emulates
+// `worktree add` creating the leaf dir.
 function recordingGit(record: string[][]) {
-  return async (args: string[]): Promise<void> => {
+  return async (args: string[]): Promise<string | undefined> => {
     record.push(args);
+    if (args.includes('check-ref-format')) return `${args.at(-1)}\n`;
     const addIdx = args.indexOf('add');
     if (addIdx !== -1) {
-      mkdirSync(args[args.length - 1] as string, { recursive: true });
+      mkdirSync(args[addIdx + 1] as string, { recursive: true });
     }
+    return undefined;
   };
 }
 
+const git = (cwd: string, ...args: string[]) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' }).trim();
+const ident = ['-c', 'user.name=test', '-c', 'user.email=test@test'];
+
+function repo(): string {
+  const root = join(mkdtempSync(join(tmpdir(), 'bakers-ws-')), 'repo');
+  mkdirSync(root);
+  git(root, 'init', '-q', '-b', 'main');
+  writeFileSync(join(root, 'README'), 'base');
+  git(root, 'add', '.');
+  git(root, ...ident, 'commit', '-qm', 'base');
+  return root;
+}
+
 describe('GitWorkspace', () => {
-  it('derives the workspace key by normalizing unsafe characters', () => {
-    const manager = new GitWorkspace({ root: '/tmp/x' });
-    expect(manager.keyFor('GL-123')).toBe('GL-123');
-    expect(manager.keyFor('weird/../Path Stuff!')).toBe('weird_.._Path_Stuff_');
-    expect(manager.keyFor('a/b')).toBe('a_b');
-  });
+  it('checks out the ticket branch under <root>/.bakers-worktrees/<branch>', async () => {
+    const root = repo();
 
-  it('adds a git worktree under <root>-worktrees with branch bakers/<key>', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'bakers-ws-'));
-    const git: string[][] = [];
-    const manager = new GitWorkspace({ root, runGit: recordingGit(git) });
-
-    const ws = await manager.ensure('GL-9');
-
-    expect(ws.path).toBe(join(`${root}-worktrees`, 'GL-9'));
-    expect(ws.instructions).toBeNull();
-    expect(existsSync(ws.path)).toBe(true);
-    expect(git).toHaveLength(1);
-    expect(git[0]).toEqual([
-      '-C',
-      root,
-      'worktree',
-      'add',
-      '--force',
-      '-B',
-      'bakers/GL-9',
-      join(`${root}-worktrees`, 'GL-9'),
-    ]);
-  });
-
-  it('puts the title slug in the branch but keeps the worktree key stable', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'bakers-ws-'));
-    const git: string[][] = [];
-    const manager = new GitWorkspace({ root, runGit: recordingGit(git) });
-
-    const ws = await manager.ensure('bb-7ea7b5', 'Readable herdr tab names');
-
-    // Worktree dir key stays identifier-only → reuse is unaffected.
-    expect(ws.path).toBe(join(`${root}-worktrees`, 'bb-7ea7b5'));
-    // Branch carries the readable slug, no run/uuid fragment.
-    const branchIdx = git[0].indexOf('-B');
-    expect(git[0][branchIdx + 1]).toBe(
-      'bakers/bb-7ea7b5-readable-herdr-tab-names',
+    const ws = await new GitWorkspace({ root }).ensure(
+      'HERDRAPP-1',
+      'feat/herdrapp-1-x',
     );
+
+    expect(ws.path).toBe(join(root, '.bakers-worktrees', 'feat/herdrapp-1-x'));
+    expect(ws.created).toBe(true);
+    expect(git(ws.path, 'branch', '--show-current')).toBe('feat/herdrapp-1-x');
+    expect(git(root, 'branch', '--list', 'bakers/*')).toBe('');
+    expect(existsSync(`${root}-worktrees`)).toBe(false);
   });
 
-  it('omits the trailing separator when there is no title', async () => {
+  it('requires a branch before it runs git or creates a path', async () => {
     const root = mkdtempSync(join(tmpdir(), 'bakers-ws-'));
-    const git: string[][] = [];
-    const manager = new GitWorkspace({ root, runGit: recordingGit(git) });
+    const calls: string[][] = [];
+    const ws = new GitWorkspace({ root, runGit: recordingGit(calls) });
 
-    await manager.ensure('GL-9');
-
-    const branchIdx = git[0].indexOf('-B');
-    expect(git[0][branchIdx + 1]).toBe('bakers/GL-9');
+    await expect(ws.ensure('GL-9')).rejects.toThrow(/requires a branch/);
+    expect(calls).toEqual([]);
+    expect(readdirSync(root)).toEqual([]);
   });
 
-  it('renders a project-supplied branch template (config-driven)', () => {
-    const manager = new GitWorkspace({
-      root: '/tmp/x',
-      branchPrefix: 'wt/',
-      branchTemplate: '{branch_prefix}{title_slug}--{key}',
-    });
-    expect(manager.branchFor('GL-9', 'Some Title')).toBe('wt/some-title--GL-9');
+  it.each([
+    'feat/../x',
+    '../x',
+    '/abs',
+    '-x',
+    '.hidden',
+    'a b',
+    '@{-1}',
+  ])('rejects the branch %j before it creates anything', async (branch) => {
+    const root = repo();
+
+    await expect(
+      new GitWorkspace({ root }).ensure('GL-9', branch),
+    ).rejects.toThrow(/invalid branch name/);
+    expect(existsSync(join(root, '.bakers-worktrees'))).toBe(false);
+    expect(git(root, 'branch', '--format=%(refname:short)')).toBe('main');
+  });
+
+  it('places new worktrees in worktreeDir, relative to root or absolute', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'bakers-ws-'));
+    const abs = mkdtempSync(join(tmpdir(), 'bakers-wt-'));
+    const at = (worktreeDir: string) =>
+      new GitWorkspace({ root, worktreeDir, runGit: recordingGit([]) })
+        .ensure('GL-9', 'feat/gl-9-x')
+        .then((w) => w.path);
+
+    expect(await at('wt')).toBe(join(root, 'wt', 'feat/gl-9-x'));
+    expect(await at(abs)).toBe(join(abs, 'feat/gl-9-x'));
+  });
+
+  it("reuses the branch's existing worktree where it lives, unmoved", async () => {
+    const root = repo();
+    const old = `${root}-worktrees/GL-9`;
+    git(root, 'worktree', 'add', '-qb', 'feat/gl-9-x', old);
+
+    const ws = await new GitWorkspace({ root }).ensure('GL-9', 'feat/gl-9-x');
+
+    expect(ws).toMatchObject({ path: old, created: false });
+    expect(existsSync(join(root, '.bakers-worktrees'))).toBe(false);
+  });
+
+  it('checks out an existing ticket branch without resetting it', async () => {
+    const root = repo();
+    git(root, 'checkout', '-qb', 'feat/gl-9-x');
+    writeFileSync(join(root, 'work'), 'done');
+    git(root, 'add', '.');
+    git(root, ...ident, 'commit', '-qm', 'work');
+    const tip = git(root, 'rev-parse', 'HEAD');
+    git(root, 'checkout', '-q', 'main');
+
+    const ws = await new GitWorkspace({ root }).ensure('GL-9', 'feat/gl-9-x');
+
+    expect(git(ws.path, 'rev-parse', 'HEAD')).toBe(tip);
   });
 
   it('loads WORKFLOW.md as instructions when present', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'bakers-ws-'));
-    const git: string[][] = [];
-    const manager = new GitWorkspace({
-      root,
-      runGit: async (args) => {
-        git.push(args);
-        const path = args[args.length - 1] as string;
-        mkdirSync(path, { recursive: true });
-        writeFileSync(join(path, 'WORKFLOW.md'), 'do the thing');
-      },
-    });
+    const root = repo();
+    writeFileSync(join(root, 'WORKFLOW.md'), 'do the thing');
+    git(root, 'add', '.');
+    git(root, ...ident, 'commit', '-qm', 'workflow');
 
-    const ws = await manager.ensure('GL-2');
-    expect(ws.instructions).not.toBeNull();
+    const ws = await new GitWorkspace({ root }).ensure('GL-2', 'feat/gl-2');
     expect(ws.instructions?.text).toBe('do the thing');
     expect(ws.instructions?.path).toBe(join(ws.path, 'WORKFLOW.md'));
     expect(ws.instructions?.sha256).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it('is idempotent: an existing worktree is reused without a new add', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'bakers-ws-'));
-    const git: string[][] = [];
-    const manager = new GitWorkspace({ root, runGit: recordingGit(git) });
+  it('is idempotent: created on first ensure, reused after', async () => {
+    const root = repo();
+    const manager = new GitWorkspace({ root });
 
-    const first = await manager.ensure('GL-9');
-    const second = await manager.ensure('GL-9');
+    const fresh = await manager.ensure('GL-1', 'feat/gl-1');
+    const reused = await manager.ensure('GL-1', 'feat/gl-1');
 
-    expect(second.path).toBe(first.path);
-    expect(git).toHaveLength(1);
-  });
-
-  // BB-84: the workspace no longer invokes hooks — it only reports whether it
-  // created a fresh worktree so the executor can run after_create just once.
-  it('reports created=true on a fresh worktree and created=false on reuse', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'bakers-ws-'));
-    const manager = new GitWorkspace({ root, runGit: recordingGit([]) });
-
-    const fresh = await manager.ensure('GL-1');
-    const reused = await manager.ensure('GL-1');
-
+    expect(reused.path).toBe(fresh.path);
     expect(fresh.created).toBe(true);
     expect(reused.created).toBe(false);
-  });
-
-  it('rejects identifiers that normalize to empty or dot-leading keys', async () => {
-    const manager = new GitWorkspace({
-      root: '/tmp/x',
-      runGit: recordingGit([]),
-    });
-    await expect(manager.ensure('')).rejects.toThrow(/invalid workspace/);
-    await expect(manager.ensure('.')).rejects.toThrow(/invalid workspace/);
-    await expect(manager.ensure('..')).rejects.toThrow(/invalid workspace/);
-    await expect(manager.ensure('.hidden')).rejects.toThrow(
-      /invalid workspace/,
-    );
   });
 });

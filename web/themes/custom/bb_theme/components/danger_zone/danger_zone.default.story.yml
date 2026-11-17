@@ -1,0 +1,13 @@
+component: bb_theme:danger_zone
+name: Default
+props:
+  title: Delete this workspace
+  description: Deletes the workspace with its first team, members and configuration. Groups and projects must be removed first.
+slots:
+  action:
+    - type: component
+      component: bb_theme:button
+      props:
+        label: Delete workspace
+        variant: danger
+        href: '#'

@@ -40,6 +40,26 @@ const untouched = {input:{expected_files:{},preserved_files:{a:'first',b:'second
 const noWrites = files => checkOutput(untouched, JSON.stringify({...saved,files})).find(row=>row.id==='no-writes').met;
 assert.equal(noWrites({b:'second',a:'first'}),true);
 for (const files of [{a:'first'}, {a:'changed',b:'second'}, {a:'first',b:'second',c:'new'}]) assert.equal(noWrites(files),false);
+const ask = text => ({role:'assistant',content:{type:'question',text}});
+const blocks = {input:{expected_files:{},preserved_files:{},max_questions:2,derived_sources:['git remote get-url origin','gh auth status']}};
+const asked = turns => checkOutput(blocks, JSON.stringify({...saved,turns}));
+const row = (turns, id) => asked(turns).find(r=>r.id===id).met;
+const preview = ask('forge: github — source: git remote get-url origin\\nauth: gh — source: gh auth status');
+assert.equal(row([preview, ask('Grants?')], 'max-questions'), true);
+assert.equal(row([preview, ask('Grants?'), ask('Hook after_create?')], 'max-questions'), false);
+assert.equal(row([preview], 'derived-source-git remote get-url origin'), true);
+assert.equal(row([ask('forge: github\\nauth: gh — source: gh auth status')], 'derived-source-git remote get-url origin'), false);
+const open = {input:{expected_files:{},preserved_files:{},asked_values:['repository']}};
+const openRow = text => checkOutput(open, JSON.stringify({...saved,turns:[ask(text)]})).find(r=>r.id==='asked-repository').met;
+assert.equal(openRow('repository: ? — asked'), true);
+assert.equal(openRow('repository: acme/shop — source: git remote get-url origin'), false);
+// A source counts only on its value's preview line, never anywhere in the question.
+assert.equal(row([ask('Run git remote get-url origin first?\\nforge: github — recommended')], 'derived-source-git remote get-url origin'), false);
+const hooks = {input:{expected_files:{},preserved_files:{},previewed_keys:['after_create','on_resume']}};
+const hookRow = (text, key) => checkOutput(hooks, JSON.stringify({...saved,turns:[ask(text)]})).find(r=>r.id===`previewed-${key}`).met;
+assert.equal(hookRow('after_create: .bakers/scripts/prepare.sh — recommended\\non_resume: none — recommended', 'on_resume'), true);
+// A preview that omits a hook leaves it unresolved, even when the prose mentions it.
+assert.equal(hookRow('after_create: .bakers/scripts/prepare.sh — recommended\\nThe on_resume hook stays unset.', 'on_resume'), false);
 '''
         result = subprocess.run(['node', '--input-type=module', '-e', script],
                                 cwd=Path(__file__).resolve().parents[2], capture_output=True, text=True)

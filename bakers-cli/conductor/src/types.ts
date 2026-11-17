@@ -88,7 +88,7 @@ export interface ConductorSettings {
     /** Never runs on its own: offered to runs as the `provision_up(profile?)` tool. */
     provision_up?: ProvisionHook;
     /** Never runs on its own: offered to runs as the `provision_exec(key, args?)` tool. */
-    provision_exec?: Record<string, string>;
+    provision_exec?: Record<string, ProvisionExecCommand>;
   };
   /** Control-plane site settings used for dropsh and agent env. */
   site: { base_url: string; jsonapi_prefix: string };
@@ -175,3 +175,6 @@ export type ConductorEngineConfig = Omit<
   /** Absent when the project names no server; the connection or the default fills it. */
   remote?: RemotePlugin;
 };
+
+/** A fixed command, or one that also receives the run's arguments as argv. */
+export type ProvisionExecCommand = string | { command: string; args?: boolean };

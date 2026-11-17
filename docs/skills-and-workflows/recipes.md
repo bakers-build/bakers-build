@@ -22,7 +22,16 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
 
 2. **Write one section per state, one slot per phase.** `## bb-state-plan`, `## bb-state-working` and `## bb-state-review`, each with a `### bb-phase-<phase>` slot only where your method adds something, usually `### bb-phase-work`, naming the method's original skills. Add a `## <type>:bb-state-<state>` section only where a type behaves differently, for example `## bug:bb-state-plan`; per phase its slot wins over the general one. A recipe links no `bb-workflow` reference and calls no other bakers.build skill. Follow the authority limits below. Keep the whole file under 500 words.
 
+   Before the state sections, `## bb-gates` holds one row per declared type: `default` for a shipped type (feature, bug, chore, deployment, verification), optionally plus gates you add; for your own type every gate it waits on. Your own gate reads `a person confirms <what> in <state>/<phase>` and is named `<recipe>:<gate>`.
+
    ```md
+   ## bb-gates
+
+   | Type | Gates |
+   |---|---|
+   | feature | default |
+   | chore | default |
+
    ## bb-state-plan
 
    ### bb-phase-work
@@ -35,6 +44,16 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
 4. **Prove it on a ticket.** Create a small ticket of a type your recipe covers, let qualification choose your recipe, or set it with the `bakers_ticket_classify` tool ([bakers tools](/cli/tools)), and let it run. The run log shows `bb-recipe-<method>` loaded in each state, and the handoff comments show whether your slots hold.
 
 **Done when:** one ticket has passed through `plan`, `working` and `review` with your recipe loaded, as the run log shows.
+
+## Shipped recipes and their plugins
+
+A shipped recipe names original skills from an external plugin. Add the recipe's ready entry to the project's [`marketplaces`](/configuration/project#agent-plugins), so every run installs that plugin:
+
+| Recipe | Plugin | Marketplace | Recommended ref | `marketplaces` entry |
+|---|---|---|---|---|
+| `bb-recipe-matt` | `mattpocock-skills` | `https://github.com/mattpocock/skills.git` | `v1.3.2` | `{ url: 'https://github.com/mattpocock/skills.git', ref: 'v1.3.2', plugins: ['mattpocock-skills'] }` |
+| `bb-recipe-superpowers` | `superpowers` | `https://github.com/obra/superpowers.git` | `v7.0.0` | `{ url: 'https://github.com/obra/superpowers.git', ref: 'v7.0.0', plugins: ['superpowers'] }` |
+| `bb-recipe-deploy-and-release`, `bb-recipe-verify` | none | — | — | — |
 
 ## The rules
 

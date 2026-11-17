@@ -8,6 +8,7 @@ import {
   defaultUpdateCachePath,
   fetchLatestVersion,
   fetchUpdateNotice,
+  readCliVersion,
   resolveCliVersion,
   UPDATE_CHECK_TTL_MS,
   updateNotice,
@@ -22,6 +23,19 @@ const response = (version: unknown): typeof fetch =>
 describe('version discovery', () => {
   it('resolves the executing package version', () => {
     expect(resolveCliVersion()).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  it('rereads the installed version on every call; the cached start version stays', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bakers-version-'));
+    const pkg = join(dir, 'package.json');
+    const write = (version: string) =>
+      writeFile(pkg, JSON.stringify({ name: '@bakers-build/core', version }));
+    const start = resolveCliVersion();
+    await write('1.0.0');
+    expect(readCliVersion(join(dir, 'dist', 'src'))).toBe('1.0.0');
+    await write('2.0.0');
+    expect(readCliVersion(join(dir, 'dist', 'src'))).toBe('2.0.0');
+    expect(resolveCliVersion()).toBe(start);
   });
 
   it('only reports a strictly newer valid semantic version', () => {

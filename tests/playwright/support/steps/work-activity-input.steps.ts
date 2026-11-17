@@ -1,4 +1,4 @@
-// Activities proposed through the bakers_time_propose tool over /mcp.
+// Activities proposed through the bakers_worklog_propose tool over /mcp.
 // Consumers: work-activity-input.feature and work-schedule.feature, including no-JS.
 import { randomUUID } from 'node:crypto';
 import { expect } from '@playwright/test';
@@ -26,13 +26,13 @@ When('I set a personal two-hour schedule as {string}', async ({ page }, account:
 When('I submit a two-hour activity for {string} with source {string}', async ({ page }, date: string, source: string) => {
   activityEntry = { source_system: 'browser', source_key: `${source}-${randomUUID()}`, source_version: '1', work_date: date,
     description: source, duration_seconds: 7200 };
-  const result = await callTool(page.request, 'bakers_time_propose', { project: projectUuid, entries: [activityEntry] });
+  const result = await callTool(page.request, 'bakers_worklog_propose', { project: projectUuid, entries: [activityEntry] });
   expect(result.isError, result.message).toBe(false);
   activityId = (result.structuredContent?.worklogs as string[])[0];
 });
 
 When('I repeat the last activity submission', async ({ page }) => {
-  activityResult = await callTool(page.request, 'bakers_time_propose', { project: projectUuid, entries: [activityEntry] });
+  activityResult = await callTool(page.request, 'bakers_worklog_propose', { project: projectUuid, entries: [activityEntry] });
 });
 
 When('I open the submitted activity', async ({ page }) => {
@@ -40,13 +40,13 @@ When('I open the submitted activity', async ({ page }) => {
 });
 
 When('I submit an activity with a forged owner', async ({ page }) => {
-  activityResult = await callTool(page.request, 'bakers_time_propose', { project: projectUuid, entries: [{
+  activityResult = await callTool(page.request, 'bakers_worklog_propose', { project: projectUuid, entries: [{
     source_system: 'browser', source_key: 'forged', source_version: '1', work_date: '2024-05-06',
     description: 'Forged activity', duration_seconds: 3600, owner_user_id: 1 }] });
 });
 
 When('I submit an activity for the time capture project', async ({ page }) => {
-  activityResult = await callTool(page.request, 'bakers_time_propose', { project: projectUuid, entries: [{
+  activityResult = await callTool(page.request, 'bakers_worklog_propose', { project: projectUuid, entries: [{
     source_system: 'browser', source_key: 'foreign', source_version: '1', work_date: '2024-05-06',
     description: 'Foreign project activity', duration_seconds: 3600 }] });
 });

@@ -80,6 +80,14 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
     And I visit the disposable ticket
     Then the newest run in Run history is "claimed"
 
+  Scenario: A guest reads why a run failed but gets no run action and no log
+    Given I am signed in as "north-guest"
+    And a disposable "bb_work" ticket in state "working" whose last 3 runs failed with "plugins: claude install failed: 401"
+    When I visit the disposable ticket
+    Then the disposable run's row says why it failed: "plugins: claude install failed: 401"
+    And the disposable run's row does not offer "Log"
+    And the ticket page offers no intervention
+
   Scenario: Settings open inside the app and offer only the exception fields
     Given a disposable "bb_work" ticket in state "plan"
     When I visit the disposable ticket

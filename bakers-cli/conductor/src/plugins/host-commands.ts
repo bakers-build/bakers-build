@@ -33,7 +33,7 @@ export function assertProtectedEntryPoints(
         ? [[`hooks.${name}`, value]]
         : Object.entries(value ?? {}).map(([key, command]) => [
             `hooks.${name}.${key}`,
-            command,
+            typeof command === 'string' ? command : command.command,
           ]);
     for (const [label, command] of commands) {
       const entry = hostCommandEntry(command);

@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CANCEL_RUN_ACTION_ID,
   CANCELLABLE_RUN_STATES,
   cancelRunPayload,
   isRunCancellable,
 } from '../../../../src/Entity/run/Form/edit.js';
 
-describe('run edit form declaration', () => {
+describe('run cancellation rules', () => {
   it('offers cancel from the active states only', () => {
     expect(isRunCancellable('claimed')).toBe(true);
     expect(isRunCancellable('running')).toBe(true);
@@ -16,10 +15,6 @@ describe('run edit form declaration', () => {
 
   it('mirrors the workflow transition source states exactly', () => {
     expect([...CANCELLABLE_RUN_STATES].sort()).toEqual(['claimed', 'running']);
-  });
-
-  it('never names the action "cancel", which already means close', () => {
-    expect(CANCEL_RUN_ACTION_ID).not.toBe('cancel');
   });
 
   it('writes only the state', () => {
