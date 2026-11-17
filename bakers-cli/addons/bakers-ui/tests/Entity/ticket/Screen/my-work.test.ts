@@ -178,3 +178,45 @@ it('honours criteria.project as a server-side filter when set', async () => {
     ).join(''),
   ).toBe('r project: Alpha');
 });
+
+it('a click selects an unselected row, opens the selected one and rejects out-of-range rows', async () => {
+  const ticket = (id: string, identifier: string) => ({
+    id,
+    attributes: { identifier, title: identifier, closed: false },
+    relationships: { labels: { data: [] } },
+  });
+  const get = vi.fn(async (path: string) =>
+    path === 'user/user'
+      ? { data: [{ id: 'user-1', attributes: { name: 'cw' } }] }
+      : { data: [ticket('ticket-1', 'BB-1'), ticket('ticket-2', 'BB-2')] },
+  );
+  const requestDraw = vi.fn();
+  const navigate = vi.fn();
+  const context: ScreenContext = {
+    sessionGeneration: 1,
+    services: {
+      client: { get, collection: vi.fn() } as never,
+      currentUser: 'cw',
+      workspace: 'bakers',
+    },
+    requestDraw,
+    navigate,
+    isActive: () => true,
+  };
+  const screen = new MyWorkScreen();
+  screen.enter(context);
+  await tick();
+  expect(screen.present(context).rowIds).toHaveLength(2);
+  requestDraw.mockClear();
+
+  expect(screen.select(1, context)).toBe(true);
+  expect(screen.present(context).selectedIndex).toBe(1);
+  expect(requestDraw).toHaveBeenCalled();
+
+  expect(screen.select(-1, context)).toBe(false);
+  expect(screen.select(2, context)).toBe(false);
+  expect(screen.present(context).selectedIndex).toBe(1);
+
+  expect(screen.activate(1, context)).toBe(true);
+  expect(navigate).toHaveBeenCalledWith('ticket.detail', { ticketId: 'ticket-2' });
+});
