@@ -403,4 +403,23 @@ describe('provision_exec', () => {
       ).toBe(expected);
     }
   });
+
+  it('reads whether the run isolates per worktree', async () => {
+    const dir = await realpath(
+      await mkdtemp(join(tmpdir(), 'bb-provision-run-')),
+    );
+    const show = 'echo "$BAKERS_RUNTIME_ISOLATES"';
+    const registry = await loadTools(
+      provisionTools(show, undefined, {
+        isolates: (worktreePath) => worktreePath === dir,
+      }),
+    );
+    const other = await realpath(await mkdtemp(join(tmpdir(), 'bb-other-')));
+    expect(
+      (await registry.call('provision_up', {}, { worktreePath: dir })).text,
+    ).toBe('exit 0\n1\n');
+    expect(
+      (await registry.call('provision_up', {}, { worktreePath: other })).text,
+    ).toBe('exit 0\n0\n');
+  });
 });

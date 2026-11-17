@@ -1,0 +1,344 @@
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+  FakeBbRemote,
+  fakeExecutor,
+  fakeRemote,
+  fakeWorkspace,
+} from '@bakers-build/addon-fake';
+import type {
+  BbAgent,
+  BbExecutor,
+  BbWorkspace,
+  ConductorFileConfig,
+  EnsuredWorkspace,
+  HookResult,
+  RuntimePlugin,
+  SpawnRunInput,
+  WorktreeTeardown,
+} from '@bakers-build/conductor/contract';
+import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
+import { type ConductorLogger, createRunClone } from '@bakers-build/core';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
+import { hostRuntime } from '../../src/plugins/runtime.js';
+import type { SlotCatalog } from '../../src/plugins/slot-catalog.js';
+import { TestConductor } from '../test-conductor.js';
+
+let root: string;
+let cacheHome: string | undefined;
+const git = (cwd: string, ...args: string[]) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' }).trim();
+beforeEach(() => {
+  root = mkdtempSync(join(tmpdir(), 'bakers-runtime-select-'));
+  const parent = join(root, 'parent');
+  mkdirSync(join(parent, '.bakers'), { recursive: true });
+  git(parent, 'init', '-q', '-b', 'main');
+  writeFileSync(join(parent, '.bakers/keep'), '');
+  git(parent, 'add', '.');
+  git(
+    parent,
+    ...['-c', 'user.name=t', '-c', 'user.email=t@t'],
+    'commit',
+    '-qm',
+    'base',
+  );
+  cacheHome = process.env.XDG_CACHE_HOME;
+  process.env.XDG_CACHE_HOME = join(root, 'cache');
+});
+afterEach(() => {
+  if (cacheHome === undefined) delete process.env.XDG_CACHE_HOME;
+  else process.env.XDG_CACHE_HOME = cacheHome;
+  rmSync(root, { recursive: true, force: true });
+});
+
+/** Every ticket gets its own run clone, as under an isolating default. */
+class Workspace implements BbWorkspace {
+  async ensure(identifier: string, branch: string): Promise<EnsuredWorkspace> {
+    const parent = join(root, 'parent');
+    git(parent, 'branch', '-f', branch);
+    const workspace = join(root, identifier);
+    const clone = createRunClone({ parent, workspace, branch });
+    return { path: workspace, instructions: null, created: false, clone };
+  }
+}
+
+class Executor implements BbExecutor {
+  readonly id = 'recording';
+  readonly started: SpawnRunInput[] = [];
+  capabilities() {
+    return { persistent: false };
+  }
+  async runHook(name: never): Promise<HookResult> {
+    return { hook: name, ran: true, ok: true };
+  }
+  async startRun(input: SpawnRunInput) {
+    this.started.push(input);
+    return { sessionRef: input.ticket.branchName };
+  }
+  async stopRun(): Promise<void> {}
+  async cleanupRun(): Promise<void> {}
+  async removeWorktree(): Promise<WorktreeTeardown> {
+    return 'unverified';
+  }
+}
+
+/** An isolating runtime that counts its instances. */
+function boxRuntime(built: string[]): RuntimePlugin {
+  return {
+    kind: 'runtime',
+    id: 'box',
+    isolates: true,
+    requiredModules: [],
+    createRuntime: async () => {
+      built.push('box');
+      return {
+        id: 'box',
+        wrap: async ({ command, env }) => ({ command, env }),
+        cleanup: async () => {},
+      };
+    },
+  };
+}
+
+const agent: BbAgent = {
+  id: 'claude',
+  prepareRun: () => ({ env: {}, readPaths: [], writePaths: [] }),
+  launchCommand: () => 'claude --go',
+  getRunLog: async () => '',
+  parseFootprint: () => emptyAgentFootprint(),
+};
+
+type Seed = { identifier: string; state?: string; labels?: string[] };
+
+function setup(
+  catalog: Partial<SlotCatalog<RuntimePlugin>>,
+  tickets: Seed[],
+  allowUnsandboxed?: boolean,
+  agentSelect?: SlotCatalog<unknown>['select'],
+) {
+  const built: string[] = [];
+  const remote = new FakeBbRemote({
+    tickets: Object.fromEntries(
+      tickets.map((t) => [
+        t.identifier,
+        {
+          identifier: t.identifier,
+          title: t.identifier,
+          state: t.state ?? 'working',
+          branchName: `bakers/${t.identifier.toLowerCase()}`,
+          labels: t.labels ?? [],
+        },
+      ]),
+    ),
+  });
+  remote.queue.push(
+    ...tickets.map((t, index) => ({
+      runUuid: `run-${t.identifier}`,
+      runId: index + 1,
+      ticketUuid: t.identifier,
+      stateAtStart: t.state ?? 'working',
+      handler: 'code' as const,
+    })),
+  );
+  const executor = new Executor();
+  const logs: Array<{ obj: Record<string, unknown>; msg?: string }> = [];
+  const mk = (obj: object, msg?: string) =>
+    logs.push({ obj: obj as Record<string, unknown>, msg });
+  const log: ConductorLogger = { debug: mk, info: mk, warn: mk, error: mk };
+  const box = boxRuntime(built);
+  const config = {
+    site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
+    remote: fakeRemote(),
+    executor: fakeExecutor(),
+    workspace: fakeWorkspace(),
+    label: 'test',
+    conductor_id: 'bakers-test-conductor',
+    project: 'bakers',
+    states: ['working'],
+    prompt: DEFAULT_AGENT_PROMPT,
+    host_key: 'test-host',
+    poll_interval_ms: 5000,
+    lease_seconds: 300,
+    config_path: `${root}/conductor.config.js`,
+    marketplaces: [],
+    runtime: box,
+    ...(allowUnsandboxed !== undefined
+      ? { allow_unsandboxed: allowUnsandboxed }
+      : {}),
+    catalogs: {
+      ...(agentSelect
+        ? {
+            agent: {
+              slot: 'agent',
+              entries: { opus: {}, fast: {} },
+              default: 'opus',
+              routes: {},
+              select: agentSelect,
+            },
+          }
+        : {}),
+      runtime: {
+        slot: 'runtime',
+        entries: { box, system: hostRuntime },
+        default: 'box',
+        routes: {},
+        fallback: 'system',
+        ...catalog,
+      },
+    },
+  } as unknown as ConductorFileConfig;
+  const conductor = new TestConductor(
+    config,
+    remote,
+    executor,
+    new Workspace(),
+    [
+      { id: 'claude', alias: 'opus', permissions: 'sandbox', agent },
+      { id: 'claude', alias: 'fast', permissions: 'sandbox', agent },
+    ],
+    log,
+    root,
+  );
+  const run = async () => {
+    await conductor.start();
+    await conductor.tick();
+  };
+  const dispatched = (identifier: string) =>
+    logs.find((l) => l.msg === 'dispatched run' && l.obj.ticket === identifier)
+      ?.obj;
+  const envOf = (identifier: string) =>
+    executor.started.find((s) => s.ticket.identifier === identifier)?.env;
+  return { run, remote, logs, built, dispatched, envOf };
+}
+
+describe('runtime chosen per ticket', () => {
+  it('follows the machine route for the ticket state', async () => {
+    const s = setup(
+      { preset: 'box', routes: { default: { review: 'system' } } },
+      [
+        { identifier: 'BB-1', state: 'review' },
+        { identifier: 'BB-2', state: 'working' },
+      ],
+    );
+    await s.run();
+    expect(s.dispatched('BB-1')).toMatchObject({
+      runtime: 'host',
+      runtimeAlias: 'system',
+      runtimeReason: 'route',
+    });
+    expect(s.envOf('BB-1')?.BAKERS_RUNTIME_ISOLATES).toBe('0');
+    expect(s.dispatched('BB-2')).toMatchObject({
+      runtime: 'box',
+      runtimeAlias: 'box',
+      runtimeReason: 'preset',
+    });
+    expect(s.envOf('BB-2')?.BAKERS_RUNTIME_ISOLATES).toBe('1');
+  });
+
+  it('takes a runtime:<alias> label naming an isolating entry', async () => {
+    const s = setup({ fallback: 'system', default: 'system' }, [
+      { identifier: 'BB-1', labels: ['runtime:box'] },
+    ]);
+    await s.run();
+    expect(s.dispatched('BB-1')).toMatchObject({
+      runtimeAlias: 'box',
+      runtimeReason: 'label',
+    });
+  });
+
+  it('lets the machine select function choose', async () => {
+    const s = setup(
+      {
+        preset: 'box',
+        select: (candidates, ticket) => {
+          expect(candidates.sort()).toEqual(['box', 'system']);
+          return ticket.identifier === 'BB-1' ? 'system' : 'box';
+        },
+      },
+      [{ identifier: 'BB-1' }, { identifier: 'BB-2' }],
+    );
+    await s.run();
+    expect(s.dispatched('BB-1')).toMatchObject({
+      runtimeAlias: 'system',
+      runtimeReason: 'function',
+    });
+    expect(s.dispatched('BB-2')).toMatchObject({
+      runtimeAlias: 'box',
+      runtimeReason: 'function',
+    });
+  });
+
+  it('ignores a label choosing a non-isolating entry without allow_unsandboxed and warns', async () => {
+    const s = setup({ preset: 'box' }, [
+      { identifier: 'BB-1', labels: ['runtime:system'] },
+    ]);
+    await s.run();
+    expect(s.dispatched('BB-1')).toMatchObject({
+      runtimeAlias: 'box',
+      runtimeReason: 'preset',
+    });
+    const warning = s.logs.find(
+      (l) => typeof l.msg === 'string' && l.msg.includes("'system'"),
+    );
+    expect(warning?.msg).toContain('BB-1');
+    expect(warning?.obj.ticket).toBe('BB-1');
+
+    const allowed = setup(
+      { preset: 'box' },
+      [{ identifier: 'BB-1', labels: ['runtime:system'] }],
+      true,
+    );
+    await allowed.run();
+    expect(allowed.dispatched('BB-1')).toMatchObject({
+      runtimeAlias: 'system',
+      runtimeReason: 'label',
+    });
+  });
+
+  it('fails the run on an unknown runtime label alias', async () => {
+    const s = setup({ preset: 'box' }, [
+      { identifier: 'BB-1', labels: ['runtime:nope'] },
+      { identifier: 'BB-2', labels: ['runtime:'] },
+    ]);
+    await s.run();
+    expect(s.dispatched('BB-1')).toBeUndefined();
+    expect(s.remote.calls.markFailed).toEqual([
+      expect.objectContaining({
+        runUuid: 'run-BB-1',
+        errorLog: expect.stringContaining("unknown alias 'nope'"),
+      }),
+      expect.objectContaining({
+        runUuid: 'run-BB-2',
+        errorLog: expect.stringContaining("malformed runtime label 'runtime:'"),
+      }),
+    ]);
+  });
+
+  it('builds one runtime instance per alias', async () => {
+    const s = setup({ preset: 'box' }, [
+      { identifier: 'BB-1' },
+      { identifier: 'BB-2' },
+      { identifier: 'BB-3' },
+    ]);
+    await s.run();
+    expect(s.dispatched('BB-3')).toMatchObject({ runtimeAlias: 'box' });
+    expect(s.built).toEqual(['box']);
+  });
+
+  it('picks the agent through the machine agents select', async () => {
+    const s = setup(
+      { preset: 'box' },
+      [{ identifier: 'BB-1' }],
+      undefined,
+      () => 'fast',
+    );
+    await s.run();
+    expect(s.dispatched('BB-1')).toMatchObject({ alias: 'fast' });
+    const plain = setup({ preset: 'box' }, [{ identifier: 'BB-1' }]);
+    await plain.run();
+    expect(plain.dispatched('BB-1')).toMatchObject({ alias: 'opus' });
+  });
+});

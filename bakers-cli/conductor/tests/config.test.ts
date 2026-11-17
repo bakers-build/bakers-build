@@ -18,6 +18,7 @@ import {
   loadConductorConfig,
   resolveAgents,
   resolveConfigPath,
+  singleEntryCatalog,
   stripLegacyConnectionFromConfigSource,
   stripStatesFromConfigSource,
 } from '../src/config.js';
@@ -2233,5 +2234,150 @@ describe('protected paths and host commands', () => {
   it('leaves host commands unchecked under runtime-host', async () => {
     const config = await load(`hooks: { before_run: 'pnpm install' },`, false);
     expect(config.runtime?.isolates ?? false).toBe(false);
+  });
+});
+
+describe('slot catalogs for runtime, executor and workspace', () => {
+  const runtimeModule = (id: string, isolates: boolean) =>
+    `export const runtimes = acc => [...acc, { kind: 'runtime', id: '${id}', isolates: ${isolates}, requiredModules: [], createRuntime: async () => ({ id: '${id}', wrap: async (l) => l, cleanup: async () => {} }) }];`;
+  // `machineBody` is spliced into the machine file's default export; a
+  // relative `use` resolves from the machine file's directory, returned.
+  const writeMachine = (machineBody: string): string => {
+    const home = mkdtempSync(join(tmpdir(), 'bakers-runtime-home-'));
+    mkdirSync(join(home, '.bakers'));
+    writeFileSync(
+      join(home, '.bakers/machine.config.js'),
+      machineSource(
+        `export default { addons: ['@bakers-build/addon-codex'], ${machineBody} };`,
+      ),
+    );
+    vi.stubEnv('HOME', home);
+    return join(home, '.bakers');
+  };
+  // A project whose addons[] contribute the preset runtime `preset`.
+  const load = (body = '', preset = true) => {
+    const path = writeDescriptorConfig(
+      `${body}${preset ? " addons: ['./runtime.js']," : ''}`,
+    );
+    writeFileSync(
+      join(dirname(path), 'runtime.js'),
+      runtimeModule('preset', true),
+    );
+    return loadConductorConfig(path);
+  };
+
+  it('loads the addon runtime unchanged as the default entry beside system', async () => {
+    writeMachine('');
+    const cfg = await load();
+    const catalog = cfg.catalogs.runtime;
+    expect(Object.keys(catalog?.entries ?? {}).sort()).toEqual([
+      'preset',
+      'system',
+    ]);
+    expect(catalog?.default).toBe('preset');
+    expect(catalog?.preset).toBe('preset');
+    expect(catalog?.entries.preset).toBe(cfg.runtime);
+    expect(catalog?.entries.system?.id).toBe('host');
+    expect(cfg.runtime?.isolates).toBe(true);
+  });
+
+  it('falls back to the built-in system runtime when none is configured', async () => {
+    writeMachine('');
+    const cfg = await load('', false);
+    expect(Object.keys(cfg.catalogs.runtime?.entries ?? {})).toEqual([
+      'system',
+    ]);
+    expect(cfg.catalogs.runtime?.default).toBe('system');
+    expect(cfg.runtime).toBeUndefined();
+  });
+
+  it('builds machine catalog entries, routes, select and the unsandboxed lock', async () => {
+    const dir = writeMachine(
+      `runtime: { catalog: [{ alias: 'box', use: './box.js' }, { alias: 'preset', use: './other.js' }], routes: { default: { review: 'box' } }, select: (c) => c[0], allow_unsandboxed: true },`,
+    );
+    writeFileSync(join(dir, 'box.js'), runtimeModule('box', true));
+    writeFileSync(join(dir, 'other.js'), runtimeModule('other', false));
+    const cfg = await load();
+    const catalog = cfg.catalogs.runtime;
+    expect(Object.keys(catalog?.entries ?? {}).sort()).toEqual([
+      'box',
+      'preset',
+      'system',
+    ]);
+    // An alias equal to the preset id replaces the addon runtime.
+    expect(catalog?.entries.preset?.id).toBe('other');
+    expect(catalog?.entries.box?.id).toBe('box');
+    expect(catalog?.routes).toEqual({ default: { review: 'box' } });
+    expect(typeof catalog?.select).toBe('function');
+    expect(cfg.allow_unsandboxed).toBe(true);
+  });
+
+  it('refuses a machine runtime select that is not a function', async () => {
+    writeMachine(`runtime: { select: 'box' },`);
+    await expect(load()).rejects.toThrow(/runtime\.select.*function/);
+  });
+
+  it('restricts the catalog and sets its default from the project', async () => {
+    writeMachine('');
+    const cfg = await load(
+      `runtime: { enabled: ['preset'], default: 'preset' },`,
+    );
+    expect(Object.keys(cfg.catalogs.runtime?.entries ?? {})).toEqual([
+      'preset',
+    ]);
+    expect(cfg.catalogs.runtime?.projectDefault).toBe('preset');
+    await expect(load(`runtime: { enabled: ['nope'] },`)).rejects.toThrow(
+      /runtime\.enabled names unknown alias 'nope'/,
+    );
+    await expect(
+      load(`runtime: { enabled: ['preset'], default: 'system' },`),
+    ).rejects.toThrow(/runtime\.default names unavailable alias 'system'/);
+  });
+
+  it('refuses a project runtime select', async () => {
+    writeMachine('');
+    await expect(load(`runtime: { select: (c) => c[0] },`)).rejects.toThrow(
+      /runtime\.select/,
+    );
+  });
+
+  it('exposes executor and workspace as one-entry catalogs', async () => {
+    writeMachine('');
+    const cfg = await load();
+    expect(cfg.catalogs.executor).toMatchObject({
+      slot: 'executor',
+      default: 'e',
+      entries: { e: cfg.executor },
+    });
+    expect(cfg.catalogs.workspace).toMatchObject({
+      slot: 'workspace',
+      default: 'w',
+      entries: { w: cfg.workspace },
+    });
+  });
+
+  it('refuses more than one executor or workspace entry', async () => {
+    expect(() =>
+      singleEntryCatalog('executor', [
+        { id: 'a' } as never,
+        { id: 'b' } as never,
+      ]),
+    ).toThrow('executor catalog: only one entry is supported');
+    expect(() =>
+      singleEntryCatalog('workspace', [
+        { id: 'a' } as never,
+        { id: 'b' } as never,
+      ]),
+    ).toThrow('workspace catalog: only one entry is supported');
+    writeMachine(
+      `executor: [{ kind: 'executor', id: 'a' }, { kind: 'executor', id: 'b' }],`,
+    );
+    await expect(load()).rejects.toThrow(/executor/);
+  });
+
+  it('carries the machine agents select onto the agent catalog', async () => {
+    writeMachine(`agents: { select: (c) => c[0] },`);
+    const cfg = await load();
+    expect(typeof cfg.catalogs.agent.select).toBe('function');
   });
 });

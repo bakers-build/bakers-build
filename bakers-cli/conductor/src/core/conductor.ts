@@ -41,11 +41,21 @@ import type {
   Ticket,
   UncleanTicket,
 } from '../plugins/remote.js';
-import { type BbRuntime, hostRuntime } from '../plugins/runtime.js';
+import {
+  type BbRuntime,
+  hostRuntime,
+  type RuntimePlugin,
+} from '../plugins/runtime.js';
 import {
   runtimeSandboxWarning,
   sandboxFailures,
 } from '../plugins/sandbox-preflight.js';
+import {
+  type SlotCatalog,
+  type SlotChoice,
+  SlotResolver,
+  selectSlot,
+} from '../plugins/slot-catalog.js';
 import { loadTools, type ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
@@ -285,8 +295,14 @@ export class Conductor {
   /** The local MCP server for addon tools; only the serve process runs one. */
   private toolServer: ToolServer | undefined;
 
-  /** Where runs execute; created once, on first use. */
-  private runtimeOnce: Promise<BbRuntime> | undefined;
+  /** Where runs execute, chosen per ticket. */
+  private readonly runtimes: SlotCatalog<RuntimePlugin>;
+
+  /** One instance per runtime alias, created on first use. */
+  private readonly slots = new SlotResolver();
+
+  /** The runtime alias of each run this process dispatched. */
+  private readonly runRuntimes = new Map<string, string>();
 
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
@@ -313,6 +329,19 @@ export class Conductor {
     private readonly secrets: Secrets = {},
   ) {
     this.tunnel = config.tunnel === true;
+    // A config built without the loader: its one runtime beside the host.
+    const runtime = config.runtime;
+    this.runtimes = config.catalogs?.runtime ?? {
+      slot: 'runtime',
+      entries: {
+        system: hostRuntime,
+        ...(runtime ? { [runtime.id]: runtime } : {}),
+      },
+      default: runtime?.id ?? 'system',
+      routes: {},
+      ...(runtime ? { preset: runtime.id } : {}),
+      fallback: 'system',
+    };
     this.inboxAddons = new InboxRuntime(
       config.inboxAddons ?? [],
       remote,
@@ -388,9 +417,17 @@ export class Conductor {
    */
   async startTools(endpointFile?: string): Promise<void> {
     const { siteTools } = this.remote;
-    const runtime = await this.runtime();
+    const runtimes = await Promise.all(
+      Object.keys(this.runtimes.entries).map((alias) => this.runtimeFor(alias)),
+    );
     if ((!this.config.tools && !siteTools) || this.toolServer) return;
-    const hosts = (await runtime.toolServerHosts?.()) ?? [];
+    const hosts = [
+      ...new Set(
+        (
+          await Promise.all(runtimes.map((r) => r.toolServerHosts?.() ?? []))
+        ).flat(),
+      ),
+    ];
     const registry = this.config.tools ?? (await loadTools([]));
     // Runs closed while no server ran (`oven once`, a crash) lose their grant here.
     const openRuns = await this.remote.fetchActiveRuns(this.id).then(
@@ -420,23 +457,40 @@ export class Conductor {
     );
   }
 
-  private runtime(): Promise<BbRuntime> {
-    this.runtimeOnce ??= (this.config.runtime ?? hostRuntime).createRuntime(
-      this.config,
-      { logger: this.logger },
+  private runtimeFor(alias: string): Promise<BbRuntime> {
+    const plugin = this.runtimes.entries[alias];
+    if (!plugin)
+      return Promise.reject(new Error(`runtime alias '${alias}' is unknown`));
+    return this.slots.instance('runtime', alias, () =>
+      plugin.createRuntime(this.config, { logger: this.logger }),
     );
-    return this.runtimeOnce;
   }
 
-  /** Best-effort, like the tab close: logged, never thrown. */
+  /** The run's runtime entry; the default for a run this process did not dispatch. */
+  private runtimePlugin(runUuid?: string): RuntimePlugin {
+    const alias =
+      (runUuid && this.runRuntimes.get(runUuid)) || this.runtimes.default;
+    return this.runtimes.entries[alias] ?? hostRuntime;
+  }
+
+  /**
+   * Best-effort, like the tab close: logged, never thrown. A run of unknown
+   * runtime (dispatched before a restart) is cleaned in every entry.
+   */
   private async cleanupRuntime(runUuid: string, runId: number): Promise<void> {
-    try {
-      await (await this.runtime()).cleanup({ uuid: runUuid, id: runId });
-    } catch (err) {
-      this.logger.warn(
-        { run: runUuid, err: String(err) },
-        'runtime cleanup failed',
-      );
+    const known = this.runRuntimes.get(runUuid);
+    for (const alias of known ? [known] : Object.keys(this.runtimes.entries)) {
+      try {
+        await (await this.runtimeFor(alias)).cleanup({
+          uuid: runUuid,
+          id: runId,
+        });
+      } catch (err) {
+        this.logger.warn(
+          { run: runUuid, runtime: alias, err: String(err) },
+          'runtime cleanup failed',
+        );
+      }
     }
   }
 
@@ -540,6 +594,11 @@ export class Conductor {
     }
     const warning = runtimeSandboxWarning(this.config.runtime?.id);
     if (warning) this.logger.warn({ conductorId: this.id }, warning);
+    if (Object.keys(this.runtimes.entries).join() === 'system')
+      this.logger.info(
+        { conductorId: this.id },
+        'no runtime configured; runs start on the host (system)',
+      );
     for (const line of await sandboxFailures(this.agents)) {
       this.logger.error({ conductorId: this.id }, line);
     }
@@ -757,6 +816,7 @@ export class Conductor {
       // Revoke before the durable close: a crash between the two must not leave a closed run's grant.
       this.revokeRunTools(r.runUuid);
       await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
+      this.runRuntimes.delete(r.runUuid);
       this.signalUi(r.worktreePath);
       this.logger.info(
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
@@ -1475,7 +1535,7 @@ export class Conductor {
       ...(t.branchName ? { BAKERS_BRANCH_NAME: t.branchName } : {}),
       BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
       // Host scripts skip what an isolated run does in its own container.
-      BAKERS_RUNTIME_ISOLATES: this.config.runtime?.isolates ? '1' : '0',
+      BAKERS_RUNTIME_ISOLATES: this.runtimePlugin(runUuid).isolates ? '1' : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
       ...(t.projectName ? { BAKERS_PROJECT: t.projectName } : {}),
@@ -1605,17 +1665,39 @@ export class Conductor {
     return { env: launch.env, args: launch.args };
   }
 
+  /** The agent a machine `agents.select` named. */
+  private agentFor(alias: string): ResolvedAgent {
+    const agent = this.agents.find((a) => (a.alias ?? a.id) === alias);
+    if (!agent) throw new Error(`agent alias '${alias}' is not loaded`);
+    return agent;
+  }
+
   /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
   private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
     const t = await this.remote.getTicket(run.ticketUuid);
     // Resolve the ticket alias and machine defaults, or the project selection hook.
     // Persist the package id below so finalize can choose its transcript parser.
-    const chosen = resolveAgent(this.agents, t, {
-      selectAgent: this.config.selectAgent,
-      routes: this.config.routes,
-      defaultAgent: this.config.default_agent,
+    // The project's select_agent wins; then the machine's agents select.
+    const agentCatalog = this.config.catalogs?.agent;
+    const chosen =
+      !this.config.selectAgent && agentCatalog?.select
+        ? this.agentFor(selectSlot(agentCatalog, t).alias)
+        : resolveAgent(this.agents, t, {
+            selectAgent: this.config.selectAgent,
+            routes: this.config.routes,
+            defaultAgent: this.config.default_agent,
+            warn: (message) =>
+              this.logger.warn({ ticket: t.identifier }, message),
+          });
+    // An unknown alias throws and fails the run. A label may choose a
+    // runtime that does not isolate only where the machine allows it.
+    const runtime = selectSlot(this.runtimes, t, {
+      labelAllowed: (alias) =>
+        this.runtimes.entries[alias]?.isolates === true ||
+        this.config.allow_unsandboxed === true,
       warn: (message) => this.logger.warn({ ticket: t.identifier }, message),
     });
+    this.runRuntimes.set(run.runUuid, runtime.alias);
     // The tick's gate may be stale by now; spawn nothing that cannot start.
     const [unavailable] = await sandboxFailures([chosen]);
     if (unavailable) throw new Error(unavailable);
@@ -1667,7 +1749,7 @@ export class Conductor {
     };
     const launch = { started: false };
     try {
-      await this.launch(run, t, chosen, ws, ctx, launch);
+      await this.launch(run, t, chosen, runtime, ws, ctx, launch);
     } catch (err) {
       await this.unwindDispatch(ctx, launch.started);
       throw err;
@@ -1682,6 +1764,7 @@ export class Conductor {
     run: ClaimedRun,
     t: Ticket,
     chosen: ResolvedAgent,
+    runtimeChoice: SlotChoice,
     ws: EnsuredWorkspace,
     ctx: HookListenerContext,
     launch: { started: boolean },
@@ -1763,7 +1846,7 @@ export class Conductor {
     // re-creates it. Sibling prior-state run tabs are left to the worktree reap.
     await this.executor.cleanupRun(t.branchName, run.runId);
     await this.cleanupRuntime(run.runUuid, run.runId);
-    const runtime = await this.runtime();
+    const runtime = await this.runtimeFor(runtimeChoice.alias);
     let prompt = ws.instructions
       ? renderPrompt(this.config.prompt, {
           identifier: t.identifier,
@@ -1836,7 +1919,8 @@ export class Conductor {
       ...(chosen.agent.modelApi ? { modelApi: chosen.agent.modelApi } : {}),
       secrets,
     };
-    const isolates = this.config.runtime?.isolates === true;
+    const isolates = this.runtimePlugin(run.runUuid).isolates === true;
+    this.config.runtime_isolation?.set(ws.path, isolates);
     // Without it the run starts in an empty private home and cannot sign in.
     if (isolates && !chosen.agent.prepareRun)
       throw new Error(
@@ -1962,6 +2046,8 @@ export class Conductor {
         harness: chosen.agent.id,
         alias: chosen.alias ?? chosen.id,
         runtime: runtime.id,
+        runtimeAlias: runtimeChoice.alias,
+        runtimeReason: runtimeChoice.reason,
         // The launch with its options; the prompt is long and in the ticket.
         launch: command.replace(shellQuote(prompt), "'<prompt>'"),
       },
@@ -2021,6 +2107,7 @@ export class Conductor {
         'dispatch cleanup failed',
       );
     }
+    this.runRuntimes.delete(runUuid);
   }
 
   async serve(signal?: AbortSignal) {
