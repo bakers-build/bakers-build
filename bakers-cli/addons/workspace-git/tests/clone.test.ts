@@ -132,6 +132,23 @@ it('borrows the parent objects with the shared option', async () => {
   expect(ws.clone?.shared).toBe(true);
 });
 
+it('lets the call override the shared option set at build time', async () => {
+  const on = await new GitWorkspace({ root, clone: true }).ensure(
+    'GL-1',
+    'feat/gl-1',
+    undefined,
+    { shared: true },
+  );
+  expect(on.clone?.shared).toBe(true);
+
+  const off = await new GitWorkspace({
+    root,
+    clone: true,
+    shared: true,
+  }).ensure('GL-2', 'feat/gl-2', undefined, { shared: false });
+  expect(off.clone?.shared).toBeFalsy();
+});
+
 it('refreshes a tree the site hardened read-only', async () => {
   const workspace = new GitWorkspace({ root, clone: true });
   const first = await workspace.ensure('GL-9', 'feat/gl-9');

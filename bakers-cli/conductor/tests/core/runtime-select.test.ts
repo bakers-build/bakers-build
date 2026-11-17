@@ -57,13 +57,15 @@ afterEach(() => {
 /** A run clone when the call asks for one, else a plain directory. */
 class Workspace implements BbWorkspace {
   readonly clones: Record<string, boolean | undefined> = {};
+  readonly shares: Record<string, boolean | undefined> = {};
   async ensure(
     identifier: string,
     branch: string,
     _baseRef?: string,
-    options?: { clone?: boolean },
+    options?: { clone?: boolean; shared?: boolean },
   ): Promise<EnsuredWorkspace> {
     this.clones[identifier] = options?.clone;
+    this.shares[identifier] = options?.shared;
     const parent = join(root, 'parent');
     const workspace = join(root, identifier);
     if (!options?.clone) {
@@ -104,8 +106,9 @@ class Executor implements BbExecutor {
 }
 
 /** An isolating runtime that counts its instances. */
-function boxRuntime(built: string[]): RuntimePlugin {
+function boxRuntime(built: string[], shared?: boolean): RuntimePlugin {
   return {
+    ...(shared === undefined ? {} : { shared }),
     kind: 'runtime',
     id: 'box',
     isolates: true,
@@ -140,6 +143,7 @@ function setup(
     workspace?: Workspace;
     agent?: BbAgent;
     isolation?: Map<string, boolean>;
+    boxShared?: boolean;
   } = {},
 ) {
   const built: string[] = [];
@@ -171,7 +175,7 @@ function setup(
   const mk = (obj: object, msg?: string) =>
     logs.push({ obj: obj as Record<string, unknown>, msg });
   const log: ConductorLogger = { debug: mk, info: mk, warn: mk, error: mk };
-  const box = boxRuntime(built);
+  const box = boxRuntime(built, opts.boxShared);
   const config = {
     site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
     remote: fakeRemote(),
@@ -405,6 +409,22 @@ describe('runtime chosen per ticket', () => {
       runtimeAlias: 'system',
     });
     expect(boxDefault.workspace.clones).toEqual({ 'BB-1': false });
+  });
+
+  it('shares the run clone objects per the run runtime', async () => {
+    const s = setup(
+      { default: 'system', fallback: 'system' },
+      [{ identifier: 'BB-1', labels: ['runtime:box'] }, { identifier: 'BB-2' }],
+      undefined,
+      undefined,
+      { boxShared: true },
+    );
+    await s.run();
+    expect(s.workspace.shares).toEqual({ 'BB-1': true, 'BB-2': undefined });
+
+    const plain = setup({ preset: 'box' }, [{ identifier: 'BB-1' }]);
+    await plain.run();
+    expect(plain.workspace.shares).toEqual({ 'BB-1': undefined });
   });
 
   it('drops the run runtime choice when dispatch fails before the launch', async () => {

@@ -45,14 +45,14 @@ export interface BbWorkspace {
    * conductor runs all hooks.
    *
    * `options.clone`, when given, overrides the build-time clone mode for this
-   * call: the conductor passes whether the run's runtime isolates. A workspace
+   * call: the conductor passes whether the run's runtime isolates and shares objects. A workspace
    * without run clones may ignore it.
    */
   ensure(
     identifier: string,
     branch?: string,
     baseRef?: string,
-    options?: { clone?: boolean },
+    options?: { clone?: boolean; shared?: boolean },
   ): Promise<EnsuredWorkspace>;
 
   /**

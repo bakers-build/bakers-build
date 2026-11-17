@@ -112,7 +112,7 @@ export class GitWorkspace implements BbWorkspace {
     _identifier: string,
     branch?: string,
     baseRef?: string,
-    options?: { clone?: boolean },
+    options?: { clone?: boolean; shared?: boolean },
   ): Promise<EnsuredWorkspace> {
     if (!branch) throw new Error('git workspace requires a branch name');
     // A ref git accepts has no `..`, leading `/`, `-` or `.`, so the path
@@ -153,7 +153,7 @@ export class GitWorkspace implements BbWorkspace {
         workspace: path,
         branch,
         ...(target ? { target } : {}),
-        shared: this.shared,
+        shared: options?.shared ?? this.shared,
       });
       return {
         path,

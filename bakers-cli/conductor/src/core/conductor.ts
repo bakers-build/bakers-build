@@ -1718,9 +1718,12 @@ export class Conductor {
       run.stateAtStart,
       chosen.agent,
     );
+    const runPlugin = this.runtimePlugin(run.runUuid);
     const ws = await this.serialGit(() =>
       this.workspace.ensure(t.identifier, t.branchName, baseRef, {
-        clone: this.runtimePlugin(run.runUuid).isolates === true,
+        clone: runPlugin.isolates === true,
+        // Only a runtime that states `shared` overrides the workspace option.
+        ...(runPlugin.shared !== undefined && { shared: runPlugin.shared }),
       }),
     );
     at.worktree = ws.path;
