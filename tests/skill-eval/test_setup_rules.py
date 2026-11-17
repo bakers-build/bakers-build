@@ -129,8 +129,10 @@ class SetupRulesTest(unittest.TestCase):
             self.assertIn(check, mode['Derive from'])
         # The flow ends by starting the conductor and offering a first ticket.
         self.assertNotIn('do not start ticket work', project_skill)
-        self.assertIn('bakers conductor start', project_skill)
-        self.assertIn('bb-create-ticket', project_skill)
+        self.assertIn('#start-the-session', project_skill)
+        session = project.split('## Start the session', 1)[1]
+        self.assertIn('bakers conductor start', session)
+        self.assertIn('bb-create-ticket', session)
 
     def test_setup_cases_stay_few(self):
         cases = [path for path in TAKE_ALL.parent.glob('*.json') if path.name != 'defaults.json']

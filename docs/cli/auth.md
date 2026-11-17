@@ -42,7 +42,7 @@ bakers auth login
 bakers auth status
 ```
 
-The default sign-in is a device code: `auth login` prints a URL and a short code, you confirm on any device, and it waits until you are signed in. A browser-redirect profile opens the browser and listens on its callback port. Connections set up for unattended use sign in with client credentials instead.
+The default sign-in is a device code: `auth login` prints a URL and a short code, you confirm on any device, and it waits until you are signed in. The URL opens a page with the code already filled in: compare it with your terminal, check the client, account and the permissions listed under *Grants access to*, then confirm. A browser-redirect profile opens the browser and listens on its callback port. Connections set up for unattended use sign in with client credentials instead.
 
 Tokens renew automatically. [Connection storage](/configuration/connection#files) owns their location and private-file requirements.
 

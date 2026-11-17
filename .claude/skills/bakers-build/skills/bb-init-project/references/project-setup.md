@@ -157,3 +157,12 @@ last configuration write. Record actual command results;
 report an unavailable command only after checking the available tools.
 Distinguish local validity, sign-in, project access and runtime readiness. A local config check
 is not proof that addons, provisioning or tunnels work.
+
+## Start the session
+
+With project/all checks green, ask once whether to start working now. On yes, start the
+conductor with `bakers conductor start` through the configured client (herdr: a new tab), confirm
+it runs, and offer a first trial ticket through `@bakers-build/bb-create-ticket`; the conductor
+opens its agent session in that client. A no, a failed check or an unattended run ends with the
+start command as the next action.
+**Done when the conductor runs or the person declined.**

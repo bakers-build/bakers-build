@@ -5,18 +5,16 @@ description: Use when initializing, completing, repairing or upgrading bakers.bu
 
 # Initialize bakers.build configuration
 
-Follow the setup documentation for choices and file ownership. Use the CLI inventory/repair
-planner for supported changes; generated defaults and existing files alone do not establish readiness.
-Existing installation to upgrade, migrate or repair: follow [upgrade](references/upgrade.md).
+Documentation owns choices and file ownership; the CLI planner owns supported changes. Generated
+defaults and existing files alone do not establish readiness.
+Upgrade, migrate or repair: follow [upgrade](references/upgrade.md).
 Read [setup checks](references/setup-checks.md) before checking/applying.
 For project/all, first [assess worktree compatibility](references/project-setup.md#check-worktree-compatibility-first)
-before configuration checks or setup changes. Resolve known application blockers before continuing.
+before configuration checks or setup changes.
 
 ## Welcome
 
-Called directly rather than from `@bakers-build/bb-init`: open with one message naming the steps
-ahead (worktree check, server project, the project's blocks, workflow, checks, conductor start)
-and the files written after confirmation: `.bakers/project.config.js` and `WORKFLOW.md`.
+Called directly, first name the steps ahead and the files it writes: `.bakers/project.config.js` and `WORKFLOW.md`.
 
 ## Select and check the scope
 
@@ -54,23 +52,15 @@ preserving custom values. Select a named connection using the current help and
 [connection guide](https://bakers.build/configuration/connection.md). Reconcile generated files with
 the documented choices from project setup, including settings without CLI flags.
 
-If authentication fails after preparation, report written paths and incomplete setup; follow the
-selected connection's exact `bakers` provider login remedy and rerun initialization.
-Run `bakers config check --scope <scope> --online` with the same paths. Machine online checks are
-inapplicable; other scopes require authentication, not a workspace. Offline checks prove local validity.
+If authentication fails after preparation, report written paths and incomplete setup; run the
+connection's exact login remedy, then rerun initialization.
+Run `bakers config check --scope <scope> --online` with the same paths (not for machine); it
+needs authentication, not a workspace. Offline checks prove local validity.
 
 For project/all, read the configured project and confirm its `WORKFLOW.md` starts with the entry
 line and names only installed skills.
-Show each written configuration back under the
-[conversation rules](../bb-init/references/setup-conversation.md#show-what-was-written).
+[Show written configurations back](../bb-init/references/setup-conversation.md#show-what-was-written).
 Report paths, scope, resolved executor and worktree (herdr-app: `@bakers-build/addon-workspace-git`),
 local validation, online readiness and remaining actions separately.
 
-## Start the session
-
-With project/all checks green, ask once whether to start working now. On yes, start the
-conductor with `bakers conductor start` through the configured client (herdr: a new tab), confirm
-it runs, and offer a first trial ticket through `@bakers-build/bb-create-ticket`; the conductor
-opens its agent session in that client. A no, a failed check or an unattended run ends with the
-start command as the next action.
-**Done when the conductor runs or the person declined.**
+For project/all, end by [starting the session](references/project-setup.md#start-the-session).

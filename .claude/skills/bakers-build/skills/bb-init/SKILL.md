@@ -10,11 +10,9 @@ Documentation owns choices and commands; this skill guides the conversation. Ret
 
 ## Welcome
 
-Open with one message, before any check or question: what bakers.build setup does, the steps
-ahead (tooling, identity, sign-in, agent harness, permissions and sandbox, then the project) and
-the files it writes after your confirmation: `~/.bakers/machine.config.js`,
-`~/.bakers/connections/default.js`, the project's `.bakers/project.config.js` and `WORKFLOW.md`.
-**Done when the welcome is shown.**
+Open with one message naming the steps ahead (tooling, identity, sign-in, harness, permissions,
+sandbox, project) and the files it writes: `~/.bakers/machine.config.js`,
+`~/.bakers/connections/default.js`, `.bakers/project.config.js` and `WORKFLOW.md`.
 
 ## Read
 
@@ -65,7 +63,7 @@ declined.**
 
 ## Report and return
 
-Show each written configuration back under the conversation rules. Report the choices and check
+Show written configurations back. Report the choices and check
 results, what was written, what was preserved, and outstanding
 actions with their owner and documentation link. Stop after machine/user setup and return to
 the caller.
