@@ -11,7 +11,7 @@ starting each run in a container at host paths. Machine scope:
 
 ## Before the first run
 
-- The agent declares `installCommand`; its first run builds the versioned image. `with.image` supplies an installed agent instead.
+- `installCommand` builds the versioned image on the first run, plus [project packages](/addons/runtime-docker/image); `with.image` replaces both.
 - Set the agent credential in the [secrets file](/configuration/machine#secrets-file): Claude uses `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`. A container cannot use the host login.
 
 ## Options

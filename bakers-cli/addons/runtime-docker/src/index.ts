@@ -70,6 +70,15 @@ export function runtimeDocker(
         packageDir,
         version: imageVersion(packageDir, version),
         conductorKey: shortHash(config.config_path),
+        // The project file lives in `.bakers/`, the layer's build context.
+        ...(config.runtimeImage
+          ? {
+              imageAdditions: {
+                image: config.runtimeImage,
+                bakersDir: dirname(config.config_path),
+              },
+            }
+          : {}),
         ...(process.argv[1]
           ? { bakersEntry: realpathSync(process.argv[1]) }
           : {}),

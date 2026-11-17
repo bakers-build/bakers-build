@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -248,5 +248,106 @@ describe('addon options: checked offline from the package schema', () => {
         ),
       ),
     ).toEqual(['unknown_key agents.catalog[0].with.modle']);
+  });
+});
+
+describe('runtime.image: project additions to the run image', () => {
+  it('accepts packages and a fragment path, and names the key path of a wrong type', () => {
+    expect(
+      validateConfig('project', {
+        project: { name: 'demo' },
+        runtime: {
+          image: {
+            packages: { apt: ['jq'], npm: ['playwright@1.65.0'] },
+            dockerfile: 'runtime.Dockerfile',
+          },
+        },
+      }),
+    ).toEqual([]);
+    expect(
+      codes(
+        validateConfig('project', {
+          project: { name: 'demo' },
+          runtime: {
+            image: {
+              packages: { apt: 'jq', npm: [3], pip: [] },
+              dockerfile: 7,
+              tag: 'x',
+            },
+          },
+        }),
+      ),
+    ).toEqual([
+      'invalid_value runtime.image.dockerfile',
+      'invalid_value runtime.image.packages.apt',
+      'invalid_value runtime.image.packages.npm[0]',
+      'unknown_key runtime.image.packages.pip',
+      'unknown_key runtime.image.tag',
+    ]);
+  });
+});
+
+describe('runtime.image.dockerfile: a fragment under .bakers/', () => {
+  const project = (dockerfile: string) =>
+    `export default { project: { name: 'demo' }, runtime: { image: { dockerfile: ${JSON.stringify(dockerfile)} } } };`;
+  const setup = () => {
+    const root = mkdtempSync(join(tmpdir(), 'bb-fragment-'));
+    const bakersDir = join(root, '.bakers');
+    mkdirSync(join(bakersDir, 'image'), { recursive: true });
+    writeFileSync(join(root, 'outside.Dockerfile'), 'RUN true\n');
+    return { root, bakersDir };
+  };
+  const messages = (bakersDir: string, dockerfile: string) =>
+    checkConfigText('project', project(dockerfile), { bakersDir })
+      .filter((p) => p.key === 'runtime.image.dockerfile')
+      .map((p) => p.message);
+
+  it('accepts a fragment inside .bakers/ and checks nothing without one', () => {
+    const { bakersDir } = setup();
+    writeFileSync(
+      join(bakersDir, 'image/run.Dockerfile'),
+      '# FROM is fine in a comment\nRUN apt-get update \\\n  && echo user from\nENV A=1\n',
+    );
+    expect(messages(bakersDir, 'image/run.Dockerfile')).toEqual([]);
+    expect(
+      checkConfigText(
+        'project',
+        "export default { project: { name: 'demo' } };",
+        {
+          bakersDir,
+        },
+      ),
+    ).toEqual([]);
+  });
+
+  it('refuses a path that leaves .bakers/: parent, absolute and symlink', () => {
+    const { root, bakersDir } = setup();
+    symlinkSync(
+      join(root, 'outside.Dockerfile'),
+      join(bakersDir, 'link.Dockerfile'),
+    );
+    for (const path of [
+      '../outside.Dockerfile',
+      join(root, 'outside.Dockerfile'),
+      'link.Dockerfile',
+    ])
+      expect(messages(bakersDir, path)).toEqual([
+        `${path} must stay inside .bakers/`,
+      ]);
+    expect(messages(bakersDir, 'missing.Dockerfile')).toEqual([
+      'missing.Dockerfile was not found in .bakers/',
+    ]);
+  });
+
+  it('refuses FROM and USER in any case, naming instruction and line', () => {
+    const { bakersDir } = setup();
+    writeFileSync(
+      join(bakersDir, 'bad.Dockerfile'),
+      'RUN true\n  user root\n# USER in a comment\nfrom node:22 AS x\n',
+    );
+    expect(messages(bakersDir, 'bad.Dockerfile')).toEqual([
+      'bad.Dockerfile:2: USER is not allowed in a run image fragment',
+      'bad.Dockerfile:4: FROM is not allowed in a run image fragment',
+    ]);
   });
 });

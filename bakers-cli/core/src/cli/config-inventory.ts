@@ -582,6 +582,7 @@ export function inventoryConfig(
       report.findings.slice(startFindings).map((finding) => finding.key),
     );
     for (const problem of checkConfigText(SCHEMA_KIND[kind], text, {
+      bakersDir: dirname(path),
       bases: [
         pathToFileURL(`${dirname(path)}/`).href,
         pathToFileURL(`${cwd}/`).href,

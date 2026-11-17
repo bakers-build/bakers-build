@@ -2168,6 +2168,15 @@ describe('protected paths and host commands', () => {
     expect(config.runtime?.isolates).toBe(true);
   });
 
+  it('hands the project runtime.image to the runtime', async () => {
+    const config = await load(
+      `runtime: { image: { packages: { npm: ['playwright@1.65.0'] } } },`,
+    );
+    expect(config.runtimeImage).toEqual({
+      packages: { npm: ['playwright@1.65.0'] },
+    });
+  });
+
   it('refuses a host command outside a protected path under an isolating runtime', async () => {
     await expect(
       load(`hooks: { before_run: 'pnpm install' },`),

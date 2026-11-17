@@ -11,6 +11,7 @@ import {
   findDefaultExportObject,
   machineContextPath,
   matchDelimiter,
+  type ProjectConfig,
   readMachineContext,
   resolveConductorSlots,
   resolveModuleEslintStyle,
@@ -512,8 +513,8 @@ export async function loadConductorConfig(
   );
   const wired = resolveConductorSlots(discovered);
   // The schema has checked the shape; the list is the project's alone.
-  const readOnly = (config.runtime as { read_only?: string[] } | undefined)
-    ?.read_only;
+  const { read_only: readOnly, image: runtimeImage } = (config.runtime ??
+    {}) as NonNullable<ProjectConfig['runtime']>;
   const isolates = wired.runtime?.isolates === true;
   if (isolates) {
     try {
@@ -776,6 +777,7 @@ export async function loadConductorConfig(
     workspace,
     ...(wired.runtime ? { runtime: wired.runtime } : {}),
     ...(readOnly ? { readOnly } : {}),
+    ...(runtimeImage ? { runtimeImage } : {}),
     marketplaces,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),

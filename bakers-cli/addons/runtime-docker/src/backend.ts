@@ -16,7 +16,12 @@ import type {
   BbRuntime,
   RuntimeLaunch,
 } from '@bakers-build/conductor/contract';
-import { type ConductorLogger, shellQuote } from '@bakers-build/core';
+import {
+  type ConductorLogger,
+  type ProjectConfig,
+  runtimeFragment,
+  shellQuote,
+} from '@bakers-build/core';
 import {
   API_KEY_PLACEHOLDER,
   type DockerOptions,
@@ -41,12 +46,17 @@ export interface RuntimeDockerOptions {
   shared?: boolean;
 }
 
+/** The project's `runtime.image`. */
+export type RuntimeImageAdditions = NonNullable<
+  NonNullable<ProjectConfig['runtime']>['image']
+>;
+
 export interface BackendDeps {
-  /** `opts.env` is merged over the conductor's env for that one command. */
+  /** `opts.env` is merged over the conductor's env for that one command; `opts.input` is its stdin. */
   exec(
     file: string,
     args: string[],
-    opts?: { env?: Record<string, string> },
+    opts?: { env?: Record<string, string>; input?: string },
   ): Promise<{ stdout: string }>;
   /** The conductor's own environment; the credential source without `agent.secrets`. */
   env: Record<string, string | undefined>;
@@ -60,6 +70,8 @@ export interface BackendDeps {
   bakersEntry?: string;
   /** Names this conductor's proxy sidecar, so conductors on one host never share one. */
   conductorKey?: string;
+  /** The project's `runtime.image` and its `.bakers/`, the layer's build context. */
+  imageAdditions?: { image: RuntimeImageAdditions; bakersDir: string };
 }
 
 /** The first 12 hex chars of the sha256 of `text`. */
@@ -67,8 +79,41 @@ export const shortHash = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
 const run = promisify(execFile);
-export const realExec: BackendDeps['exec'] = (file, args, opts) =>
-  run(file, args, opts?.env ? { env: { ...process.env, ...opts.env } } : {});
+export const realExec: BackendDeps['exec'] = (file, args, opts) => {
+  const p = run(
+    file,
+    args,
+    opts?.env ? { env: { ...process.env, ...opts.env } } : {},
+  );
+  if (opts?.input !== undefined) p.child.stdin?.end(opts.input);
+  return p;
+};
+
+const PLAYWRIGHT = /^(?:@playwright\/test|playwright)(?:@|$)/;
+
+/** The layer on the shipped image: apt, npm, Playwright's Chromium, then the fragment. */
+export function layerDockerfile(
+  base: string,
+  apt: string[],
+  npm: string[],
+  fragment: string,
+): string {
+  const lines = [`FROM ${base}`];
+  if (apt.length > 0)
+    lines.push(
+      `RUN apt-get update && apt-get install -y --no-install-recommends ${apt.map(shellQuote).join(' ')} && rm -rf /var/lib/apt/lists/*`,
+    );
+  if (npm.length > 0)
+    lines.push(`RUN npm install -g ${npm.map(shellQuote).join(' ')}`);
+  // Runs start under the host uid: browsers go where any uid can read them.
+  if (npm.some((p) => PLAYWRIGHT.test(p)))
+    lines.push(
+      'ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright',
+      'RUN playwright install --with-deps chromium && chmod -R a+rX /opt/ms-playwright',
+    );
+  if (fragment) lines.push(fragment.replace(/\n+$/, ''));
+  return `${lines.join('\n')}\n`;
+}
 
 export function dockerRuntime(
   options: RuntimeDockerOptions,
@@ -98,27 +143,55 @@ export function dockerRuntime(
       );
     return join(cacheHome, 'bakers/runtime', uuid);
   };
-  // One image per agent install; built once each.
+  // One image per tag (agent install, additions); built once each.
   const imagesReady = new Map<string, Promise<void>>();
 
-  const ensureImage = async (image: string, install: string) => {
-    try {
-      await deps.exec(docker, ['image', 'inspect', image]);
-    } catch (err) {
-      if (options.image !== undefined)
-        throw new Error(
-          `runtime-docker: image ${image} is not available (${String(err)}); pull or build it first`,
-        );
-      deps.logger.info({ image }, 'building the run image');
-      await deps.exec(docker, [
-        'build',
-        '-t',
-        image,
-        '--build-arg',
-        `AGENT_INSTALL=${install}`,
-        join(deps.packageDir, 'image'),
-      ]);
+  const ensureImage = (image: string, build: () => Promise<unknown>) => {
+    let ready = imagesReady.get(image);
+    if (!ready) {
+      ready = (async () => {
+        try {
+          await deps.exec(docker, ['image', 'inspect', image]);
+        } catch (err) {
+          if (options.image !== undefined)
+            throw new Error(
+              `runtime-docker: image ${image} is not available (${String(err)}); pull or build it first`,
+            );
+          deps.logger.info({ image }, 'building the run image');
+          await build();
+        }
+      })().catch((err) => {
+        imagesReady.delete(image);
+        throw err;
+      });
+      imagesReady.set(image, ready);
     }
+    return ready;
+  };
+
+  /** The project's layer, or none; the fragment is reread and rechecked on every run. */
+  const layerOf = (base: string) => {
+    const additions = options.image ? undefined : deps.imageAdditions;
+    if (!additions) return undefined;
+    const { packages = {}, dockerfile } = additions.image;
+    const apt = packages.apt ?? [];
+    const npm = packages.npm ?? [];
+    let fragment = '';
+    if (dockerfile) {
+      const { text, problems } = runtimeFragment(
+        additions.bakersDir,
+        dockerfile,
+      );
+      if (problems.length > 0)
+        throw new Error(`runtime-docker: ${problems.join('; ')}`);
+      fragment = text ?? '';
+    }
+    if (apt.length + npm.length === 0 && !fragment.trim()) return undefined;
+    return {
+      tag: `${base}-${shortHash(JSON.stringify([base, apt, npm, fragment]))}`,
+      dockerfile: layerDockerfile(base, apt, npm, fragment),
+      context: additions.bakersDir,
+    };
   };
 
   const ensureNetwork = async (name: string, internal: boolean) => {
@@ -223,18 +296,38 @@ export function dockerRuntime(
         throw new Error(
           `runtime-docker: agent ${launch.harness} has no installCommand; configure an image`,
         );
-      const image =
-        options.image ??
-        `bakers-runtime:${deps.version}-${shortHash(launch.installCommand ?? '')}`;
-      if (!imagesReady.has(image))
-        imagesReady.set(
-          image,
-          ensureImage(image, launch.installCommand ?? '').catch((err) => {
-            imagesReady.delete(image);
-            throw err;
-          }),
+      const install = launch.installCommand ?? '';
+      const base =
+        options.image ?? `bakers-runtime:${deps.version}-${shortHash(install)}`;
+      const layer = layerOf(base);
+      await ensureImage(base, () =>
+        deps.exec(docker, [
+          'build',
+          '-t',
+          base,
+          '--build-arg',
+          `AGENT_INSTALL=${install}`,
+          join(deps.packageDir, 'image'),
+        ]),
+      );
+      if (layer)
+        await ensureImage(layer.tag, () =>
+          deps.exec(
+            docker,
+            ['build', '-t', layer.tag, '-f', '-', layer.context],
+            { input: layer.dockerfile },
+          ),
         );
-      await imagesReady.get(image);
+      const image = layer?.tag ?? base;
+      deps.logger.info(
+        {
+          image,
+          agentVersion: options.image
+            ? 'operator image'
+            : (/@(\d[\w.+-]*)\s*$/.exec(install)?.[1] ?? 'unpinned'),
+        },
+        'run image',
+      );
       if (allowlist) {
         if (!gateway || !toolsPort)
           throw new Error(

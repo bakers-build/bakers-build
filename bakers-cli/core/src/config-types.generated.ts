@@ -95,6 +95,17 @@ export interface ProjectConfig {
   select_agent?: (...args: never[]) => unknown;
   runtime?: {
     read_only?: Array<string>;
+    /** runtime-docker: additions built as a cached layer on the shipped run image. Ignored when the machine sets with.image. */
+    image?: {
+      packages?: {
+        /** Debian packages, installed with apt-get install --no-install-recommends. */
+        apt?: Array<string>;
+        /** npm packages, installed globally; playwright@<v> also installs Chromium. */
+        npm?: Array<string>;
+      };
+      /** A Dockerfile fragment under .bakers/, relative to it, appended after the packages. FROM and USER are refused. */
+      dockerfile?: string;
+    };
   };
 }
 
