@@ -10,6 +10,9 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\consumers\Entity\Consumer;
+use Drupal\entity_test\Entity\EntityTest;
+use Drupal\og\Entity\OgRole;
+use Drupal\og\Og;
 use Drupal\bb_oauth_device\Form\DeviceVerificationForm;
 use Drupal\simple_oauth\Entity\Oauth2Scope;
 use Drupal\simple_oauth\Entity\Oauth2Token;
@@ -354,9 +357,9 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   }
 
   /**
-   * A sent link names the account and still needs the code typed.
+   * A sent link fills in its code for comparison and names the account.
    */
-  public function testLinkedCodeMustBeTypedAndNamesTheAccount(): void {
+  public function testLinkedCodeIsFilledInAndNamesTheAccount(): void {
     $body = $this->requestDeviceAuthorization();
 
     $user = $this->drupalCreateUser(['grant simple_oauth codes']);
@@ -372,11 +375,52 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $field = $fields->item(0);
     $this->assertInstanceOf(\DOMElement::class, $field);
     $this->assertSame('text', $field->getAttribute('type'));
-    $this->assertSame('', $field->getAttribute('value'));
+    $this->assertSame($body['user_code'], $field->getAttribute('value'));
+    $this->assertStringContainsString('Compare with the code in your terminal.', $content);
 
     $messages = $this->submitVerificationForm('', 'confirm', $body['user_code']);
     $this->assertStringContainsString('Device code field is required.', $messages);
     $this->assertSame('authorization_pending', $this->pollError($body['device_code']));
+  }
+
+  /**
+   * The consent names each group the account acts in, with its rank.
+   *
+   * The account holds no site-wide permission beyond the route's own: what a
+   * token reaches comes from its memberships' ranks.
+   */
+  public function testConsentListsTheAccountsMemberships(): void {
+    $this->enableModules(['og']);
+    $this->installEntitySchema('og_membership');
+    $this->installEntitySchema('entity_test');
+    $this->installConfig(['og']);
+    // enableModules() rebuilt the container; the kernel from setUp() is stale.
+    $this->httpKernel = $this->container->get('http_kernel');
+    Og::addGroup('entity_test', 'entity_test');
+    $lead = OgRole::create(['name' => 'lead', 'label' => 'Lead']);
+    $lead->setGroupType('entity_test')->setGroupBundle('entity_test')->save();
+    $north = EntityTest::create(['name' => 'Team North']);
+    $north->save();
+    $south = EntityTest::create(['name' => 'Team South']);
+    $south->save();
+    $elsewhere = EntityTest::create(['name' => 'Team Elsewhere']);
+    $elsewhere->save();
+
+    $body = $this->requestDeviceAuthorization();
+    // Uid 1 bypasses every check; the consenting account must not be it.
+    $this->drupalCreateUser([]);
+    $user = $this->drupalCreateUser(['grant simple_oauth codes']);
+    $this->assertInstanceOf(User::class, $user);
+    Og::createMembership($north, $user)->addRole($lead)->save();
+    Og::createMembership($south, $user)->save();
+    $this->setCurrentUser($user);
+
+    $request = Request::create('/oauth/device', 'GET', ['user_code' => $body['user_code']]);
+    $content = (string) $this->httpKernel->handle($request)->getContent();
+    $this->assertStringContainsString('Acts within your memberships:', $content);
+    $this->assertStringContainsString('Team North — Lead', $content);
+    $this->assertStringContainsString('Team South — Member', $content);
+    $this->assertStringNotContainsString('Team Elsewhere', $content);
   }
 
   /**

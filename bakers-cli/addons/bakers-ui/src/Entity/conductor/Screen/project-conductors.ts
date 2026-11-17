@@ -190,7 +190,7 @@ export class ProjectConductorsScreen extends ListScreen<
     return this.viewOnlyNotice() || this.identityReason;
   }
 
-  select(index: number, context: ScreenContext): boolean {
+  override select(index: number, context: ScreenContext): boolean {
     if (index < 0 || index >= this.rows.length) return false;
     this.selectedIndex = index;
     this.toast = '';

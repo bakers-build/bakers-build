@@ -98,6 +98,64 @@ class SetupRulesTest(unittest.TestCase):
                 with self.subTest(path=path.name, url=url):
                     self.assertTrue(url.split('#')[0].endswith('.md'), 'link the page source, not the rendered page')
 
+    def test_setup_loads_few_documentation_pages(self):
+        # Facts the setup needs are inlined; each linked page is one more load in a run.
+        pages = {url.split('#')[0] for path in {*SKILLS.glob('bb-init/**/*.md'), *SKILLS.glob('bb-init-project/**/*.md')}
+                 for url in re.findall(r'https://bakers\.build/[^)\s`]*', path.read_text()) if '<path>' not in url}
+        self.assertLessEqual(len(pages), 18, sorted(pages))
+
+    def test_onboarding_flow_is_taught(self):
+        init = (SKILLS / 'bb-init/SKILL.md').read_text()
+        project_skill = (SKILLS / 'bb-init-project/SKILL.md').read_text()
+        machine = MATRICES[0].read_text()
+        project = MATRICES[1].read_text()
+        rules = CONVERSATION.read_text()
+        # Welcome names the steps and the files written.
+        welcome = init.split('## Welcome', 1)[1].split('\n## ', 1)[0]
+        for written in ['machine.config.js', 'connections/default.js', '.bakers/project.config.js', 'WORKFLOW.md']:
+            self.assertIn(written, welcome)
+        self.assertIn('## Welcome', project_skill)
+        # Every block question carries its step; configs are shown back masked.
+        self.assertIn('Step n of m', rules)
+        self.assertIn('***', rules)
+        # Sign-in defaults to the hosted server.
+        sign_in = blocks(MATRICES[0])['Sign-in'][0]
+        self.assertIn('https://app.bakers.build', sign_in['Recommend'])
+        # The worktree check runs and reports pass or fail with a reason.
+        self.assertIn('git worktree add', project)
+        self.assertIn('git worktree remove', project)
+        self.assertIn('fail — <reason>', project)
+        self.assertIn('Step n of m — Worktree', project)
+        # The private credentials file is explained where the harness is registered.
+        harness = next(row for row in blocks(MATRICES[0])['Machine'] if row['Decide'] == 'Agent harness to register')
+        self.assertIn('.bakers.env', harness['Explain'])
+        # Both sandbox runtimes are offered with their prerequisites.
+        mode = next(row for row in blocks(MATRICES[0])['Permissions'] if 'Permission mode' in row['Decide'])
+        for runtime, check in [('runtime-bwrap', 'bwrap'), ('runtime-docker', 'docker info')]:
+            self.assertIn(runtime, mode['Recommend'])
+            self.assertIn(check, mode['Derive from'])
+        # The flow ends by starting the conductor and offering a first ticket.
+        self.assertNotIn('do not start ticket work', project_skill)
+        self.assertIn('#start-the-session', project_skill)
+        session = project.split('## Start the session', 1)[1]
+        self.assertIn('bakers conductor start', session)
+        self.assertIn('bb-create-ticket', session)
+        # The first ticket is a concrete example to accept as it is.
+        self.assertIn('Title:', session)
+        self.assertIn('Description:', session)
+        # Setup first checks for a Git repository and, outside one, offers the northbakery sample.
+        repository = project.split('## Check the repository first', 1)[1].split('\n## ', 1)[0]
+        self.assertIn('git rev-parse --show-toplevel', repository)
+        self.assertIn('fail — not a Git repository', repository)
+        self.assertIn('Step 1 of m — Repository', repository)
+        self.assertIn('git clone https://github.com/bakers-build/northbakery.git', repository)
+        self.assertLess(project.index('## Check the repository first'), project.index('## Check worktree compatibility first'))
+        self.assertIn('#check-the-repository-first', project_skill)
+
+    def test_setup_cases_stay_few(self):
+        cases = [path for path in TAKE_ALL.parent.glob('*.json') if path.name != 'defaults.json']
+        self.assertLessEqual(len(cases), 10)
+
 
 if __name__ == '__main__':
     unittest.main()
