@@ -71,6 +71,8 @@ Feature: Entity administration form contracts
     Then the contract page contains "BDD diagnosis text body"
     And the contract page contains "debug_diagnose"
 
+  # Restores the labels of the scenario's own ticket afterwards.
+  @feature:ticket-inline-properties
   Scenario: A contributor may not add a protected label on a ticket of a conductor they do not own
     Given the API client is "north-contributor"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
@@ -87,6 +89,8 @@ Feature: Entity administration form contracts
     When I reload the page
     Then the inline "Labels" selection does not include "runtime:system"
 
+  # Restores the labels of the scenario's own ticket afterwards.
+  @feature:ticket-inline-properties
   Scenario: A workspace lead may add a protected label
     Given the API client is "north-lead"
     When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
