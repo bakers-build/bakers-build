@@ -8,6 +8,12 @@ description: Use when preparing a machine for bakers.build, choosing its tooling
 Documentation owns choices and commands; this skill guides the conversation. Return project setup to
 `@bakers-build/bb-init-project`.
 
+## Welcome
+
+Open with one message naming the steps ahead (tooling, identity, sign-in, harness, permissions,
+sandbox, project) and the files it writes: `~/.bakers/machine.config.js`,
+`~/.bakers/connections/default.js`, `.bakers/project.config.js` and `WORKFLOW.md`.
+
 ## Read
 
 Read [machine setup](references/machine-setup.md), the [setup conversation](references/setup-conversation.md)
@@ -57,6 +63,7 @@ declined.**
 
 ## Report and return
 
-Report the choices and check results, what was written, what was preserved, and outstanding
+Show written configurations back. Report the choices and check
+results, what was written, what was preserved, and outstanding
 actions with their owner and documentation link. Stop after machine/user setup and return to
 the caller.
