@@ -31,13 +31,13 @@ When('I open the device verification page for that code', async ({ page }) => {
 });
 
 When('I confirm the device sign-in', async ({ page }) => {
-  await page.getByLabel('Device code').fill(userCode);
+  // The link filled in the code; the person compares it and only decides.
   await page.getByRole('button', { name: 'Confirm sign-in' }).click();
   await page.waitForURL('**/oauth/device?done=*');
 });
 
 When('I deny the device sign-in', async ({ page }) => {
-  await page.getByLabel('Device code').fill(userCode);
+  // The link filled in the code; the person compares it and only decides.
   await page.getByRole('button', { name: 'Deny' }).click();
   await page.waitForURL('**/oauth/device?done=*');
 });
@@ -55,9 +55,15 @@ Then('the consent names the requesting client', async ({ page }) => {
   await expect(page.locator(GATE_CONTENT).getByText(/wants to sign in/)).toBeVisible();
 });
 
-Then('the consent asks for the device code', async ({ page }) => {
-  await expect(page.getByLabel('Device code')).toHaveValue('');
+Then('the device code field shows that code', async ({ page }) => {
+  await expect(page.getByLabel('Device code')).toHaveValue(userCode);
+  await expect(page.getByText('Compare with the code in your terminal.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
+});
+
+Then('the consent lists the membership {string}', async ({ page }, membership: string) => {
+  const memberships = page.locator(GATE_CONTENT).getByText(/^Acts within your memberships:/);
+  await expect(memberships).toContainText(membership);
 });
 
 Then('the page does not overflow horizontally', async ({ page }) => {
