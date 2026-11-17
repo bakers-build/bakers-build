@@ -96,6 +96,7 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'simple_oauth.oauth2_scope.bb_session_update_any_bb_ticket',
     'simple_oauth.oauth2_scope.bb_session_update_any_bb_workspace',
     'simple_oauth.oauth2_scope.bb_session_update_own_bb_machine',
+    'simple_oauth.oauth2_scope.bb_session_update_own_bb_project',
     'simple_oauth.oauth2_scope.bb_session_use_text_format_bb_rich',
     'simple_oauth.oauth2_scope.bb_session_view_bb_comment',
     'simple_oauth.oauth2_scope.bb_session_view_bb_conductor',

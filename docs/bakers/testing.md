@@ -164,6 +164,7 @@ section is absent on every other site.
 | `fixture-profile` | Northside member, Southside member | Saves its own position and background per workspace on the Profile tab |
 | `fixture-favorites` | Northside lead, Southside member | Marks and unmarks its own favorite projects |
 | `fixture-team-lead` | Northside contributor, North Crew lead | Team-lead edit rights and team time |
+| `fixture-project-owner` | Northside contributor, North Crew | Edits the Settings of the project it owns |
 | `fixture-workspace-only` | Northside member, no team | Workspace membership without project authority |
 | `fixture-time-contributor` | Northside contributor, owner of Personal time crew | Personal time, work schedule and activity input; owns a crew, so it may read its own statistics |
 | `fixture-settings` | Northside lead, Southside lead | Writes its own notification settings and work schedule |

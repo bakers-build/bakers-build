@@ -25,7 +25,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_project_update',
   label: new TranslatableMarkup('Update a project'),
-  description: new TranslatableMarkup('Changes a project’s repository settings; keys not given are kept. Needs edit bb_project on the project. Returns the saved project.'),
+  description: new TranslatableMarkup('Changes a project’s repository settings; keys not given are kept. Needs edit bb_project on the project, or update own bb_project as its owner. Returns the saved project.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_project',
@@ -143,7 +143,7 @@ final class ProjectUpdate extends ToolBase {
     $project = $this->readableProject($values['project']);
     if (!$project->access('update', $this->currentUser) || !$project->get('repository')->access('edit', $this->currentUser)) {
       // Roles, not people: naming holders would disclose memberships.
-      throw new \InvalidArgumentException(sprintf('You may not edit project %s: it needs edit bb_project, held by team leads, team owners and workspace leads of its workspace, or administer bakers.', $project->getKey()));
+      throw new \InvalidArgumentException(sprintf('You may not edit project %s: it needs edit bb_project, held by team leads, team owners and workspace leads of its workspace, update own bb_project as its owner, or administer bakers.', $project->getKey()));
     }
     $repository = array_merge($project->get('repository')->first()?->getValue() ?? [], $values['repository']);
     if (($repository['url'] ?? '') === '') {
