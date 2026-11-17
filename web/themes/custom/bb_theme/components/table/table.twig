@@ -363,7 +363,9 @@
         whole entry; `hidden` carries the entry's identity and version so the
         save can refuse a stale cell. The entry link is an icon in the cell's
         corner, so the input keeps its width; `hx` lets it open the dialog the
-        way the action kind does. `stored` and `sums` feed `live_sums`. #}
+        way the action kind does. `stored` and `sums` feed `live_sums`.
+        `duration` completes a bare whole hour to H:00 when the input loses
+        focus, as `input--bb-duration` does for a form field. #}
     {%- set input_id = c.name|replace({'[': '-', ']': ''}) -%}
     {%- set input_attributes = create_attribute()
       .addClass(['text-right', 'tabular-nums'])
@@ -383,6 +385,11 @@
     {%- endif -%}
     {%- if c.autofocus -%}
       {%- set input_attributes = input_attributes.setAttribute('autofocus', 'autofocus') -%}
+    {%- endif -%}
+    {%- if c.duration -%}
+      {%- set input_attributes = input_attributes
+        .setAttribute('x-data', '{}')
+        .setAttribute('x-on:blur', "const v = $el.value.trim(); if (/^[0-9]{1,6}$/.test(v)) { $el.value = v + ':00'; $el.dispatchEvent(new Event('input', { bubbles: true })) }") -%}
     {%- endif -%}
     <span class="relative inline-flex flex-col items-end gap-inline-xs w-20 whitespace-normal text-left">
       {{- include('bb_theme:form_input', {
@@ -507,7 +514,7 @@
   {% set table_attributes = (attributes ?: create_attribute()).addClass(['w-full', 'border-collapse', 'text-body']) %}
   {% if live_sums %}
     {% set table_attributes = table_attributes
-      .setAttribute('x-data', "{ secs(v) { const m = /^(\\d{1,6}):([0-5]\\d)$/.exec((v || '').trim()); return m ? m[1] * 3600 + m[2] * 60 : 0 }, recalc() { const t = {}; this.$root.querySelectorAll('[data-sheet-sums]').forEach((i) => { const d = this.secs(i.value) - Number(i.dataset.sheetStored || 0); i.dataset.sheetSums.split(' ').forEach((k) => { t[k] = (t[k] || 0) + d }) }); this.$root.querySelectorAll('[data-sheet-sum]').forEach((c) => { const s = Math.max(0, Number(c.dataset.sheetSeconds || 0) + (t[c.dataset.sheetSum] || 0)); c.textContent = Math.floor(s / 3600) + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') }) } }")
+      .setAttribute('x-data', "{ secs(v) { const m = /^(\\d{1,6})(?::([0-5]\\d))?$/.exec((v || '').trim()); return m ? m[1] * 3600 + (m[2] || 0) * 60 : 0 }, recalc() { const t = {}; this.$root.querySelectorAll('[data-sheet-sums]').forEach((i) => { const d = this.secs(i.value) - Number(i.dataset.sheetStored || 0); i.dataset.sheetSums.split(' ').forEach((k) => { t[k] = (t[k] || 0) + d }) }); this.$root.querySelectorAll('[data-sheet-sum]').forEach((c) => { const s = Math.max(0, Number(c.dataset.sheetSeconds || 0) + (t[c.dataset.sheetSum] || 0)); c.textContent = Math.floor(s / 3600) + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') }) } }")
       .setAttribute('x-init', 'recalc()')
       .setAttribute('x-on:input', 'recalc()') %}
   {% endif %}

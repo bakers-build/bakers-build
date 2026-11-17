@@ -13,7 +13,17 @@ When('I change the personal Tuesday to {string} and the cap to {string}', async 
 });
 
 Then('the personal schedule rejects the input', async ({ page }) => {
-  await expect(page.getByRole('alert').getByText('Use hours:minutes, for example 8:00 or 0:00.')).toBeVisible();
+  await expect(page.getByRole('alert').getByText('Use whole hours or hours:minutes, for example 8, 7:30 or 0:00.')).toBeVisible();
+});
+
+When('I type {string} into the personal Tuesday and leave it', async ({ page }, value: string) => {
+  const field = page.getByLabel('Tuesday (H:MM)', { exact: true });
+  await field.fill(value);
+  await field.blur();
+});
+
+Then('the personal Tuesday shows {string}', async ({ page }, value: string) => {
+  await expect(page.getByLabel('Tuesday (H:MM)', { exact: true })).toHaveValue(value);
 });
 
 Then('the personal schedule shows Monday {string}, Tuesday {string} and cap {string}', async ({ page }, monday: string, tuesday: string, cap: string) => {

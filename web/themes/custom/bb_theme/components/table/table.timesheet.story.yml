@@ -53,6 +53,7 @@ props:
           name: cells[2026-08-04:1:12][duration]
           value: ''
           label: Tue 04 · Customer · Project · WORK-12
+          duration: true
           stored: 0
           sums:
             - row:1:12

@@ -15,12 +15,21 @@ Feature: Employees record their week in an editable grid
     When I reload the page
     Then the week grid row "Bread · Time capture" shows "0:45" on "Tue 08"
 
+  Scenario: A bare hour typed into the week becomes whole hours
+    When I visit "/bakers/time?mode=week&date=2026-09-07"
+    And I type "2" into the week grid row "Bread · Time capture" on "Fri 11" and leave it
+    Then the week grid row "Bread · Time capture" shows "2:00" on "Fri 11"
+    When I save the week
+    And I reload the page
+    Then the week grid row "Bread · Time capture" shows "2:00" on "Fri 11"
+    And "north-lead" of "Time capture" on "2026-09-11" totals 7200 seconds
+
   Scenario: An invalid cell saves nothing and keeps every typed value
     When I visit "/bakers/time?mode=week&date=2026-09-07"
     And I type "25:61" into the week grid row "Bread · Time capture" on "Wed 09"
     And I type "0:30" into the week grid row "Bread · Time capture" on "Thu 10"
     And I save the week
-    Then the week grid row "Bread · Time capture" on "Wed 09" shows the error "Enter duration as hours:minutes, for example 0:30 or 1:15."
+    Then the week grid row "Bread · Time capture" on "Wed 09" shows the error "Enter duration as whole hours or hours:minutes, for example 8, 0:30 or 1:15."
     And the week grid row "Bread · Time capture" shows "0:30" on "Thu 10"
     And "north-lead" of "Time capture" on "2026-09-10" totals 0 seconds
 

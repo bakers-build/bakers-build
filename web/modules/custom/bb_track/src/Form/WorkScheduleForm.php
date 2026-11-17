@@ -43,6 +43,8 @@ final class WorkScheduleForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $schedule = $this->settings->schedule() ?? [];
     $form['#attributes']['data-hx-boost'] = 'false';
+    $format_error = $this->t('Use whole hours or hours:minutes, for example 8, 7:30 or 0:00.');
+    $hint = $this->t('Whole hours or H:MM, for example 8 or 7:30.');
     $form['messages'] = [
       '#type' => 'status_messages',
     ];
@@ -56,10 +58,13 @@ final class WorkScheduleForm extends FormBase {
       'Sunday',
     ] as $index => $day) {
       $form['days'][$index] = [
-        '#type' => 'textfield',
+        '#type' => 'bb_duration',
+        '#minimum' => 0,
+        '#format_error' => $format_error,
         '#title' => $this->t('@day (H:MM)', [
           '@day' => $day,
         ]),
+        '#description' => $hint,
         '#required' => TRUE,
         '#size' => 8,
         '#default_value' => isset($schedule['day_' . $index]) ? WorklogFormLayout::formatDuration((int) $schedule['day_' . $index]) : '',
@@ -67,9 +72,13 @@ final class WorkScheduleForm extends FormBase {
     }
     $form['days']['#tree'] = TRUE;
     $form['cap'] = [
-      '#type' => 'textfield',
+      '#type' => 'bb_duration',
+      '#minimum' => 0,
+      '#format_error' => $format_error,
       '#title' => $this->t('Optional proposal-day cap (H:MM)'),
-      '#description' => $this->t('Optional planning guidance for your AI. bakers.build does not allocate or cap recorded time.'),
+      '#description' => $this->t('@hint Optional planning guidance for your AI. bakers.build does not allocate or cap recorded time.', [
+        '@hint' => $hint,
+      ]),
       '#default_value' => isset($schedule['cap']) ? WorklogFormLayout::formatDuration((int) $schedule['cap']) : '',
     ];
     $form['actions']['#type'] = 'actions';
@@ -81,12 +90,12 @@ final class WorkScheduleForm extends FormBase {
   }
 
   /**
-   * Parses minute-precision settings, including explicit zero.
+   * Parses whole hours or H:MM settings, including explicit zero.
    */
   public static function duration(mixed $value): int {
-    $seconds = $value === '0:00' ? 0 : WorklogFormLayout::parseDuration($value);
+    $seconds = WorklogFormLayout::parseDuration($value, 0);
     if ($seconds === NULL) {
-      throw new \InvalidArgumentException('Use hours:minutes, for example 8:00 or 0:00.');
+      throw new \InvalidArgumentException('Use whole hours or hours:minutes, for example 8, 7:30 or 0:00.');
     }
     return $seconds;
   }
@@ -95,14 +104,13 @@ final class WorkScheduleForm extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state): void {
-    try {
-      $form_state->set('days_seconds', array_map(self::duration(...), $form_state->getValue('days')));
-      $cap = $form_state->getValue('cap');
-      $form_state->set('cap_seconds', $cap === '' ? NULL : self::duration($cap));
+    // The duration elements already set their own errors.
+    if ($form_state->hasAnyErrors()) {
+      return;
     }
-    catch (\InvalidArgumentException $error) {
-      $form_state->setErrorByName('days', $error->getMessage());
-    }
+    $form_state->set('days_seconds', array_map(self::duration(...), $form_state->getValue('days')));
+    $cap = $form_state->getValue('cap');
+    $form_state->set('cap_seconds', $cap === '' ? NULL : self::duration($cap));
   }
 
   /**

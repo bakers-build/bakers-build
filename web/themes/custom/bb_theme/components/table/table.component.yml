@@ -715,6 +715,12 @@ props:
                     id and version a save checks for staleness.
                   additionalProperties:
                     type: string
+                duration:
+                  type: boolean
+                  title: Duration input
+                  description: >-
+                    An `input` cell that takes a duration: a bare whole hour
+                    becomes H:00 when the input loses focus.
                 autofocus:
                   type: boolean
                   title: Focus this input

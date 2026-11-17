@@ -331,9 +331,9 @@ final class WorklogFormLayout implements TrustedCallbackInterface {
   }
 
   /**
-   * Parses H:MM into a positive minute-precision second count.
+   * Parses whole hours or H:MM into a bounded minute-precision second count.
    */
-  public static function parseDuration(mixed $raw): ?int {
+  public static function parseDuration(mixed $raw, int $minimum = 60): ?int {
     if (!is_string($raw) && !is_int($raw)) {
       return NULL;
     }
@@ -341,9 +341,9 @@ final class WorklogFormLayout implements TrustedCallbackInterface {
     if (!preg_match(WorkTimeRules::DURATION_PATTERN, $value, $matches)) {
       return NULL;
     }
-    $seconds = ((int) $matches[1]) * 3600 + ((int) $matches[2]) * 60;
+    $seconds = ((int) $matches[1]) * 3600 + ((int) ($matches[2] ?? 0)) * 60;
     try {
-      WorkTimeRules::seconds($seconds);
+      WorkTimeRules::seconds($seconds, $minimum);
     }
     catch (\InvalidArgumentException) {
       return NULL;
@@ -370,9 +370,9 @@ final class WorklogFormLayout implements TrustedCallbackInterface {
       '#disabled' => $read_only,
     ];
     $form['duration'] = [
-      '#type' => 'textfield',
+      '#type' => 'bb_duration',
       '#title' => $this->t('Duration (hours:minutes)'),
-      '#description' => $this->t('Hours and minutes as H:MM. Examples: 0:30, 1:15.'),
+      '#description' => $this->t('Whole hours or H:MM. Examples: 8, 0:30, 1:15.'),
       '#required' => TRUE,
       '#default_value' => $entry instanceof Worklog
         ? self::formatDuration((int) $entry->get('duration_seconds')->value)
