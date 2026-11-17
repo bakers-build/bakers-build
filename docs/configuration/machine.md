@@ -43,7 +43,7 @@ export default {
 | `agents.select` | Optional function `(candidates, ticket) => alias`; see [Slot catalogs](/configuration/slot-catalogs). |
 | `runtime` | Optional; the keys below only. Without a catalog, `addons[]` is the preset. |
 | `runtime.catalog`, `runtime.catalog[].alias`, `runtime.catalog[].use`, `runtime.catalog[].with` | Entries `{ alias, use, with? }`. |
-| `runtime.routes` | State (or `'*'`) to alias routes. |
+| `runtime.routes` | Named routes, as for agents. |
 | `runtime.select` | Optional function `(candidates, ticket) => alias`. |
 | `runtime.allow_unsandboxed` | Boolean, default `false`. |
 | `tunnel` | Optional literal boolean, default `false`. See [below](#preview-link-tunnels). |
