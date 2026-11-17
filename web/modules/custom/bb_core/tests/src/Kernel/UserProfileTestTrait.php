@@ -23,7 +23,7 @@ trait UserProfileTestTrait {
   }
 
   /**
-   * Presses Save on a user's Profile form in a workspace, as the current account.
+   * Presses Save on a user's Profile form in a workspace, as the current user.
    */
   protected function submitUserProfile(UserInterface $user, int $workspace_id, string $position, string $background): FormStateInterface {
     $form = $this->container->get('entity_type.manager')->getFormObject('bb_profile', 'default');

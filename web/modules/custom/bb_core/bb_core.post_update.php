@@ -13,6 +13,7 @@ use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTermInterface;
 use Drupal\bb_core\Ticket\BranchName;
 use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\user\UserInterface;
 
 /**
  * Removes the environments past deploys stamped onto the tickets they carried.
@@ -180,31 +181,10 @@ function bb_core_post_update_user_profiles(array &$sandbox): string {
   }
   $users = \Drupal::entityTypeManager()->getStorage('user');
   $ids = $users->getQuery()->accessCheck(FALSE)->condition('uid', $sandbox['last'] ?? 0, '>')->sort('uid')->range(0, 100)->execute();
-  $messages = [];
-  foreach ($users->loadMultiple($ids) as $user) {
-    $values = array_map(static fn (string $field): string => trim((string) $user->get($field)->value), $fields);
-    if (implode('', $values) === '') {
-      continue;
-    }
-    // Every membership state: a blocked member's profile is kept too.
-    $workspaces = \Drupal::database()->select('og_membership', 'm')->fields('m', ['entity_id'])
-      ->condition('m.uid', $user->id())->condition('m.entity_type', 'bb_workspace')
-      ->execute()->fetchCol();
-    if ($user->hasField('bb_service_workspace') && !$user->get('bb_service_workspace')->isEmpty()) {
-      $workspaces[] = $user->get('bb_service_workspace')->target_id;
-    }
-    $workspaces = array_unique(array_map('intval', $workspaces));
-    if ($workspaces === []) {
-      $line = sprintf('uid %d: position "%s", background "%s"', $user->id(), $values['position'] ?? '', $values['background'] ?? '');
-      \Drupal::logger('bb_core')->notice('Profile not moved, the account is in no workspace: @line', ['@line' => $line]);
-      $messages[] = 'Not moved, in no workspace: ' . $line . '.';
-      continue;
-    }
-    foreach ($workspaces as $workspace_id) {
-      $profile = \Drupal::service(Profiles::class)->forAccount((int) $user->id(), $workspace_id);
-      $profile->setPosition($values['position'] ?? '')->setBackground($values['background'] ?? '')->save();
-    }
-  }
+  $messages = array_filter(array_map(
+    static fn ($user): ?string => _bb_core_move_user_profile($user, $fields),
+    $users->loadMultiple($ids),
+  ));
   $sandbox['last'] = $ids === [] ? ($sandbox['last'] ?? 0) : max($ids);
   if ($ids !== []) {
     $sandbox['#finished'] = 0.5;
@@ -217,3 +197,39 @@ function bb_core_post_update_user_profiles(array &$sandbox): string {
   return trim(implode(' ', $messages) . ' Position and background moved into profiles; the account fields are deleted.');
 }
 
+/**
+ * Copies one account's values into its workspace profiles.
+ *
+ * @param \Drupal\user\UserInterface $user
+ *   The account.
+ * @param array<string, string> $fields
+ *   Profile key => account field, of the fields that exist.
+ *
+ * @return string|null
+ *   A message when the values could not be kept, else NULL.
+ */
+function _bb_core_move_user_profile(UserInterface $user, array $fields): ?string {
+  $values = array_map(static fn (string $field): string => trim((string) $user->get($field)->value), $fields);
+  $values += ['position' => '', 'background' => ''];
+  if (implode('', $values) === '') {
+    return NULL;
+  }
+  // Every membership state: a blocked member's profile is kept too.
+  $workspaces = \Drupal::database()->select('og_membership', 'm')->fields('m', ['entity_id'])
+    ->condition('m.uid', $user->id())->condition('m.entity_type', 'bb_workspace')
+    ->execute()->fetchCol();
+  if ($user->hasField('bb_service_workspace') && !$user->get('bb_service_workspace')->isEmpty()) {
+    $workspaces[] = $user->get('bb_service_workspace')->target_id;
+  }
+  $workspaces = array_unique(array_map('intval', $workspaces));
+  foreach ($workspaces as $workspace_id) {
+    \Drupal::service(Profiles::class)->forAccount((int) $user->id(), $workspace_id)
+      ->setPosition($values['position'])->setBackground($values['background'])->save();
+  }
+  if ($workspaces !== []) {
+    return NULL;
+  }
+  $line = sprintf('uid %d: position "%s", background "%s"', $user->id(), $values['position'], $values['background']);
+  \Drupal::logger('bb_core')->notice('Profile not moved, the account is in no workspace: @line', ['@line' => $line]);
+  return 'Not moved, in no workspace: ' . $line . '.';
+}

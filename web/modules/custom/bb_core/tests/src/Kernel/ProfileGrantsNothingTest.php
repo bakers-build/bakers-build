@@ -55,7 +55,7 @@ final class ProfileGrantsNothingTest extends KernelTestBase {
   }
 
   /**
-   * Saving a profile, favorites included, leaves roles, memberships and access untouched.
+   * Saving a profile, favorites included, leaves roles and access untouched.
    */
   public function testSavingProfileFieldsGrantsNothing(): void {
     $user = $this->createUser();

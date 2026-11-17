@@ -64,8 +64,8 @@ Given('the account {string} is not linked to an oauth provider', async ({}, name
 Given('the account {string} has no context answers', async ({}, name: string) => {
   const uid = uidOf(name);
   php(
-    `$u = \\Drupal\\user\\Entity\\User::load(${uid}); ` +
-      '$u->set("field_bb_background", NULL); $u->save();',
+    'foreach (\\Drupal::entityTypeManager()->getStorage("bb_profile")' +
+      `->loadByProperties(["uid" => ${uid}]) as $p) { $p->set("background", NULL)->save(); }`,
   );
 });
 
@@ -95,22 +95,30 @@ When('I visit the profile settings of {string}', async ({ page }, name: string) 
   await page.goto(`/user/${uidOf(name)}/edit`);
 });
 
-Given(
-  'the account {string} has full name {string} and developer title {string}',
-  async ({}, name: string, fullName: string, title: string) => {
-    php(
-      `$u = \\Drupal\\user\\Entity\\User::load(${uidOf(name)}); ` +
-        `$u->set("field_full_name", "${safe(fullName)}"); $u->set("field_developer_title", "${safe(title)}"); $u->save();`,
-    );
-  },
-);
-
-Given('the account {string} has no full name and no developer title', async ({}, name: string) => {
+Given('the account {string} has full name {string}', async ({}, name: string, fullName: string) => {
   php(
     `$u = \\Drupal\\user\\Entity\\User::load(${uidOf(name)}); ` +
-      '$u->set("field_full_name", NULL); $u->set("field_developer_title", NULL); $u->save();',
+      `$u->set("field_full_name", "${safe(fullName)}"); $u->save();`,
   );
 });
+
+Given('the account {string} has no full name', async ({}, name: string) => {
+  php(
+    `$u = \\Drupal\\user\\Entity\\User::load(${uidOf(name)}); ` +
+      '$u->set("field_full_name", NULL); $u->save();',
+  );
+});
+
+When(
+  'I visit the profile page of {string} in the workspace {string}',
+  async ({ page }, name: string, slug: string) => {
+    const uuid = php(
+      `$w = current(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["slug" => "${safe(slug)}"])); print $w ? $w->uuid() : "";`,
+    );
+    expect(uuid, `No workspace "${slug}"`).not.toBe('');
+    await page.goto(`/user/${uidOf(name)}/profile?workspace=${uuid}`);
+  },
+);
 
 When('I click {string} in the page header', async ({ page }, label: string) => {
   const current = page.url();
@@ -133,21 +141,12 @@ Then('the profile form is inside the app shell', async ({ page }) => {
   await expect(page.locator('form.user-form')).toHaveCount(1);
 });
 
-Then(
-  'the user overview shows the name {string} and the developer title {string}',
-  async ({ page }, displayName: string, title: string) => {
-    const body = page.locator(CONTENT_ISLAND);
-    await expect(page.locator(RAIL_ISLAND)).toBeVisible();
-    await expect(body.locator('[data-person-mark]')).toHaveCount(1);
-    await expect(body.locator('[data-person-mark]')).toBeVisible();
-    await expect(body).toContainText(displayName);
-    await expect(body).toContainText(title);
-  },
-);
-
-Then('the user overview shows the name {string} and no developer title', async ({ page }, displayName: string) => {
+// Position lives in the per-workspace profile, so the account overview shows none.
+Then('the user overview shows the name {string}', async ({ page }, displayName: string) => {
   const body = page.locator(CONTENT_ISLAND);
+  await expect(page.locator(RAIL_ISLAND)).toBeVisible();
   await expect(body.locator('[data-person-mark]')).toHaveCount(1);
+  await expect(body.locator('[data-person-mark]')).toBeVisible();
   await expect(body).toContainText(displayName);
   await expect(body).not.toContainText('Position');
 });
@@ -170,12 +169,12 @@ When('I fill in the full name {string}', async ({ page }, fullName: string) => {
 });
 
 When('I fill in the position {string}', async ({ page }, title: string) => {
-  await page.locator('[name="field_developer_title[0][value]"]').fill(title);
+  await page.locator('[name="position[0][value]"]').fill(title);
 });
 
 Then('the edit form has no position or background field', async ({ page }) => {
   await expect(page.locator('form.user-form')).toBeVisible();
-  await expect(page.locator('[name^="field_developer_title"], [name^="field_bb_background"]')).toHaveCount(0);
+  await expect(page.locator('[name^="position"], [name^="background"]')).toHaveCount(0);
 });
 
 When('I save the profile form', async ({ page }) => {
@@ -196,8 +195,8 @@ Then('the full name field holds {string}', async ({ page }, value: string) => {
   await expect(page.locator('[name="field_full_name[0][value]"]')).toHaveValue(value);
 });
 
-Then('the developer title field holds {string}', async ({ page }, value: string) => {
-  await expect(page.locator('[name="field_developer_title[0][value]"]')).toHaveValue(value);
+Then('the position field holds {string}', async ({ page }, value: string) => {
+  await expect(page.locator('[name="position[0][value]"]')).toHaveValue(value);
 });
 
 Then('the mail field is disabled', async ({ page }) => {

@@ -50,10 +50,9 @@ final class BbProfileAccessControlHandler extends EntityAccessControlHandler imp
       return $own;
     }
     // As readable as the person's name on the workspace's member screens.
-    $owner = $entity->getOwner();
     $member = in_array($entity->workspaceId(), $this->readScope->workspaceIds($account), TRUE);
-    return AccessResult::allowedIf($member && $owner !== NULL)
-      ->andIf($owner?->access('view', $account, TRUE) ?? AccessResult::neutral())
+    return AccessResult::allowedIf($member)
+      ->andIf($entity->getOwner()->access('view', $account, TRUE))
       ->addCacheTags(['og_membership_list'])
       ->inheritCacheability($own);
   }

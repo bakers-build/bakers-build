@@ -244,8 +244,9 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'social_auth.settings',
     'social_auth_google.settings',
     // The consolidated user-profile fields (BB-507 D3/D4): the core image
-    // field that doubles as social_auth's avatar target, and the full name. Config entities, so the recipe path skips them like any
-    // other field on this list.
+    // field that doubles as social_auth's avatar target, and the full name.
+    // Config entities, so the recipe path skips them like any other field on
+    // this list.
     'field.storage.user.user_picture',
     'field.field.user.user.user_picture',
     'field.storage.user.field_full_name',

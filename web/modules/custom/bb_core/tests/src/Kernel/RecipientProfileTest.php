@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -61,7 +62,10 @@ final class RecipientProfileTest extends KernelTestBase {
     $this->createUser([], 'uid1-dummy');
     $etm = $this->container->get('entity_type.manager');
     $this->workspaceId = (int) $this->workspace('north')->id();
-    $group = $etm->getStorage('bb_group')->create(['name' => 'recipient-profile-group', 'workspace_id' => $this->workspaceId]);
+    $group = $etm->getStorage('bb_group')->create([
+      'name' => 'recipient-profile-group',
+      'workspace_id' => $this->workspaceId,
+    ]);
     $group->save();
     $project = $etm->getStorage('bb_project')
       ->create(['name' => 'recipient-profile-project', 'group_id' => $group->id()]);
@@ -72,9 +76,13 @@ final class RecipientProfileTest extends KernelTestBase {
   /**
    * Creates a workspace.
    */
-  private function workspace(string $slug): object {
-    $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create(['name' => $slug, 'slug' => $slug]);
+  private function workspace(string $slug): BbWorkspaceInterface {
+    $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create([
+      'name' => $slug,
+      'slug' => $slug,
+    ]);
     $workspace->save();
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
     return $workspace;
   }
 
@@ -82,7 +90,9 @@ final class RecipientProfileTest extends KernelTestBase {
    * Creates a user carrying the given profile values.
    *
    * @param array<string, string> $values
-   *   Profile field values keyed by field name.
+   *   Profile values keyed `position` and `background`.
+   * @param int|null $workspace_id
+   *   The profile's workspace; NULL for the project's.
    */
   private function createProfiledUser(array $values, ?int $workspace_id = NULL): UserInterface {
     $user = $this->createUser();

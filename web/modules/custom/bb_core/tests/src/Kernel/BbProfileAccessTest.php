@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbProfileInterface;
@@ -111,10 +112,11 @@ final class BbProfileAccessTest extends KernelTestBase {
   /**
    * Creates a workspace.
    */
-  private function workspace(string $slug): object {
+  private function workspace(string $slug): BbWorkspaceInterface {
     $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
       ->create(['name' => ucfirst($slug), 'slug' => $slug]);
     $workspace->save();
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
     return $workspace;
   }
 

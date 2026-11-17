@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
-use Drupal\Core\Database\IntegrityConstraintViolationException;
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbProfileInterface;
 use Drupal\bb_core\Profile\Profiles;
+use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * One profile per account and workspace, holding position, background and favorites.
+ * One profile per account and workspace: position, background, favorites.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -49,7 +50,7 @@ final class BbProfileTest extends KernelTestBase {
    * The service returns an unsaved profile first, then the stored one.
    */
   public function testProfileIsLoadedOrCreatedPerWorkspace(): void {
-    $account = $this->createUser();
+    $account = $this->person();
     $north = $this->workspace('north');
     $south = $this->workspace('south');
     $profiles = $this->container->get(Profiles::class);
@@ -74,7 +75,7 @@ final class BbProfileTest extends KernelTestBase {
    * A second profile for the same account and workspace is refused.
    */
   public function testDuplicateAccountAndWorkspaceIsRefused(): void {
-    $account = $this->createUser();
+    $account = $this->person();
     $north = $this->workspace('north');
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_profile');
     $storage->create(['uid' => $account->id(), 'workspace_id' => $north->id()])->save();
@@ -85,18 +86,28 @@ final class BbProfileTest extends KernelTestBase {
       $duplicate->save();
       self::fail('A duplicate profile was stored.');
     }
-    catch (EntityStorageException | IntegrityConstraintViolationException) {
+    catch (EntityStorageException) {
       self::assertCount(1, $storage->loadMultiple());
     }
   }
 
   /**
+   * Creates an account.
+   */
+  private function person(): UserInterface {
+    $user = $this->createUser();
+    self::assertInstanceOf(UserInterface::class, $user);
+    return $user;
+  }
+
+  /**
    * Creates a workspace.
    */
-  private function workspace(string $slug): object {
+  private function workspace(string $slug): BbWorkspaceInterface {
     $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
       ->create(['name' => ucfirst($slug), 'slug' => $slug]);
     $workspace->save();
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
     return $workspace;
   }
 

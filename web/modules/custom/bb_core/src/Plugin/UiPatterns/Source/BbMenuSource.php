@@ -186,27 +186,43 @@ final class BbMenuSource extends MenuSource {
           $entry[$key] = $options[$key];
         }
       }
-      if (($options['bb_children'] ?? NULL) === 'teams') {
-        $entry['below'] = array_merge($entry['below'], $this->teamItems());
-        $action = $this->teamCreateAction();
-        if (isset($action['#props'])) {
-          $entry['action'] = $action['#props'] + ['icon' => 'plus'];
-        }
-        elseif ($entry['below'] === []) {
-          continue;
-        }
-      }
-      if (($options['bb_children'] ?? NULL) === 'favorites') {
-        $entry['below'] = $this->favoriteItems();
-        if ($entry['below'] === []) {
-          continue;
-        }
+      $entry = $this->withRequestChildren($entry, $options['bb_children'] ?? NULL);
+      if ($entry === NULL) {
+        continue;
       }
       // A parent of the current entry is in the trail, so its panel opens.
       $entry['in_active_trail'] = in_array(TRUE, array_column([$entry, ...$entry['below']], 'in_active_trail'), TRUE);
       $result[] = $entry;
     }
     return $result;
+  }
+
+  /**
+   * Adds the per-request children a `bb_children` option names.
+   *
+   * @param array<string, mixed> $entry
+   *   The nav item.
+   * @param string|null $kind
+   *   `teams`, `favorites` or NULL.
+   *
+   * @return array<string, mixed>|null
+   *   The item, or NULL when it has nothing to show.
+   */
+  private function withRequestChildren(array $entry, ?string $kind): ?array {
+    if ($kind === 'favorites') {
+      $entry['below'] = $this->favoriteItems();
+      return $entry['below'] === [] ? NULL : $entry;
+    }
+    if ($kind !== 'teams') {
+      return $entry;
+    }
+    $entry['below'] = array_merge($entry['below'], $this->teamItems());
+    $action = $this->teamCreateAction();
+    if (isset($action['#props'])) {
+      $entry['action'] = $action['#props'] + ['icon' => 'plus'];
+      return $entry;
+    }
+    return $entry['below'] === [] ? NULL : $entry;
   }
 
   /**

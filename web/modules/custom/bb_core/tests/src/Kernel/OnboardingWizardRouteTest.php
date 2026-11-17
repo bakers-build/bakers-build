@@ -123,9 +123,15 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
   public function testStepTwoNextSavesAboutWithoutCompleting(): void {
     $account = $this->createUser();
     self::assertInstanceOf(UserInterface::class, $account);
-    $north = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create(['name' => 'North', 'slug' => 'north']);
+    $north = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create([
+      'name' => 'North',
+      'slug' => 'north',
+    ]);
     $north->save();
-    $south = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create(['name' => 'South', 'slug' => 'south']);
+    $south = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create([
+      'name' => 'South',
+      'slug' => 'south',
+    ]);
     $south->save();
     $this->addMembership($north, $account, ['member']);
     $this->addMembership($south, $account, ['member']);
@@ -499,10 +505,14 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
   /**
    * A workspace the account is a member of.
    */
-  private function createWorkspaceFor(UserInterface $account): object {
-    $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create(['name' => 'Attack', 'slug' => 'attack']);
+  private function createWorkspaceFor(UserInterface $account): BbWorkspaceInterface {
+    $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create([
+      'name' => 'Attack',
+      'slug' => 'attack',
+    ]);
     $workspace->save();
     $this->addMembership($workspace, $account, ['member']);
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
     return $workspace;
   }
 

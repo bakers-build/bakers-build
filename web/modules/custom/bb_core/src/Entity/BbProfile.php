@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
+use Drupal\Core\Entity\ContentEntityBase;
+use Drupal\Core\Entity\EntityChangedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -34,8 +36,9 @@ use Drupal\user\EntityOwnerTrait;
   base_table: 'bb_profile',
   admin_permission: 'administer bakers',
 )]
-final class BbProfile extends BbContentEntityBase implements BbProfileInterface {
+final class BbProfile extends ContentEntityBase implements BbProfileInterface {
 
+  use EntityChangedTrait;
   use EntityOwnerTrait;
   use BbBaseFieldsTrait;
 
@@ -43,8 +46,11 @@ final class BbProfile extends BbContentEntityBase implements BbProfileInterface 
    * {@inheritdoc}
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
-    $fields = parent::baseFieldDefinitions($entity_type) + static::ownerBaseFieldDefinitions($entity_type);
-    $fields['uid']->setRequired(TRUE);
+    $fields = parent::baseFieldDefinitions($entity_type);
+    $fields['uid'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(new TranslatableMarkup('Owner'))
+      ->setSetting('target_type', 'user')
+      ->setRequired(TRUE);
     $fields['workspace_id'] = static::workspaceBaseFieldDefinition(NULL);
     $fields['position'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Position'))
@@ -62,8 +68,8 @@ final class BbProfile extends BbContentEntityBase implements BbProfileInterface 
       ->setLabel(new TranslatableMarkup('Favorite projects'))
       ->setSetting('target_type', 'bb_project')
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED);
-    // Only the profile form's own fields; the timestamps stay off it.
-    $fields['created']->setDisplayConfigurable('form', FALSE)->setDisplayOptions('form', ['region' => 'hidden']);
+    $fields['changed'] = BaseFieldDefinition::create('changed')
+      ->setLabel(new TranslatableMarkup('Changed'));
     return $fields;
   }
 

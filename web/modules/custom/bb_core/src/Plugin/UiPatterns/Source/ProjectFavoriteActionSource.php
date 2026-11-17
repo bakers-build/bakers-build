@@ -62,7 +62,10 @@ final class ProjectFavoriteActionSource extends SourcePluginBase implements Cont
     if ($this->routeMatch->getRouteName() !== 'entity.bb_project.canonical' || !$project instanceof BbProjectInterface || !$workspace instanceof BbWorkspaceInterface) {
       return $build;
     }
-    $url = Url::fromRoute('bb_core.project.favorite', ['bb_workspace' => $workspace->getSlug(), 'bb_project' => $project->id()]);
+    $url = Url::fromRoute('bb_core.project.favorite', [
+      'bb_workspace' => $workspace->getSlug(),
+      'bb_project' => $project->id(),
+    ]);
     $account = $this->currentUser;
     $access = $url->access($account, TRUE);
     CacheableMetadata::createFromRenderArray($build)->addCacheableDependency($access)->applyTo($build);

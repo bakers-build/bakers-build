@@ -101,7 +101,7 @@ final class UserProfileFormTest extends KernelTestBase {
   }
 
   /**
-   * The form holds position and background, never owner, workspace or favorites.
+   * The form holds position and background, not owner, workspace, favorites.
    */
   public function testFormHoldsOnlyTheProfileFields(): void {
     $user = $this->person();
@@ -165,8 +165,20 @@ final class UserProfileFormTest extends KernelTestBase {
       'base_table' => 'users_field_data',
       'base_field' => 'uid',
       'display' => [
-        'default' => ['id' => 'default', 'display_title' => 'Default', 'display_plugin' => 'default', 'position' => 0, 'display_options' => ['access' => ['type' => 'none']]],
-        'my_work' => ['id' => 'my_work', 'display_title' => 'My work', 'display_plugin' => 'page', 'position' => 1, 'display_options' => ['path' => $shipped['display']['my_work']['display_options']['path']]],
+        'default' => [
+          'id' => 'default',
+          'display_title' => 'Default',
+          'display_plugin' => 'default',
+          'position' => 0,
+          'display_options' => ['access' => ['type' => 'none']],
+        ],
+        'my_work' => [
+          'id' => 'my_work',
+          'display_title' => 'My work',
+          'display_plugin' => 'page',
+          'position' => 1,
+          'display_options' => ['path' => $shipped['display']['my_work']['display_options']['path']],
+        ],
       ],
     ])->save();
     $this->container->get('router.builder')->rebuild();

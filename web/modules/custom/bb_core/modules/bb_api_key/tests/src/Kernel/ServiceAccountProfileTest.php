@@ -156,9 +156,15 @@ final class ServiceAccountProfileTest extends KernelTestBase {
     self::assertSame([], $formState->getErrors());
     self::assertSame(['Release bot', 'Ships tagged builds'], $this->storedUserProfile($this->service, (int) $this->workspace->id()));
 
-    $group = $this->container->get('entity_type.manager')->getStorage('bb_group')->create(['name' => 'profile-group', 'workspace_id' => $this->workspace->id()]);
+    $group = $this->container->get('entity_type.manager')->getStorage('bb_group')->create([
+      'name' => 'profile-group',
+      'workspace_id' => $this->workspace->id(),
+    ]);
     $group->save();
-    $project = $this->container->get('entity_type.manager')->getStorage('bb_project')->create(['name' => 'profile-project', 'group_id' => $group->id()]);
+    $project = $this->container->get('entity_type.manager')->getStorage('bb_project')->create([
+      'name' => 'profile-project',
+      'group_id' => $group->id(),
+    ]);
     $project->save();
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'Assigned to the bot',

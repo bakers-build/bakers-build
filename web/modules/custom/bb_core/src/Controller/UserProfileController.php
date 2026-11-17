@@ -43,7 +43,10 @@ final class UserProfileController extends ControllerBase {
       ? [
         '#type' => 'component',
         '#component' => 'bb_theme:empty-state',
-        '#props' => ['message' => (string) $this->t('You are in no workspace yet. Join a workspace to fill in your profile.'), 'icon' => 'user'],
+        '#props' => [
+          'message' => (string) $this->t('You are in no workspace yet. Join a workspace to fill in your profile.'),
+          'icon' => 'user',
+        ],
       ]
       : $this->entityFormBuilder()->getForm($profile, 'default');
     (new CacheableMetadata())->addCacheContexts(['url.query_args:workspace', 'user'])

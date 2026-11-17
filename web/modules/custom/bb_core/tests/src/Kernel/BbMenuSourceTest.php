@@ -581,7 +581,10 @@ final class BbMenuSourceTest extends KernelTestBase {
    */
   private function favoriteProject(string $name, string $key, ?BbWorkspaceInterface $workspace = NULL): BbProjectInterface {
     $etm = $this->container->get('entity_type.manager');
-    $group = $etm->getStorage('bb_group')->create(['name' => $name . ' Group', 'workspace_id' => ($workspace ?? $this->workspace)->id()]);
+    $group = $etm->getStorage('bb_group')->create([
+      'name' => $name . ' Group',
+      'workspace_id' => ($workspace ?? $this->workspace)->id(),
+    ]);
     $group->save();
     $project = $etm->getStorage('bb_project')->create(['name' => $name, 'key' => $key, 'group_id' => $group->id()]);
     self::assertInstanceOf(BbProjectInterface::class, $project);

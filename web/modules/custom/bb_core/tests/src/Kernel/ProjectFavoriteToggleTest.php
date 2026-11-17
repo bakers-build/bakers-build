@@ -69,7 +69,11 @@ final class ProjectFavoriteToggleTest extends KernelTestBase {
     $this->workspace = $workspace;
     $group = $etm->getStorage('bb_group')->create(['name' => 'Platform Group', 'workspace_id' => $workspace->id()]);
     $group->save();
-    $project = $etm->getStorage('bb_project')->create(['name' => 'Platform', 'key' => 'PLAT', 'group_id' => $group->id()]);
+    $project = $etm->getStorage('bb_project')->create([
+      'name' => 'Platform',
+      'key' => 'PLAT',
+      'group_id' => $group->id(),
+    ]);
     $project->save();
     self::assertInstanceOf(BbProjectInterface::class, $project);
     $this->project = $project;
@@ -189,7 +193,10 @@ final class ProjectFavoriteToggleTest extends KernelTestBase {
     try {
       // checkNamedRoute() would skip the checks that need the request: CSRF.
       $route = $this->container->get('router.route_provider')->getRouteByName('bb_core.project.favorite');
-      $raw = $this->parameters() + [RouteObjectInterface::ROUTE_NAME => 'bb_core.project.favorite', RouteObjectInterface::ROUTE_OBJECT => $route];
+      $raw = $this->parameters() + [
+        RouteObjectInterface::ROUTE_NAME => 'bb_core.project.favorite',
+        RouteObjectInterface::ROUTE_OBJECT => $route,
+      ];
       $upcast = $this->container->get('paramconverter_manager')->convert($raw + $route->getDefaults());
       $match = new RouteMatch('bb_core.project.favorite', $route, $upcast, $this->parameters());
       return $this->container->get('access_manager')->check($match, $account, $request);

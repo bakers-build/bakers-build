@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
-use Drupal\bb_core\Profile\Profiles;
 use Drupal\Core\Cache\CacheableResponse;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -20,6 +19,7 @@ use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Onboarding\FirstProjectCreator;
 use Drupal\bb_core\Onboarding\OnboardingDestination;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\bb_core\Workspace\InviteMatcher;
 use Drupal\user\Plugin\Validation\Constraint\UserNameUnique;
 use Drupal\user\UserDataInterface;
@@ -48,6 +48,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @SuppressWarnings("PHPMD.TooManyMethods")
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 final class BbOnboardingWizardForm extends FormBase {
 
