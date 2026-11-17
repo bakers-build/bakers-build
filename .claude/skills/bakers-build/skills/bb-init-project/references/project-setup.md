@@ -125,8 +125,8 @@ the path and protection gap. Nested entries protect their entire top-level proje
 ancestor renames; explain this scope when obtaining consent.
 
 Place each addon in its owning file: agent harnesses in `~/.bakers/machine.config.js` only; herdr,
-server remote and Git workspace in `.bakers/project.config.js` only; ports, DDEV, herdr-core and
-others as their guide says. Use the linked configuration guides and current CLI help. Initialization supplies a starting
+server remote and Git workspace in `.bakers/project.config.js` only; every other addon as its guide
+says. Use the linked configuration guides and current CLI help. Initialization supplies a starting
 configuration, not the user's choices. Read back every generated setting; reconcile defaults with
 the selected client and documented addon scopes. Preserve unrelated custom values and identities.
 

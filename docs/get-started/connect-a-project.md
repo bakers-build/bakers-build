@@ -60,7 +60,7 @@ Return here after any changes. Before starting agents, install every skill the w
 
 ::: details What changes
 
-The skill first tests that the project is worktree capable, since each ticket runs in its own worktree: it adds and removes a temporary worktree and checks for nested DDEV projects, reporting each as pass or fail with the reason. It resolves the server project, prepares `.bakers/project.config.js` and `WORKFLOW.md`, checks ignores and shows every written file back, secrets masked. Credentials and a project `.bakers/connection.config.js` stay private. [Configuration](/configuration/) explains file ownership and precedence.
+The skill first tests that the project is worktree capable, since each ticket runs in its own worktree: it adds and removes a temporary worktree and checks that the runtime allows worktrees in their location, reporting each as pass or fail with the reason. It resolves the server project, prepares `.bakers/project.config.js` and `WORKFLOW.md`, checks ignores and shows every written file back, secrets masked. Credentials and a project `.bakers/connection.config.js` stay private. [Configuration](/configuration/) explains file ownership and precedence.
 :::
 
 ::: details Manual equivalent
