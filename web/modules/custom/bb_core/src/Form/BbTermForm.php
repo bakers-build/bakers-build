@@ -61,7 +61,7 @@ final class BbTermForm extends BbContentEntityFormBase {
       $form['#attributes']['data-hx-boost'] = 'false';
       // Opened by a boosted link, core's action keeps `ajax_page_state`; a
       // page re-rendered after an error would then arrive without assets.
-      $form['#action'] = $this->cleanCurrentUrl()->toString();
+      $form['#action'] = HtmxTransport::currentUrl($this->getRequest())->toString();
     }
     $form['owner_user_id']['#access'] = FALSE;
     $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
@@ -140,15 +140,6 @@ final class BbTermForm extends BbContentEntityFormBase {
     return $route !== NULL && $workspace instanceof BbWorkspaceInterface
       ? Url::fromRoute($route, ['bb_workspace' => $workspace->getSlug()])
       : NULL;
-  }
-
-  /**
-   * The current page, without the htmx keys a boosted link leaves on it.
-   */
-  private function cleanCurrentUrl(): Url {
-    $query = $this->getRequest()->query->all();
-    unset($query['ajax_page_state'], $query['_wrapper_format'], $query['_triggering_element_name'], $query['_triggering_element_value']);
-    return Url::fromRoute('<current>', [], ['query' => $query]);
   }
 
 }

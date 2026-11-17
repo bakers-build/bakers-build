@@ -13,6 +13,14 @@ Feature: Each account chooses which ticket activities reach it by email
     And the user-area rail marks "Notifications" as the current entry
     And the notification settings form is inside the app shell
 
+  # Reached through a boosted rail link, the form's action used to carry the
+  # htmx request's ajax_page_state; a rejected save re-rendered unstyled.
+  Scenario: Notification settings reached by the rail link post to a clean address
+    Given I am logged in as the account "fixture-settings"
+    When I visit the user area of "fixture-settings"
+    And I follow "Notifications" in the user-area rail
+    Then the notification settings post back without htmx transport keys
+
   Scenario Outline: Saved choices survive a reload
     Given the notification settings of "<account>" are untouched
     And I am logged in as the account "<account>"

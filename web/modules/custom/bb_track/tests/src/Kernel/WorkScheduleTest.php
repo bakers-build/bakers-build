@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_track\Kernel;
 
+use Drupal\bb_track\Form\WorkScheduleForm;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\bb_track\Form\WorklogFormLayout;
-use Drupal\bb_track\Form\WorkScheduleForm;
 use Drupal\bb_track\WorkTimeRules;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -38,6 +38,24 @@ final class WorkScheduleTest extends WorkTimeTestBase {
     self::assertEquals(0, $schedule->get('work_schedule')->getValue()[0]['day_4']);
     self::assertTrue($schedule->get('work_schedule')->access('view', $this->employee));
     self::assertFalse($schedule->get('work_schedule')->access('view', $this->peer));
+  }
+
+  /**
+   * The form says what the schedule is for and how to fill it in.
+   */
+  public function testFormExplainsSchedule(): void {
+    $form = $this->container->get('form_builder')->getForm(WorkScheduleForm::class);
+    $intro = (string) $form['intro']['#markup'];
+    self::assertStringContainsString('hours you usually work', $intro);
+    self::assertStringContainsString('planning total', $intro);
+    self::assertStringContainsString('Nothing is booked, capped or enforced', $intro);
+    self::assertStringContainsString('Only you can open this page', $intro);
+    foreach (range(0, 6) as $index) {
+      self::assertSame('Whole hours or H:MM, for example 8 or 7:30. 0:00 means a day off.', (string) $form['days'][$index]['#description']);
+    }
+    $cap = (string) $form['cap']['#description'];
+    self::assertStringContainsString('most time your agent should propose for one day', $cap);
+    self::assertStringContainsString('does not cap recorded time', $cap);
   }
 
   /**

@@ -34,3 +34,13 @@ Then('the personal schedule shows Monday {string}, Tuesday {string} and cap {str
   }
   await expect(page.getByLabel('Optional proposal-day cap (H:MM)', { exact: true })).toHaveValue(cap);
 });
+
+When('I save the personal schedule with Monday {string}', async ({ page }, monday: string) => {
+  await page.getByLabel('Monday (H:MM)', { exact: true }).fill(monday);
+  for (const day of ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']) {
+    await page.getByLabel(`${day} (H:MM)`, { exact: true }).fill('0:00');
+  }
+  const navigation = page.waitForNavigation({ waitUntil: 'load' });
+  await page.getByRole('button', { name: 'Save schedule', exact: true }).click();
+  await navigation;
+});

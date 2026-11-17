@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_track\Form;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\bb_core\Form\HtmxTransport;
 use Drupal\bb_track\WorkTimeSettings;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -43,10 +44,16 @@ final class WorkScheduleForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $schedule = $this->settings->schedule() ?? [];
     $form['#attributes']['data-hx-boost'] = 'false';
+    // Opened by a boosted link, core's action keeps `ajax_page_state`; a
+    // page re-rendered after an error would then arrive without assets.
+    $form['#action'] = HtmxTransport::currentUrl($this->getRequest())->toString();
     $format_error = $this->t('Use whole hours or hours:minutes, for example 8, 7:30 or 0:00.');
-    $hint = $this->t('Whole hours or H:MM, for example 8 or 7:30.');
     $form['messages'] = [
       '#type' => 'status_messages',
+    ];
+    $form['intro'] = [
+      '#type' => 'item',
+      '#markup' => $this->t('Enter the hours you usually work on each weekday. Your agent uses them as a planning total when it prepares your time proposals. Nothing is booked, capped or enforced from them. Only you can open this page.'),
     ];
     foreach ([
       'Monday',
@@ -64,7 +71,7 @@ final class WorkScheduleForm extends FormBase {
         '#title' => $this->t('@day (H:MM)', [
           '@day' => $day,
         ]),
-        '#description' => $hint,
+        '#description' => $this->t('Whole hours or H:MM, for example 8 or 7:30. 0:00 means a day off.'),
         '#required' => TRUE,
         '#size' => 8,
         '#default_value' => isset($schedule['day_' . $index]) ? WorklogFormLayout::formatDuration((int) $schedule['day_' . $index]) : '',
@@ -76,9 +83,7 @@ final class WorkScheduleForm extends FormBase {
       '#minimum' => 0,
       '#format_error' => $format_error,
       '#title' => $this->t('Optional proposal-day cap (H:MM)'),
-      '#description' => $this->t('@hint Optional planning guidance for your AI. bakers.build does not allocate or cap recorded time.', [
-        '@hint' => $hint,
-      ]),
+      '#description' => $this->t('Whole hours or H:MM. The most time your agent should propose for one day. Leave empty for no limit. bakers.build does not cap recorded time.'),
       '#default_value' => isset($schedule['cap']) ? WorklogFormLayout::formatDuration((int) $schedule['cap']) : '',
     ];
     $form['actions']['#type'] = 'actions';

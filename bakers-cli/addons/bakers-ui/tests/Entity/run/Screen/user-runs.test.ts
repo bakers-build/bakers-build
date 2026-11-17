@@ -64,3 +64,17 @@ it('publishes count/page in meta and Enter/Tab in actions — not a status ladde
     renderTree(nodeById(shown.body, 'user-runs-filter-closed-chip')!).join(''),
   ).toBe('x closed: hidden');
 });
+
+it('a click selects an unselected row and rejects out-of-range rows', () => {
+  const screen = new WorkspaceMemberRunsScreen();
+  screen.showRows([{ id: 'a' }, { id: 'b' }] as never);
+  const requestDraw = vi.fn();
+  const context = { requestDraw } as unknown as ScreenContext;
+
+  expect(screen.select(1, context)).toBe(true);
+  expect(screen.selectedIndex).toBe(1);
+  expect(requestDraw).toHaveBeenCalled();
+  expect(screen.select(-1, context)).toBe(false);
+  expect(screen.select(2, context)).toBe(false);
+  expect(screen.selectedIndex).toBe(1);
+});

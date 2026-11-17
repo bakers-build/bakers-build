@@ -12,6 +12,7 @@ use Drupal\Core\Render\Element\Search;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\bb_core\Access\BbActiveWorkspaceInterface;
+use Drupal\bb_core\Form\HtmxTransport;
 use Drupal\bb_core\Navigation\AccountWorkspaceContext;
 use Drupal\bb_core\Plugin\EntityReferenceSelection\ActiveWorkspaceSelectionBase;
 use Drupal\user\AccountForm;
@@ -181,8 +182,7 @@ final class FormAlterHooks {
     // its libraries are loaded renders without CSS or JavaScript. Replacing
     // core's action also skips its own removal of _wrapper_format, so every
     // htmx transport key goes, as in BbContentEntityFormBase::settingsUrl().
-    $query = $this->requestStack->getCurrentRequest()?->query->all() ?? [];
-    unset($query['ajax_page_state'], $query['_wrapper_format'], $query['_triggering_element_name'], $query['_triggering_element_value']);
+    $query = HtmxTransport::strip($this->requestStack->getCurrentRequest()?->query->all() ?? []);
     if ($this->workspaceContext->isOwnProfile()) {
       $cache = CacheableMetadata::createFromRenderArray($form);
       $workspace = $this->workspaceContext->resolve($cache);

@@ -120,13 +120,6 @@ export class ConductorTicketsScreen extends ListScreen<TicketRow, void> {
     return true;
   }
 
-  select(index: number, context: ScreenContext): boolean {
-    if (index < 0 || index >= this.rows.length) return false;
-    this.selectedIndex = index;
-    context.requestDraw();
-    return true;
-  }
-
   override handleInput(input: string, context: ScreenContext): boolean {
     if (super.handleInput(input, context)) return true;
     if (this.search.handleKey(input, context)) return true;
