@@ -1,0 +1,20 @@
+# Public test credentials; this account exists only in recipe-test worlds.
+# Northside contributor and North Crew member that owns project.owner.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 289a0000-0000-4000-8000-000000000001
+  default_langcode: en
+default:
+  name:
+  - value: fixture-project-owner
+  mail:
+  - value: fixture-project-owner@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true
