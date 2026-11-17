@@ -10,6 +10,9 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\consumers\Entity\Consumer;
+use Drupal\entity_test\Entity\EntityTest;
+use Drupal\og\Entity\OgRole;
+use Drupal\og\Og;
 use Drupal\bb_oauth_device\Form\DeviceVerificationForm;
 use Drupal\simple_oauth\Entity\Oauth2Scope;
 use Drupal\simple_oauth\Entity\Oauth2Token;
@@ -381,47 +384,43 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   }
 
   /**
-   * The consent lists the permissions an umbrella scope grants this account.
+   * The consent names each group the account acts in, with its rank.
+   *
+   * The account holds no site-wide permission beyond the route's own: what a
+   * token reaches comes from its memberships' ranks.
    */
-  public function testConsentListsTheGrantedPermissions(): void {
-    $umbrella = Oauth2Scope::create([
-      'name' => 'test:umbrella',
-      'description' => 'Test umbrella scope',
-      'grant_types' => [
-        'urn:ietf:params:oauth:grant-type:device_code' => [
-          'status' => TRUE,
-          'description' => 'Test umbrella device_code',
-        ],
-      ],
-      'umbrella' => TRUE,
-    ]);
-    $umbrella->save();
-    foreach (['access user profiles', 'administer users'] as $permission) {
-      Oauth2Scope::create([
-        'name' => 'test:umbrella:' . str_replace(' ', '_', $permission),
-        'description' => 'Test umbrella child',
-        'grant_types' => ['client_credentials' => ['status' => TRUE, 'description' => 'Child']],
-        'umbrella' => FALSE,
-        'parent' => $umbrella->id(),
-        'granularity_id' => 'permission',
-        'granularity_configuration' => ['permission' => $permission],
-      ])->save();
-    }
-    $this->consumer->get('scopes')->appendItem($umbrella->id());
-    $this->consumer->save();
-    $body = $this->requestDeviceAuthorization(['scope' => 'test:umbrella']);
+  public function testConsentListsTheAccountsMemberships(): void {
+    $this->enableModules(['og']);
+    $this->installEntitySchema('og_membership');
+    $this->installEntitySchema('entity_test');
+    $this->installConfig(['og']);
+    // enableModules() rebuilt the container; the kernel from setUp() is stale.
+    $this->httpKernel = $this->container->get('http_kernel');
+    Og::addGroup('entity_test', 'entity_test');
+    $lead = OgRole::create(['name' => 'lead', 'label' => 'Lead']);
+    $lead->setGroupType('entity_test')->setGroupBundle('entity_test')->save();
+    $north = EntityTest::create(['name' => 'Team North']);
+    $north->save();
+    $south = EntityTest::create(['name' => 'Team South']);
+    $south->save();
+    $elsewhere = EntityTest::create(['name' => 'Team Elsewhere']);
+    $elsewhere->save();
 
-    // Uid 1 holds every permission; the consenting account must not be it.
+    $body = $this->requestDeviceAuthorization();
+    // Uid 1 bypasses every check; the consenting account must not be it.
     $this->drupalCreateUser([]);
-    $user = $this->drupalCreateUser(['grant simple_oauth codes', 'access user profiles']);
+    $user = $this->drupalCreateUser(['grant simple_oauth codes']);
     $this->assertInstanceOf(User::class, $user);
+    Og::createMembership($north, $user)->addRole($lead)->save();
+    Og::createMembership($south, $user)->save();
     $this->setCurrentUser($user);
+
     $request = Request::create('/oauth/device', 'GET', ['user_code' => $body['user_code']]);
     $content = (string) $this->httpKernel->handle($request)->getContent();
-    $this->assertStringContainsString('Grants access to:', $content);
-    $this->assertStringContainsString('View user information', $content);
-    // A permission the account does not hold is never granted, so not listed.
-    $this->assertStringNotContainsString('Administer users', $content);
+    $this->assertStringContainsString('Acts within your memberships:', $content);
+    $this->assertStringContainsString('Team North — Lead', $content);
+    $this->assertStringContainsString('Team South — Member', $content);
+    $this->assertStringNotContainsString('Team Elsewhere', $content);
   }
 
   /**

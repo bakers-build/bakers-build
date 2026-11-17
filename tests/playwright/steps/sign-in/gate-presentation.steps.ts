@@ -61,8 +61,9 @@ Then('the device code field shows that code', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
 });
 
-Then('the consent lists the granted permissions', async ({ page }) => {
-  await expect(page.locator(GATE_CONTENT).getByText(/^Grants access to:/)).toBeVisible();
+Then('the consent lists the membership {string}', async ({ page }, membership: string) => {
+  const memberships = page.locator(GATE_CONTENT).getByText(/^Acts within your memberships:/);
+  await expect(memberships).toContainText(membership);
 });
 
 Then('the page does not overflow horizontally', async ({ page }) => {

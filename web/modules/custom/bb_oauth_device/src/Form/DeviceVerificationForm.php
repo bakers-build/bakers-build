@@ -12,9 +12,9 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\consumers\Entity\Consumer;
 use Drupal\bb_oauth_device\Repositories\DeviceCodeRepository;
-use Drupal\user\PermissionHandlerInterface;
+use Drupal\og\MembershipManagerInterface;
+use Drupal\og\OgRoleInterface;
 use Drupal\simple_oauth\Entities\ClientEntityInterface;
-use Drupal\simple_oauth\Oauth2ScopeProviderInterface;
 use Drupal\simple_oauth\Server\AuthorizationServerFactoryInterface;
 use League\OAuth2\Server\Entities\DeviceCodeEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -40,8 +40,8 @@ class DeviceVerificationForm extends FormBase {
     protected AuthorizationServerFactoryInterface $authorizationServerFactory,
     protected AccountInterface $currentUser,
     protected FloodInterface $flood,
-    protected Oauth2ScopeProviderInterface $scopeProvider,
-    protected PermissionHandlerInterface $permissionHandler,
+    // Optional: this module does not depend on og.
+    protected ?MembershipManagerInterface $membershipManager,
   ) {}
 
   /**
@@ -53,8 +53,7 @@ class DeviceVerificationForm extends FormBase {
       $container->get('simple_oauth.server.authorization_server.factory'),
       $container->get('current_user'),
       $container->get('flood'),
-      $container->get('simple_oauth.oauth2_scope.provider'),
-      $container->get('user.permissions'),
+      $container->get('og.membership_manager', ContainerInterface::NULL_ON_INVALID_REFERENCE),
     );
     $form->setRequestStack($container->get('request_stack'));
 
@@ -147,9 +146,9 @@ class DeviceVerificationForm extends FormBase {
       $form['consent_scopes'] = $this->text($scopes
         ? $this->t('Requested access: @scopes', ['@scopes' => implode(', ', $scopes)])
         : $this->t('No specific access scopes were requested.'), ['tone' => 'faint']);
-      $granted = $this->grantedPermissionTitles($scopes);
-      if ($granted) {
-        $form['consent_grants'] = $this->text($this->t("Grants access to:\n@permissions", ['@permissions' => implode("\n", $granted)]), ['tone' => 'faint']);
+      $memberships = $this->membershipLines();
+      if ($memberships) {
+        $form['consent_memberships'] = $this->text($this->t("Acts within your memberships:\n@memberships", ['@memberships' => implode("\n", $memberships)]), ['tone' => 'faint']);
       }
       $form['user_code']['#default_value'] = $linkCode;
       $form['user_code']['#description'] = $this->t('Compare with the code in your terminal.');
@@ -157,32 +156,25 @@ class DeviceVerificationForm extends FormBase {
   }
 
   /**
-   * Titles of the permissions the requested scopes grant this account.
+   * One line per active membership: the group and the account's ranks.
    *
-   * A token never exceeds its account, so only held permissions are listed.
-   *
-   * @param string[] $scopeNames
-   *   The requested scope names.
+   * A token reaches what the account's ranks reach in these groups, so they,
+   * not site-wide permissions, say what a confirmation grants.
    *
    * @return string[]
-   *   Permission titles, sorted.
+   *   Lines such as "Team North — Lead", sorted.
    */
-  protected function grantedPermissionTitles(array $scopeNames): array {
-    $definitions = $this->permissionHandler->getPermissions();
-    $titles = [];
-    foreach ($this->scopeProvider->loadMultipleByNames($scopeNames) as $scope) {
-      // A scope without granularity grants no permission of its own.
-      if (!$scope->isUmbrella() && $scope->getGranularity() === NULL) {
-        continue;
-      }
-      foreach ($this->scopeProvider->getPermissions($scope) as $permission) {
-        if (isset($definitions[$permission]) && $this->currentUser->hasPermission($permission)) {
-          $titles[$permission] = (string) $definitions[$permission]['title'];
-        }
-      }
+  protected function membershipLines(): array {
+    $lines = [];
+    foreach ($this->membershipManager?->getMemberships((int) $this->currentUser->id()) ?? [] as $membership) {
+      $roles = $membership->getRoles();
+      // Every membership holds the required member role; name it only alone.
+      $ranks = array_filter($roles, static fn (OgRoleInterface $role): bool => $role->getRoleType() !== OgRoleInterface::ROLE_TYPE_REQUIRED) ?: $roles;
+      $labels = array_map(static fn (OgRoleInterface $role): string => (string) $role->label(), $ranks);
+      $lines[] = $membership->getGroup()?->label() . ' — ' . implode(', ', $labels);
     }
-    sort($titles);
-    return $titles;
+    sort($lines);
+    return $lines;
   }
 
   /**
