@@ -32,7 +32,7 @@ A run is one execution attempt for a ticket state: a claim, a worktree and an ag
 One `bb_activity` row per event: `created`; `status_changed` with the step's summary and any closed run and its conductor; `claimed` for the first run outside qualification only; `run_ended` for a `failed`, `expired` or `cancelled` run; `assigned`, `review_requested` and `review_completed` when the assignee changes, a reviewer is added or a review is submitted (they can also be [mailed to you](/configuration/guides/notifications)). Later claims, unchanged saves, heartbeats and `done` runs add none. Visibility follows ticket view.
 
 ```sh
-bakers tools tool_api__bakers_ticket_activity_list --data '{"ticket":"<identifier>","limit":20}'
+bakers tools tool_api__bakers_activity_list --data '{"ticket":"<identifier>","limit":20}'
 ```
 
 Pass `project` (key or UUID) instead of `ticket` for a whole project's feed, and `offset` with the returned `next_offset` for the next page. Clients cannot write these rows. The tool reference is [bakers tools](/cli/tools).

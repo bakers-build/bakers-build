@@ -2,7 +2,7 @@
 
 Read only for causes the human named. Pair each human statement with a counted fact or explicit
 limitation printed directly below it; distinguish statement from inference. Read relevant
-handoffs, recipe and agent labels. Query `bakers_ticket_runs_list` via [tools](tools.md), following
+handoffs, recipe and agent labels. Query `bakers_run_list` via [tools](tools.md), following
 next_offset to null before exact counts. Partial/denied reads mean unavailable, not zero.
 Tickets have no queryable transition history; use state_at_start and agent on runs.
 

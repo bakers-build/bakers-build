@@ -90,7 +90,7 @@ async function commentCase() {
       result: result(''),
     },
     bakers(
-      ['tools', 'tool_api__bakers_comment_publish', '--data', `@${argsFile}`],
+      ['tools', 'tool_api__bakers_comment_create', '--data', `@${argsFile}`],
       {
         id: commentId,
         type: 'coding',
@@ -243,14 +243,14 @@ describe('skill call contracts', () => {
   it('passes one call rejected before sending, a schema lookup and a successful retry with a call-quality warning', async () => {
     const { fixture, profile, trace, body } = await commentCase();
     const invalid = call(
-      'bakers_comment_publish',
+      'bakers_comment_create',
       { ticket: ticketId, body },
       '',
       4,
       error('E_VALIDATION'),
     );
     const schema = bakers(
-      ['tools', 'tool_api__bakers_comment_publish', '--schema'],
+      ['tools', 'tool_api__bakers_comment_create', '--schema'],
       { name: 'x' },
     );
     const recovered = [...trace.slice(0, 2), invalid, schema, trace[2]];
@@ -389,13 +389,13 @@ describe('skill call contracts', () => {
       const recovered = [
         ...trace.slice(0, 2),
         call(
-          'bakers_comment_publish',
+          'bakers_comment_create',
           { ticket: ticketId, body },
           '',
           4,
           error('E_VALIDATION'),
         ),
-        bakers(['tools', 'tool_api__bakers_comment_publish', '--schema'], {
+        bakers(['tools', 'tool_api__bakers_comment_create', '--schema'], {
           name: 'x',
         }),
         trace[2],
@@ -569,11 +569,11 @@ describe('recipe and type on ticket creation', () => {
       ],
       ['bakers_ticket_read', { ticket: created }],
       [
-        'bakers_comment_publish',
+        'bakers_comment_create',
         { ticket: created, type: 'qualification', body: qualification },
       ],
       [
-        'bakers_comment_publish',
+        'bakers_comment_create',
         { ticket: created, type: 'summary', body: 'Created and qualified.' },
       ],
       ['bakers_ticket_transition', { ticket: created, state: destination }],
@@ -721,7 +721,7 @@ describe('remote base call evidence', () => {
       expect(
         grade([
           call(
-            'bakers_comment_publish',
+            'bakers_comment_create',
             { ticket: ticketId, type: 'comment', body: 'x' },
             { id: commentId, type: 'comment' },
           ),
@@ -910,7 +910,7 @@ describe('hand-over of a specified ticket', () => {
     } = {},
   ): Array<[string, unknown]> => [
     [
-      'bakers_comment_publish',
+      'bakers_comment_create',
       {
         ticket: 'EVAL-31',
         type: 'qualification',
@@ -918,7 +918,7 @@ describe('hand-over of a specified ticket', () => {
       },
     ],
     [
-      'bakers_comment_publish',
+      'bakers_comment_create',
       {
         ticket: 'EVAL-31',
         type: 'spec',
@@ -928,7 +928,7 @@ describe('hand-over of a specified ticket', () => {
       },
     ],
     [
-      'bakers_comment_publish',
+      'bakers_comment_create',
       {
         ticket: 'EVAL-31',
         type: 'plan',
@@ -936,7 +936,7 @@ describe('hand-over of a specified ticket', () => {
       },
     ],
     [
-      'bakers_comment_publish',
+      'bakers_comment_create',
       {
         ticket: 'EVAL-31',
         type: 'test',
@@ -944,7 +944,7 @@ describe('hand-over of a specified ticket', () => {
       },
     ],
     [
-      'bakers_comment_publish',
+      'bakers_comment_create',
       {
         ticket: 'EVAL-31',
         type: 'summary',
@@ -1075,7 +1075,7 @@ describe('a bug from a conversation', () => {
     extra: Array<[string, unknown]> = [],
   ): Array<[string, unknown]> => [
     [
-      'bakers_comment_publish',
+      'bakers_comment_create',
       {
         ticket: 'EVAL-32',
         type: 'qualification',
@@ -1083,7 +1083,7 @@ describe('a bug from a conversation', () => {
       },
     ],
     [
-      'bakers_comment_publish',
+      'bakers_comment_create',
       { ticket: 'EVAL-32', type: 'summary', body: 'Qualified.' },
     ],
     [
@@ -1164,7 +1164,7 @@ describe('the start of a conversation', () => {
       'create-ticket-conversation-start',
       start([
         [
-          'bakers_comment_publish',
+          'bakers_comment_create',
           { ticket: 'EVAL-101', type: 'qualification', body: 'AC1' },
         ],
       ]),

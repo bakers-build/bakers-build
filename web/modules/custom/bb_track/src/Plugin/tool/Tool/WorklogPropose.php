@@ -29,7 +29,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Stores the caller's activities as one unbooked proposal, all or nothing.
  */
 #[Tool(
-  id: 'bakers_time_propose',
+  id: 'bakers_worklog_propose',
   label: new TranslatableMarkup('Propose time'),
   description: new TranslatableMarkup('Stores activities as proposed worklogs of one new proposed submission owned by the caller, for review in the week sheet. Any failing entry stores nothing; the message names it by 1-based position and source_key.'),
   operation: ToolOperation::Write,
@@ -81,7 +81,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
     ),
   ],
 )]
-final class TimePropose extends ToolBase {
+final class WorklogPropose extends ToolBase {
 
   private const FIELDS = [
     'source_system', 'source_key', 'source_version', 'work_date', 'description',

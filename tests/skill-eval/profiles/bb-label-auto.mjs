@@ -38,7 +38,7 @@ function analyze(f, output, context) {
   const { recovered, diagnostics } = callRecovery(trace);
   const sent = writes(trace).filter(c => c.result?.exit_code !== 4);
   const of = id => sent.filter(c => c.name === tool(id));
-  const comments = of('bakers_comment_publish'), updates = of('bakers_ticket_update');
+  const comments = of('bakers_comment_create'), updates = of('bakers_ticket_update');
   const states = of('bakers_ticket_transition').filter(c => arg(c, 'state'));
   // The heading is the comment's whole first line: `# Technical problem details` is an ordinary comment.
   const headed = heading => comments.filter(c => new RegExp(`^\\s*# ${heading}[ \\t]*(\\n|$)`).test(arg(c, 'body') ?? ''));

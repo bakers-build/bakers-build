@@ -61,7 +61,7 @@ export function checkOutput(f, output, context) {
     checks.push(check('ticket-search', input.terms.every(t => searches.some(c => succeeded(c) && arg(c, 'query') === t)) && priorArtSearched(searches),
       'Search both spellings, and prove an empty search with the known-present ticket probe, before the base check'));
     if (!blocked) {
-      const comments = allWrites.filter(c => c.name === tool('bakers_comment_publish'));
+      const comments = allWrites.filter(c => c.name === tool('bakers_comment_create'));
       const qualification = comments.find(c => arg(c, 'type') === 'qualification');
       checks.push(check('qualification-handoff', comments.some(c => arg(c, 'type') === 'summary') && qualification &&
         allWrites.every(c => comments.includes(c) && c.index > Math.max(grep.index, probe?.index ?? -1) && succeeded(c) &&

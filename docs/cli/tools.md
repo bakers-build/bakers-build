@@ -77,9 +77,9 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |
 | `bakers_ticket_transition` | `ticket`; `state`, `links` or both | Change the state or add links |
 | `bakers_ticket_template_run` | `template` (UUID); optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | Create a ticket from a ticket template |
-| `bakers_ticket_runs_list` | `ticket` | A ticket's agent runs |
-| `bakers_ticket_activity_list` | `ticket` or `project` | The activity feed of a ticket or a project |
-| `bakers_comment_publish` | `ticket`, `type`, `body` | Publish a comment |
+| `bakers_run_list` | `ticket` | A ticket's agent runs |
+| `bakers_activity_list` | `ticket` or `project` | The activity feed of a ticket or a project |
+| `bakers_comment_create` | `ticket`, `type`, `body` | Create a comment |
 | `bakers_metric_write` | `ticket`, `name`, `rows`; optional `label` | Record a measurement ([Ticket metrics](/skills-and-workflows/metrics)) |
 | `bakers_run_cancel` | `ticket` or `machine_id`, `reason` | Cancel a ticket's active runs, or every active run of your machine; on a [parked ticket](/addons/bakers-ui/tickets#restart-a-parked-ticket) it cancels the newest failed run, which restarts it |
 | `bakers_inbox_send` | `ticket`, `message` (e.g. `ports.tunnel`); optional `payload` | Send an addon message to the ticket's conductor, under the same access and payload rules as the web UI, and wait up to 30 s. Returns `id`, `status` (`pending`, `running`, `done` or `failed`) and the Markdown answer `markdown`; `failed` is the addon's answer, a refusal is a tool error |
