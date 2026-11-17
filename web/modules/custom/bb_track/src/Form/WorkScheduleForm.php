@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_track\Form;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\bb_core\Form\HtmxTransport;
 use Drupal\bb_track\WorkTimeSettings;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -43,6 +44,9 @@ final class WorkScheduleForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $schedule = $this->settings->schedule() ?? [];
     $form['#attributes']['data-hx-boost'] = 'false';
+    // Opened by a boosted link, core's action keeps `ajax_page_state`; a
+    // page re-rendered after an error would then arrive without assets.
+    $form['#action'] = HtmxTransport::currentUrl($this->getRequest())->toString();
     $form['messages'] = [
       '#type' => 'status_messages',
     ];
