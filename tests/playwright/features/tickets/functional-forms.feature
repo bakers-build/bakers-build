@@ -70,3 +70,35 @@ Feature: Entity administration form contracts
     When the contract browser opens "/bakers/ticket/{saved.ticket}" with status 200
     Then the contract page contains "BDD diagnosis text body"
     And the contract page contains "debug_diagnose"
+
+  Scenario: A contributor may not add a protected label on a ticket of a conductor they do not own
+    Given the API client is "north-contributor"
+    When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
+      """
+      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"Protected label ticket","workflow":"bb_work"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{conductor.home}"}}}}}
+      """
+    Then the API response status is 201
+    When the API resource is remembered as "ticket"
+    And I am logged in as the account "north-contributor"
+    And the contract browser opens "/bakers/ticket/{saved.ticket}" with status 200
+    And I remember the inline properties for cleanup
+    And I select inline "Labels" option "runtime:system"
+    Then the inline "Labels" says "You may not add the protected label runtime:system here."
+    When I reload the page
+    Then the inline "Labels" selection does not include "runtime:system"
+
+  Scenario: A workspace lead may add a protected label
+    Given the API client is "north-lead"
+    When the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
+      """
+      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"Protected label ticket","workflow":"bb_work"},"relationships":{"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{conductor.home}"}}}}}
+      """
+    Then the API response status is 201
+    When the API resource is remembered as "ticket"
+    And I am logged in as the account "north-lead"
+    And the contract browser opens "/bakers/ticket/{saved.ticket}" with status 200
+    And I remember the inline properties for cleanup
+    And I select inline "Labels" option "runtime:system"
+    Then the inline "Labels" save succeeds without navigation
+    When I reload the page
+    Then the inline "Labels" selection includes "runtime:system"
