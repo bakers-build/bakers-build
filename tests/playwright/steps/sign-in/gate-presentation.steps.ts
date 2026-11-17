@@ -55,9 +55,14 @@ Then('the consent names the requesting client', async ({ page }) => {
   await expect(page.locator(GATE_CONTENT).getByText(/wants to sign in/)).toBeVisible();
 });
 
-Then('the consent asks for the device code', async ({ page }) => {
-  await expect(page.getByLabel('Device code')).toHaveValue('');
+Then('the device code field shows that code', async ({ page }) => {
+  await expect(page.getByLabel('Device code')).toHaveValue(userCode);
+  await expect(page.getByText('Compare with the code in your terminal.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
+});
+
+Then('the consent lists the granted permissions', async ({ page }) => {
+  await expect(page.locator(GATE_CONTENT).getByText(/^Grants access to:/)).toBeVisible();
 });
 
 Then('the page does not overflow horizontally', async ({ page }) => {

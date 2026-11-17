@@ -354,9 +354,9 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   }
 
   /**
-   * A sent link names the account and still needs the code typed.
+   * A sent link fills in its code for comparison and names the account.
    */
-  public function testLinkedCodeMustBeTypedAndNamesTheAccount(): void {
+  public function testLinkedCodeIsFilledInAndNamesTheAccount(): void {
     $body = $this->requestDeviceAuthorization();
 
     $user = $this->drupalCreateUser(['grant simple_oauth codes']);
@@ -372,11 +372,56 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $field = $fields->item(0);
     $this->assertInstanceOf(\DOMElement::class, $field);
     $this->assertSame('text', $field->getAttribute('type'));
-    $this->assertSame('', $field->getAttribute('value'));
+    $this->assertSame($body['user_code'], $field->getAttribute('value'));
+    $this->assertStringContainsString('Compare with the code in your terminal.', $content);
 
     $messages = $this->submitVerificationForm('', 'confirm', $body['user_code']);
     $this->assertStringContainsString('Device code field is required.', $messages);
     $this->assertSame('authorization_pending', $this->pollError($body['device_code']));
+  }
+
+  /**
+   * The consent lists the permissions an umbrella scope grants this account.
+   */
+  public function testConsentListsTheGrantedPermissions(): void {
+    $umbrella = Oauth2Scope::create([
+      'name' => 'test:umbrella',
+      'description' => 'Test umbrella scope',
+      'grant_types' => [
+        'urn:ietf:params:oauth:grant-type:device_code' => [
+          'status' => TRUE,
+          'description' => 'Test umbrella device_code',
+        ],
+      ],
+      'umbrella' => TRUE,
+    ]);
+    $umbrella->save();
+    foreach (['access user profiles', 'administer users'] as $permission) {
+      Oauth2Scope::create([
+        'name' => 'test:umbrella:' . str_replace(' ', '_', $permission),
+        'description' => 'Test umbrella child',
+        'grant_types' => ['client_credentials' => ['status' => TRUE, 'description' => 'Child']],
+        'umbrella' => FALSE,
+        'parent' => $umbrella->id(),
+        'granularity_id' => 'permission',
+        'granularity_configuration' => ['permission' => $permission],
+      ])->save();
+    }
+    $this->consumer->get('scopes')->appendItem($umbrella->id());
+    $this->consumer->save();
+    $body = $this->requestDeviceAuthorization(['scope' => 'test:umbrella']);
+
+    // Uid 1 holds every permission; the consenting account must not be it.
+    $this->drupalCreateUser([]);
+    $user = $this->drupalCreateUser(['grant simple_oauth codes', 'access user profiles']);
+    $this->assertInstanceOf(User::class, $user);
+    $this->setCurrentUser($user);
+    $request = Request::create('/oauth/device', 'GET', ['user_code' => $body['user_code']]);
+    $content = (string) $this->httpKernel->handle($request)->getContent();
+    $this->assertStringContainsString('Grants access to:', $content);
+    $this->assertStringContainsString('View user information', $content);
+    // A permission the account does not hold is never granted, so not listed.
+    $this->assertStringNotContainsString('Administer users', $content);
   }
 
   /**

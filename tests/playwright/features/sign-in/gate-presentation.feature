@@ -9,6 +9,8 @@ Feature: Device sign-in consent and result
     And a device code was requested by the CLI
     When I open the device verification page for that code
     Then the consent names the requesting client
+    And the device code field shows that code
+    And the consent lists the granted permissions
     And the page has exactly one h1
     When I confirm the device sign-in
     Then the address carries "done=confirmed"
@@ -37,5 +39,5 @@ Feature: Device sign-in consent and result
     When I request an login link for "north-lead@example.test"
     And I sign in with the code from the mail
     Then the address is "/oauth/device"
-    And the consent asks for the device code
+    And the device code field shows that code
     And the consent names the requesting client

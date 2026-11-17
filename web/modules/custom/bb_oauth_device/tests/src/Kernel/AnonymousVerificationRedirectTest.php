@@ -140,7 +140,7 @@ class AnonymousVerificationRedirectTest extends EntityKernelTestBase {
     $response = $this->handle(Request::create('/oauth/device', 'GET', ['user_code' => 'TEST-CODE']));
 
     $this->assertSame(200, $response->getStatusCode());
-    // The link's code is never prefilled, so the form asks for it typed.
+    // An unknown link code describes no device, so the form asks for it typed.
     $this->assertStringContainsString('name="user_code"', (string) $response->getContent());
   }
 

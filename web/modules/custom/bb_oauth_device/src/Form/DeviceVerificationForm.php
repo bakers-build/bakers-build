@@ -12,7 +12,9 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\consumers\Entity\Consumer;
 use Drupal\bb_oauth_device\Repositories\DeviceCodeRepository;
+use Drupal\user\PermissionHandlerInterface;
 use Drupal\simple_oauth\Entities\ClientEntityInterface;
+use Drupal\simple_oauth\Oauth2ScopeProviderInterface;
 use Drupal\simple_oauth\Server\AuthorizationServerFactoryInterface;
 use League\OAuth2\Server\Entities\DeviceCodeEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
@@ -38,6 +40,8 @@ class DeviceVerificationForm extends FormBase {
     protected AuthorizationServerFactoryInterface $authorizationServerFactory,
     protected AccountInterface $currentUser,
     protected FloodInterface $flood,
+    protected Oauth2ScopeProviderInterface $scopeProvider,
+    protected PermissionHandlerInterface $permissionHandler,
   ) {}
 
   /**
@@ -49,6 +53,8 @@ class DeviceVerificationForm extends FormBase {
       $container->get('simple_oauth.server.authorization_server.factory'),
       $container->get('current_user'),
       $container->get('flood'),
+      $container->get('simple_oauth.oauth2_scope.provider'),
+      $container->get('user.permissions'),
     );
     $form->setRequestStack($container->get('request_stack'));
 
@@ -76,9 +82,10 @@ class DeviceVerificationForm extends FormBase {
       return $form;
     }
 
-    // The link's code (RFC 8628 verification_uri_complete) only looks up the
-    // consent below; it is never prefilled, so a sent link cannot confirm a
-    // stranger's device with one click.
+    // The link's code (RFC 8628 verification_uri_complete) looks up the
+    // consent below and, once it resolves to a waiting device, fills the field
+    // for comparison with the terminal: the human still sees and submits the
+    // code, and validateForm() binds the decision to the described device.
     $linkCode = $this->getRequest()->query->get('user_code', '');
     $linkCode = is_string($linkCode) ? $linkCode : '';
     // The page's one h1: the gate chrome carries the mark, not a heading.
@@ -95,24 +102,8 @@ class DeviceVerificationForm extends FormBase {
       '#maxlength' => 32,
     ];
 
-    // Resolving the code already on GET, before any decision is made, is what
-    // gives the human something to consent to rather than a blind text field
-    // (the consumer's name and the token's scopes). The lookup is an
-    // existence oracle, so it is gated by the POST path's flood control.
     if ($linkCode !== '' && $this->floodAllows()) {
-      $device_code = $this->deviceCodeRepository->getDeviceCodeEntityByUserCode($this->normalize($linkCode));
-      if ($device_code === NULL) {
-        $this->flood->register(self::FLOOD_EVENT, self::FLOOD_WINDOW_SECONDS, $this->floodIdentifier());
-      }
-      if ($device_code !== NULL && $device_code->getUserIdentifier() === NULL) {
-        $client = $this->drupalConsumer($device_code);
-        $form['consent'] = $this->text($this->t('@client wants to sign in', ['@client' => $client->label()]));
-        $form['consent_account'] = $this->text($this->t('Signs in as @account', ['@account' => $this->currentUser->getDisplayName()]));
-        $scopes = array_map(static fn ($scope) => $scope->getIdentifier(), $device_code->getScopes());
-        $form['consent_scopes'] = $this->text($scopes
-          ? $this->t('Requested access: @scopes', ['@scopes' => implode(', ', $scopes)])
-          : $this->t('No specific access scopes were requested.'), ['tone' => 'faint']);
-      }
+      $this->buildConsent($form, $linkCode);
     }
 
     $form['actions'] = ['#type' => 'actions'];
@@ -128,6 +119,70 @@ class DeviceVerificationForm extends FormBase {
     ];
 
     return $form;
+  }
+
+  /**
+   * Adds the waiting device's consent and fills in its code.
+   *
+   * Resolving the code already on GET, before any decision is made, is what
+   * gives the human something to consent to rather than a blind text field
+   * (the consumer's name and the token's scopes). The lookup is an
+   * existence oracle, so it is gated by the POST path's flood control.
+   *
+   * @param array<string, mixed> $form
+   *   The verification form.
+   * @param string $linkCode
+   *   The code the opened link carries.
+   */
+  protected function buildConsent(array &$form, string $linkCode): void {
+    $device_code = $this->deviceCodeRepository->getDeviceCodeEntityByUserCode($this->normalize($linkCode));
+    if ($device_code === NULL) {
+      $this->flood->register(self::FLOOD_EVENT, self::FLOOD_WINDOW_SECONDS, $this->floodIdentifier());
+    }
+    if ($device_code !== NULL && $device_code->getUserIdentifier() === NULL) {
+      $client = $this->drupalConsumer($device_code);
+      $form['consent'] = $this->text($this->t('@client wants to sign in', ['@client' => $client->label()]));
+      $form['consent_account'] = $this->text($this->t('Signs in as @account', ['@account' => $this->currentUser->getDisplayName()]));
+      $scopes = array_map(static fn ($scope) => $scope->getIdentifier(), $device_code->getScopes());
+      $form['consent_scopes'] = $this->text($scopes
+        ? $this->t('Requested access: @scopes', ['@scopes' => implode(', ', $scopes)])
+        : $this->t('No specific access scopes were requested.'), ['tone' => 'faint']);
+      $granted = $this->grantedPermissionTitles($scopes);
+      if ($granted) {
+        $form['consent_grants'] = $this->text($this->t("Grants access to:\n@permissions", ['@permissions' => implode("\n", $granted)]), ['tone' => 'faint']);
+      }
+      $form['user_code']['#default_value'] = $linkCode;
+      $form['user_code']['#description'] = $this->t('Compare with the code in your terminal.');
+    }
+  }
+
+  /**
+   * Titles of the permissions the requested scopes grant this account.
+   *
+   * A token never exceeds its account, so only held permissions are listed.
+   *
+   * @param string[] $scopeNames
+   *   The requested scope names.
+   *
+   * @return string[]
+   *   Permission titles, sorted.
+   */
+  protected function grantedPermissionTitles(array $scopeNames): array {
+    $definitions = $this->permissionHandler->getPermissions();
+    $titles = [];
+    foreach ($this->scopeProvider->loadMultipleByNames($scopeNames) as $scope) {
+      // A scope without granularity grants no permission of its own.
+      if (!$scope->isUmbrella() && $scope->getGranularity() === NULL) {
+        continue;
+      }
+      foreach ($this->scopeProvider->getPermissions($scope) as $permission) {
+        if (isset($definitions[$permission]) && $this->currentUser->hasPermission($permission)) {
+          $titles[$permission] = (string) $definitions[$permission]['title'];
+        }
+      }
+    }
+    sort($titles);
+    return $titles;
   }
 
   /**
