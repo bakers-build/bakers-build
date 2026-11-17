@@ -10,17 +10,22 @@ Documentation owns choices and commands; this skill guides the conversation. Ret
 
 ## Welcome
 
-Open with one message naming the steps ahead (tooling, identity, sign-in, harness, permissions,
-sandbox, project) and the files it writes: `~/.bakers/machine.config.js`,
+Open with one message naming the steps ahead (sandbox prerequisites, tooling, identity, sign-in,
+harness, permissions, sandbox, project) and the files it writes: `~/.bakers/machine.config.js`,
 `~/.bakers/connections/default.js`, `.bakers/project.config.js` and `WORKFLOW.md`.
 
 ## Read
 
 Read [machine setup](references/machine-setup.md), the [setup conversation](references/setup-conversation.md)
 and [Set up a machine](https://bakers.build/provision/machine.md), in full text as the conversation
-rules say. If the required documentation cannot be read, report the missing source and stop; do not
-substitute a remembered tool list.
+rules say. Unreadable required documentation: report the missing source and stop, never
+substituting a remembered tool list.
 **Done when the relevant documentation is loaded.**
+
+## Sandbox prerequisites
+
+Follow [sandbox prerequisites](references/sandbox-prerequisites.md) before any question.
+**Done when they pass or are declined, or the run stops after the hand-over.**
 
 ## Ask and explain
 
@@ -35,10 +40,9 @@ for its project's documented setup and checks.
 
 Follow the selected documentation path: tooling first, then identity and sign-in. Run the
 applicable read-only checks and explain failures with the documentation's next action.
-The person installs tools; give the documentation link and recheck after they act.
-On a worker, check the documented agent sandbox prerequisites (`bakers conductor check` once a
-project is connected). Report present tools and leave them alone. Run a missing one's documented
-install command only with explicit consent, or hand it over when it needs `sudo` this session lacks.
+Report present tools and leave them alone. Install a missing one only with explicit consent; hand
+over what needs `sudo` with its documentation link, as in *Sandbox prerequisites*, and recheck after
+they act; `bakers conductor check` rechecks once a project is connected.
 
 Before configuration writes, inspect existing configuration, collect only missing inputs and
 write after the person confirms.
@@ -46,8 +50,8 @@ Preserve correct values and keep secrets out of output. On a host that runs tick
 the chosen agent harness and write chosen routes, permissions and preview policy per
 [machine configuration](https://bakers.build/configuration/machine.md), or report each unresolved.
 Identity initialization configures none of them.
-Distinguish tool readiness, authentication and workspace access. Blocked prerequisites remain
-outstanding; they are not successful setup.
+Distinguish tool readiness, authentication and workspace access. Blocked prerequisites stay
+outstanding, never successful setup.
 **Done when the documented checks pass or each remaining action has an owner.**
 
 ## Check out projects
