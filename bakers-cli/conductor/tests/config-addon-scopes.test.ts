@@ -227,6 +227,23 @@ describe('shared run permissions from the machine and project config', () => {
     ]);
   });
 
+  it('warns when a machine yolo mode runs without an isolating runtime', async () => {
+    writeMachine(`export default {
+      addons: ['@bakers-build/addon-codex'],
+      permissions: { mode: 'yolo' },
+    };`);
+    const { warnings, result } = await captureWarnings(() =>
+      loadConductorConfig(writeProject(projectConfig())),
+    );
+    // one line per enabled candidate of the harness
+    expect(warnings.filter((w) => w.includes("'yolo'"))).toHaveLength(
+      result.agents.length,
+    );
+    expect(warnings).toContain(
+      "warning: codex: permissions 'yolo' runs without isolation on runtime host; use an isolating runtime (runtime-docker, runtime-bwrap) — see https://bakers.build/docs/agents/isolation",
+    );
+  });
+
   it('warns once per project loosening of mode, lists and default reads', async () => {
     writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
     const { warnings } = await captureWarnings(() =>

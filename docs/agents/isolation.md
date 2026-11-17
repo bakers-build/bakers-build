@@ -99,6 +99,14 @@ Both runtimes work in a fresh clone of the ticket branch: uncommitted work does 
 
 Use **`permissions: 'sandbox'`** for native harness policy; `sandbox` is a separate options object. Default mode is `system`. `yolo` bypasses harness safeguards; `custom` is harness-specific. Neither selects an outer runtime.
 
+Recommended for unattended runs: **`permissions: 'yolo'` inside an isolating runtime** ([Docker](/addons/runtime-docker#what-a-run-sees) or [Bubblewrap](/addons/runtime-bwrap)): the runtime limits what the run sees, and the agent works without prompts. When an enabled agent runs `yolo` on a runtime that does not isolate, every command that loads the config warns once per agent, without changing the exit code:
+
+```text
+warning: <agent>: permissions 'yolo' runs without isolation on runtime host; use an isolating runtime (runtime-docker, runtime-bwrap) — see https://bakers.build/docs/agents/isolation
+```
+
+With an isolating runtime and every enabled agent on `yolo`, the host-only sandbox preflight warning is dropped: `yolo` starts no harness sandbox to check.
+
 [Agent permissions](/provision/security/execution) documents modes, native prerequisites, read/write rules, trusted-command exceptions, network defaults and MCP limits. [Shared settings](/provision/security/shared-settings#harness-support) shows applied/skipped/rejected keys. Inspect effective rules with `bakers agents`. A host preflight does not verify a runtime environment.
 
 ## Not covered by any model

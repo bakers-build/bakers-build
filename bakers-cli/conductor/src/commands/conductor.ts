@@ -520,9 +520,13 @@ async function cmdCheck(deps: BbCliDeps): Promise<void> {
       `${slot}: ${packages[slot] ?? plugin.id}${source ? ` (${source})` : ''}`,
     );
   }
-  const warning = runtimeSandboxWarning(config.runtime?.id);
+  const agents = deps.agents ?? (await selectAgents(config));
+  const warning = runtimeSandboxWarning(config.runtime?.id, {
+    isolates: config.runtime?.isolates,
+    modes: agents.map((a) => a.permissions),
+  });
   if (warning) console.warn(`warning: ${warning}`);
-  for (const agent of deps.agents ?? (await selectAgents(config))) {
+  for (const agent of agents) {
     const [failure] = await sandboxFailures([agent]);
     console.log(failure ?? `${agent.alias ?? agent.id}: sandbox ok`);
     if (failure) process.exitCode = 1;
@@ -1201,12 +1205,17 @@ async function cmdStartBody(
   if (!(await ensureAuthenticated(config, logger))) return;
   // The loop withholds claims while this fails; say so before it starts.
   // Best-effort: an agent config the loop cannot load fails there, as before.
-  const warning = runtimeSandboxWarning(config.runtime?.id);
+  let agents: ResolvedAgent[] | undefined;
+  try {
+    agents = deps.agents ?? (await selectAgents(config));
+  } catch {}
+  const warning = runtimeSandboxWarning(config.runtime?.id, {
+    isolates: config.runtime?.isolates,
+    modes: agents?.map((a) => a.permissions),
+  });
   if (warning) console.warn(`warning: ${warning}`);
   try {
-    for (const line of await sandboxFailures(
-      deps.agents ?? (await selectAgents(config)),
-    )) {
+    for (const line of await sandboxFailures(agents ?? [])) {
       console.warn(`warning: ${line}`);
     }
   } catch {}

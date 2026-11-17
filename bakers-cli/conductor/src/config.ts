@@ -41,6 +41,7 @@ import {
   narrowConductorContributions,
 } from './plugins/preset.js';
 import type { Ticket } from './plugins/remote.js';
+import { yoloWithoutIsolationWarnings } from './plugins/sandbox-preflight.js';
 import {
   type AgentCatalog,
   loadTools,
@@ -719,6 +720,15 @@ export async function loadConductorConfig(
   if (candidates.length === 0)
     throw new Error('effective agent catalog is empty after agents filters');
   warnNotApplied(candidates);
+  for (const line of yoloWithoutIsolationWarnings(
+    candidates.map(({ alias, agent }) => ({
+      id: agent.id,
+      alias,
+      permissions: agent.permissions?.mode.value,
+    })),
+    wired.runtime ?? {},
+  ))
+    console.warn(line);
   const enabledAgents = [
     ...new Set(candidates.map((candidate) => candidate.alias as string)),
   ];
