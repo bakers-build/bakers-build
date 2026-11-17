@@ -19,13 +19,12 @@ For known blockers, report the required application changes and stop setup until
 perform repairs only within the authorized scope. Keep unknowns explicitly unverified.
 **Done when each requirement has an evidence-based assessment and no known blocker remains.**
 
-Explain why in one sentence: each ticket runs in its own Git worktree with its own runtime, so
-the project must work from any checkout path beside the others. Then test it rather than assume
-it, and report each line as `pass` or `fail — <reason>`:
+Explain why in one sentence: each ticket runs in its own worktree with its own runtime. Test it,
+reporting each line as `pass` or `fail — <reason>`:
 
-- Git: `git worktree add <tmp> HEAD`, then `git worktree remove <tmp>`; a failure names Git's error.
-- Nesting: `.ddev/` in the repository fails when the worktree location lies inside the checkout,
-  because nested DDEV projects conflict; the Environment block's worktree-location row resolves it.
+- Git: `git worktree add <tmp> HEAD`, then `git worktree remove <tmp>`; a failure quotes Git.
+- Location: worktrees inside the checkout fail when the runtime forbids one project inside another;
+  the Environment block's worktree-location row resolves it.
 
 When the environment is available, verify the
 [two-worktree isolation check](https://bakers.build/provision/guide.md#verify-independent-operation).
