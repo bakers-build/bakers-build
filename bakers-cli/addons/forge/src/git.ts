@@ -375,7 +375,7 @@ export async function updateBranch(
         Boolean,
       );
       throw new Error(
-        `merging '${target}' into '${branch}' conflicts in ${paths.join(', ')}; nothing changed. Merge origin/${target} in the run, resolve those paths and commit`,
+        `merging '${target}' into '${branch}' conflicts in ${paths.join(', ')}; nothing changed. The run cannot resolve this: stop and report it to the developers. A developer with write access merges origin/${target} into '${branch}' outside the run, resolves those paths and pushes; the next run starts there`,
       );
     }
     const resulting = await remote(
