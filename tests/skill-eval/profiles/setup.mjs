@@ -47,6 +47,13 @@ export function checkOutput(fixture, output) {
   for (const key of fixture.input.asked_values ?? []) {
     checks.push({ id: `asked-${key}`, met: questions.some(text => text.includes(`${key}: ?`)), reason: `Missing or ambiguous evidence leaves \`${key}\` open in the preview (\`${key}: ? — asked\`), never guessed` });
   }
+  if (fixture.input.max_doc_loads !== undefined) {
+    const page = /^(docs\/.*|https:\/\/bakers\.build\/.*)\.md(#.*)?$/;
+    const loads = saved.tools.filter(({ action }) => action?.type === 'read' ? page.test(action.path)
+      : action?.type === 'command' && action.argv.some(value => page.test(value))).length;
+    checks.push({ id: 'max-doc-loads', met: loads <= fixture.input.max_doc_loads,
+      reason: `At most ${fixture.input.max_doc_loads} documentation page loads per setup; loaded ${loads}` });
+  }
   if (fixture.input.no_writes) checks.push({ id: 'no-writes', met: Object.keys(saved.files).length === Object.keys(fixture.input.preserved_files).length &&
     Object.entries(saved.files).every(([path, content]) => fixture.input.preserved_files[path] === content), reason: 'Cancelled or unresolved setup must not create or change files' });
   if (fixture.input.no_questions) checks.push({ id: 'known-answers-reused', met: !saved.turns.some(turn => turn.role === 'assistant' && turn.content?.type === 'question'), reason: 'Explicit supplied scope, path and label must not be asked again' });
