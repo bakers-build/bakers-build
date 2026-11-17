@@ -121,7 +121,7 @@ describe('GitHub checks failure ticket', () => {
     expect(result.status, result.stderr).toBe(0);
     expect(tools(result.calls)).toEqual([
       'bakers_ticket_search',
-      'bakers_comment_publish',
+      'bakers_comment_create',
     ]);
     expect(result.calls[1].args).toMatchObject({
       ticket: 'BAKERS-90',
@@ -164,7 +164,7 @@ describe('GitHub checks failure ticket', () => {
     expect(result.status, result.stderr).toBe(0);
     expect(tools(result.calls)).toEqual([
       'bakers_ticket_search',
-      'bakers_comment_publish',
+      'bakers_comment_create',
     ]);
     expect(result.calls[1].args).toMatchObject({
       ticket: 'BAKERS-90',
@@ -190,7 +190,7 @@ describe('GitHub checks failure ticket', () => {
     expect(result.status, result.stderr).toBe(0);
     expect(tools(result.calls)).toEqual([
       'bakers_ticket_search',
-      'bakers_comment_publish',
+      'bakers_comment_create',
     ]);
     expect(result.calls[1].args.ticket).toBe('BAKERS-94');
   });

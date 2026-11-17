@@ -14,7 +14,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
-final class TicketRunsListToolTest extends BakersToolTestBase {
+final class RunListToolTest extends BakersToolTestBase {
 
   use ForeignWorkspaceTrait;
 
@@ -30,7 +30,7 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
    * The tool takes a ticket and paging, nothing else.
    */
   public function testInputAllowlist(): void {
-    $tool = $this->container->get('plugin.manager.tool')->createInstance('bakers_ticket_runs_list');
+    $tool = $this->container->get('plugin.manager.tool')->createInstance('bakers_run_list');
     self::assertSame(['ticket', 'limit', 'offset'], array_keys($tool->getInputDefinitions()));
   }
 
@@ -50,11 +50,11 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
     $third = $this->seedRun($ticket, ['state' => 'running']);
     $this->seedRun($this->ticket('RL-2'), ['state' => 'running']);
 
-    $out = $this->outputs($this->runTool('bakers_ticket_runs_list', ['ticket' => $ticket->getIdentifier(), 'limit' => 2]));
+    $out = $this->outputs($this->runTool('bakers_run_list', ['ticket' => $ticket->getIdentifier(), 'limit' => 2]));
     self::assertSame([$third->uuid(), $second->uuid()], array_column($out['runs'], 'uuid'));
     self::assertSame(2, $out['next_offset']);
 
-    $out = $this->outputs($this->runTool('bakers_ticket_runs_list', ['ticket' => $ticket->uuid(), 'offset' => 2]));
+    $out = $this->outputs($this->runTool('bakers_run_list', ['ticket' => $ticket->uuid(), 'offset' => 2]));
     self::assertNull($out['next_offset']);
     self::assertSame([
       [
@@ -76,7 +76,7 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
     $ticket = $this->ticket('RL-3');
     $this->seedRun($ticket, ['state' => 'running']);
     $this->container->get('current_user')->setAccount($this->account('outsider', ['skill_user']));
-    $this->assertFailure($this->runTool('bakers_ticket_runs_list', ['ticket' => $ticket->getIdentifier()]), 'does not exist or is not readable');
+    $this->assertFailure($this->runTool('bakers_run_list', ['ticket' => $ticket->getIdentifier()]), 'does not exist or is not readable');
   }
 
   /**
@@ -86,7 +86,7 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
     $ticket = $this->ticket('RL-4');
     $this->seedRun($ticket, ['state' => 'running']);
     $this->foreignWorkspace();
-    $this->assertFailure($this->runTool('bakers_ticket_runs_list', ['ticket' => $ticket->getIdentifier()]), 'does not exist or is not readable');
+    $this->assertFailure($this->runTool('bakers_run_list', ['ticket' => $ticket->getIdentifier()]), 'does not exist or is not readable');
   }
 
   /**

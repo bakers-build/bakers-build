@@ -22,7 +22,7 @@ use Drupal\tool\TypedData\OutputDefinition;
  * Lists a readable ticket's viewable runs, newest first, without their logs.
  */
 #[Tool(
-  id: 'bakers_ticket_runs_list',
+  id: 'bakers_run_list',
   label: new TranslatableMarkup('List ticket runs'),
   description: new TranslatableMarkup('Lists the runs of a ticket you can view, newest first: state, the ticket state the run started in, agent, conductor, start time and whether the run is closed.'),
   operation: ToolOperation::Read,
@@ -105,7 +105,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
   ],
 )]
-final class TicketRunsList extends ToolBase {
+final class RunList extends ToolBase {
 
   use TicketInputTrait;
   use PagedQueryTrait;

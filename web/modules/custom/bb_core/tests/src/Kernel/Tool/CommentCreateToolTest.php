@@ -13,7 +13,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
-final class CommentPublishToolTest extends BakersToolTestBase {
+final class CommentCreateToolTest extends BakersToolTestBase {
 
   /**
    * Stores the Markdown source as bb_rich with the given type.
@@ -21,7 +21,7 @@ final class CommentPublishToolTest extends BakersToolTestBase {
   public function testPublishStoresTypedMarkdown(): void {
     $ticket = $this->ticket('TL-1');
     $body = "# Plan\n\n- one `step`\n";
-    $out = $this->outputs($this->runTool('bakers_comment_publish', [
+    $out = $this->outputs($this->runTool('bakers_comment_create', [
       'ticket' => $ticket->getIdentifier(),
       'type' => 'plan',
       'body' => $body,
@@ -60,13 +60,13 @@ final class CommentPublishToolTest extends BakersToolTestBase {
     foreach ($budgets as $type => $limit) {
       $body = str_repeat('é', intdiv($limit, 2));
       $values = ['ticket' => $ticket->uuid(), 'type' => $type, 'body' => $body];
-      $out = $this->outputs($this->runTool('bakers_comment_publish', $values));
+      $out = $this->outputs($this->runTool('bakers_comment_create', $values));
       $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_comment', $out['id']);
       self::assertInstanceOf(BbCommentInterface::class, $stored);
       self::assertSame($body, $stored->get('body')->value);
       $before = $storage->getQuery()->accessCheck(FALSE)->count()->execute();
       $values['body'] .= 'x';
-      $this->assertFailure($this->runTool('bakers_comment_publish', $values), sprintf('%s is %d UTF-8 bytes; limit %d', $type, $limit + 1, $limit));
+      $this->assertFailure($this->runTool('bakers_comment_create', $values), sprintf('%s is %d UTF-8 bytes; limit %d', $type, $limit + 1, $limit));
       self::assertSame($before, $storage->getQuery()->accessCheck(FALSE)->count()->execute());
     }
   }
@@ -76,7 +76,7 @@ final class CommentPublishToolTest extends BakersToolTestBase {
    */
   public function testTicketByUuid(): void {
     $ticket = $this->ticket('TL-2');
-    $out = $this->outputs($this->runTool('bakers_comment_publish', [
+    $out = $this->outputs($this->runTool('bakers_comment_create', [
       'ticket' => $ticket->uuid(),
       'type' => 'comment',
       'body' => 'x',
@@ -89,13 +89,13 @@ final class CommentPublishToolTest extends BakersToolTestBase {
    */
   public function testInvalidInputStoresNothing(): void {
     $id = $this->ticket('TL-3')->getIdentifier();
-    $this->assertFailure($this->runTool('bakers_comment_publish', ['ticket' => $id, 'type' => 'plan']), 'body');
+    $this->assertFailure($this->runTool('bakers_comment_create', ['ticket' => $id, 'type' => 'plan']), 'body');
     $blank = ['ticket' => $id, 'type' => 'plan', 'body' => " \t\n\n"];
-    $this->assertFailure($this->runTool('bakers_comment_publish', $blank), 'body');
+    $this->assertFailure($this->runTool('bakers_comment_create', $blank), 'body');
     $missing = ['ticket' => 'TL-404', 'type' => 'plan', 'body' => 'x'];
-    $this->assertFailure($this->runTool('bakers_comment_publish', $missing), 'TL-404');
+    $this->assertFailure($this->runTool('bakers_comment_create', $missing), 'TL-404');
     $this->container->get('current_user')->setAccount($this->account('outsider', ['skill_user']));
-    $this->assertFailure($this->runTool('bakers_comment_publish', ['ticket' => $id, 'type' => 'plan', 'body' => 'x']), $id);
+    $this->assertFailure($this->runTool('bakers_comment_create', ['ticket' => $id, 'type' => 'plan', 'body' => 'x']), $id);
     self::assertSame(0, (int) $this->container->get('entity_type.manager')->getStorage('bb_comment')
       ->getQuery()->accessCheck(FALSE)->count()->execute());
   }

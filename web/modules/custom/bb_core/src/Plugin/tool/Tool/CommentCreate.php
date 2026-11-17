@@ -21,8 +21,8 @@ use Drupal\tool\TypedData\OutputDefinition;
  * Publishes one typed Markdown comment on a ticket.
  */
 #[Tool(
-  id: 'bakers_comment_publish',
-  label: new TranslatableMarkup('Publish a ticket comment'),
+  id: 'bakers_comment_create',
+  label: new TranslatableMarkup('Create a ticket comment'),
   description: new TranslatableMarkup('Stores a Markdown comment of the given type (plan, spec, summary, …) on a ticket. The create response is the confirmation.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
@@ -60,7 +60,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
   ],
 )]
-final class CommentPublish extends ToolBase {
+final class CommentCreate extends ToolBase {
 
   use TicketInputTrait;
 

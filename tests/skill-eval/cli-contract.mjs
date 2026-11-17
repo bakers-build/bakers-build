@@ -145,7 +145,7 @@ function toolModel(simulation) {
       for (const link of links) if (!t.links.some(l => l.uri === link.uri)) t.links.push({ uri: link.uri, title: link.title ?? '' });
       return { state: t.state, links: structuredClone(t.links) };
     },
-    comment_publish: a => {
+    comment_create: a => {
       const t = find(a.ticket);
       const comment = { id: `22222222-2222-4222-8222-${String(comments.length + 1).padStart(12, '0')}`, ticket: t.id, type: a.type, body: a.body };
       comments.push(comment);
@@ -162,7 +162,7 @@ function toolModel(simulation) {
       }
       return { metrics: structuredClone(t.metrics) };
     },
-    time_propose: a => {
+    worklog_propose: a => {
       a.entries.forEach((e, i) => {
         if (!DATE.test(e.work_date) || e.duration_seconds < 60 || e.duration_seconds > 86400 || e.duration_seconds % 60 || e.description.length > 2000) {
           throw new Refused(`Entry ${i + 1} (${e.source_key}) is invalid: work_date Y-m-d, whole minutes from 60 to 86400 seconds, at most 2000 characters.`);
@@ -249,7 +249,7 @@ export async function startEndpoint(seed = {}) {
         if (!(error instanceof Refused)) throw error;
         return reply({ content: [{ type: 'text', text: error.message }], isError: true });
       }
-      if (faults.lostResponse && name === 'tool_api__bakers_comment_publish') {
+      if (faults.lostResponse && name === 'tool_api__bakers_comment_create') {
         if (faults.lostResponse === 'unapplied') model.comments.pop();
         record.status = 'connection-closed';
         record.applied = faults.lostResponse !== 'unapplied';

@@ -19,7 +19,7 @@ Evaluate the actual tool calls made by ticket-writes, create-ticket and transiti
 
    | Fixture | Required behavior |
    |---|---|
-   | `publish-comment-calls` | Read the body, call `bakers_comment_publish` once with the exact Markdown `body`, `type` and `ticket`; the result's `id` confirms it |
+   | `publish-comment-calls` | Read the body, call `bakers_comment_create` once with the exact Markdown `body`, `type` and `ticket`; the result's `id` confirms it |
    | `publish-comment-uncertain` | Report the lost response (exit 5) as unresolved and never publish again; a body that lost a trailing newline fails |
    | `create-ticket-calls` | Search two spellings and prove an empty one with the `ticket` probe, create with `recipe` and `type` by name, read it back, publish qualification and summary, then route once to `plan` |
    | `create-ticket-prior-art` | Read the returned candidate in full and stop without mutations |
@@ -80,8 +80,8 @@ A passed `transition-ticket-rejected` means the rejection was preserved, not tha
 Creation shows why order is a correctness rule. In this trace excerpt the summary is published after routing, so `qualification-and-summary` fails even though both comments exist:
 
 ```text
-5 bakers_comment_publish (qualification)   6 bakers_ticket_transition (state plan)
-7 bakers_comment_publish (summary)         8 bakers_ticket_read
+5 bakers_comment_create (qualification)   6 bakers_ticket_transition (state plan)
+7 bakers_comment_create (summary)         8 bakers_ticket_read
 ```
 
 Both publications must succeed before the transition.
