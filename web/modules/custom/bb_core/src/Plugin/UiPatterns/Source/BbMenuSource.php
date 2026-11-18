@@ -297,6 +297,7 @@ final class BbMenuSource extends MenuSource {
     }
     $current = $this->routeMatch->getParameter('bb_project');
     $current_id = $current instanceof BbProjectInterface ? (int) $current->id() : NULL;
+    $on_tickets = $this->routeMatch->getRouteName() === 'view.tickets.project_tickets';
     $storage = $this->entityTypeManager->getStorage('bb_project');
     // Deleted, foreign and no longer viewable projects drop out here.
     $ids = $storage->getQuery()
@@ -318,7 +319,19 @@ final class BbMenuSource extends MenuSource {
           'initials' => self::markInitials((string) $project->label()),
           'color' => self::markColor((int) $project->id()),
         ],
-        'below' => [],
+        // The Tickets route applies the same bb_project.view check.
+        'below' => [
+          [
+            'title' => (string) $this->t('Tickets'),
+            'url' => Url::fromRoute('view.tickets.project_tickets', [
+              'bb_workspace' => $workspace->getSlug(),
+              'bb_project' => $project->id(),
+            ])->toString(),
+            'icon' => 'ticket',
+            'in_active_trail' => (int) $project->id() === $current_id && $on_tickets,
+            'below' => [],
+          ],
+        ],
       ];
     }
     return $items;

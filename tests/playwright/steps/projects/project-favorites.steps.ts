@@ -1,7 +1,7 @@
 // Favorite projects: the overview's page-header toggle and the rail heading.
 // `I visit the project {string}` and the address step come from
 // project-overview.steps.ts, `I visit the {string} listing` from
-// projects-list.steps.ts, `I reload the page` from shell.steps.ts.
+// projects-list.steps.ts.
 import { Given, When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import { php } from '../../support/drush';
@@ -30,6 +30,11 @@ Then('the rail lists the favorite {string}', async ({ page }, name: string) => {
   const rail = page.locator(RAIL_ISLAND);
   await expect(rail.getByText('Favorites', { exact: true })).toBeVisible();
   await expect(rail.getByRole('link', { name, exact: true })).toBeVisible();
+});
+
+Then('the rail lists the Tickets of the favorite {string}', async ({ page }, name: string) => {
+  const favorite = page.locator(RAIL_ISLAND).locator('li').filter({ has: page.getByRole('link', { name, exact: true }) });
+  await expect(favorite.getByRole('link', { name: 'Tickets', exact: true })).toHaveAttribute('href', /\/project\/\d+\/tickets$/);
 });
 
 Then('the rail lists no favorites', async ({ page }) => {

@@ -109,6 +109,21 @@ final class ProjectFavoriteToggleTest extends KernelTestBase {
   }
 
   /**
+   * From htmx the toggle lands on the project and announces the island event.
+   */
+  public function testHtmxToggleAnnouncesTheChange(): void {
+    $lead = $this->lead();
+    $this->setCurrentUser($lead);
+
+    $response = $this->toggle(TRUE);
+
+    self::assertSame(ProjectFavoriteController::CHANGED_EVENT, $response->headers->get('HX-Trigger'));
+    self::assertStringContainsString($this->project->toUrl()->toString(), (string) $response->headers->get('HX-Location'));
+    self::assertSame([(int) $this->project->id()], $this->container->get(Profiles::class)
+      ->forAccount((int) $lead->id(), (int) $this->workspace->id())->favoriteProjectIds());
+  }
+
+  /**
    * An account that may not view the project, or anonymous, is refused.
    */
   public function testNonViewerAndAnonymousAreRefused(): void {
@@ -207,12 +222,16 @@ final class ProjectFavoriteToggleTest extends KernelTestBase {
   }
 
   /**
-   * Runs the toggle as the current account.
+   * Runs the toggle as the current account, from a page load or from htmx.
    */
-  private function toggle(): mixed {
+  private function toggle(bool $htmx = FALSE): mixed {
+    $request = Request::create('/favorite');
+    if ($htmx) {
+      $request->headers->set('HX-Request', 'true');
+    }
     return $this->container->get('class_resolver')
       ->getInstanceFromDefinition(ProjectFavoriteController::class)
-      ->toggle($this->project);
+      ->toggle($this->project, $request);
   }
 
   /**

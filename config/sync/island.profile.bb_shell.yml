@@ -45,6 +45,8 @@ placements:
     enabled: true
     events:
       - bakers.team.created
+      - bakers.entity.renamed
+      - bakers.favorites.changed
     configuration:
       component:
         component_id: 'bb_theme:sidebar'
