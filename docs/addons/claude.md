@@ -42,8 +42,8 @@ Default: `system`. A [runtime](/addons/runtime-docker) preserves the configured 
 |---|---|
 | `sandbox` | `--permission-mode default --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
 | `system` | none: your own Claude settings apply unchanged |
-| `yolo` | `--dangerously-skip-permissions`, the launch before `permissions` existed |
 | `custom` | `--settings '<config as JSON>'`, nothing else |
+| other modes | see [Agent permissions › Modes](/provision/security/execution#modes) |
 
 `sandbox` keys and their defaults:
 
@@ -62,7 +62,7 @@ Default: `system`. A [runtime](/addons/runtime-docker) preserves the configured 
 ## Isolated runtimes
 
 [Docker](/addons/runtime-docker) gives Claude a private home without its login; plugins are read-only, transcripts stay on the host. Set
-`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY` in the [secrets file](/configuration/machine#secrets-file); allowlist mode keeps it in the proxy. [Bubblewrap](/addons/runtime-bwrap) can share the host login instead. Its settings carry `skipDangerousModePermissionPrompt`, so `yolo` skips the bypass dialog.
+`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY` in the [secrets file](/configuration/machine#secrets-file); allowlist mode keeps it in the proxy. [Bubblewrap](/addons/runtime-bwrap) can share the host login instead. Its settings carry `skipDangerousModePermissionPrompt`, so [the bypass mode](/provision/security/execution#modes) skips its dialog.
 
 ## Deny unused tools
 
@@ -91,7 +91,7 @@ bakers agents
 ## Good to know
 
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
-- `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
+- `skip_permissions` and `security` fail loading; use `permissions` ([modes](/provision/security/execution#modes)).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
 - `proxy: true` only logs the requests; `measure` wins when both are set.
 - Listed in a project config, an agent addon is ignored with a warning.

@@ -68,7 +68,7 @@ Runs start in `system` mode by default; choose `permissions: 'sandbox'` for Clau
 ```js
 agents: {
   catalog: [
-    { harness: '@bakers-build/addon-claude', alias: 'opus-yolo', with: { model: 'opus', permissions: 'yolo' } },
+    { harness: '@bakers-build/addon-claude', alias: 'opus-sandbox', with: { model: 'opus', permissions: 'sandbox' } },
   ],
 },
 ```
