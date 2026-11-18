@@ -1,20 +1,11 @@
 # Skills & Workflows
 
-Control how tickets move from a request to checked work. Skills provide instructions, recipes select an engineering method, and the repository's `WORKFLOW.md` supplies project-specific preparation and checks.
+Adapt how your team handles tickets: set project rules, choose an engineering method and decide when people approve the work.
 
-Read [how the process works](/skills-and-workflows/guide) for an overview. For setup, [install the skills](/skills-and-workflows/skills) on the machine or client that needs them.
-
-## Choose your task
-
-Review ticket work, adjust project rules or extend the methods available to agents.
-
-<DocQuickLinks aria-label="Workflow tasks" :items="[
-  { label: 'Workflows and states', text: 'Understand ticket states and approval gates.', link: '/skills-and-workflows/states' },
-  { label: 'Accept results', text: 'Review the outcome and decide what happens next.', link: '/skills-and-workflows/accept-results' },
-  { label: 'Types, recipes and labels', text: 'Select the work type, method and ticket labels.', link: '/skills-and-workflows/types-recipes-labels' },
-  { label: 'Configure WORKFLOW.md', text: 'Set project preparation, instructions and checks.', link: '/skills-and-workflows/workflow-file' },
-  { label: 'Write a recipe', text: 'Add an engineering method for agents to follow.', link: '/skills-and-workflows/recipes' },
-  { label: 'Ticket metrics', text: 'Define and record measurements on tickets.', link: '/skills-and-workflows/metrics' }
+<DocTiles :tiles="[
+  { title: 'Set project rules', text: 'Define preparation, tests, extra skills and delivery rules in WORKFLOW.md.', link: '/skills-and-workflows/workflow-file', icon: 'layers', meta: 'Configure your project →' },
+  { title: 'Choose a method', text: 'Use an existing recipe or add your own method for planning, implementation and review.', link: '/skills-and-workflows/recipes', icon: 'book', meta: 'Choose your approach →' },
+  { title: 'Decide when people approve', text: 'Approve each step, accept the result or let the agent work unattended. Choose where questions arrive.', link: '/skills-and-workflows/collaboration', icon: 'git-branch', meta: 'Set up collaboration →' }
 ]" />
 
-[Get started](/get-started/#after-your-first-ticket) owns basic ticket use. [Agents](/agents/) chooses which harness runs each state. [Provision](/provision/) explains how configured preparation commands execute; instructions alone do not create an environment or enforce a sandbox.
+[Choose the agent and model](/agents/guide) in Agents. The [workflow reference](/skills-and-workflows/states) explains the fixed states, phases and limits of customization.
