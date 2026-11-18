@@ -9,7 +9,6 @@ import {
   type BbConnectionConfig,
   CommandRunner,
   type ConductorLogger,
-  createBbConnectionClient,
   createBbConnectionContext,
   createLogger,
   exec,
@@ -116,13 +115,42 @@ export interface BuildWriteClientOptions {
 async function buildWriteClientDefault(
   o: BuildWriteClientOptions,
 ): Promise<unknown> {
-  return createBbConnectionClient(
+  const context = await createBbConnectionContext(
     {
       site: { base_url: o.baseUrl, jsonapi_prefix: o.jsonapiPrefix },
       plugins: o.plugins,
     },
     o.stateDir ? { stateDir: o.stateDir } : {},
   );
+  return { ...context.client, runLog: runLogReader(context) };
+}
+
+/**
+ * Reads a run's stored log from the download route, signed in like the client
+ * ('' for 204, no log). JSON:API returns `log`/`error_log` empty, so a
+ * read-modify-write of either needs this; any other answer throws rather than
+ * read as empty and let the write replace the log.
+ */
+export function runLogReader(
+  context: Pick<
+    Awaited<ReturnType<typeof createBbConnectionContext>>,
+    'http' | 'auth' | 'baseUrl'
+  >,
+) {
+  return async (runId: string, kind: 'log' | 'error_log'): Promise<string> => {
+    const base = context.baseUrl.replace(/\/+$/, '');
+    const response = await context.http.send(
+      await context.auth.apply({
+        method: 'GET',
+        url: `${base}/_bakers-api/run/${runId}/log/${kind}`,
+        headers: { 'Accept-Encoding': 'gzip' },
+      }),
+    );
+    if (response.status === 204) return '';
+    if (response.status !== 200)
+      throw new Error(`Run ${runId} ${kind}: HTTP ${response.status}`);
+    return response.body;
+  };
 }
 
 /** The dynamically-imported `@bakers-build/addon-bakers-ui` module shape. */

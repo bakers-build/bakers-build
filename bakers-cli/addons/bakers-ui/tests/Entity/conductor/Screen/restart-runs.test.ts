@@ -57,8 +57,16 @@ const TICKETS: Ticket[] = [
 ];
 
 /** A client answering the covered-set read and each ticket's newest run. */
-const serverWith = (runs: Run[] = RUNS, failGet = false) => {
-  const client = fakeClient();
+const serverWith = (runs: Run[] = RUNS, failGet = false, failLog = false) => {
+  // Like the server: JSON:API returns error_log empty (BbRun::preSave moves it
+  // to a private file); only its size and the log route tell the text.
+  const client = Object.assign(fakeClient(), {
+    runLog: vi.fn(async (runId: string, kind: string) => {
+      expect(kind).toBe('error_log');
+      if (failLog) throw new Error('log route failed');
+      return runs.find((run) => run.id === runId)?.log ?? '';
+    }),
+  });
   client.get = vi.fn(async (path: string, params?: unknown) => {
     if (failGet) throw new Error('read failed');
     const query = queryStringOf(params);
@@ -93,7 +101,8 @@ const serverWith = (runs: Run[] = RUNS, failGet = false) => {
         attributes: {
           state: run.state,
           drupal_internal__id: n,
-          error_log: run.log ?? null,
+          error_log: null,
+          error_log_bytes: run.log?.length ?? 0,
         },
         relationships: {
           ticket_id: { data: { type: 'bb_ticket--bb_ticket', id: run.ticket } },
@@ -247,6 +256,37 @@ describe('restart runs dialog', () => {
     failed.screen.handleInput('enter', failed.context);
     await settle();
     expect(failing.writes).toEqual([]);
+  });
+
+  it('a failed error-log read writes nothing', async () => {
+    const client = serverWith(RUNS, false, true);
+    const { screen, context } = await dialogFor(
+      restartRunsRequest(TARGET),
+      client,
+    );
+    screen.handleInput('enter', context);
+    await settle();
+    expect(client.writes).toEqual([]);
+  });
+
+  it('confirms when the same runs come back in another order', async () => {
+    let runs = RUNS.slice(0, 2);
+    const client = serverWith();
+    const base = client.get;
+    client.get = vi.fn((path: string, params?: unknown) =>
+      (serverWith(runs).get as typeof base)(path, params),
+    ) as never;
+    const { screen, context } = await dialogFor(
+      restartRunsRequest(TARGET),
+      client,
+    );
+    runs = [RUNS[1]!, RUNS[0]!];
+    screen.handleInput('enter', context);
+    await settle();
+    expect(client.writes.map((write) => write.id)).toEqual([
+      'r-claimed',
+      'r-running',
+    ]);
   });
 
   it('a list that changed since the dialog opened writes nothing', async () => {

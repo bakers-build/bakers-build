@@ -1,6 +1,8 @@
+import { toUnixSeconds } from '@bakers-build/core';
 import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import type { DropshClient, JsonApiResource } from '../../../types.js';
 import type { ListTable, Page } from '../../collection.js';
+import { singleRelId } from '../../ticket/Data/tickets.js';
 import { deriveConductorStatus } from './liveness.js';
 
 /** One machine of the control plane, as the Machines tab lists it. */
@@ -15,17 +17,8 @@ export interface MachineRow {
   ownerUserId: string | null;
 }
 
-const relId = (resource: JsonApiResource, name: string): string | null => {
-  const data = resource.relationships?.[name]?.data;
-  return data && !Array.isArray(data) ? data.id : null;
-};
-
-const toUnix = (value: unknown): number | null => {
-  if (typeof value === 'number') return value;
-  if (typeof value !== 'string' || value === '') return null;
-  const ms = Date.parse(value);
-  return Number.isNaN(ms) ? null : Math.floor(ms / 1000);
-};
+const relId = (resource: JsonApiResource, name: string): string | null =>
+  singleRelId(resource.relationships?.[name]);
 
 /**
  * The machines of these conductors, grouped from one conductor read with the
@@ -70,8 +63,8 @@ export const listMachineRows = async (
       {
         present: true,
         status: typeof attrs.status === 'string' ? attrs.status : null,
-        lastSeen: toUnix(attrs.last_seen),
-        leaseExpiresAt: toUnix(attrs.lease_expires_at),
+        lastSeen: toUnixSeconds(attrs.last_seen),
+        leaseExpiresAt: toUnixSeconds(attrs.lease_expires_at),
       },
       nowSeconds,
     );

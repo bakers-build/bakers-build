@@ -10,7 +10,8 @@ export interface CoveredRun {
   readonly state: string;
   readonly identifier: string;
   readonly frozen: boolean;
-  readonly errorLog: string;
+  /** JSON:API returns `error_log` empty (`BbRun::preSave` files it); its size tells whether one exists. */
+  readonly errorLogBytes: number;
 }
 
 /** What Restart runs acts on: a machine (all its conductors) or one conductor. */
@@ -61,7 +62,7 @@ const readRuns = async (
     .addFields('bb_run--bb_run', [
       'state',
       'drupal_internal__id',
-      'error_log',
+      'error_log_bytes',
       'ticket_id',
     ])
     .addFields('bb_ticket--bb_ticket', ['identifier', 'frozen'])
@@ -87,7 +88,7 @@ const readRuns = async (
         state: String(run.attributes?.state ?? ''),
         identifier: String(ticket.identifier ?? '?'),
         frozen: ticket.frozen === true,
-        errorLog: String(run.attributes?.error_log ?? ''),
+        errorLogBytes: Number(run.attributes?.error_log_bytes ?? 0),
       } satisfies CoveredRun,
     };
   });
@@ -136,7 +137,14 @@ const runLine = (run: CoveredRun): string =>
   }`;
 
 const sameRuns = (a: readonly CoveredRun[], b: readonly CoveredRun[]) =>
-  a.map((run) => run.id).join() === b.map((run) => run.id).join();
+  a
+    .map((run) => run.id)
+    .sort()
+    .join() ===
+  b
+    .map((run) => run.id)
+    .sort()
+    .join();
 
 /**
  * Restart runs, for the confirmation dialog: cancel every covered run with a
@@ -176,11 +184,21 @@ export const restartRunsRequest = (target: RestartTarget): ConfirmRequest => ({
           );
         const note = restartNote(target, services.currentUser ?? 'unknown');
         const writer = services.writeClient ?? services.client;
-        for (const run of fresh) {
+        // A PATCH replaces the stored error log, so read every existing one before writing any.
+        const logs = await Promise.all(
+          fresh.map((run) => {
+            if (run.errorLogBytes === 0) return '';
+            if (!writer.runLog)
+              throw new Error("Cannot read the runs' error logs to keep them.");
+            return writer.runLog(run.id, 'error_log');
+          }),
+        );
+        for (const [i, run] of fresh.entries()) {
+          const log = logs[i]?.replace(/[\r\n]+$/, '') ?? '';
           await writer.update('bb_run--bb_run', run.id, {
             attributes: {
               state: CANCELLED_RUN_STATE,
-              error_log: run.errorLog ? `${run.errorLog}\n${note}` : note,
+              error_log: log ? `${log}\n${note}` : note,
             },
           });
         }
