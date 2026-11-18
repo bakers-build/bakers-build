@@ -44,10 +44,22 @@
   'ghost': ['bg-transparent', 'text-text-light', 'border', 'border-transparent', 'hover:bg-surface-3', 'hover:text-text'],
   'danger': ['bg-transparent', 'text-state-unassigned-ink', 'border', 'border-state-unassigned', 'hover:bg-state-unassigned-tint'],
 } %}
+{#- Optional, as on bb_theme:button: `#bb_icon` leads with an icon,
+    `#bb_icon_only` moves the label into aria-label, and `#bb_pressed` makes
+    the submit a toggle that says whether it is on (primary look when on). -#}
+{% set is_icon_only = element['#bb_icon_only']|default(false) %}
+{% set is_toggle = element['#bb_pressed'] is defined and element['#bb_pressed'] is not null %}
+{% set is_on = is_toggle and element['#bb_pressed'] %}
+{% set color_classes = is_on ? variant_classes['primary'] : (variant_classes[element['#bb_variant']|default('primary')]|default(variant_classes['primary'])) %}
+{% if is_icon_only %}{% set attributes = attributes.setAttribute('aria-label', element['#value']) %}{% endif %}
+{% if is_toggle %}{% set attributes = attributes.setAttribute('aria-pressed', is_on ? 'true' : 'false') %}{% endif %}
 <button{{ attributes.addClass([
   'button', 'inline-flex', 'items-center', 'justify-center', 'gap-[6px]',
-  'h-[30px]', 'max-md:min-h-touch', 'px-[10px]', 'rounded-sm', 'text-body-strong',
+  'h-[30px]', 'max-md:min-h-touch', is_icon_only ? 'w-[30px] px-0 max-md:min-w-touch' : 'px-[10px]', 'rounded-sm', 'text-body-strong',
   'no-underline', 'cursor-pointer', 'disabled:opacity-60',
   'disabled:cursor-not-allowed',
   'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring',
-]|merge(variant_classes[element['#bb_variant']|default('primary')]|default(variant_classes['primary']))) }}>{{ element['#value'] }}</button>{{ children }}
+]|merge(color_classes)) }}>
+  {%- if element['#bb_icon'] is defined %}{{ include('bb_theme:icon', { name: element['#bb_icon'], size: 'sm' }, with_context = false) }}{% endif %}
+  {%- if not is_icon_only %}{{ element['#value'] }}{% endif -%}
+</button>{{ children }}

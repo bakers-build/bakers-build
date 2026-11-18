@@ -15,15 +15,14 @@ Given('the account {string} has no favorite projects', async ({}, name: string) 
 });
 
 When('I click the favorite toggle {string}', async ({ page }, label: string) => {
-  const toggle = page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: label, exact: true });
-  const response = page.waitForResponse((r) => r.url().includes('/favorite') && r.status() < 400);
+  const toggle = page.locator(PAGE_HEADER_ISLAND).getByRole('button', { name: label, exact: true });
+  const response = page.waitForResponse((r) => r.url().includes('/favorite') && r.request().method() === 'POST' && r.status() < 400);
   await toggle.click();
   await response;
-  await page.waitForLoadState('load');
 });
 
 Then('the page header offers {string}', async ({ page }, label: string) => {
-  await expect(page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: label, exact: true })).toBeVisible();
+  await expect(page.locator(PAGE_HEADER_ISLAND).getByRole('button', { name: label, exact: true })).toBeVisible();
 });
 
 Then('the rail lists the favorite {string}', async ({ page }, name: string) => {

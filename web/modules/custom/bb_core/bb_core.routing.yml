@@ -526,15 +526,16 @@ bb_core.user.profile:
     _auth: ['cookie']
     _bb_user_area: TRUE
 
-# The project overview's favorite toggle, a plain link: the CSRF token guards
-# it, and only an account that may view the project reaches it.
+# The project overview's favorite toggle, a form on its own route so its POST
+# is main content here; the form token guards it, and only an account that may
+# view the project reaches it.
 bb_core.project.favorite:
   path: '/_workspace/{bb_workspace}/project/{bb_project}/favorite'
   defaults:
-    _controller: '\Drupal\bb_core\Controller\ProjectFavoriteController::toggle'
+    _form: '\Drupal\bb_core\Form\ProjectFavoriteForm'
+    _title: 'Favorite'
   requirements:
     _entity_access: 'bb_project.view'
-    _csrf_token: 'TRUE'
     _user_is_logged_in: 'TRUE'
   options:
     parameters:
