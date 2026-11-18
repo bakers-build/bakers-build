@@ -58,6 +58,25 @@ Feature: User Machines listing and View
     When I visit the machine "e2e default host"
     Then the Activities list "BB-142 started work in plan"
 
+  Scenario: The owner sees its conductors and opens Restart runs behind a confirmation
+    Given I am signed in as a member of the "bakers" workspace
+    When I visit the machine "e2e default host"
+    Then the machine Overview lists the conductor "srv01-bakers" with "Restart runs"
+    When I open "Restart runs" on the machine
+    Then a dialog asks "e2e default host"
+    When I choose "Keep runs" in the dialog
+    Then the machine Overview lists the conductor "srv01-bakers" with "Restart runs"
+
+  Scenario Outline: Restart runs is the owner's alone
+    Given I am logged in as the account "<account>"
+    When I request Restart runs on the machine "e2e default host"
+    Then the Restart runs address answers 404
+
+    Examples:
+      | account           |
+      | north-contributor |
+      | north-guest       |
+
   @machine-connection
   Scenario: A lead sees and selects the connection address saved at start
     Given I am signed in as a member of the "bakers" workspace
