@@ -38,7 +38,7 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
     'field', 'og',
-    'link', 'text', 'filter', 'bb_core',
+    'link', 'text', 'filter', 'bb_core', 'tool',
   ];
 
   /**
@@ -466,6 +466,47 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
     $this->assertSame('bb_work', $ticket->getWorkflow());
     $this->assertSame((int) $this->project->id(), (int) $ticket->get('project_id')->target_id);
     $this->assertSame(0, $this->ticketCount());
+  }
+
+  /**
+   * A template's protected label cannot create a ticket the actor may not add.
+   */
+  public function testProtectedTemplateLabelIsRefused(): void {
+    $template = $this->protectedLabelTemplate();
+    try {
+      $this->instantiator()->instantiate($template->uuid(), $this->actor);
+      $this->fail('A validation exception was expected.');
+    }
+    catch (TicketTemplateValidationException $e) {
+      $this->assertStringContainsString('runtime:system', $e->getMessage());
+    }
+    $this->assertSame(0, $this->ticketCount());
+  }
+
+  /**
+   * The template run tool refuses the same template.
+   */
+  public function testTemplateRunToolRefusesProtectedLabel(): void {
+    $template = $this->protectedLabelTemplate();
+    $this->container->get('current_user')->setAccount($this->actor);
+    $result = $this->container->get('tool.runner')
+      ->run('bakers_ticket_template_run', ['template' => $template->uuid()])
+      ->getFormattedResult();
+    $this->assertFalse($result->isSuccess());
+    $this->assertStringContainsString('runtime:system', (string) $result->getMessage());
+    $this->assertSame(0, $this->ticketCount());
+  }
+
+  /**
+   * A template carrying `runtime:system`, with the namespace protected.
+   */
+  private function protectedLabelTemplate(): BbTicketTemplateInterface {
+    $this->config('bb_core.settings')->set('protected_label_namespaces', ['runtime'])->save();
+    BbVocabulary::create(['id' => 'label', 'label' => 'label'])->save();
+    $this->container->get('entity_type.bundle.info')->clearCachedBundles();
+    $term = BbTerm::create(['vid' => 'label', 'name' => 'runtime:system']);
+    $term->save();
+    return $this->createTemplate(['labels' => [$term->id()]]);
   }
 
 }

@@ -483,4 +483,19 @@ describe('forge-github', () => {
     });
     expect(f.calls.some((c) => c.method === 'DELETE')).toBe(true);
   });
+
+  it('refuses every origin issue operation as unsupported, without a request', async () => {
+    const f = fakeFetch({});
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    const issue = 'https://github.com/acme/shop/issues/3';
+    for (const op of [
+      b.issueLabels(issue),
+      b.updateIssueLabels(issue, { add: 'x', remove: [] }),
+      b.commentIssue(issue, 'x'),
+    ])
+      await expect(op).rejects.toThrow(
+        'origin issues are unsupported on GitHub; record the step in Manual review',
+      );
+    expect(f.calls).toEqual([]);
+  });
 });

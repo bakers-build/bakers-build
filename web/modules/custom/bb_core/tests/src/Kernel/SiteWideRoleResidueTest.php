@@ -103,6 +103,8 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     'create bb_term',
     'create bb_ticket',
     'edit bb_project',
+    // The time tools record, correct and delete the owner's own worklogs.
+    'record own worklog',
     'register bakers conductor',
     'update any bb_group',
     'update any bb_term',

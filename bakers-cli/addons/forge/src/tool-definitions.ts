@@ -87,6 +87,27 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
       required: ['job_id'],
     },
   },
+  forge_issue_update: {
+    description:
+      "The run ticket's origin issue, with the conductor's credentials. operation list_labels: the origin project's labels, inherited group labels included, as {name, is_project_label}. update_labels: in one update add the label `add` and remove the labels `remove`; every name must be a listed label spelled exactly, none is created; returns the issue's labels. comment: post `body` (Markdown, sent unchanged) once, never retried; returns {id, url}. Refused without an origin, and on a backend without origin issues (GitHub): record the step in Manual review.",
+    input: {
+      type: 'object',
+      properties: {
+        operation: {
+          type: 'string',
+          enum: ['list_labels', 'update_labels', 'comment'],
+        },
+        add: { type: 'string', description: 'update_labels: label to set' },
+        remove: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'update_labels: labels to remove',
+        },
+        body: { type: 'string', description: 'comment: Markdown text' },
+      },
+      required: ['operation'],
+    },
+  },
   forge_merge: {
     description:
       "Merge the open PR/MR of an owned branch into its base, once it is conflict free and overall is success. Human approval is the workflow's merge gate, not this tool's.",

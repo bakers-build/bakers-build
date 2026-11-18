@@ -1,49 +1,23 @@
----
-title: Write a recipe
-description: Add a recipe skill that brings your engineering method to plan, working and review.
----
+# Choose a method
 
-# Write a recipe
+A recipe tells the agent how to plan, implement and review a ticket. Choose one for its engineering approach; put your runtime and checks in [project rules](/skills-and-workflows/workflow-file).
 
-**Your team works with a different method? Write a recipe, and qualification can choose it for your tickets.**
+## Use an existing recipe
 
-A recipe brings one engineering method to `plan`, `working` and `review`. It adds slots to the state × phase grid of the frame skill `bb-workflow`, whose state files read the ticket, provision the runtime, run the project's checks and move the ticket on. The shipped example is `bb-recipe-matt`. Stack-specific knowledge does not belong in a recipe: put it in a runtime guide or in the project's `WORKFLOW.md` hints.
+Qualification reads the installed recipes, chooses one that fits the request and records its reason on the ticket. No recipe is preselected. Tell the agent your team's preference when you describe the work; it must still choose a recipe that supports the ticket's type.
 
-**You need:** a repository connected to bakers.build and its skills under `.claude/skills` or `.agents/skills`.
+| You need | Shipped recipe |
+|---|---|
+| Clarify the problem, agree a spec, implement test-first and review | `matt` |
+| Brainstorm, plan and implement using the Superpowers method | `superpowers` |
+| Verify an existing result | `verify` |
+| Deploy and release a batch | `deploy-and-release` |
 
-1. **Describe it.** Create `.claude/skills/<namespace>/skills/bb-recipe-<method>/SKILL.md`. Name the method and the ticket types it covers. Qualification loads every installed recipe completely and chooses the one whose method fits the ask, so the sections below, not the description, carry what the method does.
+The **type** selects the recipe's variant: for example, a bug needs a diagnosis rather than a feature specification. A recipe declares the types it supports.
 
-   ```yaml
-   ---
-   name: bb-recipe-lean
-   description: Recipe for tickets of type feature or chore — a short plan, then test-first implementation and a code review.
-   ---
-   ```
+**Example:** ask for a small feature using the Matt method. After qualification, check that the ticket records recipe `matt`, type `feature` and the reason for that choice. In plan, expect a spec; in working, test-first implementation; in review, a code review. The run log should name `bb-recipe-matt` and the relevant method skills. A field value alone does not prove the method ran.
 
-2. **Write one section per state, one slot per phase.** `## bb-state-plan`, `## bb-state-working` and `## bb-state-review`, each with a `### bb-phase-<phase>` slot only where your method adds something, usually `### bb-phase-work`, naming the method's original skills. Add a `## <type>:bb-state-<state>` section only where a type behaves differently, for example `## bug:bb-state-plan`; per phase its slot wins over the general one. A recipe links no `bb-workflow` reference and calls no other bakers.build skill. Follow the authority limits below. Keep the whole file under 500 words.
-
-   Before the state sections, `## bb-gates` holds one row per declared type: `default` for a shipped type (feature, bug, chore, deployment, verification), optionally plus gates you add; for your own type every gate it waits on. Your own gate reads `a person confirms <what> in <state>/<phase>` and is named `<recipe>:<gate>`.
-
-   ```md
-   ## bb-gates
-
-   | Type | Gates |
-   |---|---|
-   | feature | default |
-   | chore | default |
-
-   ## bb-state-plan
-
-   ### bb-phase-work
-
-   Follow `brainstorming`, then `writing-plans`.
-   ```
-
-3. **Install it** in the repository or in any plugin, so the agent can discover it. `WORKFLOW.md` does not list recipes.
-
-4. **Prove it on a ticket.** Create a small ticket of a type your recipe covers, let qualification choose your recipe, or set it with the `bakers_ticket_classify` tool ([bakers tools](/cli/tools)), and let it run. The run log shows `bb-recipe-<method>` loaded in each state, and the handoff comments show whether your slots hold.
-
-**Done when:** one ticket has passed through `plan`, `working` and `review` with your recipe loaded, as the run log shows.
+To change an already agreed method or scope, ask the agent to use `bb-scope-change` before continuing.
 
 ## Shipped recipes and their plugins
 
@@ -55,12 +29,62 @@ A shipped recipe names original skills from an external plugin. Add the recipe's
 | `bb-recipe-superpowers` | `superpowers` | `https://github.com/obra/superpowers.git` | `v7.0.0` | `{ url: 'https://github.com/obra/superpowers.git', ref: 'v7.0.0', plugins: ['superpowers'] }` |
 | `bb-recipe-deploy-and-release`, `bb-recipe-verify` | none | — | — | — |
 
-## The rules
+## Add your own recipe
 
-A type-specific phase slot wins; a missing phase falls back to the general state section, then to no recipe slot. The frame's state phase always runs. A recipe can replace a default deliverable, comment, merge or check when its slot names one explicitly. Approval, the coding gate, the verdict and readbacks remain mandatory; a transition slot can only choose a destination allowed by the gate.
+Start with the [skills installed for your agent](/skills-and-workflows/skills). Create a discoverable skill named `bb-recipe-<method>` in your repository or a plugin; for example, `.claude/skills/team/skills/bb-recipe-small-change/SKILL.md`.
 
-Install every required method skill before running a ticket. Keep runtime mechanics in runtime guides and project checks in `WORKFLOW.md`. [Workflow mechanics](/skills-and-workflows/guide#how-it-works) explains the surrounding run; the installed `bb-workflow/references/authoring.md` defines the authoring contract.
+This complete example supports chores with a short plan and a check-first implementation:
 
-## Reader contract
+```md
+---
+name: bb-recipe-small-change
+description: Recipe for tickets of type chore — a short plan, a failing check, a minimal change and independent review.
+---
 
-Qualification must be able to determine the method and supported ticket types from the complete recipe. Verify them through the small ticket above before using it on production work.
+## bb-gates
+
+| Type | Gates |
+|---|---|
+| chore | default |
+
+## bb-state-qualification
+
+### bb-phase-work
+
+Clarify only what is needed to make the acceptance criteria checkable.
+
+## bb-state-plan
+
+### bb-phase-work
+
+Describe the smallest change and its observable check. Agree the check
+before implementation, including what it cannot prove.
+
+## bb-state-working
+
+### bb-phase-work
+
+Show the agreed check failing, make the smallest change, then show it
+passing. Keep the check result and the checked revision in the handoff.
+
+## bb-state-review
+
+### bb-phase-work
+
+Check the diff against the approved scope and project conventions.
+Independently verify the recorded result and report missing evidence.
+```
+
+A `bb-state-<state>` section supplies the method for that state. A `bb-phase-<phase>` slot adds instructions at that point in the run. Name the original skills if your method requires them, and install them too. Keep the recipe under 500 words and free of project commands.
+
+**Verify:** give the agent a small chore that fits this method. Let qualification select it and check the recorded reason. Follow the ticket through plan, working and review: each log must show `bb-recipe-small-change` loaded, and the handoffs must contain the agreed check, its failing/passing results and the review evidence. A missing recipe, state section, supported type or required skill stops the run.
+
+## Change the method for one type
+
+A type-specific slot such as `## bug:bb-state-plan` overrides the general slot for that phase. Phases absent there fall back to the general state section. Declare the type and its gates before using it; the example above supports only `chore`.
+
+A recipe supplies method within the [fixed workflow](/skills-and-workflows/states#what-stays-fixed). It can name a replacement deliverable or check, but cannot remove approval gates, the verdict or readbacks. Adding a slot does not add a server state.
+
+For example, “only diagnose this bug” is a scope and stopping instruction to agree with the agent; it is not a new `diagnosis` state. Keep the diagnosis in plan and do not authorize implementation.
+
+The installed `bb-workflow/references/authoring.md` is the full authoring contract. For who approves the method's results, see [collaboration](/skills-and-workflows/collaboration).

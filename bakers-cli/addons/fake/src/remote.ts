@@ -65,6 +65,7 @@ export interface FakeSeedTicket {
   /** Label term names sideloaded for agent selection (BB-144). */
   type?: string;
   recipe?: string;
+  conductorOwner?: string;
   labels?: string[];
   /** Environments sideloaded for agent selection (BB-144). */
   environments?: { name: string; tier: string }[];
@@ -380,6 +381,7 @@ export class FakeBbRemote implements BbRemote {
       ...(t.workspaceName ? { workspaceName: t.workspaceName } : {}),
       ...(t.type ? { type: t.type } : {}),
       ...(t.recipe ? { recipe: t.recipe } : {}),
+      ...(t.conductorOwner ? { conductorOwner: t.conductorOwner } : {}),
       labels: t.labels ?? [],
       environments: t.environments ?? [],
     };

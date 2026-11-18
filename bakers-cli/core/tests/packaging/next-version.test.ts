@@ -15,8 +15,17 @@ it('allocates above every published package, including a partial prior publish',
   ).toBe('0.6.0-next.44\n');
   expect(next('0.6.0', []).stdout).toBe('0.6.0-next.1\n');
 });
-it('rejects a backwards or already stable release base and invalid snapshots', () => {
-  for (const versions of [['0.6.0'], ['0.7.0-next.2'], ['invalid'], {}])
+it('allocates above a stable published above the tag base', () => {
+  expect(next('0.10.1', ['0.10.1-next.16', '0.11.0']).stdout).toBe(
+    '0.11.1-next.1\n',
+  );
+  expect(next('0.10.1', ['0.11.0', '0.11.1-next.4']).stdout).toBe(
+    '0.11.1-next.5\n',
+  );
+  expect(next('0.6.0', ['0.6.0']).stdout).toBe('0.6.1-next.1\n');
+});
+it('rejects a prerelease above the base and invalid snapshots', () => {
+  for (const versions of [['0.7.0-next.2'], ['invalid'], {}])
     expect(next('0.6.0', versions).status).not.toBe(0);
   expect(next('0.6.0;echo unsafe', []).status).not.toBe(0);
 });
