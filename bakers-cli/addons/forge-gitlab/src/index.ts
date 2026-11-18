@@ -303,17 +303,23 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       const skipped: { mail: string; reason: string }[] = [];
       const ids: number[] = [];
       for (const mail of mails) {
-        // `email` is only returned to an admin token; others see `public_email`.
-        const found = (
-          (await apiAt(
-            `${base}/api/v4`,
-            `/users?search=${encodeURIComponent(mail)}`,
-          )) as { id: number; public_email?: string; email?: string }[]
-        ).find((u) =>
-          [u.public_email, u.email].some(
-            (e) => e?.toLowerCase() === mail.toLowerCase(),
-          ),
-        );
+        const hits = (await apiAt(
+          `${base}/api/v4`,
+          `/users?search=${encodeURIComponent(mail)}`,
+        )) as { id: number; public_email?: string; email?: string }[];
+        // An admin token sees e-mails: match exactly. Others get basic fields
+        // only; the search already matched the public e-mail, so one hit counts.
+        const found =
+          hits.find((u) =>
+            [u.public_email, u.email].some(
+              (e) => e?.toLowerCase() === mail.toLowerCase(),
+            ),
+          ) ??
+          (hits.length === 1 &&
+          hits[0]!.public_email === undefined &&
+          hits[0]!.email === undefined
+            ? hits[0]
+            : undefined);
         if (found) {
           ids.push(found.id);
           requested.push(mail);

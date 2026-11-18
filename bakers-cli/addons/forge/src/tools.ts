@@ -338,8 +338,9 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       // One server read serves the base and the reviewers.
       const read = req.currentTicket;
       if (read) {
-        const once = read();
-        req = { ...req, currentTicket: () => once };
+        // Lazy: a suffixed branch without the flag never reads the ticket.
+        let once: ReturnType<typeof read> | undefined;
+        req = { ...req, currentTicket: () => (once ??= read()) };
       }
       const base = await currentBase(req, branch, run);
       const b = await backend();

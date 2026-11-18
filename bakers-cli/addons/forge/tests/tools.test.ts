@@ -348,6 +348,24 @@ describe('forge tools', () => {
       }
     });
 
+    it('reads no ticket on a suffixed branch without the flag', async () => {
+      const { backend } = fakeBackend({});
+      let reads = 0;
+      await forgeTools({ backend: async () => backend, settings: {} })
+        .forge_pr_upsert!(
+        request(
+          { title: 'feat: x', branch: 'feat/bb-7-work-alt' },
+          '/nonexistent',
+          reviewed,
+          async () => {
+            reads++;
+            return reviewed;
+          },
+        ),
+      );
+      expect(reads).toBe(0);
+    });
+
     it('still returns the PR when the forge fails, skipping every reviewer with the reason', async () => {
       const { backend } = fakeBackend({ reviewersFail: 'HTTP 502' });
       const result = await upsert(backend, {

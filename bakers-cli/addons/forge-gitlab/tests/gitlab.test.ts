@@ -322,7 +322,31 @@ describe('forge-gitlab', () => {
           { id: 7, public_email: 'Ada@Example.com' },
         ],
         'hidden@example.com': [{ id: 8, public_email: '' }],
+        // A non-admin token gets basic fields only, no e-mail.
+        'bea@example.com': [{ id: 4, username: 'bea' }],
+        'two@example.com': [
+          { id: 1, username: 'a' },
+          { id: 2, username: 'b' },
+        ],
       })[url.searchParams.get('search') ?? ''] ?? [];
+
+    it('takes the single hit when the list shows no e-mail, as for a non-admin token', async () => {
+      const f = fakeFetch({
+        'GET /api/v4/users': users,
+        'GET /merge_requests/9': () => ({ ...MR, reviewers: [] }),
+        'PUT /merge_requests/9': () => MR,
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(
+        await b.addReviewers(PR, ['bea@example.com', 'two@example.com']),
+      ).toMatchObject({
+        requested: ['bea@example.com'],
+        skipped: [{ mail: 'two@example.com' }],
+      });
+      expect(f.calls.find((c) => c.method === 'PUT')?.body).toEqual({
+        reviewer_ids: [4],
+      });
+    });
 
     it('resolves mails to users by exact e-mail and PUTs the union with the reviewers already on the MR', async () => {
       const f = fakeFetch({
