@@ -77,6 +77,11 @@ Then('the notification settings form is inside the app shell', async ({ page }) 
   await expect(rail(page).getByRole('link', { name: 'Account', exact: true })).toBeVisible();
 });
 
+Then('the notification settings post back without htmx transport keys', async ({ page }) => {
+  await expect(page.locator(SETTINGS_FORM)).toBeVisible();
+  await expect(page.locator(SETTINGS_FORM)).not.toHaveAttribute('action', /ajax_page_state|_wrapper_format|_triggering_element_/);
+});
+
 When('I tick {string} under {string}', async ({ page }, option: string, groupName: string) => {
   await group(page, groupName).getByRole('checkbox', { name: option, exact: true }).check();
 });

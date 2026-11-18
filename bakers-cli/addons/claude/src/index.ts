@@ -567,13 +567,12 @@ export class ClaudeAgent implements BbAgent {
       ['socat', 'socat'],
     ].filter(([bin]) => !host.onPath(bin as string));
     if (missing.length > 0) {
+      const pkgs = missing.map(([, pkg]) => pkg as string);
       return {
         ok: false,
         cause: `${missing.map(([bin]) => bin).join(' and ')} not found`,
-        fix: `install it with ${installCommand(
-          host,
-          missing.map(([, pkg]) => pkg as string),
-        )}`,
+        // The running agent session only finds the new tools after a restart.
+        fix: `install ${pkgs.join(' and ')} with ${installCommand(host, pkgs)}, then restart the agent session`,
       };
     }
     // The namespaces Claude's sandbox needs: user (unprivileged) and net.

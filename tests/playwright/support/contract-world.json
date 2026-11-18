@@ -199,6 +199,10 @@
     "uuid": "e8a2c6f4-5193-4e17-da65-0c2f4b8d1e53",
     "entityType": "bb_project"
   },
+  "project.owner": {
+    "uuid": "289a0000-0000-4000-8000-000000000004",
+    "entityType": "bb_project"
+  },
   "machine.edit": {
     "uuid": "f9b3d7a5-6204-4f28-eb76-1d3a5c9e2f64",
     "entityType": "bb_machine"
