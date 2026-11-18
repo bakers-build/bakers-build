@@ -90,6 +90,10 @@ Add the chosen label through the ticket's normal label editing. Use either an al
 
 These results assume the shown files and no other selectors. On an existing machine, a `default` route that maps states other than `'*'`, custom selectors and state-specific labels can also change the result. See [Configuration's selection reference](/configuration/machine#which-agent-runs-a-state) for the complete order.
 
+### Choose the runtime per ticket
+
+The `runtime` slot works the same way: a catalog, routes and the `runtime:<alias>` label (with `@<state>`), see [Slot catalogs](/configuration/slot-catalogs). Adding a `runtime:` label needs a workspace permission, see [protected namespaces](/skills-and-workflows/types-recipes-labels#protected-label-namespaces).
+
 ### Verify the run
 
 Run a small ticket and inspect the recorded agent and model. With `agent:coder`, expect Claude/Sonnet. With `agent:reviewed`, check both working and review. Unknown or unavailable labels can warn and fall back, so a label alone is not proof.

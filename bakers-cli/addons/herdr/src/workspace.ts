@@ -139,10 +139,16 @@ export class HerdrWorkspace implements BbWorkspace {
     _identifier: string,
     branch?: string,
     baseRefOverride?: string,
+    options?: { clone?: boolean },
   ): Promise<EnsuredWorkspace> {
     if (branch === undefined) {
       throw new Error('herdr workspace requires a branch name');
     }
+    // shortcut: clone mode is fixed per herdr workspace; switch per run like the git workspace when a herdr machine needs a mixed runtime catalog.
+    if (options?.clone !== undefined && options.clone !== !!this.options.clone)
+      throw new Error(
+        'herdr workspace: the run runtime clone mode differs from the workspace; a herdr machine cannot mix isolating and host runtimes',
+      );
     const extra = this.options.autoSetupMerge
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };

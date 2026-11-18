@@ -41,7 +41,7 @@ The conductor takes the first match, top to bottom. Labels are ticket labels; `<
 7. The first remaining candidate, when there is no `routes.default['*']`.
 8. Priority order: candidates with a `priority` function first, then config order.
 
-Unknown or unavailable labels log a warning and fall through; `agent:default` is ignored. A direct alias always beats a route, whatever the label order. A project `select_agent` function replaces this whole chain. Routes choose an agent for the current state only; they neither pick a conductor nor move the ticket, so the same route names must exist on every host that may run the ticket.
+Unknown or unavailable labels log a warning and fall through; `agent:default` is ignored. A direct alias always beats a route, whatever the label order. A machine `agents.select` function, or the deprecated project `select_agent`, replaces this whole chain; an unknown alias or a throw fails the run. Routes choose an agent for the current state only; they neither pick a conductor nor move the ticket, so the same route names must exist on every host that may run the ticket.
 
 ## Harnesses
 

@@ -48,6 +48,27 @@ Other installed `bb-label-<label>` skills can define behavior for their labels. 
 
 Labels pick from the agent catalog on the machine that runs the ticket. A direct alias beats a route; the full precedence list is in [Machines](/agents/reference#which-agent-runs-a-state). An unknown or unavailable label warns and falls through. Aliases, routes and defaults are set in [Agents and models](/agents/guide).
 
+## Runtime labels
+
+`runtime:<alias>` (optionally `runtime:<alias>@<state>`) picks the machine's runtime for the ticket, like an agent label. A label that chooses a runtime without isolation is ignored unless the machine sets `allow_unsandboxed`; an unknown alias fails the run. See [Slot catalogs](/configuration/slot-catalogs).
+
+## Protected label namespaces
+
+A label whose text before the first `:` is in `bb_core.settings:protected_label_namespaces` (initially `runtime`) can be added only with a workspace permission. Removing a protected label, and adding or removing any other label, work as usual.
+
+| Permission | Allows |
+|---|---|
+| `set any <namespace> label on bb_ticket` | Any ticket in the workspace. Granted to the workspace **lead**. |
+| `set <namespace> label on bb_ticket with own conductor` | Tickets assigned to a conductor you own. Granted to the **contributor**. |
+
+"Own" means you own the ticket's assigned conductor, not the ticket. Members, guests and non-members have neither. Rules:
+
+- The check runs on every save (form, JSON:API, `bakers_ticket_update`, templates), as the current user. A run's session token acts as the human's account but holds `write bakers via session scope`, and any actor holding it is refused, so a run cannot lift its own sandbox. Administrator roles hold that permission too and are refused as well: use a non-admin lead account.
+- A ticket template is checked against its own conductor. A template run is checked as the trigger's owner, so a trigger fails when its owner lacks the grant. `bakers_ticket_create` takes no labels.
+- Changing a ticket's conductor drops its protected labels, because the grant was for the old conductor. Only protected labels already on the stored ticket are dropped; a protected label added in the same save is kept if the actor may set it for the new conductor. To carry a dropped label over, re-add it in a second save.
+- Reassigning tickets when a conductor is deactivated drops their `runtime:*` labels the same way.
+- Renaming a label term to a protected name, or from one protected name to another, needs the `any` permission, because every ticket carrying the term gets the new name. The same session-scope rule applies. Creating a new term with a protected name stays open; adding it to a ticket is checked.
+
 ## Origin labels
 
 A ticket with a GitLab issue as origin mirrors its progress as a label on that issue: [Origin labels](/skills-and-workflows/workflow-file#origin-labels).
