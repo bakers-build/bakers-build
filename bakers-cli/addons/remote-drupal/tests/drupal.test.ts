@@ -107,12 +107,24 @@ describe('DrupalBbRemote', () => {
     const rows = [
       fakeResource(
         'run-1',
-        { state: 'running', state_at_start: 'working' },
+        {
+          state: 'running',
+          state_at_start: 'working',
+          drupal_internal__id: 11,
+          agent: 'claude',
+          started_at: '2026-11-17T17:37:00+00:00',
+          state_changed: '2026-11-17T17:37:01+00:00',
+        },
         { ticket_id: 'tic-1' },
       ),
       fakeResource(
         'run-2',
-        { state: 'claimed', state_at_start: 'review' },
+        {
+          state: 'claimed',
+          state_at_start: 'review',
+          drupal_internal__id: 12,
+          state_changed: '2026-11-17T17:46:00+00:00',
+        },
         { ticket_id: 'tic-2' },
       ),
     ];
@@ -156,24 +168,40 @@ describe('DrupalBbRemote', () => {
       'cond-id',
     );
     expect(col.whereIn).toHaveBeenCalledWith('state', ['claimed', 'running']);
+    expect(col.fields).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        'drupal_internal__id',
+        'agent',
+        'started_at',
+        'state_changed',
+      ]),
+    );
     expect(active).toEqual([
       {
         runUuid: 'run-1',
+        runId: 11,
         ticketUuid: 'tic-1',
         ticketIdentifier: 'BB-1',
         branchName: 'bakers/bb-1',
         state: 'running',
         stateAtStart: 'working',
         worktreePath: '',
+        agent: 'claude',
+        startedAt: '2026-11-17T17:37:00+00:00',
+        stateChangedAt: '2026-11-17T17:37:01+00:00',
       },
       {
         runUuid: 'run-2',
+        runId: 12,
         ticketUuid: 'tic-2',
         ticketIdentifier: 'BB-2',
         branchName: 'bakers/bb-2',
         state: 'claimed',
         stateAtStart: 'review',
         worktreePath: '',
+        agent: '',
+        startedAt: '',
+        stateChangedAt: '2026-11-17T17:46:00+00:00',
       },
     ]);
   });
@@ -1180,6 +1208,21 @@ describe('DrupalBbRemote', () => {
     expect(body.attributes).toHaveProperty('error_log', 'startRun boom');
     expect(body.attributes).toHaveProperty('closed', true);
     expect(body.attributes).toHaveProperty('closed_date');
+  });
+
+  it('cancelRun patches state=cancelled + error_log and leaves the close to finalisation', async () => {
+    const update = vi.fn(async () => fakeResource('x'));
+    const remote = new DrupalBbRemote(fakeClient({ update }));
+    await remote.cancelRun('run-1', 'machine restart: why');
+    expect(update.mock.calls).toEqual([
+      [
+        'bb_run',
+        'run-1',
+        {
+          attributes: { state: 'cancelled', error_log: 'machine restart: why' },
+        },
+      ],
+    ]);
   });
 
   const CLOSE_METRICS = {

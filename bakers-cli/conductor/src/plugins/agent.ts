@@ -280,6 +280,21 @@ export interface BbAgent extends AgentRuntimeInfo {
     isolatedGit?: boolean,
   ): string;
   /**
+   * The command that continues session `sessionId` in `workspacePath` with the
+   * launch's own flags (see {@link launchCommand} for the other arguments).
+   * The conductor uses it for a run whose agent died in a machine restart.
+   * Optional: without it, or when it returns undefined for this configuration,
+   * such a run is cancelled and its ticket gets a fresh run.
+   */
+  resumeCommand?(
+    sessionId: string,
+    workspacePath?: string,
+    tools?: { url: string },
+    env?: Readonly<Record<string, string>>,
+    args?: readonly string[],
+    isolatedGit?: boolean,
+  ): string | undefined;
+  /**
    * Locate and read this agent's run transcript for a run that executed in
    * `worktreePath`. MUST return '' (never throw) when nothing is found.
    *

@@ -185,18 +185,30 @@ export class DrupalBbRemote implements BbRemote {
       .collection('bb_run')
       .where('conductor_id.conductor_id', '=', id)
       .whereIn('state', ACTIVE)
-      .fields(['state', 'state_at_start', 'worktree_path'])
+      .fields([
+        'state',
+        'state_at_start',
+        'worktree_path',
+        'drupal_internal__id',
+        'agent',
+        'started_at',
+        'state_changed',
+      ])
       .page(100)
       .list();
     return Promise.all(
       rows.map(async (r) => ({
         runUuid: r.id,
+        runId: Number(r.attr<number>('drupal_internal__id')),
         ticketUuid: r.rel('ticket_id') ?? '',
         ticketIdentifier: await this.getRunTicketIdentifier(r.id),
         branchName: await this.getRunTicketBranchName(r.id),
         state: r.attr<string>('state') ?? '',
         stateAtStart: r.attr<string>('state_at_start') ?? '',
         worktreePath: r.attr<string>('worktree_path') ?? '',
+        agent: r.attr<string>('agent') ?? '',
+        startedAt: r.attr<string>('started_at') ?? '',
+        stateChangedAt: r.attr<string>('state_changed') ?? '',
       })),
     );
   }
@@ -720,6 +732,12 @@ export class DrupalBbRemote implements BbRemote {
         closed: true,
         closed_date: t,
       },
+    });
+  }
+
+  async cancelRun(uuid: string, errorLog: string): Promise<void> {
+    await this.api.update('bb_run', uuid, {
+      attributes: { state: 'cancelled', error_log: errorLog },
     });
   }
 

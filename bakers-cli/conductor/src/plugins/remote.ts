@@ -117,6 +117,8 @@ export interface Ticket {
 
 export interface ActiveRun {
   runUuid: string;
+  /** Numeric run id (drupal_internal__id); names the run's tab. */
+  runId: number;
   ticketUuid: string;
   ticketIdentifier: string;
   branchName: string;
@@ -124,6 +126,12 @@ export interface ActiveRun {
   stateAtStart: string;
   /** Absolute path of the per-run git worktree, or '' when unset. */
   worktreePath: string;
+  /** Id of the agent the run was launched with, or '' when unset. */
+  agent: string;
+  /** The run's last launch (`started_at`, ISO), or '' when never launched. */
+  startedAt: string;
+  /** The server's last run state change (`state_changed`, ISO), or ''. */
+  stateChangedAt: string;
 }
 
 export interface ConductorStatus {
@@ -416,6 +424,13 @@ export interface BbRemote {
    * failure is visible immediately and its cause is recorded.
    */
   markFailed(runUuid: string, errorLog: string): Promise<void>;
+  /**
+   * Cancel a live run (`cancel`: claimed/running → cancelled) and record why
+   * in `error_log`. Unlike `failed` it does not count toward the ticket's
+   * failed-run circuit breaker; finalisation then closes the run as for an
+   * operator's cancel.
+   */
+  cancelRun(runUuid: string, errorLog: string): Promise<void>;
   /**
    * Runs this conductor owns that are state in (done, cancelled) but not yet
    * closed — the conductor's one-shot finalisation work list. Cancelled runs
