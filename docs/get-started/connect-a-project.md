@@ -12,13 +12,7 @@ next:
 
 # Prepare your project
 
-Connect a repository on your computer so agents can work on its tickets. A server **project** holds those tickets within your team's **workspace**; your checkout holds the code.
-
-**You need:** a local Git checkout, [a bakers.build account](https://app.bakers.build/) with workspace access, and [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in.
-
-::: tip This checkout is already connected?
-Run the [verification below](#verify). If it passes, continue with [your first ticket](/get-started/first-ticket); do not create another project.
-:::
+Connect a repository on your computer so agents can work on its tickets. A server **project** holds those tickets within your team's **workspace**; your checkout holds the code. This needs your [computer set up](/get-started/#set-up-your-computer).
 
 <span id="skill-wizard-—-recommended"></span>
 <span id="connect-or-reuse"></span>
@@ -28,71 +22,98 @@ Run the [verification below](#verify). If it passes, continue with [your first t
 
 ## 1. Connect this checkout
 
-Make sure the [bakers skills](/skills-and-workflows/skills) are available in your agent. In the checkout, ask it to set up the project. It checks existing settings and guides you through missing prerequisites before making changes.
+This is a prompt for your agent. Start it in the checkout, then **Ask your agent:**
 
 ```text
-Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.
-Check sign-in, use `bakers:bb-init` for missing local tools, and guide me through anything missing.
-Reuse this environment, connection and any existing server project. Ask which
-client I want to use unless I already chose one or the project has one configured.
-Check the project’s setup commands.
-Confirm the permission group and exact hook commands with me.
-Prepare WORKFLOW.md, check required skills, and show what changed.
+/bakers:bb-init-project
 ```
+
+Codex: `Use bakers:bb-init-project to connect this checkout.` The skill checks what is already set up, reuses an existing server project and asks only for what is missing.
 
 <span id="choose-your-tui"></span>
 <span id="set-up-your-environment"></span>
 <span id="choose-the-workflow"></span>
 
-### Review the project setup
+To change the defaults later, see [Use your client](/get-started/use-your-client), [Prepare a worktree environment](/provision/guide) and [Configure your workflow](/skills-and-workflows/guide). These are optional for a first ticket.
 
-Start with the client, application environment and workflow. Keep existing settings and use these guides when you need to change them.
+<span id="verify"></span>
+<span id="2-verify-the-connection-and-environment"></span>
 
-<DocTiles :tiles="[
-  { title: 'Use your client', text: 'Choose how you observe, discuss and act on ticket work with herdr-cli, herdr-app, Orca or Hermes. Keep working project settings.', link: '/get-started/use-your-client', icon: 'terminal', meta: 'Explore clients →' },
-  { title: 'Prepare your environment', text: 'The environment runs your application and dependencies. Reuse your project scripts and make them work independently in each ticket worktree.', link: '/provision/guide', icon: 'layers', meta: 'Prepare the environment →' },
-  { title: 'Configure your workflow', text: 'WORKFLOW.md supplies project rules and checks. Keep the existing recipe, or start with the shipped Matt recipe.', link: '/skills-and-workflows/guide', icon: 'book', meta: 'Understand workflows →' }
-]" />
+## 2. Verify
 
-Return here after any changes. Before starting agents, install every skill the workflow names; a shipped recipe's plugin comes from the ready `marketplaces` entry in [shipped recipes](/skills-and-workflows/recipes#shipped-recipes-and-their-plugins). Review [tools and security](/provision/guide#check-tools-and-access).
+**Done when:** the skill, which runs the checks itself, reports the project, your account, the ignored private files and a passing `bakers conductor check`, then offers to start the conductor and a first trial ticket.
+
+**Next:** [Run the first ticket](/get-started/first-ticket).
 
 <span id="what-changes"></span>
 
-::: details What changes
+## What setup does — an example
 
-The skill first checks for a Git repository; outside one it offers to clone the northbakery sample project. Each ticket runs in its own worktree, so the skill then adds and removes a temporary worktree and reports pass or fail with the reason. It resolves the server project, prepares `.bakers/project.config.js` and `WORKFLOW.md`, checks ignores and shows every written file back, secrets masked. Credentials and a project `.bakers/connection.config.js` stay private. [Configuration](/configuration/) explains file ownership and precedence.
-:::
+The sample is a fresh Git repository with only a `package.json` (a `test` script) and a `README.md`. Running `/bakers:bb-init-project` there and accepting every recommendation, the skill checked the worktree support, set up the server project `docs-example` in workspace `bakers`, chose the herdr-core client and the shipped Matt recipe, derived the check from the `test` script and showed each written file back. It wrote these three files, unchanged:
 
-::: details Manual equivalent
-After resolving the real server project:
+`.bakers/project.config.js`, committed and the same for everyone:
+
+```js
+// @bakers-schema-version 1
+// The project's bakers.build configuration — committed and identical for
+// everyone. A conductor is this machine (machine.config.js) + this project +
+// the variant (project.<name>.config.js). Connections are private files.
+//
+// Each addon in `addons` fills its slots through its preset: herdr-core
+// supplies the executor and brings @bakers-build/addon-workspace-git for the
+// worktree. The server comes from the connection,
+// by default @bakers-build/addon-remote-drupal.
+
+/** @type {import('@bakers-build/core').ProjectConfig} */
+export default {
+  schema_version: 1,
+  project: { name: "docs-example", workspace: "bakers" },
+  // The run budget (max_parallel) is set on the machine in the backend.
+  // Transcripts upload only where the server's run-log storage allows it.
+  // Set to false to keep this conductor's transcripts local even then.
+  // Metrics are unaffected either way.
+  capture_logs: true,
+  addons: [ { use: "@bakers-build/addon-herdr-core" }],
+  // Every run installs exactly these plugins into its own agent home.
+  marketplaces: [
+    { url: 'https://github.com/bakers-build/bakers-build.git', ref: 'main', plugins: ['bakers'] },
+    { url: 'https://github.com/mattpocock/skills.git', ref: 'v1.3.2', plugins: ['mattpocock-skills'] },
+  ],
+};
+```
+
+`WORKFLOW.md`, excerpt: the entry line and the project's check.
+
+```md
+# docs-example — WORKFLOW
+
+Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
+
+## bb-phase-validate
+
+| When | Command |
+|---|---|
+| Any change to `*.js`, `*.mjs` or `package.json` | `npm test` |
+```
+
+`.gitignore`, the private and per-run files:
+
+```text
+/assets-ai/
+/.bakers/log.txt
+/.bakers/connection.config.js
+```
+
+Sign-in and credentials stay private under `~/.bakers`. [Configuration](/configuration/) explains file ownership and precedence.
+
+<span id="manual-equivalent"></span>
+
+## Without the skill
+
+After creating the server project:
 
 ```sh
 bakers config init --scope project --project <name> --workspace <name>
 ```
 
-Choose the project's [executor and worktree](/addons/slots), then approved hooks and [workflow rules](/skills-and-workflows/workflow-file). Select a named connection with `--connection team` or `BAKERS_CONNECTION=team`.
-
-Ignore `/assets-ai/`, `/.bakers/log.txt` and `/.bakers/connection.config.js`. Commit the project file, WORKFLOW and README.
-:::
-
-<span id="verify"></span>
-<span id="2-verify-the-connection-and-environment"></span>
-
-## 2. Verify the connection and environment
-
-Confirm that this checkout points to the intended project and is ready for a ticket.
-
-```sh
-git check-ignore -v assets-ai/probe .bakers/log.txt .bakers/connection.config.js
-bakers config check --scope project --online
-bakers info
-bakers conductor check
-```
-
-The online check verifies sign-in; confirm project access separately. `conductor check` tests agent sandbox startup. Use your project's workflow checks to establish application readiness.
-
-**Done when:** project and account are correct, required skills are available, private files are ignored and the project's readiness checks pass.
-
-With the checks green, the skill offers to start the session: it runs `bakers conductor start` in your client (herdr: a new tab) and offers a first trial ticket through `bakers:bb-create-ticket` with an example you can accept as it is.
-
-**Next:** [Run the first ticket](/get-started/first-ticket).
+Ignore `/assets-ai/`, `/.bakers/log.txt` and `/.bakers/connection.config.js`, then commit `.bakers/project.config.js` and `WORKFLOW.md`. [Configuration](/configuration/) explains every setting.

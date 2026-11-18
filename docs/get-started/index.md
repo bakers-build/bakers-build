@@ -2,9 +2,43 @@
 
 bakers.build is a ticket-driven AI software factory. Coding agents work every ticket on your development machine or on remote workers, and a person decides at [every station](#how-it-works). Open source, self-hosted or hosted, both free.
 
-**You need:** a bakers.build account (hosted at [app.bakers.build](https://app.bakers.build/) or [self-hosted](/self-hosting/)), [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in, and a local Git checkout.
+**You need:** a bakers.build account (hosted at [app.bakers.build](https://app.bakers.build/) or [self-hosted](/self-hosting/)), [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in, a Git checkout and a computer where you may install packages.
 
 <span id="before-you-start"></span>
+
+## Set up your computer (once) {#set-up-your-computer}
+
+Web-only ticket writers skip this.
+
+1. **CLI** ([Node.js ≥20.19](/provision/node)):
+
+   ```sh
+   npm install -g @bakers-build/bakers
+   ```
+
+2. **Skills**, in Claude Code one at a time ([Codex](/skills-and-workflows/skills#codex)):
+
+   ```text
+   /plugin marketplace add https://bakers.build/marketplace.json
+   ```
+
+   ```text
+   /plugin install bakers@bakers
+   ```
+
+3. **Linux only:** install the sandbox tools yourself; the agent has no `sudo`. Other distributions: same packages.
+
+   ```sh
+   sudo apt install bubblewrap socat
+   ```
+
+4. **Restart the agent session**, then ask your agent:
+
+   ```text
+   /bakers:bb-init
+   ```
+
+**Done when:** `bakers conductor check` prints `sandbox ok`. Remote or manual setup: [Choose where agents run](/provision/machine).
 
 ## Choose where to start
 
@@ -21,15 +55,15 @@ bakers.build is a ticket-driven AI software factory. Coding agents work every ti
 
 The path of one ticket:
 
-1. You write a **ticket**, a request with checkable acceptance criteria, in a **project** of your **workspace**. Workspace and project live on the bakers.build server, hosted or self-hosted; the workspace holds your team's projects and access.
-2. A **conductor**, bound to your project checkout on a **worker machine** (your computer or a remote worker), claims an eligible ticket: in a state it serves, not frozen or blocked, with machine capacity free. See [which tickets it takes](/configuration/project/conductors#which-tickets-it-takes) and [where agents run](/provision/machine).
-3. The conductor starts a coding **agent**, Claude Code or Codex under your own sign-in ([Agents](/agents/)).
-4. The agent writes a spec and plan into the ticket and waits for your approval before implementing ([Workflows and states](/skills-and-workflows/states)).
-5. Each attempt is a **run** in its own **worktree**, a separate Git checkout. The agent implements and checks the change within the permissions set in [Agent permissions and isolation](/agents/security).
-6. An agent reviews the change, then you review the result: a summary in the ticket and a merge request ([Accept results](/skills-and-workflows/accept-results)).
+1. You write a **ticket** with checkable acceptance criteria in a **project** of your **workspace** on the bakers.build server.
+2. A **conductor** on a **worker machine** (your computer or a remote worker) claims it: see [which tickets it takes](/configuration/project/conductors#which-tickets-it-takes) and [where agents run](/provision/machine).
+3. It starts a coding **agent**, Claude Code or Codex under your own sign-in ([Agents](/agents/)).
+4. The agent writes a spec and plan and waits for your approval ([Workflows and states](/skills-and-workflows/states)).
+5. Each attempt is a **run** in its own **worktree**, a separate Git checkout, within [Agent permissions and isolation](/agents/security).
+6. An agent reviews the change, then you review the summary and merge request ([Accept results](/skills-and-workflows/accept-results)).
 7. You authorize the merge.
 
-Environments and tools for your stack are prepared under [Provision](/provision/).
+Stack environments: [Provision](/provision/).
 
 <span id="after-your-first-ticket"></span>
 

@@ -14,10 +14,6 @@ Run a small task from your [prepared project](/get-started/connect-a-project) an
 <span id="choose-where-the-work-runs"></span>
 <span id="use-the-team-setup"></span>
 
-::: tip Your team already runs tickets?
-Use the team's entry in the ticket's **Conductor** field and skip to [Create and follow](#create-and-follow). Your team handles startup.
-:::
-
 <span id="start-the-conductor"></span>
 <span id="start-your-local-setup"></span>
 
@@ -37,6 +33,8 @@ Confirm the selected agent is signed in. `conductor check` checks whether agents
 <span id="ai-first-guide-the-first-run"></span>
 
 ::: details Let your agent guide startup
+**Ask your agent:**
+
 ```text
 Check this project's configured client, agent skills and environment.
 Reuse working settings. Help me start its conductor and verify that it is online.

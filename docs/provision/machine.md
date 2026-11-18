@@ -13,10 +13,6 @@ next:
 
 Agents need somewhere to run: an existing team environment, a remote server or your own computer. Choose that location first. Reuse its tools and accounts wherever possible. <span id="choose-your-tools"></span>
 
-::: tip Your team already runs this project?
-Continue with [ticket work](/get-started/daily-work/create-a-ticket). You can use the web or a connected chat without installing an agent locally.
-:::
-
 <span id="choose-the-machine"></span>
 
 ## Choose an execution environment
@@ -36,10 +32,6 @@ Follow these steps only if you are responsible for preparing the chosen environm
 
 **You need:** your account, workspace access, the server URL if your team does not use `https://app.bakers.build`, and an installed, signed-in [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) in that environment.
 
-::: tip Already ready?
-[Verify the setup](#verify) and continue with [your project](/get-started/connect-a-project).
-:::
-
 <span id="skill-wizard-—-recommended"></span>
 <span id="use-the-guided-setup"></span>
 
@@ -54,7 +46,7 @@ Follow [skill installation](/skills-and-workflows/skills) for your chosen agent,
 
 ### 2. Check tools and sign in
 
-Start a new agent session in the chosen environment. Ask it to check what is ready and guide only the missing steps:
+Start a new agent session in the chosen environment. It checks what is ready and guides only the missing steps. **Ask your agent:**
 
 ```text
 Use `bakers:bb-init` to check this environment for running bakers.build agents.
