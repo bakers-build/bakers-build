@@ -138,6 +138,11 @@ placement (embedding is one level deep). A placement plugin declares its
 references through `IslandEmbeddingInterface`; core knows nothing about UI
 Patterns slot structure.
 
+The `IslandBoost` nesting guard does not see into component slots, because UI
+Patterns builds them after the guard has run. A boosted component that embeds an
+island with a boost of its own is not checked, so declare no conflicting boost
+on either.
+
 ## Quickest path to a new island
 
 One plugin class in `my_module/src/Plugin/Island/MyTasks.php`:

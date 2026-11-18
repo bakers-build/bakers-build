@@ -15,6 +15,7 @@ use Drupal\island_test\ProfileAppProvider;
 use Drupal\KernelTests\KernelTestBase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use Psr\Log\AbstractLogger;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -171,6 +172,64 @@ final class IslandEmbeddedPlacementTest extends KernelTestBase {
   }
 
   /**
+   * A boosted embedding component passes the nesting guard on page and rebuild.
+   *
+   * The guard runs only on a boosted container that declares ids, so `header`
+   * is boosted with `counter` riding along. It does not see into component
+   * slots (see IslandBoost::checkNesting()), so this proves the boosted
+   * component and its embedded island render together without a violation.
+   */
+  public function testBoostedEmbeddingComponentPassesNestingGuard(): void {
+    $logged = $this->captureIslandLog();
+    $this->boostHeader();
+    self::assertStringContainsString('data-hx-select-oob="#' . self::htmlId('counter') . '"', $this->renderPage());
+    $this->enterPath('/island-test');
+    $host = $this->container->get('island.profile_renderer')->registerHost($this->profile(), 'one');
+    self::assertInstanceOf(IslandProfileHost::class, $host);
+    $html = (string) $this->container->get('island.responder')->toResponse(
+      IslandResponse::make()->dispatch('tasks.other'), NULL, $host,
+    )->getContent();
+    $this->container->get('request_stack')->pop();
+    self::assertSame(1, substr_count($html, 'id="' . self::htmlId('tasks') . '"'));
+    self::assertSame([], $logged->getArrayCopy());
+  }
+
+  /**
+   * Boosts `header` with `counter` riding along and saves the profile.
+   */
+  private function boostHeader(): void {
+    $placements = self::placements();
+    $placements['header']['configuration'] += ['boost' => TRUE, 'also_placements' => ['counter']];
+    $this->profile()->set('placements', $placements)->save();
+  }
+
+  /**
+   * Records what the island logger channel is told.
+   *
+   * @return \ArrayObject<int, string>
+   *   The messages, filled while the test runs.
+   */
+  private function captureIslandLog(): \ArrayObject {
+    $sink = new \ArrayObject();
+    $logger = new class($sink) extends AbstractLogger {
+
+      public function __construct(
+        private readonly \ArrayObject $sink,
+      ) {}
+
+      /**
+       * {@inheritdoc}
+       */
+      public function log($level, string|\Stringable $message, array $context = []): void {
+        $this->sink->append((string) $message);
+      }
+
+    };
+    $this->container->get('logger.factory')->get('island')->addLogger($logger);
+    return $sink;
+  }
+
+  /**
    * The embedded island's action posts to the page and answers with fragments.
    */
   public function testEmbeddedActionAnswersWithItsContainerAndSubscribers(): void {
@@ -219,6 +278,19 @@ final class IslandEmbeddedPlacementTest extends KernelTestBase {
   public function testValidProfileIsAccepted(): void {
     self::assertSame([], $this->formErrors($this->profile()));
     self::assertSame([], $this->importErrors($this->profile()));
+  }
+
+  /**
+   * An unavailable plugin does not count as an unreferenced embedded placement.
+   *
+   * Its references are unknown, so only the profile's own validation of the
+   * unavailable plugin applies.
+   */
+  public function testUnavailablePluginIsNoMissingReference(): void {
+    $placements = self::placements();
+    $placements['header']['plugin_id'] = 'unavailable';
+    $errors = $this->container->get('island.profile_embedding')->errors($this->profile()->set('placements', $placements));
+    self::assertSame([], $errors);
   }
 
   /**

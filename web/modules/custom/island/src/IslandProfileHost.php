@@ -22,7 +22,7 @@ final class IslandProfileHost implements IslandContextProviderInterface, IslandV
     private readonly AppProviderInterface $provider,
     private readonly string $instanceId,
     private readonly IslandConditionEvaluator $evaluator,
-    private readonly ?IslandProfileEmbedding $embedding = NULL,
+    private readonly IslandProfileEmbedding $embedding,
   ) {
   }
 
@@ -94,7 +94,7 @@ final class IslandProfileHost implements IslandContextProviderInterface, IslandV
       return $access;
     }
     // An embedded island is shown only inside its referencing placement.
-    $this->references ??= $this->embedding?->references($this->profile) ?? [];
+    $this->references ??= $this->embedding->references($this->profile);
     $referencing = $this->references[$island_id] ?? [];
     $access = $access->andIf(AccessResult::allowedIf($referencing !== []));
     foreach ($referencing as $placement_id) {

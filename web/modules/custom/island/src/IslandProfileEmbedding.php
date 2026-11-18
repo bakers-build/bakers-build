@@ -94,9 +94,30 @@ final class IslandProfileEmbedding {
         }
       }
     }
+    return array_merge($errors, $this->countErrors($profile, $embedded, $references));
+  }
+
+  /**
+   * Errors for embedded placements not referenced exactly once.
+   *
+   * @param \Drupal\island\Entity\IslandProfileInterface $profile
+   *   The profile.
+   * @param string[] $embedded
+   *   Enabled placement ids in the embedded slot.
+   * @param array<string, string[]> $references
+   *   The result of references().
+   *
+   * @return string[]
+   *   Error messages.
+   */
+  private function countErrors(IslandProfileInterface $profile, array $embedded, array $references): array {
+    $errors = [];
+    // References from an unavailable plugin are unknown; a zero count would
+    // be a false error beside the profile's own report of that plugin.
+    $unresolved = array_filter($profile->getEnabledPlacements(), fn(array $placement): bool => !$this->islandManager->hasDefinition((string) ($placement['plugin_id'] ?? '')));
     foreach ($embedded as $embedded_id) {
       $count = count($references[$embedded_id] ?? []);
-      if ($count !== 1) {
+      if ($count > 1 || ($count === 0 && $unresolved === [])) {
         $errors[] = (string) $this->t('Embedded placement @id must be referenced exactly once; it is referenced @count times.', [
           '@id' => $embedded_id,
           '@count' => $count,
