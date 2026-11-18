@@ -1,5 +1,4 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { uptime } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import {
   type ConductorLogger,
@@ -37,7 +36,6 @@ import {
   resolveAgent,
 } from '../plugins/plugins.js';
 import type {
-  ActiveRun,
   BbRemote,
   ClaimedRun,
   ConductorRegistration,
@@ -279,18 +277,8 @@ export function registrationOf(
   };
 }
 
-/** Why a pre-boot run is not resumed; the recovery cancels it with this message. */
-class ResumeRefused extends Error {}
-
-/** Unix seconds of this machine's boot (suspend does not move it). */
-const machineBootTime = () => Math.floor(Date.now() / 1000 - uptime());
-
-const isoOf = (seconds: number) => new Date(seconds * 1000).toISOString();
-
 export class Conductor {
   private uuid: string | null = null;
-  /** Set once this process has read its runs from before the machine boot. */
-  private recovered = false;
   /**
    * Frozen tickets seen on the last poll, by uuid, with the worktree their
    * hook ran in. Mirrored to `frozenStateFile` when one is given, so an
@@ -343,8 +331,6 @@ export class Conductor {
     private readonly readMachine?: () => Promise<Partial<MachineContext>>,
     /** `~/.bakers/.bakers.env`, loaded at start; runs get declared names only. */
     private readonly secrets: Secrets = {},
-    /** Unix seconds of the machine boot; tests pin it. */
-    private readonly bootTime: () => number = machineBootTime,
   ) {
     this.tunnel = config.tunnel === true;
     // A config built without the loader: its one runtime beside the host.
@@ -703,8 +689,6 @@ export class Conductor {
     }
     // A hung action blocks only its ticket's lane; make it visible.
     this.queue.warnOverdue(this.config.lease_seconds * 1000);
-    if (!this.recovered)
-      await this.step('recover', () => this.enqueueRecovery());
     await this.step('finalize', () => this.enqueueFinalize());
     await this.step('reap', () => this.enqueueReap());
     await this.step('freeze', () => this.observeFreezes());
@@ -775,96 +759,6 @@ export class Conductor {
         machineLoad >= maxParallel
           ? 'at capacity, nothing claimed'
           : 'idle, nothing to claim',
-      );
-    }
-  }
-
-  /**
-   * Once per process, before its first claim: a run last launched before the
-   * machine booted has no live agent, because no process survives a boot. It
-   * is resumed or cancelled; no multiplexer is asked whether an agent lives.
-   * A resume restamps `started_at`, so a later conductor restart skips it.
-   * shortcut: assumes the agent runs on this machine; a remote runtime must opt out.
-   */
-  private async enqueueRecovery(): Promise<void> {
-    const boot = this.bootTime();
-    const runs = await this.remote.fetchActiveRuns(this.id);
-    this.recovered = true;
-    for (const r of runs) {
-      const launched = Math.floor(
-        Math.max(Date.parse(r.startedAt) || 0, Date.parse(r.stateChangedAt) || 0) /
-          1000,
-      );
-      if (launched >= boot) continue;
-      this.queue.enqueue({
-        key: `recover:${r.runUuid}`,
-        lane: r.ticketUuid || r.runUuid,
-        run: () => this.recoverOne(r, boot, launched),
-      });
-    }
-  }
-
-  /** Resumes one pre-boot run, else cancels it so its ticket gets a fresh run. */
-  private async recoverOne(
-    r: ActiveRun,
-    boot: number,
-    launched: number,
-  ): Promise<void> {
-    const why = `machine restart: booted ${isoOf(boot)}, run last launched ${launched ? isoOf(launched) : 'never'}`;
-    let reason: string;
-    if (r.state !== 'running') reason = 'run was only claimed';
-    else if (!r.worktreePath || !existsSync(r.worktreePath))
-      reason = `worktree ${r.worktreePath || '(unrecorded)'} is gone`;
-    else {
-      try {
-        const session = await this.dispatch(
-          {
-            runUuid: r.runUuid,
-            runId: r.runId,
-            ticketUuid: r.ticketUuid,
-            stateAtStart: r.stateAtStart,
-            handler: r.stateAtStart,
-          },
-          {},
-          r.agent,
-        );
-        await this.runNote(r.runUuid, `${why}; resumed session ${session}`);
-        this.logger.info({ run: r.runUuid }, `${why}; resumed`);
-        return;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        reason =
-          err instanceof ResumeRefused
-            ? message
-            : `resume launch failed: ${message}`;
-      }
-    }
-    const cause = `${why}; not resumed: ${reason}; the ticket gets a fresh run`;
-    try {
-      await this.remote.cancelRun(r.runUuid, cause);
-    } catch (err) {
-      // Re-read next tick: a run no longer active (cancelled meanwhile) drops out.
-      this.recovered = false;
-      this.logger.warn(
-        { run: r.runUuid, err: String(err) },
-        'pre-boot run not cancelled; retried next tick',
-      );
-      return;
-    }
-    this.revokeRunTools(r.runUuid);
-    this.signalUi(r.worktreePath);
-    this.logger.warn({ run: r.runUuid }, cause);
-    await this.runNote(r.runUuid, cause);
-  }
-
-  /** Best-effort: a failed note write is logged, never thrown. */
-  private async runNote(runUuid: string, note: string): Promise<void> {
-    try {
-      await this.remote.appendRunNote(runUuid, note);
-    } catch (err) {
-      this.logger.warn(
-        { run: runUuid, err: String(err) },
-        'run note write failed',
       );
     }
   }
@@ -1813,16 +1707,8 @@ export class Conductor {
     return agent;
   }
 
-  /**
-   * `at.worktree` is set once the workspace exists, so a failure can signal it.
-   * `resumeAgent`: continue the run's newest session of that agent instead of
-   * prompting afresh; returns the resumed session id.
-   */
-  private async dispatch(
-    run: ClaimedRun,
-    at: { worktree?: string } = {},
-    resumeAgent?: string,
-  ): Promise<string | undefined> {
+  /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
+  private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
     const t = await this.remote.getTicket(run.ticketUuid);
     // Resolve the ticket alias and machine defaults, or the project selection hook.
     // Persist the package id below so finalize can choose its transcript parser.
@@ -1848,10 +1734,6 @@ export class Conductor {
           this.config.routes,
         );
     }
-    if (resumeAgent !== undefined && chosen.id !== resumeAgent)
-      throw new ResumeRefused(
-        `agent changed from ${resumeAgent || '(unrecorded)'} to ${chosen.id}`,
-      );
     // An unknown alias throws and fails the run. A label may choose a
     // runtime that does not isolate only where the machine allows it.
     const runtime = selectSlot(this.runtimes, t, {
@@ -1886,10 +1768,6 @@ export class Conductor {
       }),
     );
     at.worktree = ws.path;
-    const resumeSession =
-      resumeAgent === undefined
-        ? undefined
-        : await this.resumableSession(chosen, ws.path, run.runUuid);
     // The transfer checks the project's list; the record is the host's alone.
     if (ws.clone)
       saveRunClone({
@@ -1923,41 +1801,11 @@ export class Conductor {
     };
     const launch = { started: false };
     try {
-      await this.launch(
-        run,
-        t,
-        chosen,
-        runtime,
-        agentWhy,
-        ws,
-        ctx,
-        launch,
-        resumeSession,
-      );
+      await this.launch(run, t, chosen, runtime, agentWhy, ws, ctx, launch);
     } catch (err) {
       await this.unwindDispatch(ctx, launch.started);
       throw err;
     }
-    return resumeSession;
-  }
-
-  /** The run's newest session of `chosen`, or a {@link ResumeRefused} why not. */
-  private async resumableSession(
-    chosen: ResolvedAgent,
-    worktree: string,
-    runUuid: string,
-  ): Promise<string> {
-    const { resumeCommand, sessionExists } = chosen.agent;
-    if (!resumeCommand || !sessionExists)
-      throw new ResumeRefused(`agent ${chosen.id} has no session resume`);
-    let newest: string | undefined;
-    for (const id of attemptFamily(runUuid)) {
-      if (!(await chosen.agent.sessionExists?.(worktree, id))) break;
-      newest = id;
-    }
-    if (newest === undefined)
-      throw new ResumeRefused('no agent session of the run');
-    return newest;
   }
 
   /**
@@ -1973,7 +1821,6 @@ export class Conductor {
     ws: EnsuredWorkspace,
     ctx: HookListenerContext,
     launch: { started: boolean },
-    resumeSession?: string,
   ): Promise<void> {
     const env = ctx.env;
     // Lifecycle hooks are conductor-owned + best-effort (BB-84): runHook never
@@ -2161,29 +2008,15 @@ export class Conductor {
     const protectedPaths = isolates
       ? protectedProjectPaths(ws.path, this.config.readOnly ?? [])
       : [];
-    const command =
-      resumeSession === undefined
-        ? chosen.agent.launchCommand(
-            prompt,
-            identity,
-            ws.path,
-            toolsUrl ? { url: toolsUrl } : undefined,
-            env,
-            plugins.args,
-            isolates,
-          )
-        : chosen.agent.resumeCommand?.(
-            resumeSession,
-            ws.path,
-            toolsUrl ? { url: toolsUrl } : undefined,
-            env,
-            plugins.args,
-            isolates,
-          );
-    if (command === undefined)
-      throw new ResumeRefused(
-        `agent ${chosen.id} cannot resume a session in this configuration`,
-      );
+    const command = chosen.agent.launchCommand(
+      prompt,
+      identity,
+      ws.path,
+      toolsUrl ? { url: toolsUrl } : undefined,
+      env,
+      plugins.args,
+      isolates,
+    );
     // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
     if (warnings?.length) {

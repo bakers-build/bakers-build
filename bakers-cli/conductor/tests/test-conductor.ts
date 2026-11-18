@@ -52,7 +52,6 @@ export class TestConductor extends Conductor {
     hookRunner?: HookRunner,
     readMachine?: ConstructorParameters<typeof Conductor>[9],
     secrets?: ConstructorParameters<typeof Conductor>[10],
-    bootTime?: ConstructorParameters<typeof Conductor>[11],
   ) {
     const rec = executor as BbExecutor & Recorders;
     const wired: BbWorkspace = Object.create(workspace);
@@ -83,7 +82,6 @@ export class TestConductor extends Conductor {
       runHook,
       readMachine,
       secrets,
-      bootTime,
     );
   }
 }

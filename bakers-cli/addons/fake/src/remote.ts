@@ -44,10 +44,6 @@ export interface FakeSeedRun {
   agent?: string;
   /** The server's run-log policy; omit to model a server that sends none. */
   runLogStorageAllowed?: boolean;
-  /** The run's last launch, ISO (`started_at`). */
-  startedAt?: string;
-  /** The server's last state change, ISO (`state_changed`). */
-  stateChangedAt?: string;
 }
 
 export interface FakeSeedTicket {
@@ -108,7 +104,6 @@ interface RunRecord {
   log?: string;
   closed?: boolean;
   startedAt?: string;
-  stateChangedAt?: string;
   runLogStorageAllowed?: boolean;
 }
 
@@ -153,11 +148,9 @@ export class FakeBbRemote implements BbRemote {
     finalizeRun: FinalizeRunCall[];
     markCleanedUp: string[];
     appendRunNote: AppendRunNoteCall[];
-    cancelRun: MarkFailedCall[];
   } = {
     markRunning: [],
     markFailed: [],
-    cancelRun: [],
     finalizeRun: [],
     markCleanedUp: [],
     appendRunNote: [],
@@ -216,10 +209,6 @@ export class FakeBbRemote implements BbRemote {
         ...(r.closed !== undefined ? { closed: r.closed } : {}),
         ...(r.runLogStorageAllowed !== undefined
           ? { runLogStorageAllowed: r.runLogStorageAllowed }
-          : {}),
-        ...(r.startedAt !== undefined ? { startedAt: r.startedAt } : {}),
-        ...(r.stateChangedAt !== undefined
-          ? { stateChangedAt: r.stateChangedAt }
           : {}),
       });
       this.queue.push({
@@ -357,16 +346,12 @@ export class FakeBbRemote implements BbRemote {
         (identifier ? `bakers/${identifier.toLowerCase()}` : '');
       return {
         runUuid: r.runUuid,
-        runId: r.runId,
         ticketUuid: r.ticketUuid,
         ticketIdentifier: identifier,
         branchName,
         state: r.state,
         stateAtStart: r.stateAtStart,
         worktreePath: r.worktreePath ?? '',
-        agent: r.agent ?? '',
-        startedAt: r.startedAt ?? '',
-        stateChangedAt: r.stateChangedAt ?? '',
       };
     });
   }
@@ -482,12 +467,6 @@ export class FakeBbRemote implements BbRemote {
       run.state = 'failed';
       run.closed = true;
     }
-  }
-
-  async cancelRun(runUuid: string, errorLog: string): Promise<void> {
-    this.calls.cancelRun.push({ runUuid, errorLog });
-    const run = this.runs.get(runUuid);
-    if (run) run.state = 'cancelled';
   }
 
   async fetchFinalizableRuns(_conductorId: string): Promise<FinalizableRun[]> {
