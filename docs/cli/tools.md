@@ -47,7 +47,7 @@ The tool's structured result is printed to stdout as JSON. Errors go to stderr a
 | `5` | HTTP or protocol error (`E_HTTP`); `details.status` `0` means the response was lost | See the rule below |
 | `6` | Plugin error | Check the connection's `plugins` |
 
-**An uncertain write is not a failure.** A write that timed out or ended with exit `5` may have been applied on the server. The CLI sends each call once; never resend it. Read the ticket back (`bakers_ticket_read`) or search for the object first, and act only on what the read shows. Likewise, a failed read or search is not a negative: it found nothing out.
+**An uncertain write is not a failure.** A write that timed out or ended with exit `5` may have been applied on the server. The CLI sends each call once; never resend it. Read the ticket back (`bakers_ticket_read`) or search for the object first, and act only on what the read shows. Likewise, a failed read or search proves no absence.
 
 ## Tools
 
