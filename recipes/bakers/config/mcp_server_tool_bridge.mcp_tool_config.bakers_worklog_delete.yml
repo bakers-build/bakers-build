@@ -1,0 +1,6 @@
+langcode: en
+status: true
+dependencies: {  }
+id: bakers_worklog_delete
+tool_id: bakers_worklog_delete
+description: null

@@ -199,6 +199,7 @@ final class BbTicketTemplate extends BbContentEntityBase implements BbTicketTemp
       ->setSetting('handler_settings', ['target_bundles' => ['label' => 'label']])
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->addConstraint('BbTicketLabelWorkspace')
+      ->addConstraint('BbTicketProtectedLabel')
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'bb_picker', 'weight' => 6]);
     $fields['project_id'] = BaseFieldDefinition::create('entity_reference')

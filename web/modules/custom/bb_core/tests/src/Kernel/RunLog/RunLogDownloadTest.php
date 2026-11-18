@@ -122,11 +122,11 @@ final class RunLogDownloadTest extends KernelTestBase {
   }
 
   /**
-   * An anonymous visitor is denied.
+   * An anonymous visitor is sent to sign-in and gets no transcript.
    */
-  public function testAnonymousIsDenied(): void {
+  public function testAnonymousIsSentToSignIn(): void {
     [$url] = $this->sealedRun('transcript body');
-    self::assertSame(403, $this->requestAnonymously($url)->getStatusCode());
+    $this->assertSignInRedirect($url, $this->requestAnonymously($url));
   }
 
   /**
@@ -376,7 +376,10 @@ final class RunLogDownloadTest extends KernelTestBase {
   }
 
   /**
-   * Access denials stay 403 for gzip and identity on both routes.
+   * Denials hold for gzip and identity on both routes.
+   *
+   * Anonymous is sent to sign-in on the workspace route but stays 403 on the
+   * API route, which has no workspace slug to redirect from.
    */
   public function testDenialsHoldForGzipAndIdentity(): void {
     [$url] = $this->sealedRun('transcript body');
@@ -391,7 +394,8 @@ final class RunLogDownloadTest extends KernelTestBase {
     $foreign = $this->memberOfAnotherWorkspace();
     foreach (['gzip', 'identity'] as $encoding) {
       $headers = ['Accept-Encoding' => $encoding];
-      self::assertSame(403, $this->requestAnonymously($url, $headers)->getStatusCode());
+      $this->assertSignInRedirect($url, $this->requestAnonymously($url, $headers));
+      self::assertSame(403, $this->requestAnonymously($apiUrl, $headers)->getStatusCode());
       self::assertSame(403, $this->requestAs($outsider, $url, $headers)->getStatusCode());
       self::assertSame(403, $this->requestAs($foreign, $url, $headers)->getStatusCode());
       self::assertSame(403, $this->requestAs($foreign, $apiUrl, $headers)->getStatusCode());
@@ -651,6 +655,18 @@ final class RunLogDownloadTest extends KernelTestBase {
     $response = $this->container->get('http_kernel')->handle($request);
     $this->container->get('request_stack')->pop();
     return $response;
+  }
+
+  /**
+   * Asserts a sign-in redirect back to the URL that carries no transcript.
+   */
+  private function assertSignInRedirect(string $url, Response $response): void {
+    self::assertSame(302, $response->getStatusCode());
+    self::assertSame(
+      Url::fromRoute('user.login', [], ['query' => ['destination' => $url]])->toString(),
+      $response->headers->get('Location'),
+    );
+    self::assertStringNotContainsString('transcript body', (string) $response->getContent());
   }
 
   /**

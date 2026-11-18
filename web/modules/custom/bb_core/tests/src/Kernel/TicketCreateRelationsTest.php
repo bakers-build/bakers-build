@@ -223,13 +223,20 @@ final class TicketCreateRelationsTest extends KernelTestBase {
   }
 
   /**
-   * A valid ticket beyond the picker's 50 candidates is still accepted.
+   * Every open ticket is offered as identifier · title, past 50 candidates.
+   *
+   * The browser-side search filters the offered rows, so an identifier
+   * search reaches only what is offered.
    */
-  public function testValidTicketBeyondCandidateCapIsAccepted(): void {
+  public function testEveryOpenTicketIsOfferedAndAccepted(): void {
     for ($i = 0; $i < 50; $i++) {
       $last = $this->ticket("Filler $i", 'A');
     }
-    self::assertNotContains($last, $this->pickerOptions($this->buildForm('A'), 'parent_id'), 'The ticket lies beyond the cap.');
+    $form = $this->buildForm('A');
+    self::assertContains($last, $this->pickerOptions($form, 'parent_id'));
+    $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->load($last);
+    self::assertInstanceOf(BbTicketInterface::class, $ticket);
+    self::assertContains($ticket->getIdentifier() . ' · Filler 49', array_column($this->pickerProps($form, 'blocked_by')['options'], 'label'));
 
     $ticket = $this->submitExpectingSave(['parent_id' => $last], 'A');
 

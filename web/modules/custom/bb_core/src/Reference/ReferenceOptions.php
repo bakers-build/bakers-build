@@ -35,9 +35,9 @@ final class ReferenceOptions {
    * Returns the access-checked candidates for one field on a host entity.
    *
    * No production caller passes `$match` yet; it is the plug-in point for a
-   * server-side picker search. `PickerWidget` passes no `$limit`, so the
-   * picker offers the first 50 candidates and its client-side search box
-   * filters only among those.
+   * server-side picker search. `PickerWidget` passes `$limit` 0, so the
+   * picker offers every candidate and its client-side search box filters
+   * among all of them.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $host
    *   The entity the field belongs to; also the selection handler's context
@@ -49,9 +49,7 @@ final class ReferenceOptions {
    *   An optional label filter, applied on the server by the selection
    *   handler rather than by the caller. Unused by production callers.
    * @param int $limit
-   *   The maximum number of candidates to return. Every caller that omits
-   *   this takes 50 (see above) — the whole candidate set as far as an
-   *   operator can tell, since nothing today asks for more.
+   *   The maximum number of candidates to return; 0 returns all of them.
    * @param string|null $handler
    *   A selection handler plugin id used instead of the field's own, e.g. a
    *   form display that narrows one field's candidates for that form only.
@@ -88,8 +86,7 @@ final class ReferenceOptions {
   /**
    * Returns the submitted target ids the given handler does not accept.
    *
-   * Uncapped, unlike {@see for()}: a valid candidate beyond the picker's
-   * first 50 is still accepted.
+   * Uncapped, whatever limit a {@see for()} caller passes.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $host
    *   The entity the field belongs to; the handler's context.

@@ -19,7 +19,8 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * Sends a signed-out visitor of a workspace URL to sign in.
  *
  * The visitor comes back to the same URL afterwards. Signed-in accounts
- * outside the workspace keep the workspace boundary's 404.
+ * outside the workspace keep the workspace boundary's 404. Only a safe request
+ * can return to its URL after sign-in, so a write keeps its 403 or 404.
  *
  * Matched by path, not route: an unknown slug or a missing entity never
  * reaches the route and 404s, while an existing one is denied. Answering both
@@ -48,6 +49,7 @@ final class WorkspaceSignInSubscriber implements EventSubscriberInterface {
     $exception = $event->getThrowable();
     // A missing entity is still unconverted here; core 404s it at priority 75.
     if (!($exception instanceof AccessDeniedHttpException || $exception instanceof NotFoundHttpException || $exception instanceof ParamNotConvertedException)
+      || !$request->isMethodSafe()
       || !$this->currentUser->isAnonymous()
       || !self::isWorkspacePath($request->getPathInfo())) {
       return;

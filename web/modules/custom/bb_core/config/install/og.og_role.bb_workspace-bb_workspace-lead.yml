@@ -56,6 +56,7 @@ permissions:
   - 'manage members'
   - 'record own worklog'
   - 'register bakers conductor'
+  - 'set any runtime label on bb_ticket'
   - 'update any bb_comment'
   - 'update any bb_environment'
   - 'update any bb_group'

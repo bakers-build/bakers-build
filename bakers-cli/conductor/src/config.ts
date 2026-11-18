@@ -9,6 +9,8 @@ import {
   discoverAddons,
   discoverScoped,
   findDefaultExportObject,
+  loadRunClone,
+  type MachineContext,
   machineContextPath,
   matchDelimiter,
   readMachineContext,
@@ -42,6 +44,8 @@ import {
   narrowConductorContributions,
 } from './plugins/preset.js';
 import type { Ticket } from './plugins/remote.js';
+import { hostRuntime, type RuntimePlugin } from './plugins/runtime.js';
+import type { SlotCatalog, SlotName } from './plugins/slot-catalog.js';
 import {
   type AgentCatalog,
   loadTools,
@@ -386,6 +390,104 @@ export async function resolveAgents(
     : resolveOne(raw);
 }
 
+/** A slot that runs one plugin per conductor: its catalog has one entry. */
+export function singleEntryCatalog<P extends { id: string }>(
+  slot: SlotName,
+  plugins: P[],
+): SlotCatalog<P> {
+  if (plugins.length > 1)
+    throw new Error(`${slot} catalog: only one entry is supported`);
+  const [only] = plugins as [P];
+  return { slot, entries: { [only.id]: only }, default: only.id, routes: {} };
+}
+
+/**
+ * The runtime catalog: built-in `system` (the host), the addon runtime as the
+ * preset under its id, then the machine entries (an alias equal to the preset
+ * id replaces it). The project only restricts it and names its default.
+ */
+async function loadRuntimeCatalog(
+  preset: RuntimePlugin | undefined,
+  machine: MachineContext['runtime'],
+  project: { enabled?: string[]; default?: string } | undefined,
+  bases: string[],
+): Promise<SlotCatalog<RuntimePlugin>> {
+  const entries: Record<string, RuntimePlugin> = { system: hostRuntime };
+  if (preset) entries[preset.id] = preset;
+  for (const [index, entry] of (machine?.catalog ?? []).entries()) {
+    if (entry.alias === 'system')
+      throw new Error(
+        "runtime catalog: alias 'system' is reserved for the built-in host runtime",
+      );
+    const found = narrowConductorContributions(
+      await discoverAddons(
+        [
+          {
+            use: entry.use,
+            ...(entry.with !== undefined ? { with: entry.with } : {}),
+          },
+        ],
+        'conductor',
+        bases,
+        { only: ['runtimes'] },
+      ),
+    ).runtimes.at(-1);
+    if (found?.kind !== 'runtime')
+      throw new Error(
+        `runtime.catalog[${index}] '${entry.use}' contributes no runtime`,
+      );
+    entries[entry.alias] = found;
+  }
+  const routes = { ...(machine?.routes ?? {}) };
+  const checkRoutes = (problem: (alias: string) => string) => {
+    for (const [name, route] of Object.entries(routes))
+      for (const alias of Object.values(route))
+        if (!Object.hasOwn(entries, alias))
+          throw new Error(`runtime.routes.${name} names ${problem(alias)}`);
+  };
+  checkRoutes((alias) => `unknown alias '${alias}'`);
+  if (project?.enabled) {
+    const unknown = project.enabled.find((a) => !Object.hasOwn(entries, a));
+    if (unknown !== undefined)
+      throw new Error(`runtime.enabled names unknown alias '${unknown}'`);
+    for (const alias of Object.keys(entries))
+      if (!project.enabled.includes(alias)) delete entries[alias];
+    if (Object.keys(entries).length === 0)
+      throw new Error('runtime.enabled leaves no runtime');
+    checkRoutes(
+      (alias) =>
+        `alias '${alias}', which the project's runtime.enabled removes`,
+    );
+  }
+  const has = (alias: string | undefined): alias is string =>
+    alias !== undefined && Object.hasOwn(entries, alias);
+  if (project?.default !== undefined && !has(project.default))
+    throw new Error(
+      `runtime.default names unavailable alias '${project.default}'`,
+    );
+  const presetAlias = preset && has(preset.id) ? preset.id : undefined;
+  const fallback = has('system') ? 'system' : undefined;
+  const dflt = [
+    routes.default?.['*'],
+    project?.default,
+    presetAlias,
+    fallback,
+    Object.keys(entries)[0],
+  ].find(has) as string;
+  return {
+    slot: 'runtime',
+    entries,
+    default: dflt,
+    routes,
+    ...(machine?.select ? { select: machine.select } : {}),
+    ...(project?.default !== undefined
+      ? { projectDefault: project.default }
+      : {}),
+    ...(presetAlias ? { preset: presetAlias } : {}),
+    ...(fallback ? { fallback } : {}),
+  };
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -513,10 +615,20 @@ export async function loadConductorConfig(
   );
   const wired = resolveConductorSlots(discovered);
   // The schema has checked the shape; the list is the project's alone.
-  const readOnly = (config.runtime as { read_only?: string[] } | undefined)
-    ?.read_only;
-  const isolates = wired.runtime?.isolates === true;
-  if (isolates) {
+  const projectRuntime = config.runtime as
+    | { read_only?: string[]; enabled?: string[]; default?: string }
+    | undefined;
+  const readOnly = projectRuntime?.read_only;
+  const runtimes = await loadRuntimeCatalog(
+    wired.runtime,
+    machineCtx.runtime,
+    projectRuntime,
+    machineBases,
+  ).catch((error: Error) => {
+    throw new Error(`${configPath}: ${error.message}`);
+  });
+  const defaultRuntime = runtimes.entries[runtimes.default] as RuntimePlugin;
+  if (Object.values(runtimes.entries).some((r) => r.isolates)) {
     try {
       assertProtectedEntryPoints(config.hooks, readOnly ?? []);
     } catch (error) {
@@ -527,13 +639,18 @@ export async function loadConductorConfig(
   // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
   // Tools load first so inbox bindings can be checked against them.
   const provisioning = provisionRuns();
+  const runtimeIsolation = new Map<string, boolean>();
   const toolSets = [
     ...discovered.addonTools,
     ...provisionTools(config.hooks?.provision_up, provisioning, {
       ...(config.hooks?.provision_exec
         ? { exec: config.hooks.provision_exec }
         : {}),
-      isolates,
+      // A run dispatched before a restart is not in the map; an isolating
+      // run always has a run clone, a host run never.
+      isolates: (worktreePath) =>
+        runtimeIsolation.get(worktreePath) ??
+        loadRunClone(worktreePath) !== undefined,
     }),
   ];
   let agentCatalog: AgentCatalog | undefined;
@@ -757,6 +874,10 @@ export async function loadConductorConfig(
     default_agent: defaultAgent,
     routes,
   };
+  if (typeof config.select_agent === 'function')
+    console.warn(
+      "select_agent in the project config is deprecated; the machine config's select replaces it.",
+    );
   return {
     ...(remote ? { remote } : {}),
     slot_sources: slotSources,
@@ -767,6 +888,24 @@ export async function loadConductorConfig(
     disabled_agents: disabled,
     default_agent: defaultAgent,
     routes,
+    catalogs: {
+      agent: {
+        slot: 'agent',
+        entries: Object.fromEntries(
+          candidates.map((candidate) => [candidate.alias as string, candidate]),
+        ),
+        default: defaultAgent,
+        routes,
+        ...(policy?.select ? { select: policy.select } : {}),
+      },
+      runtime: runtimes,
+      executor: singleEntryCatalog('executor', [executor]),
+      workspace: singleEntryCatalog('workspace', [workspace]),
+    },
+    ...(machineCtx.runtime?.allow_unsandboxed === true
+      ? { allow_unsandboxed: true }
+      : {}),
+    runtime_isolation: runtimeIsolation,
     ...(typeof config.select_agent === 'function'
       ? {
           selectAgent: config.select_agent as NonNullable<
@@ -775,7 +914,7 @@ export async function loadConductorConfig(
         }
       : {}),
     workspace,
-    ...(wired.runtime ? { runtime: wired.runtime } : {}),
+    ...(defaultRuntime !== hostRuntime ? { runtime: defaultRuntime } : {}),
     ...(readOnly ? { readOnly } : {}),
     marketplaces,
     hookListeners,
