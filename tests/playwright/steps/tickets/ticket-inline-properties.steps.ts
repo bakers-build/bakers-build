@@ -374,11 +374,13 @@ Then('the inline {string} panel is closed', async ({ page }, label: string) => {
 
 Then('the inline {string} chips are {string}', async ({ page }, label: string, chips: string) => {
     const control = picker(page, label);
-    const expected = chips === '' ? [] : chips.split(', ').map(name => name.trim());
+    // Chips follow the unsorted candidate list, not pick order, so they compare as a set.
+    const expected = chips === '' ? [] : chips.split(', ').map(name => name.trim()).sort();
     await expect.poll(async () =>
         (await control.locator('[data-option-picker-chip]').allTextContents())
             .map(text => text.trim())
-            .filter(Boolean),
+            .filter(Boolean)
+            .sort(),
     ).toEqual(expected);
 });
 
