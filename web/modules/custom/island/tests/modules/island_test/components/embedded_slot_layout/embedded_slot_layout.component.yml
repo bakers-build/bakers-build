@@ -1,0 +1,12 @@
+$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Embedded slot layout
+status: experimental
+description: 'A layout that declares a slot named like the reserved `embedded` placement slot, which profile validation must refuse.'
+props:
+  type: object
+  properties: {}
+slots:
+  body:
+    title: Body
+  embedded:
+    title: Embedded

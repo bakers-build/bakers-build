@@ -12,6 +12,12 @@ events on the placement to rebuild its mappings after an app event. Each
 placement resolves its own current host data, and responses stay within the
 triggering profile instance.
 
+The `island_placement` source renders a placement from the profile's reserved
+`embedded` slot inside a component slot. It reads the profile host that the
+`ui_patterns_component` island passes as the `island_host` context, and renders
+nothing elsewhere. See "Embedding a placement in a component slot" in the
+island README.
+
 App providers may return `contexts` from `getIslandData()`, mapping names to
 Drupal `ContextInterface` objects. A source's `context_mapping` binds its
 required context to that name. For example, the installed
