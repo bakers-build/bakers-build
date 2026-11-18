@@ -96,6 +96,8 @@ It runs through `sh -c` in the run's worktree with the inherited conductor envir
 
 At 30 minutes, ticket teardown or conductor shutdown, the conductor sends `SIGTERM` to the process group. It does not escalate to `SIGKILL`; commands must handle termination. The result retains the tail of combined stdout/stderr, capped at 65,536 string characters. A non-zero exit is a tool error. Unlike lifecycle hooks, the caller sees this failure directly. No profile runs automatically, and the conductor neither checks application health nor validates the printed URL.
 
+The first call on a new worktree can take minutes, and the call waits until the command ends. Agent harnesses cut MCP tool calls by default: Claude Code's HTTP MCP client after 60 seconds (the server entry's `timeout`, else `MCP_TOOL_TIMEOUT`), Codex after the server's `tool_timeout_sec` (60 seconds by default). bakers.build sets both for its `bakers` server at launch, past the 30-minute provision limit. The limit is the harness's, not the conductor's: a harness launched another way still cuts the call. After a client timeout the command keeps running; a new call with the same profile joins it and returns its result instead of starting the command again.
+
 ## Run a configured command
 
 `hooks.provision_exec` maps keys (letters, digits, `_`, `-`) to commands and offers the tool `provision_exec(key, args?)`. A string is a fixed command: the run picks the key, never the command, and `args` are refused. `{ command, args: true }` also passes `args`, a list of strings, as separate arguments after `--`, never through a shell; the script must validate them. An unknown key is refused. The result carries the exit code and the output tail, and a non-zero exit is a tool error.
