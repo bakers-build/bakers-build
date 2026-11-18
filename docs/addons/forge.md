@@ -23,7 +23,7 @@ addons: [
 ],
 ```
 
-Without a `forge` entry no tool is served; without `backend.use` the conductor does not start.
+Without a `forge` entry no tool is served; without `backend.use` the conductor won't start.
 
 ## Options
 
@@ -38,7 +38,7 @@ Without a `forge` entry no tool is served; without `backend.use` the conductor d
 | `forge_fetch` | Fetches `base_branch`, the ticket branch and parents named in `branches`. | Read only; no tags. |
 | `forge_update_branch` | Merges the current target into a run clone's ticket branch; `sync` says how the run follows. | Pushes nothing. |
 | `forge_push` | Pushes an owned branch. | Fast-forward, or `force_with_lease`; bare force does not exist. |
-| `forge_pr_upsert` | Opens, updates or retargets the PR/MR into the derived base; `request_reviewers` adds ticket reviewers by public e-mail. | Refuses a non-Conventional Commits title before any request. |
+| `forge_pr_upsert` | Opens, updates or retargets the PR/MR into the derived base; `request_reviewers` only adds ticket reviewers, by public e-mail. | Refuses non-Conventional Commits titles first; names skipped reviewers. |
 | `forge_checks` | Lists checks with raw `conclusion`, `run_id`, `job_id` and `overall`. | Read only. |
 | `forge_job_log` | A job's log tail, 16 KiB by default. | Read only. |
 | `forge_issue_update` | Labels or comments on the origin issue. | [GitLab](/addons/forge-gitlab) only. |
