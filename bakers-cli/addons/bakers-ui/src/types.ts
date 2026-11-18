@@ -121,13 +121,11 @@ export interface RendererServices {
   /**
    * BB-472 — re-execute this process, injected from `ui/src/bun-runtime.ts`'s
    * `reExecUnderBun` by the conductor entry. The workspace-picker screen calls
-   * it AFTER writing a new selection to the owning config, so a conductor
-   * reading the same file picks up the write on its next read; absent ⇒ the
-   * picker can write but not restart (e.g. under an injected test renderer).
+   * it with the picked name; the new process is scoped to that workspace for
+   * its session and no config file is written. Absent ⇒ the picker cannot
+   * switch.
    */
-  restartProcess?: () => void;
-  /** Persist a product-workspace name through the command owner's config contract. */
-  selectWorkspace?: (name: string) => Promise<void>;
+  restartProcess?: (workspace: string) => void;
   /** BB-472 — the active workspace's uuid, unresolved name form. See
    *  `TuiOptions.workspaceId`. */
   workspaceId?: string;
@@ -291,7 +289,6 @@ export interface TuiOptions {
   /** BB-472 — the RESOLVED workspace name the plugin's `run()` produced,
    *  passed to the chrome verbatim. Absent ⇒ no workspace suffix. */
   workspace?: string | undefined;
-  selectWorkspace?: ((name: string) => Promise<void>) | undefined;
   /** BB-472 — see `RendererServices.configPath`. */
   configPath?: string | undefined;
   currentUser?: string;
@@ -314,10 +311,10 @@ export interface TuiOptions {
    */
   conductorProcess?: ConductorProcessHost | undefined;
   /**
-   * BB-472 — the re-exec seam the workspace-picker screen calls after
-   * writing a new selection. See `RendererServices.restartProcess`.
+   * BB-472 — the re-exec seam the workspace-picker screen calls with the
+   * picked workspace name. See `RendererServices.restartProcess`.
    */
-  restartProcess?: (() => void) | undefined;
+  restartProcess?: ((workspace: string) => void) | undefined;
   /** BB-257 R2: the parent picker's debounce, injectable for the tests.
    *  Absent ⇒ a real `setTimeout`. */
   debounce?: Debounce | undefined;
