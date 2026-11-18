@@ -104,7 +104,7 @@ describe('relative tab registration', () => {
       'my-work',
       'projects',
       'members',
-      'conductors',
+      'machines',
     ]);
     expect(routes.tabs('project').map((t) => t.id)).toEqual([
       'overview',

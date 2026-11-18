@@ -2,16 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   restartCoveredRuns,
   restartRunsRequest,
-} from '../../../src/Entity/machine/Data/restart-runs.js';
-import { ContextBag } from '../../../src/Routing/context.js';
+} from '../../../../src/Entity/conductor/Screen/restart-runs.js';
+import { ContextBag } from '../../../../src/Routing/context.js';
 import {
   ConfirmDialogScreen,
   type ConfirmRequest,
   confirmRequestContext,
-} from '../../../src/Screen/confirm-dialog.js';
-import type { ScreenContext } from '../../../src/Screen/screen.js';
-import { renderTree } from '../../render-tree.js';
-import { fakeClient, queryStringOf } from '../../test-support.js';
+} from '../../../../src/Screen/confirm-dialog.js';
+import type { ScreenContext } from '../../../../src/Screen/screen.js';
+import { renderTree } from '../../../render-tree.js';
+import { fakeClient, queryStringOf } from '../../../test-support.js';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 

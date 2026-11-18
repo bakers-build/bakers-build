@@ -543,6 +543,8 @@ export interface ConductorQuery {
   projectId?: string | undefined;
   /** The conductors this user OWNS (BB-460 D3) — by owner, never by machine. */
   ownerUserId?: string | undefined;
+  /** One machine's conductors, opened from the Machines tab. */
+  machineId?: string | undefined;
 }
 
 /**
@@ -562,6 +564,7 @@ const conductorParams = (query: ConductorQuery): DrupalJsonApiParams => {
   if (query.projectId) params.addFilter('project_id.id', query.projectId);
   if (query.ownerUserId)
     params.addFilter('owner_user_id.id', query.ownerUserId);
+  if (query.machineId) params.addFilter('machine.id', query.machineId);
   return params;
 };
 
