@@ -51,6 +51,21 @@ Feature: The create-ticket dialog relates a new ticket only within its project
     And the stored ticket has parent "BB-100"
     And the stored ticket is blocked by "BB-110, BB-118"
 
+  Scenario: Both pickers find a ticket by its identifier or its number
+    When I visit the ticket list of project "bakers.build Platform"
+    And I click the "New ticket" action
+    And I type "Picked by identifier within bakers.build Platform" into the title line
+    And I open the "Parent" picker
+    And I search the open picker for "bb-100"
+    And I pick the related ticket "BB-100"
+    And I open the "Blocked by" picker
+    And I search the open picker for "110"
+    And I pick the related ticket "BB-110"
+    And I submit the dialog
+    Then the dialog closed
+    And the stored ticket has parent "BB-100"
+    And the stored ticket is blocked by "BB-110"
+
   Scenario: Both relations may stay empty
     When I visit the ticket list of project "bakers.build Platform"
     And I click the "New ticket" action
