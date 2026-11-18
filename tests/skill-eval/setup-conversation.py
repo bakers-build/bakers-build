@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 import worker
-from setup_support import safe_path, config_args, init_blocked, parse_action, validate_config_write
+from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, validate_config_write
 
 ROOT = worker.ROOT
 SYSTEM = '''Apply the supplied setup skill and its documentation to the user request.
@@ -36,6 +36,8 @@ other code are accepted. After a direct write to a machine or project config, co
 and declared synthetic checks remain available. Connection files must use the CLI.
 Never invent user answers. Git check-ignore -v is supported in the project root;
 bakers conductor check has a declared synthetic response, not real runtime verification.
+Evidence commands (git remote, forge CLI status, merged requests, repository settings) answer only
+where the case declares a synthetic response; any other command is blocked, which is missing evidence.
 No install, shell, hook, real login, clone or conductor operation will be executed.
 Use English. Preserve the skill's conversation, scope and readiness requirements.'''
 
@@ -133,8 +135,9 @@ def main():
                             canonical = json.dumps(['bakers', 'config', 'check', '--scope', scope, '--online'], separators=(',', ':'))
                             if canonical in fixture.get('commands', {}):
                                 key = canonical
-                        if key in fixture.get('commands', {}):
-                            event.update(output=fixture['commands'][key], simulated=True)
+                        declared = declared_output(fixture.get('commands', {}), json.loads(key))
+                        if declared is not None:
+                            event.update(output=declared, simulated=True)
                         elif argv[:2] == ['bakers', 'tools'] or argv == ['bakers', 'info']:
                             event.update(output=simulation.call('bakers', {'argv': argv}), simulated=True)
                         elif argv[:3] == ['git', 'check-ignore', '-v'] and len(argv) > 3:

@@ -110,6 +110,19 @@ final class MachineListToolTest extends BakersToolTestBase {
   }
 
   /**
+   * The machine's own assignment is listed.
+   */
+  public function testShowsAssignment(): void {
+    $this->entity('bb_machine', [
+      'name' => 'box-f',
+      'host_key' => 'box-f',
+      'owner_user_id' => $this->actor->id(),
+      'assignment' => 'forbid',
+    ]);
+    self::assertSame(['forbid'], array_column($this->outputs($this->runTool('bakers_machine_list', []))['machines'], 'assignment'));
+  }
+
+  /**
    * The inputs are an explicit allowlist.
    */
   public function testInputAllowlist(): void {
@@ -144,6 +157,7 @@ final class MachineListToolTest extends BakersToolTestBase {
       'connection_url' => $url,
       'max_parallel' => $max_parallel,
       'current_load' => 0,
+      'assignment' => $machine->get('assignment')->value,
     ];
   }
 

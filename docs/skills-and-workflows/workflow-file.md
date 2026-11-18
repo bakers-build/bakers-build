@@ -11,7 +11,7 @@ Use bakers:bb-init-project to set up WORKFLOW.md for this repository.
 Include our runtime, checks and test users. Preserve existing project rules.
 ```
 
-The file starts with this entry line:
+`bb-init-project` creates or updates the file, including an older `## Loaded skills` layout. The file starts with this entry line:
 
 ```md
 # Project — WORKFLOW
@@ -30,7 +30,7 @@ Add only the phase sections your project needs:
 | Test users and how to get manual-review logins | `## bb-phase-outtake` |
 | Optional GitLab origin-label mapping | `## bb-phase-transition` |
 
-Every matching table row applies. These are instructions the agent reads, not configuration parsed or enforced by the conductor. Install every named skill; a missing required skill stops the agent. Keep longer repository conventions in repository docs and link them.
+Every matching table row applies. These are instructions the agent reads, not configuration parsed or enforced by the conductor. Install every named skill; a missing required skill stops the agent. For shipped recipes, install their plugins through the project's `marketplaces`; [recipe plugin entries](/skills-and-workflows/recipes#shipped-recipes-and-their-plugins) lists them. Keep longer repository conventions in repository docs and link them.
 
 ## Example: run PHP checks in DDEV
 
@@ -85,7 +85,7 @@ Choose [a recipe](/skills-and-workflows/recipes) for the engineering method and 
 
 ## Optional: mirror progress to GitLab
 
-For a ticket with a GitLab origin, an authorized agent transition can also update an existing origin label. Manual state changes do not mirror labels. Install and sign in to `glab` on the conductor host, then add:
+For a ticket with a GitLab origin, an authorized agent transition can update existing origin labels through `forge_issue_update`. The [GitLab backend](/addons/forge-gitlab) needs access to that project; without the tool, the handoff records the step for a person. Manual state changes do not mirror labels. Add:
 
 ```md
 ## bb-phase-transition

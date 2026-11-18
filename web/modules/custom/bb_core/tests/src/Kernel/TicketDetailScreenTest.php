@@ -645,18 +645,19 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * A detail card keeps its Save, and the last write still wins.
    */
   public function testDetailCardsKeepTheirSaveButton(): void {
-    $team = $this->container->get('entity_type.manager')->getStorage('bb_team')
-      ->create(['name' => 'Platform Crew', 'workspace_id' => $this->workspace->id()]);
-    self::assertInstanceOf(ContentEntityInterface::class, $team);
-    $team->save();
-    $this->tabsOn('entity.bb_team.canonical', ['bb_team' => $team]);
-    $opening = $this->openForm($team, 'identity');
-    $team->set('name', 'Renamed elsewhere')->save();
+    // Team and group cards only show now; a machine card still edits.
+    $this->installEntitySchema('bb_machine');
+    $machine = $this->container->get('entity_type.manager')->getStorage('bb_machine')
+      ->create(['name' => 'Build box', 'host_key' => 'detail-card-save', 'owner_user_id' => 1]);
+    self::assertInstanceOf(ContentEntityInterface::class, $machine);
+    $machine->save();
+    $opening = $this->openForm($machine, 'identity');
+    $machine->set('name', 'Renamed elsewhere')->save();
 
-    [$form, $state] = $this->postForm($team, 'identity', ['name' => [['value' => 'Platform Team']]] + $opening);
+    [$form, $state] = $this->postForm($machine, 'identity', ['name' => [['value' => 'Build server']]] + $opening);
 
     self::assertSame([], $state->getErrors());
-    self::assertSame('Platform Team', $this->stored($team)->label());
+    self::assertSame('Build server', $this->stored($machine)->label());
     self::assertSame('Save', (string) $form['actions']['submit']['#value']);
     self::assertNotContains('js-hide', $form['actions']['#attributes']['class'] ?? []);
   }
@@ -1241,6 +1242,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'view.tickets.team_tickets',
         'view.runs.team_runs',
         'bb_core.bb_team.members',
+        'bb_core.bb_team.settings',
         'view.worklog.team',
       ],
       $tabs,
@@ -1412,6 +1414,12 @@ final class TicketDetailScreenTest extends KernelTestBase {
     self::assertSame($expected, $found[0]['url']);
     self::assertStringContainsString('parent=' . $this->ticket->getIdentifier(), $found[0]['url']);
     self::assertStringContainsString('closed=all', $found[0]['url']);
+
+    // A ticket without an identifier has no parent to filter by.
+    $identifier = $this->ticket->getIdentifier();
+    $this->ticket->setIdentifier('');
+    self::assertSame([], $links($rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket)), 'No identifier, no link.');
+    $this->ticket->setIdentifier($identifier);
 
     // A ticket without a project has no list to open.
     $this->ticket->set('project_id', NULL);
@@ -1647,7 +1655,10 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * The newest failed run is danger, says why and offers its three actions.
+   * The newest failed run is danger, says why and offers its actions.
+   *
+   * Both runs record an error-log size without a stored file, so neither has
+   * a log to offer or to point to.
    */
   public function testFailedRunRowShowsReasonAndActions(): void {
     $this->assignTheConductors();
@@ -1661,22 +1672,21 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $item = $this->rowItem($newest);
     self::assertSame('critical', $item['accent']);
     self::assertSame('critical', $item['cells']['state']['tone']);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
-    self::assertSame(['Retry', 'Re-dispatch', 'Log'], $this->actionLabels($item));
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
+    self::assertSame(['Retry', 'Re-dispatch'], $this->actionLabels($item), 'No Log for a file that is not there.');
     self::assertStringContainsString('run_action=retry', $item['cells']['retry']['href']);
     self::assertStringContainsString('run_action=redispatch', $item['cells']['redispatch']['hx']['get']);
-    self::assertTrue($item['cells']['log']['full_load'], 'The Log downloads as a whole document, outside the boost.');
 
     $item = $this->rowItem($older);
     self::assertSame('critical', $item['accent']);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
-    self::assertSame(['Log'], $this->actionLabels($item), 'An older failed run offers its log only.');
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
+    self::assertSame([], $this->actionLabels($item), 'An older failed run without a log offers nothing.');
 
     $guest = $this->createUser(['view bb_ticket']);
     self::assertInstanceOf(UserInterface::class, $guest);
     $this->setCurrentUser($guest);
     $item = $this->rowItem($newest);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
     self::assertSame([], $this->actionLabels($item), 'A guest sees the reason, no intervention and no log.');
   }
 
@@ -2244,6 +2254,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'owner_user_id' => $owner->id(),
         'status' => 'online',
         'project_id' => $this->ticket->get('project_id')->target_id,
+        // The reader re-dispatches to it; the setting has its own tests.
+        'assignment' => 'allow',
         'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
       ]);
       $conductor->save();

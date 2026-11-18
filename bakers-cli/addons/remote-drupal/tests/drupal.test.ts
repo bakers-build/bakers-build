@@ -539,7 +539,7 @@ describe('DrupalBbRemote', () => {
     // labels + environments for agent selection (BB-144), and BB-495's
     // project_id.group_id.workspace_id chain for the dispatch env.
     expect(get).toHaveBeenCalledWith(
-      'bb_ticket/bb_ticket/tic-1?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id',
+      'bb_ticket/bb_ticket/tic-1?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id,conductor_id.owner_user_id',
     );
     expect(ticket).toEqual({
       uuid: 'tic-1',
@@ -614,6 +614,38 @@ describe('DrupalBbRemote', () => {
       'tic-8',
     );
     expect(ticket).toMatchObject({ type: 'feature', recipe: 'matt' });
+  });
+
+  it('getTicket sideloads the conductor owner through conductor_id.owner_user_id', async () => {
+    const get = vi.fn(async () => ({
+      data: {
+        id: 'tic-9',
+        attributes: { identifier: 'GL-9', title: 'Owned', state: 'working' },
+        relationships: {
+          conductor_id: {
+            data: { type: 'bb_conductor--bb_conductor', id: 'c-1' },
+          },
+        },
+      },
+      included: [
+        {
+          type: 'bb_conductor--bb_conductor',
+          id: 'c-1',
+          attributes: {},
+          relationships: {
+            owner_user_id: { data: { type: 'user--user', id: 'u-1' } },
+          },
+        },
+        { type: 'user--user', id: 'u-1', attributes: { display_name: 'Ada' } },
+      ],
+    }));
+    const remote = new DrupalBbRemote(fakeClient({ get }));
+    expect(await remote.getTicket('tic-9')).toMatchObject({
+      conductorOwner: 'Ada',
+    });
+    expect(String((get.mock.calls[0] as unknown[])[0])).toContain(
+      'conductor_id.owner_user_id',
+    );
   });
 
   // BB-495: the dotted include resolves project AND workspace in one request

@@ -122,6 +122,12 @@ const NO_RUN = { run_id: null, job_id: null, run_started_at: null } as const;
 const basic = (token: string) =>
   Buffer.from(`x-access-token:${token}`).toString('base64');
 
+const unsupported = async (): Promise<never> => {
+  throw new Error(
+    'origin issues are unsupported on GitHub; record the step in Manual review',
+  );
+};
+
 const factory: ForgeBackendFactory = async (raw, context) => {
   const s = settingsOf(raw);
   const doFetch = context.fetch ?? fetch;
@@ -373,6 +379,9 @@ const factory: ForgeBackendFactory = async (raw, context) => {
         throw new Error(`job ${jobId} is not a job of ${s.repository}`);
       return tail(log, maxBytes);
     },
+    issueLabels: unsupported,
+    updateIssueLabels: unsupported,
+    commentIssue: unsupported,
   };
   return backend;
 };

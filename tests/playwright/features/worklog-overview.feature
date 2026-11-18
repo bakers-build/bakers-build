@@ -15,14 +15,12 @@ Feature: Employees review their own time in a workspace by day and week
     And the My time heading describes recorded hours
     And the period chips have no remove control
     When I choose overview mode "Day"
-    And I set the overview date to "2026-11-03"
-    And I apply the overview filters
     Then the address includes "mode=day"
-    And the address includes "date=2026-11-03"
-    And the overview total is "2:30"
+    When I visit "/bakers/time?mode=day&date=2026-11-03"
+    Then the overview total is "2:30"
     When I choose overview mode "Week"
-    And I apply the overview filters
     Then the address includes "mode=week"
+    And the address includes "date=2026-11-03"
     And the overview total is "4:30"
     When I go to the previous overview period
     And I go to the previous overview period
@@ -48,8 +46,8 @@ Feature: Employees review their own time in a workspace by day and week
     And the overview shows 2 rows
     When I visit "/bakers/time?mode=week&date=2026-11-03"
     Then the overview total is "4:30"
-    And the week strip shows "2:30" for "Tue 2026-11-03"
-    And the week strip shows "2:00" for "Sun 2026-11-08"
+    And the day column "Tue 03" header shows "2:30"
+    And the day column "Sun 08" header shows "2:00"
     And the week total is "4:30"
     And the week grid row "Bread · Time capture" shows "2:00" on "Tue 03"
     And the week grid row "Bread · Time capture" shows "2:00" on "Sun 08"
@@ -154,3 +152,10 @@ Feature: Employees review their own time in a workspace by day and week
     And I save the time entry
     Then the address does not include "evil.example"
     And the stored duration for description "Overview hostile dest" is 1200 seconds
+
+  Scenario: My time fits a phone and every control is large enough to tap
+    Given the viewport is 390 pixels wide
+    When I visit "/bakers/time?mode=week&date=2026-11-03"
+    Then I see the My time overview
+    And the document does not scroll horizontally
+    And every control in the main region is at least 44 pixels in both dimensions

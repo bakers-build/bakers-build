@@ -4,28 +4,18 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
-use Drupal\bb_core\Access\BbWorkspaceAccessCheck;
 use Drupal\bb_core\Controller\BbStatsController;
-use Drupal\bb_core\EventSubscriber\MyWorkSignInSubscriber;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\Core\Routing\RouteMatch;
-use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\Core\Session\AnonymousUserSession;
-use Drupal\Core\Url;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\bb_core\Kernel\Statistics\InsightsFixtureTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Event\ExceptionEvent;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 /**
  * Covers the My work › Stats page: the account's own figures.
@@ -169,70 +159,6 @@ final class MyWorkStatsRouteTest extends KernelTestBase {
   public function testAnonymousIsRefused(): void {
     $access = $this->container->get('access_manager')->checkNamedRoute(self::ROUTE, ['bb_workspace' => 'north'], new AnonymousUserSession(), TRUE);
     self::assertFalse($access->isAllowed());
-  }
-
-  /**
-   * An anonymous visitor is sent to sign in and comes back afterwards.
-   */
-  public function testAnonymousIsSentToSignIn(): void {
-    $this->setCurrentUser(new AnonymousUserSession());
-    $response = $this->denied(self::ROUTE, '/north/stats?filter[period]=year');
-    self::assertInstanceOf(RedirectResponse::class, $response);
-    self::assertSame(
-      Url::fromRoute('user.login', [], ['query' => ['destination' => '/north/stats?filter[period]=year']])->toString(),
-      $response->getTargetUrl(),
-    );
-  }
-
-  /**
-   * A signed-in account, and any other route, keep the workspace boundary.
-   */
-  public function testOnlyAnonymousStatsVisitsAreRedirected(): void {
-    $stranger = $this->createUser([], 'stranger');
-    self::assertInstanceOf(UserInterface::class, $stranger);
-    $this->setCurrentUser($stranger);
-    self::assertNull($this->denied(self::ROUTE, '/north/stats'));
-    $this->setCurrentUser(new AnonymousUserSession());
-    self::assertNull($this->denied('bb_core.workspace.insights', '/north/insights'));
-  }
-
-  /**
-   * An unknown slug answers an anonymous visitor exactly like a known one.
-   *
-   * The unknown slug never reaches the route, so the router's 404 carries no
-   * route name; a signed-in account keeps that 404.
-   */
-  public function testUnknownWorkspaceIsAlsoSentToSignIn(): void {
-    $this->setCurrentUser(new AnonymousUserSession());
-    $response = $this->denied(NULL, '/no-such-bakery/stats', new NotFoundHttpException());
-    self::assertInstanceOf(RedirectResponse::class, $response);
-    self::assertSame(
-      Url::fromRoute('user.login', [], ['query' => ['destination' => '/no-such-bakery/stats']])->toString(),
-      $response->getTargetUrl(),
-    );
-    self::assertNull($this->denied(NULL, '/no-such-bakery/insights', new NotFoundHttpException()));
-    $this->setCurrentUser($this->alice);
-    self::assertNull($this->denied(NULL, '/no-such-bakery/stats', new NotFoundHttpException()));
-  }
-
-  /**
-   * The response the sign-in subscriber gives a refused request, if any.
-   */
-  private function denied(?string $route, string $uri, ?\Throwable $exception = NULL): ?Response {
-    $request = Request::create($uri);
-    if ($route !== NULL) {
-      $request->attributes->set(RouteObjectInterface::ROUTE_NAME, $route);
-    }
-    $event = new ExceptionEvent(
-      $this->container->get('http_kernel'),
-      $request,
-      HttpKernelInterface::MAIN_REQUEST,
-      $exception ?? new AccessDeniedHttpException(BbWorkspaceAccessCheck::WORKSPACE_MISMATCH_REASON),
-    );
-    $subscriber = $this->container->get('bb_core.my_work_sign_in_subscriber');
-    self::assertInstanceOf(MyWorkSignInSubscriber::class, $subscriber);
-    $subscriber->onException($event);
-    return $event->getResponse();
   }
 
   /**

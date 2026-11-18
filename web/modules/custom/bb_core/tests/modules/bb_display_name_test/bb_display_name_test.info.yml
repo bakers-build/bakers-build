@@ -1,0 +1,5 @@
+name: bakers.build display name test
+type: module
+description: Gives every account a display name that differs from its account name.
+package: Testing
+core_version_requirement: ^11

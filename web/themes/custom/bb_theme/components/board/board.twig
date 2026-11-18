@@ -31,7 +31,7 @@
   {% set collapsed = c.collapsed|default(false) %}
   {#- A group grows like a lane but never below its nested columns (no
       min-w-0: its minimum is their min-content). -#}
-  {% set width = collapsed ? ['shrink-0', 'min-w-0'] : (group ? ['flex-1', 'shrink-0'] : ['flex-1', 'basis-60', 'min-w-60', 'shrink-0']) %}
+  {% set width = collapsed ? ['shrink-0', 'min-w-0'] : (group ? ['flex-1', 'shrink-0', 'max-md:snap-start'] : ['flex-1', 'basis-60', 'min-w-60', 'shrink-0', 'max-md:flex-none', 'max-md:w-70', 'max-md:snap-start']) %}
   {#- The column stretches to the row's height, so its sticky header stays at
       the top of the scroll region while a taller neighbour scrolls. It draws
       nothing itself: the header carries the top of its surface and the body
@@ -94,7 +94,7 @@
 <div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'gap-stack', 'min-w-0']).setAttribute('data-component-id', 'bb_theme:board') }}>
   {% if toolbar is not empty %}<div class="min-w-0">{{ toolbar }}</div>{% endif %}
   {% if filters_active is not empty %}<div class="min-w-0">{{ filters_active }}</div>{% endif %}
-  <div class="relative min-w-0 -mx-group max-h-board-height overflow-auto bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" tabindex="0" role="region" aria-label="Board columns">
+  <div class="relative min-w-0 -mx-group max-h-board-height overflow-auto max-md:snap-x max-md:snap-mandatory bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" tabindex="0" role="region" aria-label="Board columns">
     <div class="relative flex w-fit min-w-full gap-group pb-inline">
       <span class="sticky left-0 z-20 w-px -mr-px shrink-0 self-stretch pointer-events-none bg-border before:absolute before:inset-y-0 before:right-full before:w-4 before:shadow-shadow-2 before:shadow-text-faint/40" aria-hidden="true"></span>
       <span class="absolute inset-y-0 left-0 z-30 w-group pointer-events-none bg-surface" aria-hidden="true"></span>

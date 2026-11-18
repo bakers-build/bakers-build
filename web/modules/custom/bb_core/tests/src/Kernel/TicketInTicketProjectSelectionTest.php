@@ -113,6 +113,48 @@ final class TicketInTicketProjectSelectionTest extends KernelTestBase {
   }
 
   /**
+   * The full identifier, in any letter case, offers its ticket.
+   */
+  public function testFullIdentifierOffersTheTicket(): void {
+    $identifier = $this->identifier('a1');
+    self::assertMatchesRegularExpression('/^[A-Z0-9]+-\d+$/', $identifier);
+
+    foreach ([$identifier, strtolower($identifier)] as $term) {
+      $offered = $this->options->for($this->host('A'), 'blocked_by', $term, handler: self::HANDLER);
+      self::assertSame($this->ids('a1'), $this->sorted(array_keys($offered)), $term);
+    }
+  }
+
+  /**
+   * The number alone offers the ticket with that identifier.
+   */
+  public function testNumberAloneOffersTheTicket(): void {
+    $number = substr($this->identifier('a1'), strrpos($this->identifier('a1'), '-') + 1);
+    $offered = $this->options->for($this->host('A'), 'parent_id', $number, handler: self::HANDLER);
+
+    self::assertContains($this->tickets['a1'], array_map('strval', array_keys($offered)));
+  }
+
+  /**
+   * Every candidate reads identifier and title.
+   */
+  public function testCandidateLabelShowsIdentifierAndTitle(): void {
+    $offered = $this->options->for($this->host('A'), 'blocked_by', handler: self::HANDLER);
+
+    self::assertSame($this->identifier('a1') . ' · Shared word alpha', $offered[$this->tickets['a1']]);
+  }
+
+  /**
+   * Another project's or workspace's identifier offers nothing.
+   */
+  public function testForeignIdentifierOffersNothing(): void {
+    foreach (['b1', 'c1'] as $name) {
+      $offered = $this->options->for($this->host('A'), 'blocked_by', $this->identifier($name), handler: self::HANDLER);
+      self::assertSame([], $offered, $name);
+    }
+  }
+
+  /**
    * A host without a project offers nothing.
    */
   public function testHostWithoutProjectOffersNothing(): void {
@@ -185,6 +227,15 @@ final class TicketInTicketProjectSelectionTest extends KernelTestBase {
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     return $ticket;
+  }
+
+  /**
+   * The stored identifier of a named ticket.
+   */
+  private function identifier(string $name): string {
+    $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->load($this->tickets[$name]);
+    self::assertInstanceOf(BbTicketInterface::class, $ticket);
+    return $ticket->getIdentifier();
   }
 
   /**

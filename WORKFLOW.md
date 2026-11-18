@@ -7,7 +7,8 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site;
 `config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
 `existing-config` install at the same revision. Commands in the web container run through
-fixed `provision_exec` keys: `phpcs`, `phpmd`, `phpstan`, `uli` (`[<persona>, <url>?]`), `playwright`
+fixed `provision_exec` keys: `phpcs`, `phpmd`, `phpstan`, `phpunit` and `phpunit-mariadb` (test paths), `paratest`
+(one suite or path), `uli` (`[<persona>, <url>?]`), `playwright`
 (spec paths), `playwright-cli` and `playground-ticket`; there is no free command. `ddev_status`/`ddev_start` replace
 project inspection and startup. Provisioning profiles use the fixed, protected `.bakers/provision.sh`
 entry point; their implementation is read from that file on each call.
@@ -72,7 +73,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 PHPUnit, browser E2E and config import run against the built Docker images in CI.
 
 Fetch, push, open the PR, read checks and merge through the forge tools
-(`bb-workflow` › `references/forge.md`). For GitHub, update the branch from its target, push and wait
+(`bb-workflow` › `references/forge.md`). For GitHub, update the branch from its target (`forge_update_branch` in a run clone), push and wait
 for the complete `GitHub checks` workflow and its aggregate `required`. PRs into `next` skip `image_gate`; it runs on the push to `next`
 after the merge, before the develop deployment. PRs into `main` run it, and `required` fails without it. A failed check blocks
 the PR; fix it on the branch and require green checks on the new revision. Protected `next` accepts

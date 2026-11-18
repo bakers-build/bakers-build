@@ -2,7 +2,8 @@
 Feature: Workspace leads read the billing report of their workspace
   The Billing report tab of Insights shows hours and AI tokens per billing
   account, project and ticket, or per person. Only a lead of the workspace
-  reaches it; everyone else is refused as on Overview.
+  reaches it; anonymous visitors are sent to sign in, and everyone else is
+  refused as on Overview.
 
   These scenarios check function and visibility only. What is counted, on
   which account, and the sums are kernel-tested.
@@ -71,7 +72,7 @@ Feature: Workspace leads read the billing report of their workspace
     When I request the Insights page "billing" of workspace "bakers"
     Then the request is answered with 404
 
-  Scenario: An anonymous visitor is refused as on Overview
+  Scenario: An anonymous visitor is sent to sign in
     Given I am signed out
     When I request the Insights page "billing" of workspace "bakers"
-    Then the request is answered with 404
+    Then I am redirected to the login form

@@ -13,6 +13,12 @@ import type {
   RunBind,
 } from '@bakers-build/conductor/contract';
 
+/** The model credentials a Claude run may receive from the secrets file. */
+export const CLAUDE_SECRET_ENV = [
+  'CLAUDE_CODE_OAUTH_TOKEN',
+  'ANTHROPIC_API_KEY',
+] as const;
+
 export function encodeClaudeProjectDir(cwd: string): string {
   return cwd.replace(/[^a-zA-Z0-9]/g, '-');
 }
@@ -21,7 +27,8 @@ export function encodeClaudeProjectDir(cwd: string): string {
 export function prepareClaudeRun(
   context: AgentRunContext,
   configDir: string,
-  hostEnv: Readonly<Record<string, string | undefined>> = process.env,
+  hostEnv: Readonly<Record<string, string | undefined>> = context.secrets ??
+    process.env,
 ): AgentRunPreparation {
   const source = context.env.CLAUDE_CONFIG_DIR ?? configDir;
   const config = join(context.homePath, '.claude');
@@ -39,7 +46,7 @@ export function prepareClaudeRun(
     ? JSON.parse(readFileSync(join(source, '.claude.json'), 'utf8'))
     : {};
   delete state.primaryApiKey;
-  const keys = ['CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY'];
+  const keys = CLAUDE_SECRET_ENV;
   const env: Record<string, string> = { CLAUDE_CONFIG_DIR: config };
   const supplied = keys.some((key) => context.env[key]);
   const bindPaths: RunBind[] = [];

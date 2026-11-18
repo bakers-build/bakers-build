@@ -519,8 +519,8 @@ Feature: The ticket list is the nav home
   # from as a full URL; the box accepts `#19`, `<repo>#19` and the URL in any
   # spelling, and compares a normalised `<repo path>#<number>` exactly, so issue
   # 19 never matches issue 190. The "bakers.build Platform" fixture project's repository
-  # is `https://gitlab.example.com/bakers/bakers`, which makes `bakers` its alias and
-  # the only repository a member can read — so a bare `#19` is unambiguous.
+  # is `https://gitlab.example.com/bakers/bakers`, which makes `bakers` its alias. The
+  # lead also reads the `owner-edit` fixture repository, so a bare `#19` is ambiguous.
   # Each scenario searches twice, because a search is a navigation and a boost
   # lost in a swap works exactly once per page load.
   Scenario: The search finds tickets by the origin issue they came from
@@ -528,6 +528,9 @@ Feature: The ticket list is the nav home
     And the workspace has tickets from origin issues 19, 190 and twice 20
     When I visit the ticket list
     And I search the ticket list for "#19"
+    Then the page says '"#19" is ambiguous — name the repository, for example bakers#19. Known in your projects: bakers, owner-edit.'
+
+    When I search the ticket list for "bakers#19"
     Then the ticket list shows the origin tickets "issue 19"
     And the ticket list does not show the origin ticket "issue 190"
 
@@ -550,10 +553,10 @@ Feature: The ticket list is the nav home
     Given I am signed in as a member of the "bakers" workspace
     When I visit the ticket list
     And I search the ticket list for "nosuchrepo#1"
-    Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers.'
+    Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers, owner-edit.'
 
     When I search the ticket list for "nosuchrepo#2"
-    Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers.'
+    Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers, owner-edit.'
 
   # BAKERS-56 D11/D12: the State facet counts the tickets each state would list
   # under the list's other filters, and its footer offers "Only open states",
@@ -685,3 +688,48 @@ Feature: The ticket list is the nav home
     # only Brood child 1 has a sub-ticket of its own.
     When I open this list for the parent "Brood parent"
     Then the ticket listing lists exactly the tickets "Brood child 1"
+
+  # THE PHONE FILTER SHEET. Below `lg` the facets aside shows only its
+  # dialog, opened by one "Filters · N" button whose N is the number of facets
+  # with a chosen value — the same set the chips show — and the chips stay
+  # outside the sheet. Inside the sheet a tick does not auto-submit (BEF's
+  # breakpoint is `lg`), so the sheet stays open until "Show results".
+  Scenario: The filters sit behind one button on a phone
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 390 pixels wide
+    When I visit "/bakers/tickets?state[]=working&priority[]=2"
+    Then the filters button reads "Filters · 2"
+    And the facets are hidden behind the filters button
+    And the active filters read "State is Working"
+    And the active filters read "Priority is Medium"
+
+  Scenario: The filter sheet keeps a tick until Show results
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 390 pixels wide
+    When I visit the full ticket list of the "bakers" workspace
+    Then the filters button reads "Filters"
+    When I open the filter sheet
+    Then the filter sheet holds the "State" facet
+    When I tick "Working" in the "State" facet
+    Then the filter sheet is open
+    And the address does not carry "state[]=working"
+    When I click button "Show results"
+    Then the address carries "state[]=working"
+    And the filter sheet is closed
+    And the active filters read "State is Working"
+    And the filters button reads "Filters · 1"
+
+  Scenario: The filter count follows the chips
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 390 pixels wide
+    When I visit "/bakers/tickets?state[]=working&priority[]=2"
+    And I remove the "State" chip
+    Then the address does not carry "state[]=working"
+    And the filters button reads "Filters · 1"
+
+  Scenario: Desktop keeps the filters aside
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 1440 pixels wide
+    When I visit the full ticket list of the "bakers" workspace
+    Then there is no filters button
+    And the facets sit in the filters aside, not above the ticket listing

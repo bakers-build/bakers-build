@@ -40,8 +40,9 @@ node bakers-cli/scripts/next-version.mjs 0.6.0 < published-versions.json
 ```
 
 The allocator chooses a sequence above the highest observed next version, including partial
-publication. It rejects a base already released as stable, a newer published base, malformed
-input or an unfamiliar prerelease format. It does not read npm, reserve a version, publish,
+publication. A stable published at or above the base moves the base one patch past the highest
+such stable, so a missing or not yet created release tag cannot keep `next` below `latest`. It
+rejects a prerelease above that base, malformed input or an unfamiliar prerelease format. It does not read npm, reserve a version, publish,
 resume a partial release or change dist-tags. The complete snapshot and exclusive publisher
 lock are prerequisites; a concurrent writer invalidates the allocation.
 

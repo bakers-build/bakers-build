@@ -58,7 +58,9 @@ hooks: { before_run: 'bash .bakers/provision.sh deps' },
 Otherwise the config fails to load with an error naming the hook. Only that entry point is checked.
 The script should call only protected code and run anything the run can write, such as dependency
 installs and builds, in a container. Host scripts read `BAKERS_WORKTREE_PATH` and
-`BAKERS_RUNTIME_ISOLATES` instead of asking Git: an isolated workspace has no Git on the host.
+`BAKERS_RUNTIME_ISOLATES` instead of asking Git: on the host an isolated workspace's `.git` is
+only a stub, without the run's commits; under [herdr](/addons/herdr#isolated-runs) it answers as the
+parent repository.
 
 A maintainer makes and delivers changes to protected files outside the isolated run. The host
 runtime has no such check and no such protection.

@@ -10,8 +10,11 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { transferIsolatedCommit } from './isolated-git.js';
+import { basename, dirname, join, resolve } from 'node:path';
+import {
+  refreshRunCloneIndex,
+  transferIsolatedCommit,
+} from './isolated-git.js';
 import { UI_REFRESH_FILE } from './ui-refresh.js';
 
 /** Host-owned record of one isolated run's clone; never store it where the run can write. */
@@ -31,6 +34,8 @@ export interface RunClone {
   target?: string;
   shared: boolean;
   protectedPaths?: string[];
+  /** Set when forge_update_branch changed protected paths the run cannot see: push refuses until a fresh clone. */
+  restartPending?: string;
 }
 
 export interface RunCloneOptions {
@@ -81,8 +86,76 @@ function loadRecord(gitDir: string): RunClone | undefined {
   }
 }
 
+/** The parent's worktree entry for a run clone; named after its Git directory, so it never clashes. */
+const adminOf = ({ parentGitDir, gitDir }: RunClone) =>
+  join(parentGitDir, 'worktrees', `run-${basename(gitDir, '.git')}`);
+
+/**
+ * Register the run clone as a linked worktree of the parent on the host, so
+ * herdr groups its workspace under the repository, with the branch tip as its
+ * index. The run never sees this: its own Git directory is mounted over the
+ * stub. Repeat after every {@link createRunClone}, which empties the stub.
+ */
+export function registerRunCloneWorktree(record: RunClone): void {
+  const admin = adminOf(record);
+  const stub = join(record.workspace, '.git');
+  mkdirSync(admin, { recursive: true });
+  writeFileSync(join(admin, 'HEAD'), `ref: refs/heads/${record.branch}\n`);
+  writeFileSync(join(admin, 'commondir'), '../..\n');
+  writeFileSync(join(admin, 'gitdir'), `${stub}\n`);
+  writeFileSync(join(stub, 'commondir'), `${record.parentGitDir}\n`);
+  writeFileSync(join(stub, 'gitdir'), `${stub}\n`);
+  // The run writes this work tree: a parent `core.hooksPath` relative to it
+  // (husky) must not make host Git there run the run's files.
+  const extension = [
+    '--git-dir',
+    record.parentGitDir,
+    'config',
+    'extensions.worktreeConfig',
+  ];
+  if (tryGit(extension) !== 'true') git([...extension, 'true']);
+  const override = join(stub, 'config.worktree');
+  writeFileSync(
+    override,
+    '[core]\n\thooksPath = /dev/null\n\tfsmonitor = false\n',
+  );
+  // Likewise the parent's filter, diff and merge drivers: the run chooses
+  // their paths through `.gitattributes`, and a plain status or diff runs them.
+  const keys =
+    tryGit([
+      '--git-dir',
+      record.parentGitDir,
+      'config',
+      '--local',
+      '--includes',
+      '--name-only',
+      '--list',
+      '-z',
+    ]) ?? '';
+  for (const key of new Set(keys.split('\0'))) {
+    const value = driverOff(key);
+    if (value !== undefined) git(['config', '--file', override, key, value]);
+  }
+  refreshRunCloneIndex(record);
+}
+
+/** The value that switches a command-valued driver key off; `undefined` for any other key. */
+function driverOff(key: string): string | undefined {
+  if (key === 'diff.external') return '';
+  const [, section = '', name = ''] =
+    /^(filter|diff|merge)\..+\.([^.]+)$/.exec(key) ?? [];
+  const off: Record<string, Record<string, string>> = {
+    filter: { clean: '', smudge: '', process: '', required: 'false' },
+    diff: { textconv: 'cat', command: '' },
+    merge: { driver: 'false' },
+  };
+  return off[section]?.[name];
+}
+
 export function removeRunClone(workspace: string, env: Env = process.env) {
   const gitDir = runCloneGitDir(workspace, env);
+  const record = loadRecord(gitDir);
+  if (record) rmSync(adminOf(record), { recursive: true, force: true });
   rmSync(gitDir, { recursive: true, force: true });
   rmSync(recordOf(gitDir), { force: true });
 }

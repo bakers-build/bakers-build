@@ -182,6 +182,9 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
         'status' => 'online',
         'project_id' => $this->projectId,
         'states' => $states,
+        // Teammates set it in these suites; ConductorOwnerAccessTest covers
+        // the setting.
+        'assignment' => 'allow',
         'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
       ]);
     $this->assertInstanceOf(BbConductorInterface::class, $conductor);

@@ -25,9 +25,6 @@ create bb_project:
 edit bb_project:
   title: 'Edit bakers.build projects'
   restrict access: true
-delete bb_project:
-  title: 'Delete bakers.build projects'
-  restrict access: true
 
 use bb_ticket_template:
   title: 'Instantiate bakers.build ticket templates'
@@ -42,5 +39,7 @@ access bakers dashboard:
   description: 'View the bakers.build application shell and the screens that render inside it.'
 
 # One `view bakers figure <id>` per configured composite figure.
+# Two per protected label namespace (`bb_core.settings:protected_label_namespaces`).
 permission_callbacks:
   - \Drupal\bb_core\FigurePermissions::permissions
+  - \Drupal\bb_core\ProtectedLabelPermissions::permissions

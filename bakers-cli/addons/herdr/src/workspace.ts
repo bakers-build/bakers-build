@@ -139,10 +139,16 @@ export class HerdrWorkspace implements BbWorkspace {
     _identifier: string,
     branch?: string,
     baseRefOverride?: string,
+    options?: { clone?: boolean },
   ): Promise<EnsuredWorkspace> {
     if (branch === undefined) {
       throw new Error('herdr workspace requires a branch name');
     }
+    // shortcut: clone mode is fixed per herdr workspace; switch per run like the git workspace when a herdr machine needs a mixed runtime catalog.
+    if (options?.clone !== undefined && options.clone !== !!this.options.clone)
+      throw new Error(
+        'herdr workspace: the run runtime clone mode differs from the workspace; a herdr machine cannot mix isolating and host runtimes',
+      );
     const extra = this.options.autoSetupMerge
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };
@@ -235,8 +241,8 @@ export class HerdrWorkspace implements BbWorkspace {
 
   /**
    * The isolating-runtime variant: a fresh run clone at the worktree's stable
-   * path, shown in a plain herdr workspace. The parent keeps the ticket
-   * branch; no linked worktree and no `.git` exist on the host.
+   * path, opened in herdr as a worktree of the parent. The parent keeps the
+   * ticket branch; the host's `.git` there is only the stub that links to it.
    */
   private async ensureClone(
     branch: string,
@@ -278,7 +284,7 @@ export class HerdrWorkspace implements BbWorkspace {
       ...(target ? { target } : {}),
       shared: this.options.shared ?? false,
     });
-    await openCloneWorkspace(this.execHerdr, branch, path);
+    await openCloneWorkspace(this.execHerdr, this.root, branch, path);
     return { path, instructions: loadInstructions(path), created, clone };
   }
 

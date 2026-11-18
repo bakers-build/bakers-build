@@ -1,0 +1,26 @@
+# Project its creator, a plain contributor, edits through update own bb_project.
+_meta:
+  version: '1.0'
+  entity_type: bb_project
+  uuid: 289a0000-0000-4000-8000-000000000004
+  default_langcode: en
+  depends:
+    a5f6ffd1-70a9-50d2-95cb-0b82f93d4269: bb_group
+    fb355227-fe83-5482-819f-51f8011a78eb: bb_team
+    289a0000-0000-4000-8000-000000000001: user
+default:
+  name:
+  - value: Owner edit project
+  key:
+  - value: OWN1
+  group_id:
+  - entity: a5f6ffd1-70a9-50d2-95cb-0b82f93d4269
+  teams:
+  - entity: fb355227-fe83-5482-819f-51f8011a78eb
+  owner_user_id:
+  - entity: 289a0000-0000-4000-8000-000000000001
+  repository:
+  - url: https://gitlab.example.com/northside/owner-edit
+    default_branch: main
+  next_number:
+  - value: 1

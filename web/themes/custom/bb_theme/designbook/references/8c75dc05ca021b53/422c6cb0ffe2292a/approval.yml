@@ -1,0 +1,13 @@
+decided_at: '2026-11-14T21:14:24.853Z'
+fingerprint: 425dce36875a378dfe1e34496d1f876b08dd519deacb2caf61f759173954933b
+note: 'Approved by the requester 2026-11-14 in the BAKERS-57 working run: P1-E ticket list (65:3720), ticket detail (65:3881) and board (65:4020) at 390x844. Suitability: yes, for the phone ticket list, ticket detail and board scenes, with accepted deviation D14 (no segmented jump-to-column control).'
+scope:
+  states:
+    - default
+  subjects:
+    - ticket-list
+    - ticket-detail
+    - board
+  views:
+    - mobile
+status: approved

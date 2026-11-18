@@ -14,7 +14,7 @@ export function validate(f) {
 
 export function checkOutput(f, output, context) {
   const e = f.expect, trace = calls(context, f.simulation.files), all = writes(trace), ticket = f.simulation.ticket;
-  const comments = all.filter(c => c.name === tool('bakers_comment_publish') && names(c, ticket) && succeeded(c));
+  const comments = all.filter(c => c.name === tool('bakers_comment_create') && names(c, ticket) && succeeded(c));
   const states = all.filter(c => c.name === tool('bakers_ticket_transition') && names(c, ticket) && arg(c, 'state'));
   const summary = comments.find(c => arg(c, 'type') === 'summary');
   const checks = [

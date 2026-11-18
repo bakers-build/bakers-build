@@ -528,7 +528,7 @@ describe('CodexAgent permissions: system, yolo, custom', () => {
 });
 
 describe('CodexAgent security: shared project and machine layers', () => {
-  it('applies a shared allow_write and reports the keys it cannot express', async () => {
+  it('applies shared allow_write and trusted_commands and reports deny_read', async () => {
     const options = {
       permissions: 'sandbox',
       shared_permissions: {
@@ -540,9 +540,9 @@ describe('CodexAgent security: shared project and machine layers', () => {
     } as never;
     const agent = new CodexAgent(options, await homeWithCodexMcp());
     expect(agent.launchCommand('x')).toContain('"/srv/cache" = true');
+    expect(agent.launchCommand('x')).toContain('pattern=["make"]');
     expect(codexAgent(options).permissions?.not_applied).toEqual([
       { key: 'deny_read', source: 'machine', reason: 'unsupported' },
-      { key: 'trusted_commands', source: 'project', reason: 'unsupported' },
     ]);
   });
 
@@ -560,10 +560,6 @@ describe('CodexAgent security: shared project and machine layers', () => {
 
 describe('CodexAgent security load errors', () => {
   it.each([
-    [
-      { permissions: 'sandbox', sandbox: { trusted_commands: ['git'] } },
-      /Codex does not support sandbox.trusted_commands/,
-    ],
     [
       { permissions: 'sandbox', sandbox: { deny_read: ['~/.ssh'] } },
       /Codex does not support sandbox.deny_read/,

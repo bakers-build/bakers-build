@@ -68,3 +68,10 @@ After editing any bakers-CLI source: `cd bakers-cli && pnpm install && pnpm -r r
 `bakers-cli/` is a layered acyclic package graph (kernel → surface contract → addons → sinks)
 enforced by `bakers-cli/scripts/assert-acyclic.mjs` through a vitest test; `bakers-cli/biome.json` is
 the formatter and linter and `pnpm lint` the gate.
+
+A site tool that skills rely on and that is added to `SITE_TOOLS`
+(`bakers-cli/conductor/src/core/site-tools.ts`) raises `min_client_version` in both
+`bb_core.settings` homes to the first published `next` prerelease (`X.Y.Z-next.N`) that contains
+it, never to a stable version that is not yet published; an older conductor silently drops the
+tool from every run it starts. Every later stable satisfies that minimum, because it is cut from
+`next` and sorts above its own prereleases, while the `next` channel can install it at once.

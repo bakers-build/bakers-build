@@ -1,0 +1,7 @@
+uuid: b7fb3d77-f02a-43a5-a21e-4ee47ac1cf9d
+langcode: en
+status: true
+dependencies: {  }
+id: bakers_worklog_delete
+tool_id: bakers_worklog_delete
+description: null

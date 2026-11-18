@@ -2,13 +2,14 @@
 
 /**
  * @file
- * Install hooks for bb_core.
+ * Install and update hooks for bb_core.
  */
 
 declare(strict_types=1);
 
 use Drupal\bb_core\Install\CliConsumer;
 use Drupal\bb_core\Install\DefaultWorkspace;
+use Drupal\Core\Utility\UpdateException;
 
 /**
  * Creates the content every bakers.build site requires.
@@ -19,4 +20,42 @@ use Drupal\bb_core\Install\DefaultWorkspace;
 function bb_core_install(): void {
   DefaultWorkspace::ensure();
   CliConsumer::ensure();
+}
+
+/**
+ * Adds the unique key on the workspace slug.
+ *
+ * Refuses while two workspaces share a slug: renaming one would change a
+ * customer's address, so a person resolves each duplicate and reruns this.
+ */
+function bb_core_update_11001(): void {
+  $rows = \Drupal::database()->query(
+    'SELECT slug, id FROM {bb_workspace} WHERE slug IN (SELECT slug FROM {bb_workspace} GROUP BY slug HAVING COUNT(*) > 1) ORDER BY slug, id'
+  );
+  $duplicates = [];
+  foreach ($rows as $row) {
+    $duplicates[$row->slug][] = $row->id;
+  }
+  if ($duplicates !== []) {
+    $lines = array_map(static fn (string $slug, array $ids): string => $slug . ': ' . implode(', ', $ids), array_keys($duplicates), $duplicates);
+    throw new UpdateException('Workspaces share a slug; give each a unique slug, then run updates again. ' . implode('; ', $lines));
+  }
+  $entity_type = \Drupal::entityTypeManager()->getDefinition('bb_workspace');
+  \Drupal::entityDefinitionUpdateManager()->updateEntityType($entity_type);
+}
+
+/**
+ * Installs the machine and conductor assignment settings.
+ *
+ * Before any post-update, so heartbeats never save to a missing column;
+ * bb_core_post_update_conductor_assignment() fills existing rows.
+ */
+function bb_core_update_11002(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  foreach (['bb_machine', 'bb_conductor'] as $type) {
+    if ($manager->getFieldStorageDefinition('assignment', $type) === NULL) {
+      $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions($type)['assignment'];
+      $manager->installFieldStorageDefinition('assignment', $type, 'bb_core', $definition);
+    }
+  }
 }

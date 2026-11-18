@@ -28,7 +28,37 @@ description: >-
   scoped to a workspace or a team — are all wiring, and wiring is out of scope
   for the whole 327 tree. Ad-hoc filter state lives in the URL in that model,
   which is likewise a wiring decision; the shape is agreed here so the ticket
-  that adds the query has nothing to restructure.
+  that adds the query has nothing to restructure. BELOW `lg` THE PANEL IS A
+  BOTTOM SHEET (BAKERS-57): an opener button (`lg:hidden`, at least the 44px
+  touch target) reading the `title`, or `title · N` when `active_count` is N >
+  0, opens a native `<dialog>` with `showModal()`; the dialog holds the same
+  collapsible and controls plus a primary "Show results" footer that calls
+  `requestSubmit()` on the form inside the dialog and closes it, because Better
+  Exposed Filters auto-submits only from `lg` up. There is ONE DOM: the aside is
+  `display: contents` below `lg` and the dialog is `display: contents` from `lg`
+  up, so the exposed form's fields exist once and the desktop aside is exactly
+  what it was. With `opener: false` the panel renders no opener of its own and
+  shows nothing below `lg` until its dialog, given an `id` by `sheet_id`, is
+  opened from outside. `bar` with `sheet_for` is that outside: below `lg` it
+  drops its surface and adds a "Filters" / "Filters · N" opener
+  (`max-lg:order-first`, after the controls in the DOM) that calls `showModal()`
+  on the dialog with that id, and the search takes its own row
+  (`max-lg:order-last max-lg:basis-full`), so the rows read [Filters · N][sort]
+  / [search] as Figma P1-E draws them. `toolbar` with `sheet` keeps `pinned`
+  (the search) and a "Filters" / "Filters · N" opener in the row below `lg` and
+  moves `controls` and `actions` into a native `<dialog>` sheet styled like the
+  panel's, whose "Show results" footer calls `requestSubmit()` on the enclosing
+  form; from `lg` up that dialog is `display: contents` and the row reads
+  `pinned` (240px, or its natural width with `pinned_width: auto`),
+  `controls`, `actions`, as before. Inside an open dialog the bar and toolbar
+  never self-submit: ticks wait for "Show results". EVERY SHEET has a visible
+  icon-only "Close" control in its top-right (at least the 44px touch target),
+  because Safari ignores `closedby` and a phone has no Escape key, and a
+  change made while it is open marks it dirty: closing it without "Show
+  results" (Close, Escape, an outside tap) reloads the page, so the form, the
+  pickers and the chips show the applied state again and no unapplied tick is
+  submitted by the next search keystroke. Without `sheet_for` / `sheet`, `bar`
+  and `toolbar` are unchanged.
 provider: bb_theme
 props:
   type: object
@@ -80,7 +110,78 @@ props:
         bar: the same `role="search"` region and self-submitting fields as
         `bar`, but no surface and no border, one centred row of at least 36 px
         (wrapping only when narrow) whose first control (the search) is 240 px
-        wide, and a trailing `actions` group pushed to the right.
+        wide, and a trailing `actions` group pushed to the right. `pinned`
+        (toolbar only) renders before `controls` and takes the 240 px search
+        width itself, the controls then filling the row.
+    active_count:
+      type: integer
+      title: Active facet count
+      default: 0
+      description: >-
+        The number of filters with a chosen value. Shown on the phone opener as
+        `title · N` (panel) or `Filters · N` (bar with `sheet_for`, toolbar with
+        `sheet`) when above 0, so a closed sheet still states that the list is
+        narrowed.
+    sheet_open:
+      type: boolean
+      title: Sheet open
+      default: false
+      description: >-
+        Render the phone sheet's `<dialog>` with its `open` attribute, so the
+        open state is reviewable in Storybook (which promotes an open dialog to
+        a modal). Callers on a page leave it false; the opener opens the sheet.
+        `panel` only.
+    sheet_id:
+      type: string
+      title: Sheet id
+      description: >-
+        The `id` of the panel's phone sheet `<dialog>`, so a `bar` with
+        `sheet_for` can open it. `panel` only.
+    opener:
+      type: boolean
+      title: Own phone opener
+      default: true
+      description: >-
+        Whether the panel renders its own phone opener button. When false, below
+        `lg` the panel shows nothing until its dialog is opened from outside by
+        `sheet_id`; from `lg` up nothing changes. `panel` only.
+    sheet_for:
+      type: string
+      title: Sheet to open
+      description: >-
+        The `id` of a panel's dialog (its `sheet_id`). When set, below `lg` the
+        bar drops its surface and shows a "Filters" / "Filters · N" opener
+        (`min-h-touch`, `lg:hidden`) that opens that dialog with `showModal()`,
+        and the search moves onto its own row. From `lg` up the bar is
+        unchanged. `bar` only.
+    sheet:
+      type: boolean
+      title: Phone sheet
+      default: false
+      description: >-
+        Below `lg`, keep only `pinned` and a "Filters" / "Filters · N" opener in
+        the row and move `controls` and `actions` into a native `<dialog>` sheet
+        with a "Show results" footer that submits the enclosing form. From `lg`
+        up the toolbar looks as without it. `toolbar` only.
+    pinned_width:
+      type: string
+      enum:
+        - search
+        - auto
+      default: search
+      title: Pinned width
+      description: >-
+        `search` (default) gives `pinned` the 240px search width (`lg:w-60`
+        with `sheet`, `w-60` without). `auto` lets `pinned` keep its natural
+        width from `lg` up, for a control wider than a search field (Insights'
+        period control). `toolbar` only.
+    opener_id:
+      type: string
+      title: Opener id
+      description: >-
+        The `id` of the phone "Filters" / "Filters · N" opener button (toolbar
+        with `sheet`, bar with `sheet_for`, panel), so a caller can refresh its
+        text out of band through htmx.
 slots:
   controls:
     title: Controls
@@ -94,6 +195,11 @@ slots:
     description: >-
       Trailing controls of the `toolbar` layout, right-aligned: the Details
       segmented control and "Clear filters".
+  pinned:
+    title: Pinned
+    description: >-
+      Leading control of the `toolbar` layout that stays in the row at every
+      width, normally the search; it takes the 240 px search width from `lg` up.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

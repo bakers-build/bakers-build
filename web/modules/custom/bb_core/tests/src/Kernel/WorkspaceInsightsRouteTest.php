@@ -215,7 +215,7 @@ final class WorkspaceInsightsRouteTest extends KernelTestBase {
    */
   public function testFiltersApplyOnChangeThroughHtmx(): void {
     $build = $this->page([]);
-    $form = $build['controls']['#slots']['content']['filters'];
+    $form = $build['controls']['#slots']['content']['bar']['#slots']['controls'];
     $attributes = $form['#attributes'];
     self::assertSame('get', $form['#method']);
     self::assertSame('/north/insights', $attributes['data-hx-get']);
@@ -231,6 +231,8 @@ final class WorkspaceInsightsRouteTest extends KernelTestBase {
         '#insights-filter-user',
         '#insights-period',
         '#insights-clear',
+        '#insights-chips',
+        '#insights-filters-opener',
         '#page-header-description',
       ],
       explode(',', $attributes['data-hx-select-oob']),
@@ -240,8 +242,11 @@ final class WorkspaceInsightsRouteTest extends KernelTestBase {
     // Back after a tick refetches the page instead of restoring a snapshot.
     self::assertSame('false', $build['content']['#attributes']['data-hx-history']);
     // The swap targets exist before the first filter, so a tick can fill them.
-    self::assertSame('insights-period', $build['controls']['#slots']['content']['period']['#attributes']['id']);
-    self::assertSame('insights-clear', $build['controls']['#slots']['content']['clear']['#attributes']['id']);
+    $content = $build['controls']['#slots']['content'];
+    self::assertSame('insights-period', $content['bar']['#slots']['pinned']['#attributes']['id']);
+    self::assertSame('insights-clear', $content['bar']['#slots']['actions']['#attributes']['id']);
+    self::assertSame('insights-chips', $content['chips']['#attributes']['id']);
+    self::assertSame('insights-filters-opener', $content['bar']['#props']['opener_id']);
     foreach ($this->components($build, 'bb_theme:option_list') as $panel) {
       self::assertTrue($panel['#props']['auto_apply']);
     }

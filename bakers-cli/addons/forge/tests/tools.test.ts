@@ -8,12 +8,14 @@ import {
   type ForgeBackend,
   type ForgeCheck,
   type ForgePr,
+  type IssueLabel,
   tail,
 } from '../src/backend.js';
 import { mergeRule } from '../src/config.js';
 import { tools as presetTools } from '../src/preset.js';
 import { FORGE_TOOL_DEFINITIONS } from '../src/tool-definitions.js';
 import {
+  FORGE_NEEDS_ORIGIN,
   FORGE_NEEDS_RUN,
   forgeTools,
   overall,
@@ -30,6 +32,8 @@ function fakeBackend(options: {
   blocker?: string;
   failWith?: string;
   log?: string;
+  labels?: IssueLabel[];
+  issueFail?: string;
 }) {
   const calls: string[] = [];
   const prs = [...(options.prs ?? [])];
@@ -79,6 +83,20 @@ function fakeBackend(options: {
     jobLog: async (jobId, maxBytes) => {
       calls.push(`log:${jobId}:${maxBytes}`);
       return tail(options.log ?? '', maxBytes);
+    },
+    issueLabels: async (issueUrl) => {
+      calls.push(`labels:${issueUrl}`);
+      if (options.issueFail) throw new Error(options.issueFail);
+      return options.labels ?? [];
+    },
+    updateIssueLabels: async (issueUrl, { add, remove }) => {
+      calls.push(`relabel:${issueUrl}:+${add ?? ''}:-${remove.join(',')}`);
+      return [add ?? ''];
+    },
+    commentIssue: async (issueUrl, body) => {
+      calls.push(`comment:${issueUrl}:${body}`);
+      if (options.issueFail) throw new Error(options.issueFail);
+      return { id: 5, url: `${issueUrl}#note_5` };
     },
   };
   return { backend, calls };
@@ -140,14 +158,16 @@ const green: ForgeCheck[] = [
 ];
 
 describe('forge tools', () => {
-  it('serves the six tools through the preset', () => {
+  it('serves the eight tools through the preset', () => {
     expect(Object.keys(presetTools!.tools).sort()).toEqual([
       'forge_checks',
       'forge_fetch',
+      'forge_issue_update',
       'forge_job_log',
       'forge_merge',
       'forge_pr_upsert',
       'forge_push',
+      'forge_update_branch',
     ]);
   });
 
@@ -567,6 +587,159 @@ describe('forge tools', () => {
   });
 });
 
+const ISSUE = 'https://gitlab.example/acme/board/-/issues/4';
+const ORIGIN_RUN = { ...RUN, issueUrl: ISSUE };
+const LABELS: IssueLabel[] = [
+  { name: 'doing', is_project_label: true },
+  { name: 'review', is_project_label: false },
+];
+
+describe('forge_issue_update', () => {
+  const setup = (options: Parameters<typeof fakeBackend>[0] = {}) => {
+    const fake = fakeBackend({ labels: LABELS, ...options });
+    return {
+      ...fake,
+      tool: forgeTools({ backend: async () => fake.backend, settings: {} })
+        .forge_issue_update!,
+    };
+  };
+
+  it('refuses a ticket without an origin before any backend call', async () => {
+    const { tool, calls } = setup();
+    await expect(tool(request({ operation: 'list_labels' }))).rejects.toThrow(
+      FORGE_NEEDS_ORIGIN,
+    );
+    expect(calls).toEqual([]);
+  });
+
+  it("acts on the origin the server returns at call time, else the run's own", async () => {
+    const { tool, calls } = setup();
+    const moved = 'https://gitlab.example/acme/board/-/issues/9';
+    const out = JSON.parse(
+      (
+        await tool(
+          request(
+            { operation: 'list_labels' },
+            '/nonexistent',
+            ORIGIN_RUN,
+            async () => ({
+              ...ORIGIN_RUN,
+              issueUrl: moved,
+            }),
+          ),
+        )
+      ).text,
+    );
+    expect(out).toEqual({ issue_url: moved, labels: LABELS });
+    await tool(
+      request({ operation: 'list_labels' }, '/nonexistent', ORIGIN_RUN, null),
+    );
+    expect(calls).toEqual([`labels:${moved}`, `labels:${ISSUE}`]);
+  });
+
+  it('update_labels sets and removes listed labels in one update', async () => {
+    const { tool, calls } = setup();
+    const out = JSON.parse(
+      (
+        await tool(
+          request(
+            { operation: 'update_labels', add: 'review', remove: ['doing'] },
+            '/nonexistent',
+            ORIGIN_RUN,
+          ),
+        )
+      ).text,
+    );
+    expect(out).toEqual({ issue_url: ISSUE, labels: ['review'] });
+    expect(calls).toEqual([
+      `labels:${ISSUE}`,
+      `relabel:${ISSUE}:+review:-doing`,
+    ]);
+  });
+
+  it('update_labels refuses a name that is not listed exactly, and an empty change, writing nothing', async () => {
+    const { tool, calls } = setup();
+    const call = (args: Record<string, unknown>) =>
+      tool(
+        request(
+          { operation: 'update_labels', ...args },
+          '/nonexistent',
+          ORIGIN_RUN,
+        ),
+      );
+    await expect(call({ add: 'Review' })).rejects.toThrow(/Review/);
+    await expect(call({ add: 'done', remove: ['doing'] })).rejects.toThrow(
+      /done/,
+    );
+    await expect(call({})).rejects.toThrow(/add or remove/);
+    await expect(call({ add: '', remove: [] })).rejects.toThrow(
+      /add or remove/,
+    );
+    expect(calls.filter((c) => c.startsWith('relabel'))).toEqual([]);
+  });
+
+  it('update_labels writes nothing when the label list fails', async () => {
+    const { tool, calls } = setup({ issueFail: 'GET labels answered 500' });
+    await expect(
+      tool(
+        request(
+          { operation: 'update_labels', add: 'review' },
+          '/nonexistent',
+          ORIGIN_RUN,
+        ),
+      ),
+    ).rejects.toThrow(/500/);
+    expect(calls).toEqual([`labels:${ISSUE}`]);
+  });
+
+  it('comment sends the body unchanged and returns id and URL; a blank body sends nothing', async () => {
+    const { tool, calls } = setup();
+    const body = '**Done** — see MR\n';
+    const out = JSON.parse(
+      (
+        await tool(
+          request({ operation: 'comment', body }, '/nonexistent', ORIGIN_RUN),
+        )
+      ).text,
+    );
+    expect(out).toEqual({ id: 5, url: `${ISSUE}#note_5` });
+    await expect(
+      tool(
+        request(
+          { operation: 'comment', body: ' \n\t' },
+          '/nonexistent',
+          ORIGIN_RUN,
+        ),
+      ),
+    ).rejects.toThrow(/body/);
+    expect(calls).toEqual([`comment:${ISSUE}:${body}`]);
+  });
+
+  it('comment reports a failed write once, redacting the token', async () => {
+    const { tool, calls } = setup({
+      issueFail: `POST notes answered 500 for ${SECRET}`,
+    });
+    const err = await tool(
+      request({ operation: 'comment', body: 'x' }, '/nonexistent', ORIGIN_RUN),
+    ).catch((e: Error) => e.message);
+    expect(err).toBe('POST notes answered 500 for [redacted]');
+    expect(calls).toEqual([`comment:${ISSUE}:x`]);
+  });
+
+  it('refuses an unknown operation', async () => {
+    const { tool, calls } = setup();
+    expect(
+      validateArgs(FORGE_TOOL_DEFINITIONS.forge_issue_update!.input, {
+        operation: 'delete',
+      }).ok,
+    ).toBe(false);
+    await expect(
+      tool(request({ operation: 'delete' }, '/nonexistent', ORIGIN_RUN)),
+    ).rejects.toThrow(/operation/);
+    expect(calls).toEqual([]);
+  });
+});
+
 describe('forge_job_log', () => {
   it('reads 16384 bytes by default, clamps a larger ask to 262144 and reports it', async () => {
     const { backend, calls } = fakeBackend({ log: 'step 1\nexit code 2\n' });
@@ -804,5 +977,254 @@ describe('forge tools for a run clone', () => {
 
     expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
     expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+  });
+
+  /** A new commit on the remote's `next`, as another merged ticket would add it. */
+  function moveTarget(f: ReturnType<typeof gitFixture>, path = 'moved') {
+    const seed = join(f.root, 'seed');
+    git(seed, 'checkout', '-q', 'next');
+    mkdirSync(join(seed, path, '..'), { recursive: true });
+    writeFileSync(join(seed, path), `${path}\n`);
+    git(seed, 'add', path);
+    git(seed, 'commit', '-qm', path);
+    git(seed, 'push', '-q', `file://${f.remote}`, 'next');
+    return git(seed, 'rev-parse', 'HEAD');
+  }
+
+  const update = async (
+    tools: ReturnType<typeof forgeTools>,
+    workspace: string,
+    current?: ToolRequest['currentTicket'],
+  ) =>
+    JSON.parse(
+      (
+        await tools.forge_update_branch!(
+          request({}, workspace, RUN, current ?? (async () => RUN)),
+        )
+      ).text,
+    );
+
+  it('forge_update_branch merges the fetched target into the ticket branch and the run syncs in place', async () => {
+    const { f, workspace, run, commit, tools } = cloned();
+    const target = moveTarget(f);
+    const tip = commit('feature.txt');
+    const { backend, calls } = fakeBackend({ remote: f.remote });
+    const live = forgeTools({ backend: async () => backend, settings: {} });
+
+    const result = await update(live, workspace);
+
+    expect(result).toMatchObject({
+      branch: RUN.branchName,
+      target_branch: 'next',
+      previous: tip,
+      target,
+      noop: false,
+      sync: 'in_place',
+    });
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(result.resulting);
+    expect(
+      git(f.clone, 'rev-list', '--parents', '-n1', result.resulting).split(' '),
+    ).toEqual([result.resulting, tip, target]);
+    expect(f.remoteSha('next')).toBe(target);
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+    expect(calls).toEqual([]);
+    expect(result.next).toContain(`git merge --ff-only ${result.resulting}`);
+
+    run('merge', '--ff-only', '-q', result.resulting);
+    expect(run('show', 'HEAD:moved')).toBe('moved');
+    expect(run('show', 'HEAD:feature.txt')).toBe('run work');
+    const pushed = JSON.parse(
+      (await tools.forge_push!(request({}, workspace))).text,
+    );
+    expect(pushed.sha).toBe(result.resulting);
+    expect(f.remoteSha(RUN.branchName)).toBe(result.resulting);
+  });
+
+  it('forge_update_branch is an explicit no-op when the target is already contained', async () => {
+    const { f, workspace, record, run, tools } = cloned();
+
+    const result = await update(tools, workspace);
+
+    expect(result).toMatchObject({
+      previous: record.expected,
+      target: f.remoteSha('next'),
+      resulting: record.expected,
+      noop: true,
+      sync: 'none',
+    });
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
+    expect(run('rev-parse', 'HEAD')).toBe(record.expected);
+  });
+
+  it("forge_update_branch merges the ticket's target as the server returns it at call time", async () => {
+    const { f, workspace, tools } = cloned();
+    const main = f.remoteSha('main');
+
+    const result = await update(tools, workspace, async () => ({
+      ...RUN,
+      targetBranch: 'main',
+    }));
+
+    expect(result).toMatchObject({ target_branch: 'main', target: main });
+    expect(f.remoteSha('next')).toBe(git(f.clone, 'rev-parse', 'origin/next'));
+  });
+
+  it('forge_update_branch refuses a conflict, naming the paths, sends it to the developers and changes nothing', async () => {
+    const { f, workspace, run, commit, tools } = cloned();
+    moveTarget(f, 'clash.txt');
+    const tip = commit('clash.txt');
+
+    const refusal = await update(tools, workspace).catch((e: Error) => e);
+    expect(String(refusal)).toMatch(
+      /conflicts in clash\.txt; nothing changed\. The run cannot resolve this: stop and report it to the developers\. A developer with write access merges origin\/next into 'feat\/bb-7-work' outside the run/,
+    );
+
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(tip);
+    expect(run('rev-parse', 'HEAD')).toBe(tip);
+    expect(run('status', '--porcelain')).toBe('');
+    expect(loadRunClone(workspace)?.expected).toBe(tip);
+  });
+
+  it.each([
+    ['changed', 'work'],
+    ['untracked', 'new.txt'],
+  ])('forge_update_branch refuses %s work and changes nothing', async (_, path) => {
+    const { f, workspace, record, tools } = cloned();
+    moveTarget(f);
+    writeFileSync(join(workspace, path), 'uncommitted');
+
+    await expect(update(tools, workspace)).rejects.toThrow(
+      new RegExp(`uncommitted work in the run \\(${path}\\)`),
+    );
+
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
+  });
+
+  it('forge_update_branch refuses a ticket branch pushed elsewhere or moved since the run started', async () => {
+    const { f, workspace, record, tools } = cloned();
+    moveTarget(f);
+    git(f.clone, 'push', '-q', `file://${f.remote}`, RUN.branchName);
+    const elsewhere = join(f.root, 'elsewhere');
+    git(f.root, 'clone', '-q', `file://${f.remote}`, elsewhere);
+    git(elsewhere, 'checkout', '-q', RUN.branchName);
+    f.commit(elsewhere, 'foreign');
+    git(elsewhere, 'push', '-q', 'origin', RUN.branchName);
+
+    await expect(update(tools, workspace)).rejects.toThrow(
+      /has commits .* lacks .*nothing changed/,
+    );
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
+
+    git(
+      f.clone,
+      'update-ref',
+      `refs/heads/${RUN.branchName}`,
+      f.remoteSha(RUN.branchName)!,
+    );
+    const moved = git(f.clone, 'rev-parse', RUN.branchName);
+    await expect(update(tools, workspace)).rejects.toThrow(
+      /moved to .* since the run last synced .*nothing changed/,
+    );
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(moved);
+  });
+
+  it('forge_update_branch merges protected target changes, then the run must restart; a fresh run clone pushes them', async () => {
+    const { f, workspace, record, tools } = cloned();
+    moveTarget(f, '.bakers/provision.sh');
+
+    const result = await update(tools, workspace);
+
+    expect(result.sync).toBe('restart');
+    expect(result.next).toMatch(/\.bakers\/provision\.sh.*bakers_run_cancel/);
+    expect(git(f.clone, 'show', `${RUN.branchName}:.bakers/provision.sh`)).toBe(
+      '.bakers/provision.sh',
+    );
+    expect(loadRunClone(workspace)?.restartPending).toBe(result.resulting);
+    for (const call of [
+      tools.forge_push!(request({}, workspace)),
+      update(tools, workspace),
+    ])
+      await expect(call).rejects.toThrow(/bakers_run_cancel/);
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+
+    const fresh = createRunClone({
+      parent: f.clone,
+      workspace,
+      branch: RUN.branchName,
+      target: 'next',
+    });
+    saveRunClone({ ...fresh, protectedPaths: ['.bakers'] });
+    expect(fresh.expected).toBe(result.resulting);
+    expect(fresh.restartPending).toBeUndefined();
+    const pushed = JSON.parse(
+      (await tools.forge_push!(request({}, workspace))).text,
+    );
+    expect(pushed.sha).toBe(result.resulting);
+    expect(record.gitDir).toBe(fresh.gitDir);
+  });
+
+  it('forge_push still rejects an agent edit of a protected path after an update', async () => {
+    const { f, workspace, run, commit, tools } = cloned();
+    moveTarget(f);
+    const result = await update(tools, workspace);
+    run('merge', '--ff-only', '-q', result.resulting);
+    commit('.bakers/provision.sh');
+
+    await expect(tools.forge_push!(request({}, workspace))).rejects.toThrow(
+      /protected path/,
+    );
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+  });
+
+  it('forge_push refuses a run that has not synced an in-place update', async () => {
+    const { f, workspace, tools } = cloned();
+    moveTarget(f);
+    const result = await update(tools, workspace);
+
+    await expect(tools.forge_push!(request({}, workspace))).rejects.toThrow(
+      `git merge --ff-only ${result.resulting}`,
+    );
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
+  });
+
+  it('forge_update_branch runs no run-planted hook, config or merge driver and never returns the token', async () => {
+    const { f, workspace, commit, plant, tools } = cloned();
+    moveTarget(f, 'driven.txt');
+    writeFileSync(
+      join(workspace, '.gitattributes'),
+      '* merge=evil filter=evil\n',
+    );
+    commit('driven.txt');
+    plant();
+    git(
+      f.clone,
+      'config',
+      'merge.evil.driver',
+      `sh -c 'echo ran >> ${f.marker}'`,
+    );
+
+    const text = await tools.forge_update_branch!(request({}, workspace))
+      .then((r) => r.text)
+      .catch((e: Error) => e.message);
+
+    expect(text).not.toContain(SECRET);
+    expect(markerRan(f)).toBe(false);
+  });
+
+  it('forge_update_branch refuses a checkout that is no run clone and a call without the run binding', async () => {
+    const f = gitFixture();
+    const { backend, calls } = fakeBackend({ remote: f.remote });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const refs = git(f.clone, 'show-ref');
+    await expect(
+      tools.forge_update_branch!(request({}, f.worktree)),
+    ).rejects.toThrow(
+      /serves isolated run clones.*merge origin\/<target> locally/,
+    );
+    await expect(
+      tools.forge_update_branch!(request({}, f.clone, { identifier: 'BB-7' })),
+    ).rejects.toThrow(FORGE_NEEDS_RUN);
+    expect(git(f.clone, 'show-ref')).toBe(refs);
+    expect(calls).toEqual([]);
   });
 });

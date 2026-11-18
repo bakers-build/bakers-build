@@ -246,7 +246,7 @@ final class EntityDetailCardFormTest extends KernelTestBase {
   public function testUnknownCardIsRefused(): void {
     self::assertNull(BbEntityDetailCardForm::fields('bb_machine', 'settings'));
     self::assertNull(BbEntityDetailCardForm::fields('bb_machine', 'capacity'));
-    self::assertSame(['name', 'max_parallel'], BbEntityDetailCardForm::fields('bb_machine', 'identity')['edit']);
+    self::assertSame(['name', 'max_parallel', 'assignment'], BbEntityDetailCardForm::fields('bb_machine', 'identity')['edit']);
   }
 
   /**

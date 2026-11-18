@@ -1,0 +1,7 @@
+uuid: 34d17f16-d85b-4f70-a606-5da5a8ebe560
+langcode: en
+status: true
+dependencies: {  }
+id: bakers_environment_delete
+tool_id: bakers_environment_delete
+description: null

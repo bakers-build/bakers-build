@@ -138,7 +138,7 @@ bb_core.bb_group.settings:
   base_route: entity.bb_group.canonical
   weight: 1
 
-# --- Team: Overview, Stats, Tickets, Runs, Members ---
+# --- Team: Overview, Stats, Tickets, Runs, Members, Settings ---
 
 entity.bb_team.canonical:
   title: 'Overview'
@@ -169,6 +169,12 @@ bb_core.bb_team.members:
   route_name: bb_core.bb_team.members
   base_route: entity.bb_team.canonical
   weight: 4
+
+bb_core.bb_team.settings:
+  title: 'Settings'
+  route_name: bb_core.bb_team.settings
+  base_route: entity.bb_team.canonical
+  weight: 5
 
 
 # --- Workspace settings: Settings, Members, Addons, Templates, Types, Recipes, Labels ---

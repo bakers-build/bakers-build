@@ -31,6 +31,19 @@ def parse_action(text):
     return action
 
 
+def declared_output(commands, argv):
+    """A fixture's synthetic output for argv: exact, or by prefix for forge CLIs, whose read flags vary."""
+    exact = json.dumps(argv, separators=(',', ':'))
+    if exact in commands:
+        return commands[exact]
+    if argv[:1] in (['gh'], ['glab']):
+        for key, output in commands.items():
+            declared = json.loads(key)
+            if declared[:1] == argv[:1] and argv[:len(declared)] == declared:
+                return output
+    return None
+
+
 def safe_path(root, value):
     root = Path(root).resolve()
     path = (root / value).resolve()

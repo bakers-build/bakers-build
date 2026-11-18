@@ -133,6 +133,32 @@ final class EntityEditAccessTest extends KernelTestBase {
   }
 
   /**
+   * An owner token with `update own bb_project` updates only its own project.
+   */
+  public function testOwnerTokenUpdatesOnlyOwnProject(): void {
+    $home = $this->createWorkspaceChain('token-project');
+    $owner = $this->createAccount('token-project-owner');
+    $this->addMembership($home['workspace'], $owner, ['contributor']);
+    $this->addMembership($home['team'], $owner, []);
+    $own = $this->createEntity('bb_project', [
+      'name' => 'token-own-project',
+      'group_id' => $home['group']->id(),
+      'teams' => [$home['team']->id()],
+      'owner_user_id' => $owner->id(),
+    ]);
+
+    $handler = $this->container->get('entity_type.manager')->getAccessControlHandler('bb_project');
+    self::assertFalse(
+      $own->access('update', $this->delegatedSessionAccount($owner, [])),
+      'an owner token without update own bb_project must not PATCH',
+    );
+    $handler->resetCache();
+    $with = $this->delegatedSessionAccount($owner, ['update own bb_project']);
+    self::assertTrue($own->access('update', $with), 'an owner token with update own bb_project may PATCH');
+    self::assertFalse($home['project']->access('update', $with), 'but not a project someone else owns');
+  }
+
+  /**
    * Workspace owner keeps workspace update; admin keeps machine update.
    *
    * No rank gains `update any bb_machine`. A workspace owner is not an
@@ -210,7 +236,7 @@ final class EntityEditAccessTest extends KernelTestBase {
     self::assertTrue($project->access('update', $secondLead), 'lead of a referenced team must edit the project');
     self::assertTrue($project->access('update', $teamOwner), 'owner of a referenced team must edit the project');
     self::assertFalse($project->access('update', $unrelatedLead), 'lead of an unreferenced team must not edit the project');
-    self::assertTrue($project->access('delete', $secondLead), 'team-lead delete of a referenced project stays granted');
+    self::assertFalse($project->access('delete', $secondLead), 'a team lead deletes only the projects it created');
     self::assertFalse($home['project']->access('update', $secondLead), 'a team lead does not edit an unreferenced project');
   }
 

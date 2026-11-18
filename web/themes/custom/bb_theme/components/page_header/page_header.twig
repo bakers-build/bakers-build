@@ -90,11 +90,11 @@
           is judged to want one. #}
       {%- set editable_classes = 'min-w-0' %}
       {%- if editable or title %}
-        <h1 class="text-page-title font-display text-title {{ editable ? editable_classes : 'line-clamp-2' }}"{% if not editable %} title="{{ title }}"{% endif %}>{{ editable ? heading_content : title }}</h1>
+        <h1 class="text-page-title font-display text-title {{ editable ? editable_classes : 'max-md:wrap-break-word md:line-clamp-2' }}"{% if not editable %} title="{{ title }}"{% endif %}>{{ editable ? heading_content : title }}</h1>
       {% endif %}
       {%- if description or has_subline %}
         {#- One page header per page: the fixed id lets an htmx swap refresh the line out of band. #}
-        <p id="page-header-description" class="truncate text-meta text-text-faint"{% if description %} title="{{ description }}"{% endif %}>{{ has_subline ? subline_content : description }}</p>
+        <p id="page-header-description" class="max-md:wrap-break-word md:truncate text-meta text-text-faint"{% if description %} title="{{ description }}"{% endif %}>{{ has_subline ? subline_content : description }}</p>
       {% endif %}
     </div>
     </div>

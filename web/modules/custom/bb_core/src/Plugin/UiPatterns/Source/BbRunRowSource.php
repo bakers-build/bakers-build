@@ -275,7 +275,7 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
    * 'log' is preferred over 'error_log' when both are captured, because a
    * transcript is what an operator scanning the ticket's run history reaches
    * for first; the error log is one click further, on the run's own detail
-   * page. NULL when neither is captured — a link to a route that answers 204
+   * page. NULL when neither is stored — a link to a route that answers 204
    * is a link to nothing, and this row already states that in `Log`/`Error
    * log` on the run's own full view mode.
    *
@@ -283,9 +283,7 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
    *   An `action` cell, or NULL.
    */
   private function logCell(BbRunInterface $run): ?array {
-    $logBytes = $run->get('log_bytes')->value;
-    $errorLogBytes = $run->get('error_log_bytes')->value;
-    $kind = $logBytes !== NULL && $logBytes !== '' ? 'log' : ($errorLogBytes !== NULL && $errorLogBytes !== '' ? 'error_log' : NULL);
+    $kind = $run->hasLog('log') ? 'log' : ($run->hasLog('error_log') ? 'error_log' : NULL);
     // The row already varies per user, so the log gate needs no own context.
     if ($kind === NULL || !$run->access('view_log')) {
       return NULL;

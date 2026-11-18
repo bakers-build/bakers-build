@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Hook;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Hook\Order\Order;
 use Drupal\bb_core\Plugin\UiPatterns\Source\ViewSearchToolbarSource;
+use Drupal\bb_core\Plugin\views\filter\BbClosedRows;
 use Drupal\views\ViewExecutable;
 
 /**
@@ -69,6 +70,34 @@ final class ListingToolbarHooks {
       unset($exposed[$key], $view->exposed_widgets[$key]);
     }
     $variables['bb_toolbar'] = $toolbar;
+    $variables['bb_active_count'] = $this->activeCount($view);
+  }
+
+  /**
+   * The number of exposed filters with a chosen value: one per chip.
+   *
+   * The phone "Filters · N" opener shows it. The search field and the closed
+   * control are not chips, so they do not count; a multi-value filter counts
+   * once, as its chip does.
+   */
+  private function activeCount(ViewExecutable $view): int {
+    $input = $view->getExposedInput();
+    $count = 0;
+    foreach ($view->filter as $filter) {
+      if (!$filter->isExposed() || $filter instanceof BbClosedRows) {
+        continue;
+      }
+      $identifier = $filter->options['expose']['identifier'] ?? '';
+      if ($identifier === '' || in_array($identifier, self::ELEMENTS, TRUE)) {
+        continue;
+      }
+      $values = array_filter(
+        (array) ($input[$identifier] ?? []),
+        static fn ($value): bool => !in_array($value, ['', '0', 'All', NULL], TRUE),
+      );
+      $count += $values === [] ? 0 : 1;
+    }
+    return $count;
   }
 
   /**

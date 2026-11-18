@@ -63,3 +63,45 @@ it('rejects mismatched existing bytes and channel rollback before publishing', a
   ).rejects.toThrow('backwards');
   expect(writes).toBe(0);
 });
+
+it('refuses a next version below latest before any write', async () => {
+  let writes = 0;
+  const registry = {
+    integrity: async () => undefined,
+    current: async (_name: string, tag: string) =>
+      tag === 'latest' ? '1.0.1' : undefined,
+    publish: async () => {
+      writes++;
+    },
+    promote: async () => {
+      writes++;
+    },
+  };
+  await expect(
+    publishSet(
+      [{ name: 'pkg', integrity: 'sha512-local' }],
+      '1.0.1-next.1',
+      'next',
+      registry,
+    ),
+  ).rejects.toThrow('below latest');
+  expect(writes).toBe(0);
+});
+
+it('moves a lower next along with a stable latest publish', async () => {
+  const tags = new Map<string, string>();
+  const registry = (next: string) => ({
+    integrity: async () => 'sha512-local',
+    current: async (_name: string, tag: string) =>
+      tag === 'next' ? next : '1.0.0',
+    publish: async () => {},
+    promote: async (_name: string, version: string, tag: string) =>
+      tags.set(tag, version),
+  });
+  const pkg = [{ name: 'pkg', integrity: 'sha512-local' }];
+  await publishSet(pkg, '1.1.0', 'latest', registry('1.0.1-next.3'));
+  expect(Object.fromEntries(tags)).toEqual({ latest: '1.1.0', next: '1.1.0' });
+  tags.clear();
+  await publishSet(pkg, '1.1.0', 'latest', registry('1.1.1-next.1'));
+  expect(Object.fromEntries(tags)).toEqual({ latest: '1.1.0' });
+});

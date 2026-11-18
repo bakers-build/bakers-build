@@ -11,6 +11,7 @@ import type { BbAgent } from './agent.js';
 import type { SecurityMode, SecurityReport } from './agent-args.js';
 import type { BbExecutor } from './executor.js';
 import type { BbRemote, Ticket } from './remote.js';
+import type { SlotChoice } from './slot-catalog.js';
 import type { BbWorkspace } from './workspace.js';
 
 /** Runtime dependencies handed to a plugin factory at selection time. */
@@ -60,6 +61,8 @@ export interface AgentPlugin extends DropSHPlugin {
   readonly requiredModules: string[];
   /** The effective run permissions and their source layers (`bakers agents`). */
   readonly permissions?: SecurityReport;
+  /** The secrets-file names its runs may receive (`bakers agents`). */
+  readonly secretEnv?: readonly string[];
   createAgent(config: ConductorFileConfig): Promise<BbAgent>;
 }
 
@@ -248,4 +251,27 @@ export function resolveAgent(
     );
   }
   return selectAgent(candidates, ticket);
+}
+
+/**
+ * Why `resolveAgent` chose `alias`, in selectSlot's vocabulary. Pure; the
+ * choice itself is never re-derived, so a surprise here only mislabels a note.
+ */
+export function agentReason(
+  ticket: Ticket,
+  alias: string,
+  routes: AgentRoutes = {},
+): SlotChoice['reason'] {
+  for (const label of ticket.labels) {
+    if (!label.startsWith('agent:')) continue;
+    const [name, state] = label.slice('agent:'.length).split('@');
+    if (!name || (state !== undefined && state !== ticket.state)) continue;
+    const via = Object.hasOwn(routes, name)
+      ? (routes[name]?.[ticket.state] ?? routes[name]?.['*'])
+      : name;
+    if (via === alias) return 'label';
+  }
+  if (routes.default?.[ticket.state] === alias) return 'route';
+  if (routes.default?.['*'] === alias) return 'default-route';
+  return 'fallback';
 }

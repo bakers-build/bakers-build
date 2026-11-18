@@ -35,7 +35,7 @@ const body = [
   '',
 ].join('\n');
 const [tool, args] = open
-  ? ['bakers_comment_publish', { ticket: open.identifier, type: 'comment', body }]
+  ? ['bakers_comment_create', { ticket: open.identifier, type: 'comment', body }]
   : ['bakers_ticket_create', {
       title: env.TITLE, project: env.PROJECT, workflow: 'bb_work', type: 'bug', recipe: 'superpowers',
       description: body,

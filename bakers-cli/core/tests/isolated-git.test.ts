@@ -136,6 +136,28 @@ it('returns the start tip and changes nothing when the run made no commit', () =
   expect(git(parent, 'show-ref')).toBe(refs);
 });
 
+it('returns the recorded tip and changes nothing when the run tip is behind it', () => {
+  const { parent, record } = fixture();
+  const merged = git(
+    parent,
+    ...ident,
+    'commit-tree',
+    'origin/next^{tree}',
+    '-p',
+    record.expected,
+    '-p',
+    'origin/next',
+    '-m',
+    'merge',
+  );
+  git(parent, 'update-ref', 'refs/heads/ticket', merged);
+  const refs = git(parent, 'show-ref');
+
+  expect(transferIsolatedCommit({ ...record, expected: merged })).toBe(merged);
+
+  expect(git(parent, 'show-ref')).toBe(refs);
+});
+
 it('rejects a destination that moved since the run started and keeps the local work', () => {
   const { parent, record, run, commit } = fixture();
   const tip = commit();
@@ -283,6 +305,34 @@ it('refreshes the run target ref from the parent without running the run-owned c
   expect(run('rev-parse', 'origin/next')).toBe(newer);
   expect(run('show', 'origin/next:newer')).toBe('newer');
   expect(run('rev-parse', 'refs/heads/ticket')).toBe(ticket);
+  expect(existsSync(join(root, 'executed'))).toBe(false);
+});
+
+it('hands the run an unreferenced merge commit with the target ref, without running the run-owned config or hooks', () => {
+  const { root, parent, record, run, plantHostileConfig } = fixture();
+  const merged = git(
+    parent,
+    ...ident,
+    'commit-tree',
+    'origin/next^{tree}',
+    '-p',
+    record.expected,
+    '-p',
+    'origin/next',
+    '-m',
+    'merge',
+  );
+  plantHostileConfig();
+
+  refreshRunTarget(record, ['next'], [merged]);
+
+  rmSync(join(record.gitDir, 'config'));
+  rmSync(join(record.gitDir, 'hooks'), { recursive: true });
+  expect(run('show', `${merged}:target-only`)).toBe('target');
+  expect(run('rev-parse', 'origin/next')).toBe(
+    git(parent, 'rev-parse', 'origin/next'),
+  );
+  expect(run('rev-parse', 'refs/heads/ticket')).toBe(record.expected);
   expect(existsSync(join(root, 'executed'))).toBe(false);
 });
 

@@ -80,6 +80,7 @@ async function dispatch(
   agent: BbAgent,
   marketplaces: MarketplaceDeclaration[] = [probe],
   ticket: { recipe?: string; worktree?: string } = {},
+  secrets: Record<string, string> = {},
 ) {
   const remote = new FakeBbRemote({
     tickets: {
@@ -99,10 +100,19 @@ async function dispatch(
     handler: 'code',
   });
   const executor = new RecordingExecutor();
-  const logs: Array<{ obj: Record<string, unknown>; msg?: string }> = [];
-  const mk = (obj: object, msg?: string) =>
-    logs.push({ obj: obj as Record<string, unknown>, msg });
-  const log: ConductorLogger = { debug: mk, info: mk, warn: mk, error: mk };
+  const logs: Array<{
+    level: string;
+    obj: Record<string, unknown>;
+    msg?: string;
+  }> = [];
+  const mk = (level: string) => (obj: object, msg?: string) =>
+    logs.push({ level, obj: obj as Record<string, unknown>, msg });
+  const log: ConductorLogger = {
+    debug: mk('debug'),
+    info: mk('info'),
+    warn: mk('warn'),
+    error: mk('error'),
+  };
   const config: ConductorFileConfig = {
     site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
     remote: fakeRemote(),
@@ -127,13 +137,17 @@ async function dispatch(
     [{ id: agent.id, alias: 'opus', permissions: 'sandbox', agent }],
     log,
     CHECKOUT,
+    undefined,
+    undefined,
+    undefined,
+    secrets,
   );
   await conductor.start();
   await conductor.tick();
   const entry = logs.find((l) => l.msg === 'plugins')?.obj.plugins as
     | Record<string, unknown>
     | undefined;
-  return { executor, remote, entry };
+  return { executor, remote, entry, logs };
 }
 
 const baseAgent = (calls: string[], extra: Partial<BbAgent> = {}): BbAgent => ({
@@ -242,6 +256,53 @@ describe('conductor: a run starts with the project plugins installed', () => {
     expect(entry).toMatchObject({
       harness: 'claude',
       failure: expect.stringContaining('not found'),
+    });
+  });
+
+  it('passes the picked secrets to the install, so a token can log the agent home in', async () => {
+    vi.stubEnv('CLAUDE_CODE_OAUTH_TOKEN', '');
+    const seen: Array<Readonly<Record<string, string>> | undefined> = [];
+    const agent = baseAgent([], {
+      secretEnv: ['CLAUDE_CODE_OAUTH_TOKEN'],
+      installPlugins: async (_m, home, secrets) => {
+        seen.push(secrets);
+        return { env: { CLAUDE_CONFIG_DIR: home }, args: [], home: 'built' };
+      },
+    });
+    await dispatch(
+      agent,
+      [probe],
+      {},
+      {
+        CLAUDE_CODE_OAUTH_TOKEN: 'file-token',
+        OTHER: 'not declared',
+      },
+    );
+    expect(seen).toEqual([{ CLAUDE_CODE_OAUTH_TOKEN: 'file-token' }]);
+  });
+
+  it('logs a host-home install without an agent home path, and each warning at warn level', async () => {
+    const agent = baseAgent([], {
+      installPlugins: async () => ({
+        env: {},
+        args: [],
+        home: 'host',
+        warnings: ['marketplace probe-market: installed ref vB, pinned vA'],
+      }),
+    });
+    const { executor, entry, logs } = await dispatch(agent);
+    expect(executor.started).toHaveLength(1);
+    expect(entry).toMatchObject({
+      state: 'on',
+      outcome: 'host',
+      warnings: ['marketplace probe-market: installed ref vB, pinned vA'],
+    });
+    expect(entry).not.toHaveProperty('hash');
+    expect(entry).not.toHaveProperty('home');
+    expect(logs).toContainEqual({
+      level: 'warn',
+      obj: { ticket: 'BB-1', run: 'r-1' },
+      msg: 'marketplace probe-market: installed ref vB, pinned vA',
     });
   });
 });

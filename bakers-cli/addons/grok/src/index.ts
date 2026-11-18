@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   type AgentFootprint,
   type AgentPlugin,
+  type AgentRunContext,
   type AgentRunIdentity,
   type BbAgent,
   type KnownOptionSpec,
@@ -21,8 +22,14 @@ import {
 } from '@bakers-build/conductor/contract';
 import { shellQuote } from '@bakers-build/core';
 import { parseGrokTranscript } from './footprint.js';
+import {
+  encodeGrokSessionCwd,
+  GROK_SECRET_ENV,
+  prepareGrokRun,
+} from './run.js';
 
 export { parseGrokTranscript } from './footprint.js';
+export { encodeGrokSessionCwd } from './run.js';
 
 export type GrokReasoningEffort = 'high' | 'medium' | 'low';
 
@@ -154,10 +161,6 @@ const GROK_KNOWN: readonly KnownOptionSpec[] = [
   { kind: 'effort', flags: ['--reasoning-effort', '--effort'] },
 ];
 
-export function encodeGrokSessionCwd(cwd: string): string {
-  return encodeURIComponent(cwd);
-}
-
 async function readText(path: string): Promise<string> {
   try {
     return await readFile(path, 'utf8');
@@ -179,6 +182,7 @@ async function readJson(path: string): Promise<Record<string, unknown> | null> {
 
 export class GrokAgent implements BbAgent {
   readonly id = 'grok';
+  readonly secretEnv = GROK_SECRET_ENV;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
@@ -238,7 +242,17 @@ export class GrokAgent implements BbAgent {
     this.overrides = cli.overrides;
   }
 
-  launchCommand(prompt: string, run?: AgentRunIdentity): string {
+  prepareRun(context: AgentRunContext) {
+    return prepareGrokRun(context, join(this.home, '.grok'));
+  }
+
+  launchCommand(
+    prompt: string,
+    run?: AgentRunIdentity,
+    _workspacePath?: string,
+    _tools?: { url: string },
+    env: Readonly<Record<string, string>> = {},
+  ): string {
     const parts = ['grok'];
     if (prompt !== '') {
       // Positional — the interactive form Grok Build documents
@@ -276,7 +290,8 @@ export class GrokAgent implements BbAgent {
       return [
         shellQuote(process.execPath),
         shellQuote(launcher),
-        shellQuote(join(this.home, '.grok')),
+        // An isolated run's own home, prepared by prepareRun.
+        shellQuote(env.GROK_HOME ?? join(this.home, '.grok')),
         shellQuote(JSON.stringify(this.security.sandbox.allow_write)),
         ...parts,
       ].join(' ');
@@ -512,6 +527,7 @@ export function grokAgent(options: GrokAgentOptions = {}): AgentPlugin {
     id: 'grok',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent() {
       return agent;
     },

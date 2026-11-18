@@ -30,8 +30,8 @@ final class TicketReadToolTest extends BakersToolTestBase {
       'origin' => 'legacy origin',
     ]);
     $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
-    self::assertSame([['name' => 'reviewer', 'mail' => NULL]], $out['reviewers']);
-    self::assertSame(['name' => 'actor', 'mail' => NULL], $out['assignee']);
+    self::assertSame([['uuid' => $other->uuid(), 'name' => 'reviewer', 'mail' => NULL, 'service_account' => FALSE]], $out['reviewers']);
+    self::assertSame(['uuid' => $this->actor->uuid(), 'name' => 'actor', 'mail' => NULL, 'service_account' => FALSE], $out['assignee']);
     self::assertSame('legacy origin', $out['origin']);
     self::assertSame($ticket->toUrl()->setAbsolute()->toString(), $out['url']);
     user_role_grant_permissions('skill_user', ['view user email addresses']);
@@ -70,7 +70,7 @@ final class TicketReadToolTest extends BakersToolTestBase {
     self::assertSame([], $update['reviewers']);
     self::assertNull($update['assignee']);
     self::assertSame([], $update['links']);
-    foreach (['reviewers_remove' => ['actor@example.test'], 'links_remove' => ['https://example.test/private']] as $input => $value) {
+    foreach (['reviewers_remove' => [$this->actor->uuid()], 'links_remove' => ['https://example.test/private']] as $input => $value) {
       $this->assertFailure($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), $input => $value]), 'You may not change');
     }
   }
@@ -152,6 +152,57 @@ final class TicketReadToolTest extends BakersToolTestBase {
     ]))['comments'], 'id');
     self::assertSame([], $read(0));
     self::assertSame([$spec->uuid(), $plan->uuid(), $test->uuid()], $read(10));
+  }
+
+  /**
+   * Types select the newest `newest` readable comments per named type.
+   */
+  public function testTypesSelectNewestPerType(): void {
+    $ticket = $this->ticket('TR-9');
+    $qualification = $this->comment($ticket, 'qualification', 1000);
+    $this->comment($ticket, 'spec', 1100);
+    $plans = [$this->comment($ticket, 'plan', 1200)];
+    $newestQualification = $this->comment($ticket, 'qualification', 2000);
+    $this->comment($ticket, 'spec', 2100);
+    $plans[] = $this->comment($ticket, 'plan', 2200);
+    $plans[] = $this->comment($ticket, 'plan', 3200);
+    $read = fn (array $values): array => $this->outputs($this->runTool('bakers_ticket_read', [
+      'ticket' => $ticket->getIdentifier(),
+    ] + $values));
+    $ids = static fn (array $out): array => array_column($out['comments'], 'id');
+    $facets = $read([])['comment_facets'];
+
+    $out = $read(['types' => ['qualification', 'plan'], 'newest' => 1]);
+    self::assertSame([$newestQualification->uuid(), $plans[2]->uuid()], $ids($out));
+    self::assertSame($facets, $out['comment_facets']);
+    self::assertSame([$plans[2]->uuid()], $ids($read(['types' => ['plan', 'no_such_type'], 'newest' => 1])));
+    self::assertSame([$plans[1]->uuid(), $plans[2]->uuid()], $ids($read(['types' => ['plan']])));
+    $allPlans = array_map(static fn ($plan): string => $plan->uuid(), $plans);
+    self::assertSame($allPlans, $ids($read(['types' => ['plan'], 'newest' => 5])));
+    self::assertSame($ids($read([])), $ids($read(['types' => []])));
+    $qualifications = [$qualification->uuid(), $newestQualification->uuid()];
+    self::assertSame($qualifications, $ids($read(['types' => ['qualification'], 'newest' => 3])));
+  }
+
+  /**
+   * Never returns a newer comment of a named type the caller cannot view.
+   */
+  public function testTypesSkipUnreadableComments(): void {
+    $other = $this->account('other', ['skill_user']);
+    $ticket = $this->ticket('TR-10', ['reviewers' => [$other->id()]]);
+    $plan = $this->comment($ticket, 'plan', 1000);
+    $this->container->get('entity_type.manager')->getStorage('bb_comment_type')
+      ->create(['id' => 'review', 'label' => 'Review'])
+      ->save();
+    $this->container->get('entity_type.bundle.info')->clearCachedBundles();
+    $this->comment($ticket, 'plan', 2000, ['bundle' => 'review', 'author' => $other->id()]);
+
+    $out = $this->outputs($this->runTool('bakers_ticket_read', [
+      'ticket' => $ticket->getIdentifier(),
+      'types' => ['plan'],
+      'newest' => 1,
+    ]));
+    self::assertSame([$plan->uuid()], array_column($out['comments'], 'id'));
   }
 
   /**

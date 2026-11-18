@@ -3,20 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { LOGO_WIDTH } from '../../src/Kernel/logo.js';
 import {
   awaitSplash,
-  SPLASH_FONT,
   SPLASH_FRAME_PAD_Y,
-  SPLASH_FRAME_WIDTH,
   SPLASH_TEXT,
   shouldSkipSplash,
   splashTree,
+  splashWordmark,
 } from '../../src/Kernel/splash.js';
 import {
   BORDER,
+  BORDER_EMPHASIS,
   BRAND_LINE,
   BRAND_SLICE,
   BRAND_TILE,
   DEFAULT_BACKGROUND,
-  DEFAULT_FOREGROUND,
   SPLASH_MS,
 } from '../../src/lib/theme.js';
 import { childrenOf, nodeById } from '../render-tree.js';
@@ -26,8 +25,29 @@ describe('splash (BB-375 D6)', () => {
     expect(SPLASH_MS).toBe(500);
   });
 
-  it('splashTree renders a BORDER-bordered ASCIIFont bakers mark (not a chrome wash)', () => {
-    const tree = splashTree();
+  it('shows bakers.build, not bakers', () => {
+    expect(SPLASH_TEXT).toBe('bakers.build');
+  });
+
+  it.each([
+    [200, 'block'],
+    [125, 'block'],
+    [124, 'tiny'],
+    [80, 'tiny'],
+    [70, 'tiny'],
+    [69, 'text'],
+    [60, 'text'],
+  ])('at %i columns uses the %s wordmark inside the terminal', (width, tier) => {
+    const mark = splashWordmark(width);
+    expect(mark.tier).toBe(tier);
+    expect(mark.frameWidth).toBeLessThanOrEqual(width);
+  });
+
+  it.each([
+    [200, 'block'],
+    [80, 'tiny'],
+  ])('at %i columns renders a BORDER frame with a %s ASCIIFont wordmark', (width, font) => {
+    const tree = splashTree(width);
     const frame = nodeById(tree, 'splash-frame');
     expect(
       (frame?.props as { borderColor?: unknown } | undefined)?.borderColor,
@@ -36,36 +56,43 @@ describe('splash (BB-375 D6)', () => {
       true,
     );
     expect((frame?.props as { width?: number } | undefined)?.width).toBe(
-      SPLASH_FRAME_WIDTH,
+      splashWordmark(width).frameWidth,
     );
-    expect(SPLASH_FRAME_WIDTH).toBeGreaterThanOrEqual(40);
     expect(
       (frame?.props as { paddingTop?: number } | undefined)?.paddingTop,
     ).toBe(SPLASH_FRAME_PAD_Y);
     expect(SPLASH_FRAME_PAD_Y).toBeGreaterThanOrEqual(2);
-    const mark = nodeById(tree, 'splash-bakers');
-    expect((mark?.props as { text?: string } | undefined)?.text).toBe(
-      SPLASH_TEXT,
-    );
-    expect((mark?.props as { font?: string } | undefined)?.font).toBe(
-      SPLASH_FONT,
-    );
-    expect(SPLASH_FONT).toBe('block');
-    expect((mark?.props as { color?: unknown } | undefined)?.color).toBe(
-      DEFAULT_FOREGROUND,
-    );
-    expect(
-      (mark?.props as { backgroundColor?: unknown } | undefined)
-        ?.backgroundColor,
-    ).toBe(DEFAULT_BACKGROUND);
+    const mark = nodeById(tree, 'splash-wordmark');
+    const props = mark?.props as
+      | {
+          text?: string;
+          font?: string;
+          color?: unknown;
+          backgroundColor?: unknown;
+        }
+      | undefined;
+    expect(props?.text).toBe('bakers.build');
+    expect(props?.font).toBe(font);
+    expect(props?.color).toBe(BORDER_EMPHASIS);
+    expect(props?.backgroundColor).toBe(DEFAULT_BACKGROUND);
     expect(
       (tree.props as { backgroundColor?: unknown } | undefined)
         ?.backgroundColor,
     ).toBe(DEFAULT_BACKGROUND);
   });
 
+  it('falls back to plain bakers.build text on a narrow terminal', () => {
+    const mark = nodeById(splashTree(60), 'splash-wordmark');
+    const props = mark?.props as
+      | { content?: string; font?: string; fg?: unknown }
+      | undefined;
+    expect(props?.content).toBe('bakers.build');
+    expect(props?.font).toBeUndefined();
+    expect(props?.fg).toBe(BORDER_EMPHASIS);
+  });
+
   it('draws the bread-slice logo in the brand slots, not the braid', () => {
-    const tree = splashTree();
+    const tree = splashTree(80);
     expect(nodeById(tree, 'splash-braid')).toBeUndefined();
     const logo = nodeById(tree, 'splash-logo');
     expect((logo?.props as { width?: number } | undefined)?.width).toBe(
@@ -99,7 +126,7 @@ describe('splash (BB-375 D6)', () => {
     // slice beside `region-body`'s `flexGrow` and land off-centre; it must be out
     // of the flow (absolute, inset 0, 100%×100%) so it fills the shell and its
     // own center alignment puts the frame in the true middle.
-    const root = splashTree();
+    const root = splashTree(80);
     const props = root.props as Record<string, unknown> | undefined;
     expect(props?.position).toBe('absolute');
     expect(props?.left).toBe(0);

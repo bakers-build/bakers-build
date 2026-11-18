@@ -73,6 +73,7 @@ What the default blocks:
 
 What it does not block:
 
+- [Trusted commands](/addons/codex/trusted-commands): each `trusted_commands` entry runs outside the sandbox without a prompt.
 - **Reads.** Codex's sandbox does not confine reads, so a command can still read `~/.ssh` and `~/.bakers`. Choose an outer boundary when that matters.
 - Network access to any host while `network` is not empty.
 - [Git metadata](#git-metadata-in-codex-and-claude-sandboxes): objects and refs stay writable, so a run can rewrite branches. Permission-profile support is required; see [Codex security](/addons/codex#security). The hook-trust bypass is not passed, so Codex hooks may stop at Codex's trust prompt.

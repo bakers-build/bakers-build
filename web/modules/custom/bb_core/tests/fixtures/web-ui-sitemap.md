@@ -78,7 +78,7 @@ table above.
 | Runs | `view.runs.project_runs` | `/{ws}/project/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Conductors | `view.conductors.project_list` | `/{ws}/project/{id}/conductors` | View (page display) | `view bb_conductor` | view's own `access: type: perm`. Rows are this project's conductors, any owner. |
 | Templates | `view.bb_ticket_templates.project_list` | `/{ws}/project/{id}/templates` | View (page display) | `view bb_ticket_template` | view's own `access: type: perm`; rows are scoped by the template read scope. Its *Add template* header action opens the project-scoped add form. |
-| Settings | `bb_core.bb_project.settings` | `/{ws}/project/{id}/settings` | Controller | `bb_project.update` (→ `edit bb_project`) | `_entity_access` |
+| Settings | `bb_core.bb_project.settings` | `/{ws}/project/{id}/settings` | Controller | `bb_project.update` (→ `edit bb_project`, or `update own bb_project` as owner) | `_entity_access` |
 
 ## Team detail — five tabs, Overview default
 
@@ -89,6 +89,7 @@ table above.
 | Tickets | `view.tickets.team_tickets` | `/{ws}/team/{id}/tickets` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
 | Runs | `view.runs.team_runs` | `/{ws}/team/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Members | `bb_core.bb_team.members` | `/{ws}/team/{id}/members` | Controller (island) | `bb_team.view` | `_entity_access` |
+| Settings | `bb_core.bb_team.settings` | `/{ws}/team/{id}/settings` | Entity form | `bb_team.update` (→ `update any bb_team`, workspace lead) | `_entity_form` + `_entity_access` |
 
 ## Group detail — two tabs, Overview default
 

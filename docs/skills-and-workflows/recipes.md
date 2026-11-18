@@ -19,6 +19,16 @@ The **type** selects the recipe's variant: for example, a bug needs a diagnosis 
 
 To change an already agreed method or scope, ask the agent to use `bb-scope-change` before continuing.
 
+## Shipped recipes and their plugins
+
+A shipped recipe names original skills from an external plugin. Add the recipe's ready entry to the project's [`marketplaces`](/configuration/project#agent-plugins), so every run installs that plugin:
+
+| Recipe | Plugin | Marketplace | Recommended ref | `marketplaces` entry |
+|---|---|---|---|---|
+| `bb-recipe-matt` | `mattpocock-skills` | `https://github.com/mattpocock/skills.git` | `v1.3.2` | `{ url: 'https://github.com/mattpocock/skills.git', ref: 'v1.3.2', plugins: ['mattpocock-skills'] }` |
+| `bb-recipe-superpowers` | `superpowers` | `https://github.com/obra/superpowers.git` | `v7.0.0` | `{ url: 'https://github.com/obra/superpowers.git', ref: 'v7.0.0', plugins: ['superpowers'] }` |
+| `bb-recipe-deploy-and-release`, `bb-recipe-verify` | none | — | — | — |
+
 ## Add your own recipe
 
 Start with the [skills installed for your agent](/skills-and-workflows/skills). Create a discoverable skill named `bb-recipe-<method>` in your repository or a plugin; for example, `.claude/skills/team/skills/bb-recipe-small-change/SKILL.md`.

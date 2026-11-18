@@ -1,7 +1,0 @@
-langcode: en
-status: true
-dependencies: {  }
-id: bakers_comment_publish
-tool_id: bakers_comment_publish
-description: null
-

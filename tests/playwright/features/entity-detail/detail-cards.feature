@@ -2,13 +2,13 @@
 Feature: Entity detail pages save each card on its own
   Team, group, machine, conductor and project details share one layout: an
   Activities feed beside one inspector card per section. An editable card is
-  its own form with its own Save. Team, machine and conductor each have one
+  its own form with its own Save. Machine and conductor each have one
   editable card; a Save replaces only that card, a refresh of another
   placement keeps its unsent input, and a rename updates the page heading
-  and the document title without a reload. The project and group details
+  and the document title without a reload. The project, group and team details
   edit nothing: their Settings do. The project inspector has About and Properties.
-  Readers see read-only rows, and a card POST without update access is refused. The former Settings addresses of
-  team and machine lead to the detail page. Conductor and machine Activities list only the activities of
+  Readers see read-only rows, and a card POST without update access is refused. The former Settings address of
+  a machine leads to its detail page. Conductor and machine Activities list only the activities of
   their own runs. Every editing scenario edits a disposable world of its own,
   removed afterwards; the access scenarios only read seeded fixtures.
 
@@ -35,7 +35,6 @@ Feature: Entity detail pages save each card on its own
     Examples:
       | entity    | label | field |
       | machine   | Name  | name  |
-      | team      | Name  | name  |
       | conductor | Label | label |
 
   Scenario: A machine saves its name and capacity together on its one card
@@ -63,6 +62,11 @@ Feature: Entity detail pages save each card on its own
     When I post the "properties" card of the world project directly
     Then the card post is refused with status 404
     And the stored project name is still its original value
+
+  Scenario: The team detail offers its editor no input: its Settings edit it
+    Given I edit a disposable detail world
+    When I open the team detail page
+    Then the "Identity" card offers no Save and no inputs
 
   Scenario: Unsent input in a card survives a refresh of the Activities and of the page header
     Given I edit a disposable detail world
@@ -108,7 +112,6 @@ Feature: Entity detail pages save each card on its own
     Examples:
       | entity  | label | field |
       | machine | Name  | name  |
-      | team    | Name  | name  |
 
   Scenario Outline: A reader sees the <card> card of <fixture> read-only and its POST is refused
     Given I am logged in as the account "north-contributor"
@@ -125,7 +128,7 @@ Feature: Entity detail pages save each card on its own
       | group.edit           | Properties    | properties    | Workspace    | Northside Bakery         | 404    |
       | group.edit           | Identity      | identity      | Description  | —                        | 404    |
       | project.edit         | Properties    | properties    | Key          | EDP1                     | 404    |
-      | team.home            | Identity      | identity      | Workspace    | Northside Bakery         | 403    |
+      | team.home            | Identity      | identity      | Workspace    | Northside Bakery         | 404    |
       | conductor.properties | Identity      | identity      | Conductor ID | bdd-properties-conductor | 403    |
 
   Scenario Outline: A reader of another workspace gets no detail page of <fixture>
@@ -150,7 +153,6 @@ Feature: Entity detail pages save each card on its own
 
     Examples:
       | account             | fixture      |
-      | fixture-lead            | team.home    |
       | fixture-conductor-owner | machine.edit |
 
   Scenario: A run's activities are listed on the conductor and machine of that run only

@@ -1,8 +1,8 @@
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import {
@@ -20,6 +20,7 @@ import {
   installCommand,
   type KnownOptionSpec,
   lastLine,
+  lock,
   type MarketplaceDeclaration,
   type PluginLaunch,
   type ResolvedSecurity,
@@ -41,7 +42,11 @@ import {
 } from '@bakers-build/core';
 import { shareLogin } from './credentials.js';
 import { parseClaudeTranscript } from './footprint.js';
-import { encodeClaudeProjectDir, prepareClaudeRun } from './run.js';
+import {
+  CLAUDE_SECRET_ENV,
+  encodeClaudeProjectDir,
+  prepareClaudeRun,
+} from './run.js';
 import { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 export { parseClaudeTranscript } from './footprint.js';
@@ -166,21 +171,30 @@ export interface ClaudeAgentOptions extends SecurityOptions {
   proxy?: boolean;
   /** False runs this agent in the user's own `~/.claude`, without the project's plugins. */
   plugins?: boolean;
+  /**
+   * Where the project's plugins live: `host`, the user's own `~/.claude` (the
+   * default in `system` and `yolo` without an isolating runtime), or
+   * `individual`, a per-marketplace agent home with pinned plugins.
+   */
+  home?: 'host' | 'individual';
 }
 
 const run = promisify(execFile);
 
-/** Run `claude <args> --json` in `configDir`; a failure names `what` and the CLI's output. */
-async function claudeJson(
-  configDir: string,
+/** Run `claude <args> --json` with `env`; a failure names `what` and the CLI's output. */
+async function claudeJson<T = Record<string, unknown>>(
+  env: NodeJS.ProcessEnv,
   what: string,
   args: string[],
-): Promise<Record<string, unknown>> {
+): Promise<T> {
   try {
-    const { stdout } = await run('claude', [...args, '--json'], {
-      env: { ...process.env, CLAUDE_CONFIG_DIR: configDir },
-    });
-    return JSON.parse(lastLine(stdout) || '{}');
+    const { stdout } = await run('claude', [...args, '--json'], { env });
+    // A list prints one multi-line document; other commands may print progress first.
+    try {
+      return JSON.parse(stdout);
+    } catch {
+      return JSON.parse(lastLine(stdout) || '{}');
+    }
   } catch (error) {
     const { stderr, stdout, message } = error as {
       stderr?: string;
@@ -191,6 +205,31 @@ async function claudeJson(
       `${what}: claude ${args.join(' ')} failed: ${(stderr || stdout || message).trim()}`,
     );
   }
+}
+
+const inConfigDir = (dir: string): NodeJS.ProcessEnv => ({
+  ...process.env,
+  CLAUDE_CONFIG_DIR: dir,
+});
+
+/** A Git URL without a trailing `/` or `.git`, so both spellings match. */
+const sameRepo = (url: string) =>
+  url
+    .replace(/^git@([^:]+):/, 'https://$1/')
+    .replace(/\/+$/, '')
+    .replace(/\.git$/, '');
+
+interface ListedMarketplace {
+  name: string;
+  url?: string;
+  repo?: string;
+  ref?: string;
+}
+
+interface ListedPlugin {
+  id: string;
+  scope: string;
+  enabled?: boolean;
 }
 
 const CLAUDE_RESERVED = [
@@ -211,6 +250,7 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
+  readonly secretEnv = CLAUDE_SECRET_ENV;
   readonly installCommand = claudeInstallCommand;
   readonly modelApi = claudeModelApi;
   private readonly args: string[];
@@ -230,6 +270,9 @@ export class ClaudeAgent implements BbAgent {
   /** The Claude config dir runs read and write: the agent home while plugins are on. */
   configDir: string;
   private pluginsOn = false;
+  private readonly homeOption: 'host' | 'individual' | undefined;
+  /** Plugins go into the user's own `~/.claude` instead of an agent home. */
+  private hostHome = false;
 
   constructor(
     options: ClaudeAgentOptions = {},
@@ -256,12 +299,37 @@ export class ClaudeAgent implements BbAgent {
     this.proxy = validateOptionalBoolean(options.proxy, 'proxy') ?? false;
     this.pluginsDisabled =
       validateOptionalBoolean(options.plugins, 'plugins') === false;
+    if (
+      options.home !== undefined &&
+      options.home !== 'host' &&
+      options.home !== 'individual'
+    )
+      throw new Error(`home must be 'host' or 'individual'`);
+    this.homeOption = options.home;
     this.configDir = join(home, '.claude');
   }
 
-  /** Point this agent at the agent home of the project's declared marketplaces. */
-  useMarketplaces(marketplaces: readonly MarketplaceDeclaration[]): void {
+  /**
+   * Choose where the project's declared marketplaces live: the user's own
+   * `~/.claude` in `system`/`yolo` without an isolating runtime, else (or with
+   * `home: 'individual'`) their agent home.
+   */
+  useMarketplaces(
+    marketplaces: readonly MarketplaceDeclaration[],
+    isolates = false,
+  ): void {
+    const hostable =
+      (this.securityMode === 'system' || this.securityMode === 'yolo') &&
+      !isolates;
+    if (this.homeOption === 'host' && !hostable)
+      throw new Error(
+        `home: 'host' works only in system or yolo mode without an isolating runtime`,
+      );
     if (this.pluginsDisabled || marketplaces.length === 0) return;
+    if (hostable && this.homeOption !== 'individual') {
+      this.hostHome = true;
+      return;
+    }
     this.pluginsOn = true;
     this.configDir = homePath(this.id, homeKey([...marketplaces]));
   }
@@ -273,41 +341,140 @@ export class ClaudeAgent implements BbAgent {
   async installPlugins(
     marketplaces: readonly MarketplaceDeclaration[],
     home: string,
+    secrets: Readonly<Record<string, string | undefined>> = process.env,
   ): Promise<PluginLaunch> {
+    if (this.hostHome) return this.installIntoHost(marketplaces);
     const credentials = join(this.home, '.claude', '.credentials.json');
+    const loginFile = existsSync(credentials);
+    // The run gets the token through its env; the home then needs no credential file.
+    if (!loginFile && !CLAUDE_SECRET_ENV.some((name) => secrets[name]))
+      throw new Error(
+        `claude: no login for the agent home: no credential file at ${credentials} (a keychain login cannot be shared with an agent home), and neither CLAUDE_CODE_OAUTH_TOKEN nor ANTHROPIC_API_KEY is set in the shell or ~/.bakers/.bakers.env`,
+      );
     const outcome = await ensureHome(home, async (dir) => {
-      if (!existsSync(credentials))
-        throw new Error(
-          `claude: no credential file at ${credentials} (a keychain login cannot be shared with an agent home); log in with a file-based credential`,
-        );
       for (const { url, ref, plugins } of marketplaces) {
-        const added = await claudeJson(dir, url, [
+        const added = await claudeJson(inConfigDir(dir), url, [
           'plugin',
           'marketplace',
           'add',
           `${url}#${ref}`,
         ]);
         for (const plugin of plugins)
-          await claudeJson(dir, plugin, [
+          await claudeJson(inConfigDir(dir), plugin, [
             'plugin',
             'install',
             `${plugin}@${String(added.marketplace)}`,
           ]);
       }
-      // Skip the first-run onboarding; the CLI wrote the rest of this file.
-      const state = join(dir, '.claude.json');
+    });
+    // Every use: skip the first-run onboarding and approve the current API key;
+    // the CLI wrote the rest of this file. Written only on a change, under the
+    // home lock, so parallel run starts never interleave.
+    const release = await lock(home);
+    try {
+      const state = join(home, '.claude.json');
       const seeded = existsSync(state)
         ? JSON.parse(readFileSync(state, 'utf8'))
         : {};
-      writeFileSync(
-        state,
-        `${JSON.stringify({ ...seeded, hasCompletedOnboarding: true }, null, 2)}\n`,
-        { mode: 0o600 },
-      );
-    });
+      const approved = secrets.ANTHROPIC_API_KEY?.slice(-20);
+      if (
+        seeded.hasCompletedOnboarding !== true ||
+        (approved &&
+          !seeded.customApiKeyResponses?.approved?.includes(approved))
+      )
+        writeFileSync(
+          state,
+          `${JSON.stringify(
+            {
+              ...seeded,
+              hasCompletedOnboarding: true,
+              ...(approved
+                ? {
+                    customApiKeyResponses: {
+                      approved: [approved],
+                      rejected: [],
+                    },
+                  }
+                : {}),
+            },
+            null,
+            2,
+          )}\n`,
+          { mode: 0o600 },
+        );
+    } finally {
+      release();
+    }
     // Every use: a token refresh inside the home replaced the link with a copy.
-    shareLogin(credentials, join(home, '.credentials.json'));
+    if (loginFile) shareLogin(credentials, join(home, '.credentials.json'));
     return { env: { CLAUDE_CONFIG_DIR: home }, args: [], home: outcome };
+  }
+
+  /**
+   * Add the declared marketplaces and plugins missing from the user's own
+   * `~/.claude`; anything installed stays as it is and a difference is a warning.
+   */
+  private async installIntoHost(
+    marketplaces: readonly MarketplaceDeclaration[],
+  ): Promise<PluginLaunch> {
+    // Never `ensureHome` here: it deletes an unready directory.
+    const path = homePath(this.id, 'host');
+    mkdirSync(dirname(path), { recursive: true });
+    const release = await lock(path);
+    try {
+      // Unset, not `~/.claude`: on macOS a set CLAUDE_CONFIG_DIR picks another keychain login.
+      const { CLAUDE_CONFIG_DIR: _, ...rest } = process.env;
+      const env = { ...rest, HOME: this.home };
+      const listed = await claudeJson<ListedMarketplace[]>(
+        env,
+        'marketplaces',
+        ['plugin', 'marketplace', 'list'],
+      );
+      const installed = await claudeJson<ListedPlugin[]>(env, 'plugins', [
+        'plugin',
+        'list',
+      ]);
+      const warnings: string[] = [];
+      for (const { url, ref, plugins } of marketplaces) {
+        const found = listed.find((m) => {
+          const at = m.url ?? (m.repo && `https://github.com/${m.repo}`);
+          return at !== undefined && sameRepo(at) === sameRepo(url);
+        });
+        let name = found?.name;
+        if (!found)
+          name = String(
+            (
+              await claudeJson(env, url, [
+                'plugin',
+                'marketplace',
+                'add',
+                `${url}#${ref}`,
+              ])
+            ).marketplace,
+          );
+        else if (found.ref !== ref)
+          warnings.push(
+            `marketplace ${found.name} (${url}): installed ref ${found.ref ?? 'default'}, pinned ${ref}; left unchanged (plugins: ${plugins.join(', ')})`,
+          );
+        for (const plugin of plugins) {
+          const id = `${plugin}@${name}`;
+          const own = installed.find((p) => p.id === id && p.scope === 'user');
+          if (!own) await claudeJson(env, plugin, ['plugin', 'install', id]);
+          else if (own.enabled === false)
+            warnings.push(
+              `plugin ${id} is installed but disabled; left disabled`,
+            );
+        }
+      }
+      return {
+        env: {},
+        args: [],
+        home: 'host',
+        ...(warnings.length ? { warnings } : {}),
+      };
+    } finally {
+      release();
+    }
   }
 
   get launchWarnings(): readonly string[] {
@@ -340,6 +507,8 @@ export class ClaudeAgent implements BbAgent {
     // A new worktree path would stop the run at Claude Code's trust dialog.
     // With plugins on, the agent home already holds the installed plugins.
     const parts = [
+      // The plugins went into ~/.claude; a CLAUDE_CONFIG_DIR inherited from the conductor would hide them.
+      ...(this.hostHome ? ['env', '-u', 'CLAUDE_CONFIG_DIR'] : []),
       ...(this.pluginsOn ? [] : ['CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1']),
       ...(workspacePath
         ? ['node', shellQuote(TRUST_WRAPPER), shellQuote(workspacePath)]
@@ -562,13 +731,12 @@ export class ClaudeAgent implements BbAgent {
       ['socat', 'socat'],
     ].filter(([bin]) => !host.onPath(bin as string));
     if (missing.length > 0) {
+      const pkgs = missing.map(([, pkg]) => pkg as string);
       return {
         ok: false,
         cause: `${missing.map(([bin]) => bin).join(' and ')} not found`,
-        fix: `install it with ${installCommand(
-          host,
-          missing.map(([, pkg]) => pkg as string),
-        )}`,
+        // The running agent session only finds the new tools after a restart.
+        fix: `install ${pkgs.join(' and ')} with ${installCommand(host, pkgs)}, then restart the agent session`,
       };
     }
     // The namespaces Claude's sandbox needs: user (unprivileged) and net.
@@ -599,8 +767,12 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     id: 'claude',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent(config) {
-      agent.useMarketplaces(config.marketplaces ?? []);
+      agent.useMarketplaces(
+        config.marketplaces ?? [],
+        config.runtime?.isolates === true,
+      );
       return agent;
     },
   };

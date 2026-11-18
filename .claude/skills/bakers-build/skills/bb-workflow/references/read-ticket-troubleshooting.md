@@ -24,6 +24,6 @@ substitute another ticket or to write anything.
 An unknown tool (exit 4) or an HTTP/protocol error (exit 5) means the connected site serves no
 bakers tools at `/mcp`, or the connection points elsewhere. Run `bakers config check --scope
 connection` for the global connection or `bakers config check --scope project --path <root>` for a
-project override and follow `@bakers-build/bb-upgrade-project`. A read-only ticket request authorizes
+project override and follow `@bakers-build/bb-init-project`. A read-only ticket request authorizes
 diagnosis; apply a configuration repair only within the caller's existing authorization. Report the
 selected file and remedy.

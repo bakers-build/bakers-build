@@ -119,6 +119,7 @@ export {
   fetchUpdateNotice,
   printVersionLine,
   REGISTRY_LATEST_URL,
+  readCliVersion,
   resolveCliVersion,
   UNKNOWN_VERSION,
   UPDATE_CHECK_TTL_MS,
@@ -159,6 +160,7 @@ export {
   withoutGitDirs,
 } from './core/git-sandbox.js';
 export {
+  changedProtectedPaths,
   refreshRunTarget,
   runCloneTip,
   transferIsolatedCommit,
@@ -191,11 +193,19 @@ export {
   loadRunClone,
   type RunClone,
   type RunCloneOptions,
+  registerRunCloneWorktree,
   removeRunClone,
   runCloneGitDir,
   saveRunClone,
 } from './core/run-clone.js';
 export { cliRootOf } from './core/runtime-paths.js';
+export {
+  loadSecretsFile,
+  parseSecretsFile,
+  pickSecrets,
+  type Secrets,
+  secretsFilePath,
+} from './core/secrets-file.js';
 export { shellQuote } from './core/shell.js';
 export { DEFAULT_SLUG_MAX_LENGTH, slugify } from './core/slug.js';
 export { bumpUiRefresh, UI_REFRESH_FILE } from './core/ui-refresh.js';

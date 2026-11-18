@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Members;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_core\Entity\BbInvite;
 use Drupal\og\Entity\OgMembership;
 use Drupal\og\OgMembershipInterface;
 use Drupal\og\OgRoleInterface;
@@ -185,6 +186,39 @@ final class MembershipWriter {
     }
     $membership = $storage->load((string) reset($ids));
     return $membership instanceof OgMembershipInterface ? $membership : NULL;
+  }
+
+  /**
+   * Each member's team names in this workspace, joined for the Team column.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $group
+   *   The workspace.
+   *
+   * @return array<int, string>
+   *   Comma-joined team labels in name order, keyed by user id.
+   */
+  public function teamNamesByMember(ContentEntityInterface $group): array {
+    // The team type is the one an invitation names, which keeps this class
+    // blind to group types.
+    $team_type = (string) BbInvite::create([])->getFieldDefinition('team_id')?->getSetting('target_type');
+    $teams = $this->entityTypeManager->getStorage($team_type)->loadByProperties(['workspace_id' => $group->id()]);
+    if ($teams === []) {
+      return [];
+    }
+    uasort($teams, static fn ($a, $b): int => strnatcasecmp((string) $a->label(), (string) $b->label()));
+    $order = array_flip(array_map('strval', array_keys($teams)));
+    $memberships = $this->entityTypeManager->getStorage('og_membership')->loadByProperties([
+      'entity_type' => $team_type,
+      'entity_id' => array_keys($teams),
+      'state' => OgMembershipInterface::STATE_ACTIVE,
+    ]);
+    $names = [];
+    foreach (array_filter($memberships, static fn ($m): bool => $m instanceof OgMembershipInterface) as $membership) {
+      $team_id = (string) $membership->getGroupId();
+      $names[(int) $membership->getOwnerId()][$order[$team_id]] = (string) $teams[$team_id]->label();
+    }
+    array_walk($names, 'ksort');
+    return array_map(static fn (array $labels): string => implode(', ', $labels), $names);
   }
 
 }

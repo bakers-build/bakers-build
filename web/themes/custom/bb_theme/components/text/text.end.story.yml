@@ -1,0 +1,7 @@
+component: bb_theme:text
+name: End aligned
+props:
+  text: Week total 4:30
+  as: p
+  size: body
+  align: end

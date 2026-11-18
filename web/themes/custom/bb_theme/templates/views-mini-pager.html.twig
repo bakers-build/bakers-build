@@ -28,8 +28,8 @@
  * @see template_preprocess_views_mini_pager()
  */
 #}
-{% set link = 'inline-flex items-center justify-center min-w-7 h-7 px-inline rounded-xs border border-border-2 bg-surface-2 text-eyebrow text-text no-underline hover:bg-surface hover:border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring' %}
-{% set current = 'inline-flex items-center justify-center min-w-7 h-7 px-inline rounded-xs text-eyebrow text-text-faint' %}
+{% set link = 'inline-flex items-center justify-center min-w-7 h-7 max-md:min-h-touch max-md:min-w-touch px-inline rounded-xs border border-border-2 bg-surface-2 text-eyebrow text-text no-underline hover:bg-surface hover:border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring' %}
+{% set current = 'inline-flex items-center justify-center min-w-7 h-7 max-md:min-h-touch max-md:min-w-touch px-inline rounded-xs text-eyebrow text-text-faint' %}
 {% if items.previous or items.next %}
   <nav class="bakers-pager pager flex w-full justify-center items-center gap-inline-xs mt-stack" role="navigation" aria-labelledby="{{ heading_id }}">
     <{{ pagination_heading_level }} id="{{ heading_id }}" class="sr-only">{{ 'Pagination'|t }}</{{ pagination_heading_level }}>

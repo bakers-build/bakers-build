@@ -1,0 +1,12 @@
+decided_at: '2026-11-11T23:56:32.734Z'
+fingerprint: e564b72f9adfe64f8776f74600a275e1a4d9532936a81c80aba9de7ce6f90ce7
+note: 'Approved by Pascal Glass 2026-11-12: Members (71:4410) and My time (72:4801) desktop frames, Figma L&T 4 and 5. Suitability: yes, for the Members tables and the My time week table (desktop), with accepted deviations D4, D5, D6, D9.'
+scope:
+  states:
+    - default
+  subjects:
+    - members
+    - my-time
+  views:
+    - desktop
+status: approved

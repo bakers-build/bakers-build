@@ -30,7 +30,7 @@ Logs/transcripts/manifests stay in artifacts. Measure before writing. Oversize: 
 ## Publish a comment
 
 Require authorized ticket/type and readable populated body file. Send unchanged to
-`bakers_comment_publish`, trailing newlines included. Whitespace-only: no call.
+`bakers_comment_create`, trailing newlines included. Whitespace-only: no call.
 Result id confirms: retain/return, no read/search or other mutation.
 
 ## Rejected or uncertain writes

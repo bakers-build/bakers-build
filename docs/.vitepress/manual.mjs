@@ -122,6 +122,7 @@ export const SIDEBAR = {
     group("Agents", [
       ["Claude", "/addons/claude"],
       ["Codex", "/addons/codex"],
+      ["Codex trusted commands", "/addons/codex/trusted-commands"],
       ["Grok", "/addons/grok"],
       ["OpenCode", "/addons/opencode"],
       ["Pi", "/addons/pi"],
@@ -173,6 +174,7 @@ export const SIDEBAR = {
       ["Connection", "/configuration/connection"],
       ["Machine", "/configuration/machine"],
       ["Project", "/configuration/project"],
+      ["Slot catalogs", "/configuration/slot-catalogs"],
       ["Lifecycle hooks", "/configuration/project/hooks"],
       ["Conductors and variants", "/configuration/project/conductors"],
     ]),

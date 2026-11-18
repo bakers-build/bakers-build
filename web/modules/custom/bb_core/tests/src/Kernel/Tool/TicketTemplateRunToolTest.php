@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel\Tool;
 
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbTicketTemplateInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -124,6 +125,40 @@ final class TicketTemplateRunToolTest extends BakersToolTestBase {
       'target_state' => 'bogus',
     ]), 'is not reachable in workflow');
     self::assertSame([], $etm->getStorage('bb_ticket')->loadMultiple());
+  }
+
+  /**
+   * A template on a teammate's conductor runs only while the owner allows it.
+   */
+  public function testTemplateWithForeignConductorFollowsAssignment(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $owner = $this->account('teammate');
+    $this->addMembership($this->workspace, $owner, ['contributor']);
+    $this->addMembership($etm->getStorage('bb_team')->load($this->project->get('teams')->target_id), $owner);
+    $conductor = $etm->getStorage('bb_conductor')->create([
+      'conductor_id' => 'node-teammate',
+      'label' => 'node-teammate',
+      'owner_user_id' => $owner->id(),
+      'status' => 'online',
+      'project_id' => $this->project->id(),
+      'assignment' => 'forbid',
+    ]);
+    assert($conductor instanceof BbConductorInterface);
+    $conductor->save();
+    $template = $this->template();
+    $template->set('conductor_id', $conductor->id())->save();
+
+    $this->assertFailure(
+      $this->runTool('bakers_ticket_template_run', ['template' => $template->uuid()]),
+      'Conductor node-teammate cannot be assigned: its owner teammate forbids assignment by others (conductor setting).',
+    );
+    self::assertSame([], $etm->getStorage('bb_ticket')->loadMultiple());
+
+    $conductor->set('assignment', 'allow')->save();
+    $out = $this->outputs($this->runTool('bakers_ticket_template_run', ['template' => $template->uuid()]));
+    $ticket = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['uuid']);
+    self::assertInstanceOf(BbTicketInterface::class, $ticket);
+    self::assertEquals($conductor->id(), $ticket->get('conductor_id')->target_id);
   }
 
   /**

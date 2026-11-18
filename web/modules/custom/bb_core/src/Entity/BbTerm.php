@@ -91,7 +91,9 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
       // entity-level so a form renders the message beside the input and a
       // JSON:API error document points at name.0.value; the validator still
       // reaches vid and workspace_id through getEntity().
-      ->addConstraint('BbTermUniqueNameInWorkspace');
+      ->addConstraint('BbTermUniqueNameInWorkspace')
+      // A label rename reaches every ticket carrying it without a ticket save.
+      ->addConstraint('BbTicketProtectedLabel');
 
     $fields['key'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Key'))

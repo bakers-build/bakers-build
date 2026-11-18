@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Conductor;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Access\BbRankCapabilityInterface;
 use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
 use Drupal\bb_core\Access\WorkspaceResolverInterface;
@@ -56,6 +57,28 @@ final class ConductorOwnerAccess {
     $project = $this->entityTypeManager->getStorage('bb_project')->load($project_id);
     $workspace = $project instanceof BbProjectInterface ? $this->workspaceResolver->resolve($project) : NULL;
     return $workspace !== NULL && $this->rankCapability->hasGroupPermission($owner, 'claim bakers tickets', $workspace);
+  }
+
+  /**
+   * Whether the actor may newly set the conductor, by its owner's setting.
+   *
+   * The owner always may; under `allow` anyone who sees the conductor may,
+   * under `forbid` nobody else, admins included. A save without a human
+   * actor (anonymous, uid 0) is the system's and is not checked.
+   *
+   * @param \Drupal\bb_core\Entity\BbConductorInterface $conductor
+   *   The conductor being set.
+   * @param \Drupal\Core\Session\AccountInterface $actor
+   *   The account setting it.
+   *
+   * @return bool
+   *   TRUE when the actor may set the conductor.
+   */
+  public function mayAssign(BbConductorInterface $conductor, AccountInterface $actor): bool {
+    if ($actor->isAnonymous() || $conductor->isOwnedBy($actor)) {
+      return TRUE;
+    }
+    return $conductor->getEffectiveAssignment()['value'] === 'allow' && $conductor->access('view', $actor);
   }
 
   /**
