@@ -87,4 +87,42 @@ final class BbProjectAccessTest extends KernelTestBase {
     $this->assertTrue($project->access('update', $editor));
   }
 
+  /**
+   * An owner editing through `update own` cannot move the saved project.
+   *
+   * Teams are the owner's own gap; group and owner are server-maintained on a
+   * saved row for every non-admin, editors included. A new project still
+   * takes its teams from its creator.
+   */
+  public function testOwnerCannotMoveTheProject(): void {
+    $owner = $this->createUser(['update own bb_project']);
+    $editor = $this->createUser(['edit bb_project']);
+    $this->assertInstanceOf(UserInterface::class, $owner);
+    $this->assertInstanceOf(UserInterface::class, $editor);
+    $project = \Drupal::entityTypeManager()->getStorage('bb_project')
+      ->create(['name' => 'owned', 'owner_user_id' => $owner->id()]);
+    $this->assertInstanceOf(ContentEntityInterface::class, $project);
+    $project->save();
+
+    $this->assertTrue($project->access('update', $owner));
+    $facts = [];
+    foreach (['teams', 'group_id', 'owner_user_id', 'name', 'repository'] as $field) {
+      $facts[$field] = [
+        $project->get($field)->access('edit', $owner),
+        $project->get($field)->access('edit', $editor),
+      ];
+    }
+    $this->assertSame([
+      'teams' => [FALSE, TRUE],
+      'group_id' => [FALSE, FALSE],
+      'owner_user_id' => [FALSE, FALSE],
+      'name' => [TRUE, TRUE],
+      'repository' => [TRUE, TRUE],
+    ], $facts);
+
+    $new = \Drupal::entityTypeManager()->getStorage('bb_project')->create(['name' => 'new']);
+    $this->assertInstanceOf(ContentEntityInterface::class, $new);
+    $this->assertTrue($new->get('teams')->access('edit', $owner), 'a creator still picks the teams of a new project');
+  }
+
 }

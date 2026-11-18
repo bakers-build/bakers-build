@@ -11,12 +11,12 @@ Feature: Parent and Blocked by are edited inline within the ticket's project
     And I remember the inline properties for cleanup
 
   Scenario: Parent and Blocked by survive reload and offer only the project
-    Then the inline "Parent" picker does not offer "waiting_for_input E2E ticket"
-    And the inline "Blocked by" picker does not offer "waiting_for_input E2E ticket"
-    When I select inline "Parent" option "Designbook coverage for core bakers.build entities"
+    Then the inline "Parent" picker does not offer "GL-E2E-WFI · waiting_for_input E2E ticket"
+    And the inline "Blocked by" picker does not offer "GL-E2E-WFI · waiting_for_input E2E ticket"
+    When I select inline "Parent" option "BB-100 · Designbook coverage for core bakers.build entities"
     Then the inline "Parent" save succeeds without navigation
-    When I select inline "Blocked by" option "Ship data-model schema for bb_ticket bundle"
+    When I select inline "Blocked by" option "BB-110 · Ship data-model schema for bb_ticket bundle"
     Then the inline "Blocked by" save succeeds without navigation
     When I reload the page
-    Then the inline "Parent" selection is "Designbook coverage for core bakers.build entities"
-    And the inline "Blocked by" selection includes "Ship data-model schema for bb_ticket bundle"
+    Then the inline "Parent" selection is "BB-100 · Designbook coverage for core bakers.build entities"
+    And the inline "Blocked by" selection includes "BB-110 · Ship data-model schema for bb_ticket bundle"

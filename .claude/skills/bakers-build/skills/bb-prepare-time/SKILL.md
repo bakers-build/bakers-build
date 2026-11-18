@@ -40,7 +40,7 @@ remain, return the report without an empty Submission or review link.
 
 ## Publish and link
 
-Use employee authentication. Publish every resolved row in **one** `bakers_time_propose` call
+Use employee authentication. Publish every resolved row in **one** `bakers_worklog_propose` call
 ([tools](../bb-workflow/references/tools.md)): `entries`, each with `source_system`, `source_key`,
 `source_version`, `work_date`, `description`, `duration_seconds` and its `project`, `ticket` or
 `account` where resolved. The result is a new proposed Submission and one Worklog per entry;

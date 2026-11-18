@@ -2,14 +2,18 @@
 // Input: JSON array of published versions across the complete package set, after draining the old publisher.
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-const { valid, prerelease, compare, parse } = createRequire(new URL('../core/package.json', import.meta.url))('semver');
-const base = process.argv[2];
+const { valid, prerelease, compare, parse, inc } = createRequire(new URL('../core/package.json', import.meta.url))('semver');
+let base = process.argv[2];
 if (valid(base) !== base || prerelease(base) || base.includes('+')) throw new Error('Expected a stable semver base');
 const versions = JSON.parse(readFileSync(0, 'utf8'));
 if (!Array.isArray(versions)) throw new Error('Expected all published package versions as a JSON array');
+for (const version of versions)
+  if (typeof version !== 'string' || !valid(version)) throw new Error('Invalid published version');
+// A stable published above the tag base (tag missing or not yet created) moves the base past it.
+for (const version of versions)
+  if (!prerelease(version) && compare(version, base) >= 0) base = inc(version, 'patch');
 let high = 0;
 for (const version of versions) {
-  if (typeof version !== 'string' || !valid(version)) throw new Error('Invalid published version');
   const parsed = parse(version);
   const stable = `${parsed.major}.${parsed.minor}.${parsed.patch}`;
   if (compare(stable, base) > 0 || (stable === base && !prerelease(version)))

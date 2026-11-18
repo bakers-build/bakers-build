@@ -1,6 +1,6 @@
 # bakers tools
 
-`bakers tools` lists, describes and calls the bakers.build server's named tools over its MCP endpoint, bound to the same connection `bakers ui` uses. Every tracker operation an agent performs is one of these tools; an agent that has the bakers.build MCP connector calls the tool of the same name natively, and `bakers tools` is the transport for everyone else.
+`bakers tools` lists, describes and calls the bakers.build server's named tools over its MCP endpoint, bound to the same connection `bakers ui` uses. Every tracker operation an agent performs is one of these tools; agents with the bakers.build MCP connector call them natively, everyone else through `bakers tools`.
 
 Inside a conductor run (`BAKERS_CONDUCTOR_URL` and `BAKERS_CONDUCTOR_TOKEN` set), `bakers tools` calls the run's [`bakers` server](/addons/build/tools#site-tools) with the run token instead, needs no connection config and reaches only that run's project. Name a tool plainly (`bakers_ticket_read`) in either place; the `tool_api__` wire name works too.
 
@@ -20,7 +20,7 @@ bakers tools [<global options>] [<wire name>] [--schema] [--data <json|@file>] [
 | `bakers tools <wire name> --data '<json>'` | Call it with inline JSON arguments |
 | `bakers tools <wire name> --param key=value` | Set one argument; repeatable, and wins over the same key in `--data` |
 
-Prefer `--data @file` for anything but a one-word value: write the file with an editor, a file tool or a JSON encoder, so Markdown bodies survive byte for byte and no shell quoting gets in the way.
+Prefer `--data @file`, written by an editor or a JSON encoder, for anything but a one-word value, so Markdown bodies survive byte for byte without shell quoting.
 
 ## Global options
 
@@ -47,7 +47,7 @@ The tool's structured result is printed to stdout as JSON. Errors go to stderr a
 | `5` | HTTP or protocol error (`E_HTTP`); `details.status` `0` means the response was lost | See the rule below |
 | `6` | Plugin error | Check the connection's `plugins` |
 
-**An uncertain write is not a failure.** A write that timed out or ended with exit `5` may have been applied on the server. The CLI sends each call once; never resend it. Reconcile first: read the ticket back (`bakers_ticket_read`) or search for the object you meant to create, and only act on what the read shows. Likewise, a failed read or search is not a negative: it found nothing out.
+**An uncertain write is not a failure.** A write that timed out or ended with exit `5` may have been applied on the server. The CLI sends each call once; never resend it. Read the ticket back (`bakers_ticket_read`) or search for the object first, and act only on what the read shows. Likewise, a failed read or search proves no absence.
 
 ## Tools
 
@@ -63,7 +63,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_project_list` | optional `workspace`, `group`, `query` | Projects you can reach, with `key` and `uuid` |
 | `bakers_project_read` | `project` (key or UUID) | One project: group, teams, repository, coder configuration, environments |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
-| `bakers_project_update` | `project`, `repository` (`url`, `default_branch`, `branch_convention`) | Change a project's repository, keeping omitted keys; needs `edit bb_project` |
+| `bakers_project_update` | `project`, `repository` (`url`, `default_branch`, `branch_convention`) | Change a project's repository, keeping omitted keys; needs `edit bb_project` or `update own bb_project` |
 | `bakers_environment_create`, `_update`, `_delete` | `project`, `environment`, `name`, `branch`, `base_url` | Manage environments |
 | `bakers_conductor_list` | `project` | A project's conductors and their status, with each conductor's `machine` (machine_id), `owner` and `assignment` |
 | `bakers_machine_list` | optional `workspace` (UUID), `conductor_uuid` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel`, `current_load` and `assignment` |
@@ -72,14 +72,14 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_comment_read` | `ticket`; optional `ids`, `type`, `author` (lists), `newest` (per type when `type` is given) | A ticket's readable comments matching every given filter, oldest first; no filter returns all |
 | `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |
 | `bakers_ticket_list` | `project` (UUID); `limit`, `offset` | Every ticket of the project you can read, closed ones included, oldest first. Each row has `id` (UUID), `identifier`, `title`, canonical absolute `url`, stored `origin`, `state`, `links` (`uri`, `title`), `labels` (names), `frozen`, `frozen_at` (ISO 8601 or `null`), `parent` (the parent's UUID, `null` when absent or unreadable) and `closed` |
-| `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee`, `reviewers` (user UUIDs) | Create a ticket; returns `title`, `url` and stored `origin` too. Ineligible people are skipped |
-| `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `assignee`, `labels_add`, `labels_remove`, `frozen`, `environments_add`, `referenced_tickets_add`, `reviewers_add`, `reviewers_remove`, `links_add`, `links_remove` | Edit a ticket; values not given are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; `assignee` takes a user UUID or `""`; a [forbidden](/configuration/project/conductors#who-may-assign-this-conductor) `conductor` is refused; a closed ticket refuses every edit |
+| `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee`, `reviewers` (user UUIDs), `blocked_by` | Create a ticket; returns `title`, `url` and stored `origin` too. Ineligible people are skipped |
+| `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `assignee`, `labels_add`, `labels_remove`, `frozen`, `environments_add`, `referenced_tickets_add`, `reviewers_add`, `reviewers_remove`, `links_add`, `links_remove`, `blocked_by_add`, `blocked_by_remove` | Edit a ticket; values not given are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; `assignee` takes a user UUID or `""`; a [forbidden](/configuration/project/conductors#who-may-assign-this-conductor) `conductor` is refused; a closed ticket refuses every edit |
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |
 | `bakers_ticket_transition` | `ticket`; `state`, `links` or both | Change the state or add links |
 | `bakers_ticket_template_run` | `template` (UUID); optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | Create a ticket from a ticket template |
-| `bakers_ticket_runs_list` | `ticket` | A ticket's agent runs |
-| `bakers_ticket_activity_list` | `ticket` or `project` | The activity feed of a ticket or a project |
-| `bakers_comment_publish` | `ticket`, `type`, `body` | Publish a comment |
+| `bakers_run_list` | `ticket` | A ticket's agent runs |
+| `bakers_activity_list` | `ticket` or `project` | The activity feed of a ticket or a project |
+| `bakers_comment_create` | `ticket`, `type`, `body` | Create a comment |
 | `bakers_metric_write` | `ticket`, `name`, `rows`; optional `label` | Record a measurement ([Ticket metrics](/skills-and-workflows/metrics)) |
 | `bakers_run_cancel` | `ticket` or `machine_id`, `reason` | Cancel a ticket's active runs, or every active run of your machine; on a [parked ticket](/addons/bakers-ui/tickets#restart-a-parked-ticket) it cancels the newest failed run, which restarts it |
 | `bakers_inbox_send` | `ticket`, `message` (e.g. `ports.tunnel`); optional `payload` | Send an addon message to the ticket's conductor, under the same access and payload rules as the web UI, and wait up to 30 s. Returns `id`, `status` (`pending`, `running`, `done` or `failed`) and the Markdown answer `markdown`; `failed` is the addon's answer, a refusal is a tool error |
@@ -91,9 +91,11 @@ The list printed by `bakers tools` is what your identity may call on this server
 
 `reviewers_add` and `reviewers_remove` take user UUIDs of active accounts eligible in the ticket’s workspace. Adding a present reviewer or removing an eligible account that is not a reviewer changes nothing. Unknown, blocked and ineligible accounts receive the same refusal; the whole update rolls back. A user in both lists is refused.
 
-`links_add` takes `[{uri, title?}]`: an exact stored URI updates its title in place; omitted `title` preserves it and `""` clears it. A new URI appends a link; duplicate URIs collapse and the server derives their kind. `links_remove` takes exact URIs; absent URIs are ignored. A URI in both lists or an invalid link refuses the whole update. Omitted/null operation lists and `[]` are no-ops. There is no clear-all: remove each reviewer or URI explicitly. Unaddressed values stay unchanged.
+`links_add` takes `[{uri, title?}]`: an exact stored URI updates its title in place; omitted `title` preserves it and `""` clears it. A new URI appends a link; duplicate URIs collapse and the server derives their kind. `links_remove` takes exact URIs; absent URIs are ignored. A URI in both lists or an invalid link refuses the whole update. Omitted/null operation lists and `[]` are no-ops. There is no clear-all: remove each reviewer or URI explicitly.
 
-Read, create and update return `reviewers: [{uuid, name, mail}]` and `assignee: {uuid, name, mail} | null`; `mail` is null without permission to view that user’s mail. Unreadable ticket fields are not disclosed. Update also returns saved `links: [{uri, title}]`. Read/list return the canonical absolute `url` and stored `origin` (null when absent or not readable); these tools never write origin. Use update to maintain links without changing state; transition’s `links` attach links alongside a state change (its existing links-only mode remains compatible).
+An added blocker (identifier or UUID) must be readable, open, in the same project and free of cycles, or the call stores nothing; removing a non-blocker is ignored. Read and update return readable `blocked_by: [{identifier, title, state}]`.
+
+Read, create and update return `reviewers: [{uuid, name, mail}]` and `assignee: {uuid, name, mail} | null`; `mail` is null without permission to view that user’s mail. Unreadable ticket fields are not disclosed. Update also returns saved `links: [{uri, title}]`. Read/list return the canonical absolute `url` and stored `origin` (null when absent or not readable); these tools never write origin. Use update to maintain links without changing state; transition’s `links` attach links alongside a state change.
 
 A state change is `bakers_ticket_transition`; the server maps the target state to an allowed transition and refuses an invalid one. Rich-text values, a ticket's `description` and a comment's `body`, are GitHub-flavored Markdown: pipe tables render as tables, and the separator colons (`:---`, `:---:`, `---:`) align a column left, center or right. Raw HTML, `<table>` included, is removed, so write tables in Markdown. `branch_name` on `bakers_ticket_create` makes a carrier ticket on a long-lived integration branch that its sub-tickets base on. Omitted, the server derives `feat/<identifier>-<title>`, and either way the value is frozen afterwards.
 

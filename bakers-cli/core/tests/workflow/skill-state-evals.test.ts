@@ -36,7 +36,7 @@ const file = (path: string, exit_code = 0): Row => ({
 });
 const comment = (type: string, body = `${type} body`) =>
   call(
-    'bakers_comment_publish',
+    'bakers_comment_create',
     { ticket, type, body },
     { id: '22222222-2222-4222-8222-000000000001', type },
   );

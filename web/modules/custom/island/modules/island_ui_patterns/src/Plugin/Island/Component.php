@@ -14,15 +14,19 @@ use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Plugin\ConfigurableTrait;
+use Drupal\Core\Plugin\Context\Context;
+use Drupal\Core\Plugin\Context\ContextDefinition;
 use Drupal\Core\Plugin\Context\ContextInterface;
 use Drupal\island\Attribute\Island;
 use Drupal\island\IslandBoost;
 use Drupal\island\IslandEvent;
 use Drupal\island\IslandConfigurationValidationInterface;
+use Drupal\island\IslandEmbeddingInterface;
 use Drupal\island\IslandPluginBase;
 use Drupal\island\IslandPluginManagerInterface;
 use Drupal\island\IslandProfileHost;
 use Drupal\island\IslandRuntimeId;
+use Drupal\island_ui_patterns\Plugin\UiPatterns\Source\IslandPlacementSource;
 use Psr\Log\LoggerInterface;
 use Drupal\ui_patterns\Element\ComponentElementBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -40,7 +44,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
   type: 'component',
   modules: ['island_ui_patterns'],
 )]
-final class Component extends IslandPluginBase implements ConfigurableInterface, DependentPluginInterface, IslandConfigurationValidationInterface {
+final class Component extends IslandPluginBase implements ConfigurableInterface, DependentPluginInterface, IslandConfigurationValidationInterface, IslandEmbeddingInterface {
 
   use ConfigurableTrait;
 
@@ -174,6 +178,32 @@ final class Component extends IslandPluginBase implements ConfigurableInterface,
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function embeddedPlacements(): array {
+    return $this->placementReferences($this->configuration['component'] ?? []);
+  }
+
+  /**
+   * Finds `island_placement` references throughout a mapping tree.
+   *
+   * @return string[]
+   *   Referenced placement ids, once per reference.
+   */
+  private function placementReferences(array $configuration): array {
+    $references = [];
+    if (($configuration['source_id'] ?? '') === 'island_placement') {
+      $references[] = (string) ($configuration['source']['placement'] ?? '');
+    }
+    foreach ($configuration as $value) {
+      if (is_array($value)) {
+        $references = array_merge($references, $this->placementReferences($value));
+      }
+    }
+    return $references;
+  }
+
+  /**
    * Finds module providers of all configured sources, including nested slots.
    *
    * @return string[]
@@ -276,6 +306,10 @@ final class Component extends IslandPluginBase implements ConfigurableInterface,
       (array) ($data['contexts'] ?? []) + ($this->configuration['contexts'] ?? []),
       static fn($context): bool => $context instanceof ContextInterface,
     );
+    $host = $this->configuration['contexts']['host'] ?? NULL;
+    if ($host instanceof IslandProfileHost) {
+      $contexts[IslandPlacementSource::HOST_CONTEXT] = new Context(new ContextDefinition('any'), $host);
+    }
     $build = $this->componentElementBuilder->buildSource(
       [],
       'content',

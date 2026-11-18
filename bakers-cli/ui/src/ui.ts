@@ -70,11 +70,9 @@ export interface RunBbUiOptions {
   /** BB-472 — the loaded connection config's absolute path, so the
    *  workspace-picker screen can find `workspace_id`'s owning file. */
   configPath?: string | undefined;
-  /** BB-472 — re-executes this process; the picker calls it after writing a
-   *  new workspace selection. */
-  restartProcess?: (() => void) | undefined;
-  /** Persist a product-workspace name through the conductor-owned contract. */
-  selectWorkspace?: ((name: string) => Promise<void>) | undefined;
+  /** BB-472 — re-executes this process scoped to the picked workspace; the
+   *  picker calls it and nothing is written. */
+  restartProcess?: ((workspace: string) => void) | undefined;
   buildProgram: (opts: { plugins: unknown[] }) => DropshProgram;
   renderer?: ((opts: unknown) => unknown) | undefined;
   /** BB-223: the deep-link target, still UNRESOLVED (the entry has no JSON:API
@@ -167,6 +165,8 @@ export interface UiDeps {
   printConfig?: boolean;
   /** Sink for `--print-config`; default: `process.stdout.write`. */
   stdout?: (s: string) => void;
+  /** Re-exec seam for the workspace switch; default: `reExecUnderBun`. */
+  reExec?: (argv: string[]) => void;
   /** Daily update lookup; injectable for startup ordering tests. */
   updateCheck?: () => Promise<string | null>;
 
@@ -633,17 +633,23 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
       // reExecUnderBun step this process took to reach OpenTUI at all
       // (`shouldReExecUnderBun`, above). Absent only when the bun binary could
       // not be resolved, which already failed startup before this point.
-      restartProcess: () => {
-        const bin = resolveBunBinary(host.resolveBases);
-        if (bin) reExecUnderBun(bin, process.argv);
+      // A pick scopes the new process through `--workspace` and writes no
+      // config file, so it cannot pin a workspace the project is not in.
+      restartProcess: (workspace: string) => {
+        const argv = process.argv.filter(
+          (arg, i, all) =>
+            arg !== '--workspace' &&
+            all[i - 1] !== '--workspace' &&
+            !arg.startsWith('--workspace='),
+        );
+        const reExec =
+          deps.reExec ??
+          ((next: string[]) => {
+            const bin = resolveBunBinary(host.resolveBases);
+            if (bin) reExecUnderBun(bin, next);
+          });
+        reExec([...argv, '--workspace', workspace]);
       },
-      ...(conductorPath && host.projectContext
-        ? {
-            selectWorkspace: async (name: string) => {
-              await host.projectContext?.writeWorkspace(conductorPath, name);
-            },
-          }
-        : {}),
       // The plugins are real constructed `DropSHPlugin[]` now (core built them),
       // matching dropsh's declared contract — F3's substance, a descriptor handed
       // to an API expecting instances, is gone. The two casts that remain are

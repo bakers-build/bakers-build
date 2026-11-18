@@ -47,9 +47,9 @@ const wire = (id: string) => `tool_api__${id}`;
 const WRITES = [
   'bakers_ticket_create',
   'bakers_ticket_transition',
-  'bakers_comment_publish',
+  'bakers_comment_create',
   'bakers_metric_write',
-  'bakers_time_propose',
+  'bakers_worklog_propose',
   'bakers_run_cancel',
 ].map(wire);
 const failing = (checks: { id: string; met: boolean }[]) =>
@@ -261,7 +261,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
           expect(alias.exit_code).toBe(0);
         }
         const invalid = await runCli(
-          ['bakers', 'tools', wire('bakers_comment_publish'), '--data', '{}'],
+          ['bakers', 'tools', wire('bakers_comment_create'), '--data', '{}'],
           options,
         );
         expect(invalid.exit_code).toBe(4);
@@ -269,7 +269,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
           [
             'bakers',
             'tools',
-            wire('bakers_comment_publish'),
+            wire('bakers_comment_create'),
             '--data',
             '@/alias.json',
           ],
@@ -279,7 +279,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
         expect(
           endpoint
             .calls()
-            .filter((r: Request) => r.tool === wire('bakers_comment_publish')),
+            .filter((r: Request) => r.tool === wire('bakers_comment_create')),
         ).toHaveLength(1);
         const readback = await runCli(
           [
@@ -467,21 +467,21 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
       const body = `${simulation.files['/fixture/comment.md']}'single' and "double" — ✓ \`$(id)\`\n\n`;
       const { files, call } = script();
       const steps = [
-        call('bakers_comment_publish', {
+        call('bakers_comment_create', {
           ticket: ticketId,
           type: 'coding',
           body,
         }),
         call('bakers_ticket_read', { ticket: ticketId }),
-        call('bakers_comment_publish', {
+        call('bakers_comment_create', {
           ticket: ticketId,
           type: 'coding',
           body: ' \n\t',
         }),
-        call('bakers_comment_publish', { ticket: ticketId, body }),
+        call('bakers_comment_create', { ticket: ticketId, body }),
       ];
       const { real, sim, endpoint } = await pair(simulation, steps, files);
-      const [publish] = sent(endpoint, 'bakers_comment_publish');
+      const [publish] = sent(endpoint, 'bakers_comment_create');
       const stored = json(real[1]!)?.comments ?? [];
       const checks = [
         ...agreeAll(real, sim),
@@ -516,7 +516,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
         check(
           'rejected-before-sending',
           [2, 3].every((i) => real[i]!.exit_code === 4) &&
-            sent(endpoint, 'bakers_comment_publish').length === 1,
+            sent(endpoint, 'bakers_comment_create').length === 1,
           'A blank body or a missing type is rejected by the schema before any call',
         ),
         ...boundary(endpoint),
@@ -547,12 +547,12 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
         call('bakers_ticket_search', { query: 'ticket' }),
         call('bakers_ticket_create', create),
         call('bakers_ticket_read', { ticket: 'EVAL-101' }),
-        call('bakers_comment_publish', {
+        call('bakers_comment_create', {
           ticket: 'EVAL-101',
           type: 'qualification',
           body: '- test_as: no login needed\n',
         }),
-        call('bakers_comment_publish', {
+        call('bakers_comment_create', {
           ticket: 'EVAL-101',
           type: 'summary',
           body: 'Created and qualified.\n',
@@ -606,7 +606,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
         check(
           'publish-before-route',
           order.indexOf(wire('bakers_ticket_transition')) >
-            order.lastIndexOf(wire('bakers_comment_publish')) &&
+            order.lastIndexOf(wire('bakers_comment_create')) &&
             json(real[8]!)?.state === 'plan' &&
             same(
               json(real[8]!)?.comments?.map((c: { type: string }) => c.type),
@@ -989,10 +989,10 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
         duration_seconds,
       });
       const steps = [
-        call('bakers_time_propose', {
+        call('bakers_worklog_propose', {
           entries: [entry('a', 3600), entry('b', 30)],
         }),
-        call('bakers_time_propose', {
+        call('bakers_worklog_propose', {
           entries: [entry('a', 3600), entry('b', 1800, '2026-10-27')],
           project: contractFixture.project,
         }),
@@ -1003,7 +1003,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
           limit: 1,
         }),
         call('bakers_worklog_list', { from: '2026-10-27', to: '2026-10-26' }),
-        call('bakers_time_propose', { entries: [] }),
+        call('bakers_worklog_propose', { entries: [] }),
       ];
       const { real, sim, endpoint } = await pair(simulation, steps, files);
       const proposal = json(real[1]!);
@@ -1048,7 +1048,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
     const body = base.files['/fixture/comment.md'];
     const { files, call } = script();
     const steps = [
-      call('bakers_comment_publish', {
+      call('bakers_comment_create', {
         ticket: ticketId,
         type: 'coding',
         body,
@@ -1082,7 +1082,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
         ),
         check(
           'one-submission-per-write',
-          sent(endpoint, 'bakers_comment_publish').length === 1,
+          sent(endpoint, 'bakers_comment_create').length === 1,
           'One publication sends one tools/call; the CLI never retries',
         ),
         check(
@@ -1111,7 +1111,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
         ),
         check(
           'endpoint-unapplied',
-          sent(endpoint, 'bakers_comment_publish').every(
+          sent(endpoint, 'bakers_comment_create').every(
             (r) => r.applied === false,
           ),
           'The endpoint applied nothing; that knowledge stays on the endpoint side',
@@ -1298,7 +1298,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
       const { files, call } = script();
       const steps = [
         call('bakers_ticket_read', { ticket: ticketId }),
-        call('bakers_comment_publish', {
+        call('bakers_comment_create', {
           ticket: ticketId,
           type: 'coding',
           body,

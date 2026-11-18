@@ -2,11 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { workspacePlugin } from '@bakers-build/addon-workspace';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import {
-  bakersProjectOwner,
-  readBbProjectSelection,
-  writeBbWorkspaceSelection,
-} from '../../conductor/src/cli/project-context.js';
+import { readBbProjectSelection } from '../../conductor/src/cli/project-context.js';
 import {
   firstWorkspace,
   secondWorkspace,
@@ -23,13 +19,6 @@ function hostWithProjectContext(configPath?: string) {
       resolveConfigPath: () =>
         configPath ?? join(f.root, '.bakers/project.config.js'),
       readWorkspace: (path: string) => readBbProjectSelection(path).workspace,
-      writeWorkspace: async (configPath: string, name: string) => {
-        await writeBbWorkspaceSelection(
-          bakersProjectOwner(configPath),
-          name,
-          `Set project.workspace in ${configPath} to switch manually.`,
-        );
-      },
     },
   };
 }
@@ -39,37 +28,72 @@ beforeEach(async () => {
   f = await workspaceFixture();
   await f.login();
 });
-it('reads and updates the selected conductor variant', async () => {
+// A switch restarts scoped to the pick for that session; no config file is
+// written, so no pick can leave a pin that stops the next start.
+it('a workspace pick restarts on that workspace and leaves every config byte-identical', async () => {
   const defaultConductor = join(f.root, '.bakers/project.config.js');
   const variantConductor = join(f.root, '.bakers/project.night.config.js');
   writeFileSync(
     defaultConductor,
-    "export default { project: { name: 'default', workspace: 'First' } };\n",
+    "export default { project: { name: 'default', workspace: 'Second' } };\n",
   );
   writeFileSync(
     variantConductor,
     "export default { project: { name: 'night', workspace: 'Second' } };\n",
   );
+  const files = [defaultConductor, variantConductor, f.config];
+  const before = files.map((path) => readFileSync(path, 'utf8'));
+  const argv = process.argv;
+  process.argv = ['bun', 'bakers', 'ui', '--workspace', 'Second', 'BB-1'];
+  let restartArgv: string[] = [];
+  try {
+    await cmdUi({
+      host: hostWithProjectContext(variantConductor),
+      cwd: f.root,
+      explicitConfig: f.config,
+      workspaceRecovery: { stateDir: f.stateDir },
+      updateCheck: async () => null,
+      stderr: () => {},
+      reExec: (next) => {
+        restartArgv = next;
+      },
+      runUi: async (opts) => {
+        expect(opts.workspaceId).toBe(secondWorkspace);
+        opts.restartProcess?.('First');
+      },
+    });
+  } finally {
+    process.argv = argv;
+  }
+  expect(restartArgv).toEqual([
+    'bun',
+    'bakers',
+    'ui',
+    'BB-1',
+    '--workspace',
+    'First',
+  ]);
+  expect(files.map((path) => readFileSync(path, 'utf8'))).toEqual(before);
 
+  // The restarted process: the pick scopes it although the project is pinned
+  // to another workspace.
+  let error = '';
+  let workspaceId: string | undefined;
   await cmdUi({
     host: hostWithProjectContext(variantConductor),
     cwd: f.root,
     explicitConfig: f.config,
+    workspace: 'First',
     workspaceRecovery: { stateDir: f.stateDir },
     updateCheck: async () => null,
-    stderr: () => {},
+    stderr: (s) => (error += s),
     runUi: async (opts) => {
-      expect(opts.workspaceId).toBe(secondWorkspace);
-      await opts.selectWorkspace?.('First');
+      workspaceId = opts.workspaceId;
     },
   });
-
-  expect(readFileSync(variantConductor, 'utf8')).toContain(
-    'workspace: "First"',
-  );
-  expect(readFileSync(defaultConductor, 'utf8')).toContain(
-    "workspace: 'First'",
-  );
+  expect(error).toBe('');
+  expect(workspaceId).toBe(firstWorkspace);
+  expect(files.map((path) => readFileSync(path, 'utf8'))).toEqual(before);
 });
 it('uses committed project.workspace without consuming the worktree plugin slot', async () => {
   const conductor = join(f.root, '.bakers/project.config.js');
@@ -78,6 +102,7 @@ it('uses committed project.workspace without consuming the worktree plugin slot'
     `export default { project: { name: 'demo', workspace: 'Second' }, worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' } };\n`,
   );
   writeFileSync(f.config, f.source(firstWorkspace));
+  let rendered = false;
 
   await cmdUi({
     host: hostWithProjectContext(),
@@ -87,16 +112,13 @@ it('uses committed project.workspace without consuming the worktree plugin slot'
     updateCheck: async () => null,
     stderr: () => {},
     runUi: async (opts) => {
+      rendered = true;
       expect(opts.connection.authPlugins[1]?.id).toBe(
         `selected-${secondWorkspace}`,
       );
-      await opts.selectWorkspace?.('First');
     },
   });
-
-  const written = readFileSync(conductor, 'utf8');
-  expect(written).toContain('workspace: "First"');
-  expect(written).toContain("worktree: { use: '@bakers-build/addon-herdr'");
+  expect(rendered).toBe(true);
 });
 it('derives UI workspace from the unique committed project when no workspace is named', async () => {
   const conductor = join(f.root, '.bakers/project.config.js');

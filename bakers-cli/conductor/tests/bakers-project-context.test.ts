@@ -109,3 +109,18 @@ it('reports missing projects with reachable workspace names', async () => {
     resolveBbProjectContext(client, { project: 'demo' }),
   ).rejects.toThrow(/demo.*Engineering/s);
 });
+
+it('names every reachable workspace and the key to fix when the pinned workspace lacks the project', async () => {
+  const { client } = api([
+    { id: 'p1', name: 'bakers', workspaceId: 'w1', workspace: 'bakers' },
+    { id: 'p2', name: 'lok', workspaceId: 'w2', workspace: 'keytec' },
+  ]);
+  const error = resolveBbProjectContext(
+    client,
+    { project: 'bakers', workspace: 'keytec' },
+    '/repo/.bakers/project.config.js',
+  );
+  await expect(error).rejects.toThrow(
+    'bakers.build project "bakers" not found in workspace "keytec". Reachable workspaces: bakers, keytec. Fix project.workspace in /repo/.bakers/project.config.js.',
+  );
+});

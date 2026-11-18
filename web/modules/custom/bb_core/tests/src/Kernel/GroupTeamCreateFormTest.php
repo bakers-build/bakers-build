@@ -331,6 +331,7 @@ final class GroupTeamCreateFormTest extends KernelTestBase {
       new DefaultAppProvider(),
       'page',
       $this->container->get('island.condition_evaluator'),
+      $this->container->get('island.profile_embedding'),
     ));
     $this->container->get('request_stack')->push($request);
     $state = new FormState();

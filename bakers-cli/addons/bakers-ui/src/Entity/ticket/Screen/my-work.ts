@@ -13,6 +13,8 @@ import { resolveWhoCandidate } from '../../user/Data/users.js';
 import {
   DEFAULT_TICKET_CRITERIA,
   describeCriteria,
+  type ParentCriterion,
+  type ProjectCriterion,
   type TicketCriteria,
 } from '../Data/query.js';
 import {
@@ -167,6 +169,13 @@ export class MyWorkScreen extends AsyncScreen<MyWorkResult> {
     ];
   }
 
+  select(index: number, context: ScreenContext): boolean {
+    if (index < 0 || index >= this.rows.length) return false;
+    this.cursor.index = index;
+    context.requestDraw();
+    return true;
+  }
+
   activate(index: number, context: ScreenContext): boolean {
     const row = this.rows[index];
     if (!row || !context.navigate) return false;
@@ -215,6 +224,29 @@ export class MyWorkScreen extends AsyncScreen<MyWorkResult> {
     this.retry(context);
   }
 
+  /**
+   * The pickers' picks land here through `context.back(result)`, as on
+   * `TicketsScreen.receiveResult`. A null pick clears only that criterion.
+   */
+  receiveResult(result: unknown, context: ScreenContext): void {
+    if (!result || typeof result !== 'object') return;
+    const returned = result as {
+      type?: unknown;
+      project?: ProjectCriterion | null;
+      parent?: ParentCriterion | null;
+    };
+    if (returned.type === 'project-filter-set')
+      this.setCriteria(
+        { ...this.criteria, project: returned.project ?? null },
+        context,
+      );
+    if (returned.type === 'parent-filter-set')
+      this.setCriteria(
+        { ...this.criteria, parent: returned.parent ?? null },
+        context,
+      );
+  }
+
   /** My work has no `mine` shortcut — the assignee is the current user. */
   resolveMine(): undefined {
     return undefined;
@@ -223,6 +255,11 @@ export class MyWorkScreen extends AsyncScreen<MyWorkResult> {
   /** The bar dispatches `r` only when the host marks itself as My work. */
   navigateToProjectFilter(context: ScreenContext): boolean {
     return context.navigate?.('my.work.project-filter', {}) ?? false;
+  }
+
+  /** `p` opens My work's own parent picker, not the project list's. */
+  navigateToParentFilter(context: ScreenContext): boolean {
+    return context.navigate?.('my.work.parent-filter', {}) ?? false;
   }
 
   /** Mirror of `TicketsScreen.filterRow` — delegates to the bar. */

@@ -6,6 +6,8 @@ namespace Drupal\Tests\bb_track\Kernel\Tool;
 
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\bb_track\Entity\Submission;
+use Drupal\bb_track\Entity\Worklog;
+use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -34,6 +36,9 @@ final class WorklogListToolTest extends TimeToolTestBase {
     $first = $this->outputs($this->runTool('bakers_worklog_list', $selection));
     self::assertSame([$own->uuid()], array_column($first['data'], 'id'));
     self::assertSame($this->project->uuid(), $first['data'][0]['project_id']);
+    self::assertSame($own->version(), $first['data'][0]['version']);
+    $account = $this->container->get('entity_type.manager')->getStorage('bb_track_account')->load($this->accountId);
+    self::assertSame($account->uuid(), $first['data'][0]['account']);
     self::assertSame([['id' => $this->project->uuid(), 'name' => 'Work']], $first['projects']);
     self::assertFalse($first['omitted']);
     self::assertSame(1, $first['next_offset']);
@@ -45,6 +50,31 @@ final class WorklogListToolTest extends TimeToolTestBase {
     self::assertCount(1, $second['data'][0]['source_keys']);
     self::assertNull($second['next_offset'] ?? NULL);
     self::assertSame('proposed', Submission::load($submission->id())->get('state')->value);
+  }
+
+  /**
+   * An account the caller cannot read is null and sets omitted.
+   */
+  public function testUnreadableAccountIsOmitted(): void {
+    $owner = $this->createUser(['record own worklog'], 'viewless');
+    self::assertInstanceOf(UserInterface::class, $owner);
+    $this->addMembership($this->fixtureWorkspace(), $owner, ['contributor']);
+    $this->container->get('current_user')->setAccount($owner);
+    // Stored directly: the owner may not read the project or its account.
+    $own = Worklog::create([
+      'owner_user_id' => $owner->id(),
+      'state' => 'recorded',
+      'work_date' => '2026-08-03',
+      'duration_seconds' => 600,
+      'description' => 'Hidden context',
+      'project_id' => $this->project->id(),
+    ]);
+    $own->save();
+    self::assertFalse($this->project->access('view', $owner));
+    $data = $this->outputs($this->runTool('bakers_worklog_list', ['from' => '2026-08-03', 'to' => '2026-08-09']));
+    self::assertSame([$own->uuid()], array_column($data['data'], 'id'));
+    self::assertNull($data['data'][0]['account']);
+    self::assertTrue($data['omitted']);
   }
 
   /**
