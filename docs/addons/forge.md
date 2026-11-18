@@ -1,6 +1,6 @@
 # Forge
 
-**Seven conductor tools through which a sandboxed run fetches, updates its branch, pushes, opens its PR/MR, reads checks and merges, while the token stays with the conductor.**
+**Conductor tools for a sandboxed run's branch, PR/MR and origin issue; the token stays with the conductor.**
 
 For operators who run agents in `sandbox` permissions without trusting `git`, `gh` or `glab`. Background: decision record `docs/decisions/sandbox-forge-tools.md`.
 
@@ -41,6 +41,7 @@ Without a `forge` entry no tool is served. An entry without `backend.use` stops 
 | `forge_pr_upsert` | Opens, updates or retargets the PR/MR into the derived base. | Refuses a non-Conventional Commits title before any request. |
 | `forge_checks` | Lists checks with raw `conclusion`, `run_id`, `job_id` and `overall`. | Read only. |
 | `forge_job_log` | Returns a job's log tail, 16 KiB by default. | Read only. |
+| `forge_issue_update` | Labels or comments on the origin issue. | [GitLab](/addons/forge-gitlab) only. |
 | `forge_merge` | Merges an owned branch's PR/MR. | Correct target, valid title, no conflict, `overall` is `success`. |
 
 `overall` is `success` only when every required check, including one named `required`, is green; none required gives `no_required_checks`.
