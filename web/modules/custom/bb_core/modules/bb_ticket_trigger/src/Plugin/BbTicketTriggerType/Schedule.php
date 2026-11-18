@@ -74,19 +74,19 @@ final class Schedule extends TicketTriggerTypeBase {
     $errors = [];
     $frequency = $config['frequency'] ?? NULL;
     if (!is_string($frequency) || !isset(self::KEYS[$frequency])) {
-      $errors[] = (string) $this->t('Choose daily, weekly or monthly.');
+      $errors['frequency'] = (string) $this->t('Choose daily, weekly or monthly.');
     }
     if (preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', (string) ($config['time'] ?? '')) !== 1) {
-      $errors[] = (string) $this->t('Enter the time as HH:MM (24 hours).');
+      $errors['time'] = (string) $this->t('Enter the time as HH:MM (24 hours).');
     }
     if (!in_array($config['timezone'] ?? NULL, \DateTimeZone::listIdentifiers(), TRUE)) {
-      $errors[] = (string) $this->t('Choose a valid time zone.');
+      $errors['timezone'] = (string) $this->t('Choose a valid time zone.');
     }
     if ($frequency === 'weekly' && !isset($this->weekdays()[(int) ($config['weekday'] ?? 0)])) {
-      $errors[] = (string) $this->t('Choose a weekday.');
+      $errors['weekday'] = (string) $this->t('Choose a weekday.');
     }
     if ($frequency === 'monthly' && !isset($this->days()[(string) ($config['day'] ?? '')])) {
-      $errors[] = (string) $this->t('Choose a day of the month between 1 and 31, or the last day.');
+      $errors['day'] = (string) $this->t('Choose a day of the month between 1 and 31, or the last day.');
     }
     return $errors;
   }

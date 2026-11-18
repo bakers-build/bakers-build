@@ -135,6 +135,22 @@ final class ScheduleTriggerTypeTest extends KernelTestBase {
   }
 
   /**
+   * A field's own error hides only its storage error, not the others'.
+   */
+  public function testValidationSkipsOnlyFieldsWithTheirOwnError(): void {
+    $plugin = $this->schedule([]);
+    $form = ['#parents' => ['settings']];
+    $form_state = new FormState();
+    $form_state->setValue('settings', ['frequency' => 'daily', 'time' => '24', 'timezone' => 'Mars/Olympus']);
+    $form_state->setErrorByName('settings][time', 'Own time error.');
+    $plugin->validateConfigurationForm($form, $form_state);
+    $this->assertSame(
+      ['settings][time' => 'Own time error.', 'settings' => 'Choose a valid time zone.'],
+      array_map('strval', $form_state->getErrors()),
+    );
+  }
+
+  /**
    * The time is typed as a clock time, stored as HH:MM.
    *
    * Text, not the browser's time picker, so a bare hour (`8`) is accepted.

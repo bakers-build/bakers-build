@@ -83,19 +83,17 @@ abstract class TicketTriggerTypeBase extends PluginBase implements BbTicketTrigg
    *   The form state.
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state): void {
-    // A field that already reported its own error is not repeated here.
     $prefix = implode('][', $form['#parents'] ?? []) . '][';
-    foreach (array_keys($form_state->getErrors()) as $name) {
-      if (str_starts_with((string) $name, $prefix)) {
-        return;
-      }
-    }
+    $errors = $form_state->getErrors();
     $candidate = clone $this;
     $candidate->setConfiguration($this->submittedValues($form, $form_state));
     // setError() only reads #parents; a copy keeps $form's own type.
     $element = $form;
-    foreach ($candidate->configurationErrors() as $error) {
-      $form_state->setError($element, $error);
+    foreach ($candidate->configurationErrors() as $field => $error) {
+      // A field that already reported its own error is not repeated here.
+      if (!isset($errors[$prefix . $field])) {
+        $form_state->setError($element, $error);
+      }
     }
   }
 
