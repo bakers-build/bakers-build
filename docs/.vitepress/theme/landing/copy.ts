@@ -38,13 +38,12 @@ const en = {
   trust: ['Open source', 'Your code stays on your machines', 'Every run recorded'],
   line: {
     eyebrow: 'How it works',
-    title: 'Every ticket passes the same line.',
-    text: 'Four stations. Agents do the work, and a person decides at every station. You choose who: your customer, a developer or you.',
-    stations: [
-      ['Plan', 'You describe what you need: in the browser, in a chat with Claude or in the terminal. The agent sorts it, asks what’s unclear and proposes a plan with acceptance criteria you can check.', 'Nothing gets built until you approve the scope.'],
-      ['Build', 'The agent works on its own branch, in its own environment on your machines. Automated tests run before the ticket moves on.', 'You confirm the result.'],
-      ['Review', 'A second agent reviews independently and gives a verdict. When it needs an expert eye, a developer joins.', 'Confirm it, or send it back with a clear expectation.'],
-      ['Ship', 'After the merge, a deployment ticket can roll a batch of merged tickets out to an environment and tag the release.', 'A person authorizes the merge: you or someone on your team.'],
+    title: 'Your work, in view.',
+    text: 'Follow tickets, understand your team’s activity and see where each project stands. A look inside bakers.build, with demo data.',
+    screenshots: [
+      { image: 'ticket-list', title: 'Tickets', text: 'Find your next task and follow work from plan to review.', alt: 'Ticket list with status indicators, priorities and filters in the Northside Bakery demo workspace.' },
+      { image: 'insights', title: 'Insights', text: 'See throughput, AI usage and how your backlog changes.', alt: 'Insights dashboard with throughput, runs per ticket, ratings, token usage and a new-versus-done chart.' },
+      { image: 'project-overview', title: 'Project overview', text: 'See what needs attention, what is in progress and the latest activity.', alt: 'Project overview showing a ticket needing attention, work in progress, project properties and recent activity.' },
     ],
   },
   run: {
@@ -131,13 +130,12 @@ const de: Copy = {
   trust: ['Open Source', 'Dein Code bleibt auf deinen Rechnern', 'Jeder Lauf protokolliert'],
   line: {
     eyebrow: 'So funktioniert’s',
-    title: 'Jedes Ticket läuft über dieselbe Backstraße.',
-    text: 'Vier Stationen. Agenten machen die Arbeit, an jeder Station entscheidet ein Mensch. Wer das ist, legst du fest: dein Kunde, ein Entwickler oder du selbst.',
-    stations: [
-      ['Planen', 'Du beschreibst, was du brauchst: im Browser, im Chat mit Claude oder im Terminal. Der Agent ordnet ein, fragt nach und legt einen Plan mit prüfbaren Abnahmekriterien vor.', 'Gebaut wird erst, wenn du den Umfang freigibst.'],
-      ['Umsetzen', 'Der Agent arbeitet auf eigenem Branch in einer eigenen Umgebung auf deinen Rechnern. Automatische Tests laufen, bevor das Ticket weitergeht.', 'Du bestätigst das Ergebnis.'],
-      ['Prüfen', 'Ein zweiter Agent prüft unabhängig und gibt ein Urteil ab. Wenn es den Blick vom Fach braucht, kommt ein Entwickler dazu.', 'Bestätigen oder mit klarer Erwartung zurückschicken.'],
-      ['Fertig', 'Nach dem Merge kann ein Deployment-Ticket einen Stapel gemergter Tickets in eine Umgebung ausrollen und das Release taggen.', 'Ein Mensch gibt den Merge frei: du selbst oder jemand aus deinem Team.'],
+    title: 'Deine Arbeit im Blick.',
+    text: 'Verfolge Tickets, verstehe die Aktivitäten deines Teams und sieh, wo jedes Projekt steht. Ein Blick in bakers.build mit Demodaten.',
+    screenshots: [
+      { image: 'ticket-list', title: 'Tickets', text: 'Finde deine nächste Aufgabe und verfolge die Arbeit vom Plan bis zum Review.', alt: 'Ticketliste mit Statusanzeigen, Prioritäten und Filtern im Demo-Arbeitsbereich Northside Bakery.' },
+      { image: 'insights', title: 'Insights', text: 'Sieh den Durchsatz, die KI-Nutzung und die Entwicklung deines Backlogs.', alt: 'Insights-Dashboard mit Durchsatz, Läufen pro Ticket, Bewertungen, Token-Verbrauch und einem Diagramm neuer und abgeschlossener Tickets.' },
+      { image: 'project-overview', title: 'Projektübersicht', text: 'Sieh, was Aufmerksamkeit braucht, was in Arbeit ist und was zuletzt passiert ist.', alt: 'Projektübersicht mit einem Ticket, das Aufmerksamkeit braucht, laufender Arbeit, Projekteigenschaften und den letzten Aktivitäten.' },
     ],
   },
   run: {
