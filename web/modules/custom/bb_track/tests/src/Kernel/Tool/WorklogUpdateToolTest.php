@@ -129,6 +129,22 @@ final class WorklogUpdateToolTest extends TimeToolTestBase {
       'account' => '',
     ]));
     self::assertSame($this->accountUuid($this->accountId), $row['account']);
+
+    // Echoing the current project keeps ticket and account.
+    $row = $this->outputs($this->runTool('bakers_worklog_update', [
+      'worklog' => $entry->uuid(),
+      'version' => $row['version'],
+      'ticket' => $ticket->uuid(),
+      'account' => $support->uuid(),
+    ]));
+    $row = $this->outputs($this->runTool('bakers_worklog_update', [
+      'worklog' => $entry->uuid(),
+      'version' => $row['version'],
+      'project' => $this->project->uuid(),
+      'description' => 'Echoed',
+    ]));
+    self::assertSame($ticket->uuid(), $row['ticket_id']);
+    self::assertSame($support->uuid(), $row['account']);
   }
 
   /**

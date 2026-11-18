@@ -165,7 +165,8 @@ final class WorklogUpdate extends ToolBase {
     $original = [$project, $ticket];
     if (isset($changes['project'])) {
       $project = $this->reference('bb_project', $changes['project']);
-      $ticket = NULL;
+      // Only a different project invalidates the ticket.
+      $ticket = $project === $original[0] ? $ticket : NULL;
     }
     if (isset($changes['ticket'])) {
       $ticket = $changes['ticket'] === '' ? NULL : $this->reference('bb_ticket', $changes['ticket']);

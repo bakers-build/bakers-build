@@ -8,6 +8,7 @@ use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Tests\bb_track\Kernel\LegacyWorklogFixture;
 use Drupal\bb_track\Entity\Worklog;
 use Drupal\tool\FormattedToolResultInterface;
+use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -72,6 +73,17 @@ final class WorklogDeleteToolTest extends TimeToolTestBase {
     $this->container->get('entity_type.manager')->getAccessControlHandler('bb_track_worklog')->resetCache();
     $this->assertFailure($this->delete($sourced, ['version' => $this->stored($sourced)]), 'Worklog unavailable.');
 
+    // An owner whose rank grants recording loses it when demoted to guest.
+    $ranked = $this->createUser(['view bb_project', 'view bb_ticket', 'view bb_group'], 'ranked');
+    self::assertInstanceOf(UserInterface::class, $ranked);
+    $this->addMembership($this->fixtureWorkspace(), $ranked, ['lead']);
+    $this->container->get('current_user')->setAccount($ranked);
+    $own = $this->manual('recorded', $ranked);
+    $this->addMembership($this->fixtureWorkspace(), $ranked, ['guest']);
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_track_worklog')->resetCache();
+    $this->assertFailure($this->delete($own), 'You may not delete this worklog: only its owner may');
+    self::assertSame($own->version(), $this->stored($own));
+
     $this->container->get('current_user')->setAccount(new AnonymousUserSession());
     self::assertFalse($this->delete($entry)->isSuccess());
     self::assertNotNull($this->stored($entry));
@@ -91,11 +103,11 @@ final class WorklogDeleteToolTest extends TimeToolTestBase {
   }
 
   /**
-   * An own entry without source, in the given state.
+   * An entry without source in the given state, by default the employee's.
    */
-  private function manual(string $state): Worklog {
+  private function manual(string $state, ?UserInterface $owner = NULL): Worklog {
     $entry = Worklog::create([
-      'owner_user_id' => $this->employee->id(),
+      'owner_user_id' => ($owner ?? $this->employee)->id(),
       'work_date' => '2026-08-03',
       'duration_seconds' => 3600,
       'description' => 'Manual work',
