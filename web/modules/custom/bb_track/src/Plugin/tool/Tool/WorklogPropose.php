@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\bb_track\Plugin\tool\Tool;
 
-use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
-use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_track\Entity\Submission;
@@ -83,6 +81,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 )]
 final class WorklogPropose extends ToolBase {
 
+  use WorklogReferenceTrait;
+
   private const FIELDS = [
     'source_system', 'source_key', 'source_version', 'work_date', 'description',
     'duration_seconds', 'project', 'ticket', 'account',
@@ -97,11 +97,6 @@ final class WorklogPropose extends ToolBase {
    * The shared activity rules.
    */
   private WorkActivityInput $activities;
-
-  /**
-   * Resolves reference UUIDs.
-   */
-  private EntityRepositoryInterface $repository;
 
   /**
    * {@inheritdoc}
@@ -163,23 +158,6 @@ final class WorklogPropose extends ToolBase {
       }
     }
     return $this->activities->input($input);
-  }
-
-  /**
-   * Resolves a viewable reference UUID to its id.
-   *
-   * @throws \InvalidArgumentException
-   * @throws \DomainException
-   */
-  private function reference(string $type, mixed $uuid): int {
-    if (!is_string($uuid) || !Uuid::isValid($uuid)) {
-      throw new \InvalidArgumentException('Project, ticket and billing account references must be UUIDs.');
-    }
-    $entity = $this->repository->loadEntityByUuid($type, $uuid);
-    if (!$entity || !$entity->access('view', $this->currentUser)) {
-      throw new \DomainException('Assignment unavailable.');
-    }
-    return (int) $entity->id();
   }
 
   /**
