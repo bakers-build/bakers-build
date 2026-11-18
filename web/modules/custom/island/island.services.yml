@@ -9,7 +9,10 @@ services:
       - { name: island.app_provider }
   island.profile_renderer:
     class: Drupal\island\IslandProfileRenderer
-    arguments: ['@entity_type.manager', '@plugin.manager.island', '@island.app_provider_manager', '@island.host_resolver', '@island.condition_evaluator']
+    arguments: ['@entity_type.manager', '@plugin.manager.island', '@island.app_provider_manager', '@island.host_resolver', '@island.condition_evaluator', '@island.profile_embedding']
+  island.profile_embedding:
+    class: Drupal\island\IslandProfileEmbedding
+    arguments: ['@plugin.manager.island', '@island.layout_manager']
   island.layout_manager:
     class: Drupal\island\IslandLayoutManager
     arguments: ['@plugin.manager.sdc']
@@ -50,7 +53,7 @@ services:
     alias: plugin.manager.island
   island.host_resolver:
     class: Drupal\island\IslandHostResolver
-    arguments: ['@plugin.manager.island', '@entity_type.manager', '@island.app_provider_manager', '@request_stack', '@island.condition_evaluator']
+    arguments: ['@plugin.manager.island', '@entity_type.manager', '@island.app_provider_manager', '@request_stack', '@island.condition_evaluator', '@island.profile_embedding']
     tags:
       - { name: service_collector, tag: island.context_provider, call: addProvider }
   island.placement:
@@ -76,6 +79,11 @@ services:
   island.action_subscriber:
     class: Drupal\island\EventSubscriber\IslandActionSubscriber
     arguments: ['@island.host_resolver', '@plugin.manager.island', '@island.responder', '@current_user', '@csrf_token']
+    tags:
+      - { name: event_subscriber }
+  island.profile_import_validate_subscriber:
+    class: Drupal\island\EventSubscriber\IslandProfileImportValidateSubscriber
+    arguments: ['@entity_type.manager', '@island.profile_embedding']
     tags:
       - { name: event_subscriber }
   island.get_subscriber:
