@@ -119,14 +119,16 @@ final class BbProfileTest extends KernelTestBase {
     ])->save();
     $profiles = $this->container->get(Profiles::class);
 
-    $new = $profiles->forAccount((int) $account->id(), (int) $south->id());
+    $new = $profiles->forEditing((int) $account->id(), (int) $south->id());
 
     self::assertTrue($new->isNew());
     self::assertSame(['Backend engineer', 'PHP.'], [$new->position(), $new->background()]);
     self::assertSame([], $new->favoriteProjectIds(), 'favorites are not copied');
-    $existing = $profiles->forAccount((int) $account->id(), (int) $north->id());
+    $read = $profiles->forAccount((int) $account->id(), (int) $south->id());
+    self::assertSame(['', ''], [$read->position(), $read->background()], 'readers see no unstored copy');
+    $existing = $profiles->forEditing((int) $account->id(), (int) $north->id());
     self::assertSame(['Old title', 'Old.'], [$existing->position(), $existing->background()], 'an existing profile is never overwritten');
-    $stranger = $profiles->forAccount((int) $this->person()->id(), (int) $south->id());
+    $stranger = $profiles->forEditing((int) $this->person()->id(), (int) $south->id());
     self::assertSame(['', ''], [$stranger->position(), $stranger->background()], 'no earlier profile: empty');
   }
 

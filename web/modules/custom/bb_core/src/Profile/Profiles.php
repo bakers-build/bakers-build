@@ -17,25 +17,29 @@ final class Profiles {
   ) {}
 
   /**
-   * The stored profile, else an unsaved one for the account and workspace.
-   *
-   * An unsaved profile starts with the position and background of the
-   * account's most recently changed profile; favorites stay per workspace.
+   * The stored profile, else an empty, unsaved one in the workspace.
    */
   public function forAccount(int $uid, int $workspace_id): BbProfileInterface {
     $storage = $this->entityTypeManager->getStorage('bb_profile');
     $found = $storage->loadByProperties(['uid' => $uid, 'workspace_id' => $workspace_id]);
-    $profile = reset($found);
-    if (!$profile) {
-      $source = $this->newest($uid);
-      $profile = $storage->create([
-        'uid' => $uid,
-        'workspace_id' => $workspace_id,
-        'position' => $source?->position() ?? '',
-        'background' => $source?->background() ?? '',
-      ]);
-    }
+    $profile = reset($found) ?: $storage->create(['uid' => $uid, 'workspace_id' => $workspace_id]);
     assert($profile instanceof BbProfileInterface);
+    return $profile;
+  }
+
+  /**
+   * Like ::forAccount(), but a new profile starts from the newest one.
+   *
+   * For paths that store the profile: position and background come from the
+   * account's most recently changed profile; favorites stay per workspace.
+   * Readers use ::forAccount(), so no workspace shows an unstored copy.
+   */
+  public function forEditing(int $uid, int $workspace_id): BbProfileInterface {
+    $profile = $this->forAccount($uid, $workspace_id);
+    $source = $profile->isNew() ? $this->newest($uid) : NULL;
+    if ($source !== NULL) {
+      $profile->setPosition($source->position())->setBackground($source->background());
+    }
     return $profile;
   }
 
@@ -46,7 +50,7 @@ final class Profiles {
    * nothing is stored.
    */
   public function provideFor(int $uid, int $workspace_id): void {
-    $profile = $this->forAccount($uid, $workspace_id);
+    $profile = $this->forEditing($uid, $workspace_id);
     if ($profile->isNew() && ($profile->position() !== '' || $profile->background() !== '')) {
       $profile->save();
     }

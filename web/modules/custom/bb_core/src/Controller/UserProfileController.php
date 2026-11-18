@@ -70,7 +70,7 @@ final class UserProfileController extends ControllerBase {
    */
   public function profileFor(UserInterface $user): ?BbProfileInterface {
     $workspace = $this->workspaceFor($user);
-    return $workspace === NULL ? NULL : $this->profiles->forAccount((int) $user->id(), (int) $workspace->id());
+    return $workspace === NULL ? NULL : $this->profiles->forEditing((int) $user->id(), (int) $workspace->id());
   }
 
   /**

@@ -31,7 +31,7 @@ final class ProjectFavoriteController extends ControllerBase {
   public function toggle(BbProjectInterface $bb_project): RedirectResponse {
     $workspace = $this->workspaceResolver->resolve($bb_project);
     if ($workspace !== NULL) {
-      $profile = $this->profiles->forAccount((int) $this->currentUser()->id(), (int) $workspace->id());
+      $profile = $this->profiles->forEditing((int) $this->currentUser()->id(), (int) $workspace->id());
       $profile->toggleFavorite((int) $bb_project->id())->save();
       $this->messenger()->addStatus(in_array((int) $bb_project->id(), $profile->favoriteProjectIds(), TRUE)
         ? $this->t('Added to favorites.')
