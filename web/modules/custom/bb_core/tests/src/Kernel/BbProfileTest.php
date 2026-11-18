@@ -22,6 +22,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 final class BbProfileTest extends KernelTestBase {
 
   use UserCreationTrait;
+  use OgScopeFixtureTrait;
 
   /**
    * {@inheritdoc}
@@ -39,10 +40,11 @@ final class BbProfileTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    foreach (['user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_project', 'bb_profile'] as $type) {
+    foreach (['user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group', 'bb_project', 'bb_profile'] as $type) {
       $this->installEntitySchema($type);
     }
     $this->installConfig(['user']);
+    $this->installOgScopeFixture();
     $this->createUser([], 'uid1-dummy');
   }
 
@@ -89,6 +91,67 @@ final class BbProfileTest extends KernelTestBase {
     catch (EntityStorageException) {
       self::assertCount(1, $storage->loadMultiple());
     }
+  }
+
+  /**
+   * A new profile starts from the newest profile's position and background.
+   */
+  public function testNewProfileCopiesTheNewestProfile(): void {
+    $account = $this->person();
+    $north = $this->workspace('north');
+    $east = $this->workspace('east');
+    $south = $this->workspace('south');
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_profile');
+    $storage->create([
+      'uid' => $account->id(),
+      'workspace_id' => $north->id(),
+      'position' => 'Old title',
+      'background' => 'Old.',
+      'changed' => 100,
+    ])->save();
+    $storage->create([
+      'uid' => $account->id(),
+      'workspace_id' => $east->id(),
+      'position' => 'Backend engineer',
+      'background' => 'PHP.',
+      'favorite_projects' => [7],
+      'changed' => 200,
+    ])->save();
+    $profiles = $this->container->get(Profiles::class);
+
+    $new = $profiles->forAccount((int) $account->id(), (int) $south->id());
+
+    self::assertTrue($new->isNew());
+    self::assertSame(['Backend engineer', 'PHP.'], [$new->position(), $new->background()]);
+    self::assertSame([], $new->favoriteProjectIds(), 'favorites are not copied');
+    $existing = $profiles->forAccount((int) $account->id(), (int) $north->id());
+    self::assertSame(['Old title', 'Old.'], [$existing->position(), $existing->background()], 'an existing profile is never overwritten');
+    $stranger = $profiles->forAccount((int) $this->person()->id(), (int) $south->id());
+    self::assertSame(['', ''], [$stranger->position(), $stranger->background()], 'no earlier profile: empty');
+  }
+
+  /**
+   * Joining a workspace, also by creating it, stores the copied profile.
+   */
+  public function testMembershipStoresCopiedProfile(): void {
+    $account = $this->person();
+    $north = $this->workspace('north');
+    $south = $this->workspace('south');
+    $profiles = $this->container->get(Profiles::class);
+    $profiles->forAccount((int) $account->id(), (int) $north->id())->setPosition('Backend engineer')->setBackground('PHP.')->save();
+
+    $this->addMembership($south, $account);
+
+    $stored = $profiles->ofAccount((int) $account->id())[(int) $south->id()] ?? NULL;
+    self::assertNotNull($stored, 'the new member has a stored profile');
+    self::assertSame(['Backend engineer', 'PHP.'], [$stored->position(), $stored->background()]);
+
+    $this->addMembership($north, $account);
+    self::assertCount(2, $profiles->ofAccount((int) $account->id()), 'an existing profile stays the only one');
+
+    $newcomer = $this->person();
+    $this->addMembership($south, $newcomer);
+    self::assertSame([], $profiles->ofAccount((int) $newcomer->id()), 'no source profile: nothing stored');
   }
 
   /**
