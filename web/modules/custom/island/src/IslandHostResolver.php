@@ -28,6 +28,7 @@ final class IslandHostResolver {
     private readonly AppProviderManager $appProviderManager,
     private readonly RequestStack $requestStack,
     private readonly IslandConditionEvaluator $evaluator,
+    private readonly IslandProfileEmbedding $embedding,
   ) {}
 
   /**
@@ -71,7 +72,7 @@ final class IslandHostResolver {
     if ($provider === NULL) {
       return NULL;
     }
-    $host = new IslandProfileHost($app, $profile, $provider, $instance_id, $this->evaluator);
+    $host = new IslandProfileHost($app, $profile, $provider, $instance_id, $this->evaluator, $this->embedding);
     $this->addProvider($host);
     return $host;
   }
