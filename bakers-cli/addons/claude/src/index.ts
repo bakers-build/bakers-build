@@ -51,7 +51,11 @@ import { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 export { parseClaudeTranscript } from './footprint.js';
 export { encodeClaudeProjectDir } from './run.js';
-export { claudeInstallCommand, claudeModelApi } from './setup.js';
+export {
+  claudeInstallCommand,
+  claudeInstallCommandFor,
+  claudeModelApi,
+} from './setup.js';
 
 /** src/index.ts and dist/src/index.js both sit two levels below the package root. */
 const MEASURE_WRAPPER = fileURLToPath(
@@ -251,7 +255,9 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
   readonly secretEnv = CLAUDE_SECRET_ENV;
-  readonly installCommand = claudeInstallCommand;
+  get installCommand(): string {
+    return claudeInstallCommand();
+  }
   readonly modelApi = claudeModelApi;
   private readonly args: string[];
   private readonly model: string | undefined;

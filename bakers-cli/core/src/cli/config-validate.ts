@@ -2,8 +2,9 @@
 // imported value and by `config check` to the literal values parsed from the
 // source without running it.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { isAbsolute, resolve, sep } from 'node:path';
 import {
   type Expression,
   type Node,
@@ -481,17 +482,79 @@ export function addonOptionProblems(
   return problems;
 }
 
+/**
+ * The project's `runtime.image.dockerfile`, read from `.bakers/`: its text, or why it is refused.
+ * Shared by `config check` and runtime-docker, which reruns it before each build.
+ */
+export function runtimeFragment(
+  bakersDir: string,
+  dockerfile: string,
+): { text?: string; problems: string[] } {
+  const outside = { problems: [`${dockerfile} must stay inside .bakers/`] };
+  if (isAbsolute(dockerfile)) return outside;
+  let text: string;
+  try {
+    const root = realpathSync(bakersDir);
+    const path = resolve(root, dockerfile);
+    const inside = (p: string) => p.startsWith(root + sep);
+    if (!inside(path)) return outside;
+    if (!statSync(path, { throwIfNoEntry: false })?.isFile())
+      return { problems: [`${dockerfile} was not found in .bakers/`] };
+    if (!inside(realpathSync(path))) return outside;
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return { problems: [`${dockerfile} could not be read from .bakers/`] };
+  }
+  const problems: string[] = [];
+  let continued = false;
+  text.split('\n').forEach((line, i) => {
+    const trimmed = line.trim();
+    // Docker drops comment and blank lines, also inside a continuation.
+    if (trimmed === '' || trimmed.startsWith('#')) return;
+    const instruction = continued
+      ? null
+      : /^(?:onbuild\s+)?(from|user)(?:\s|$)/i.exec(trimmed);
+    if (instruction)
+      problems.push(
+        `${dockerfile}:${i + 1}: ${(instruction[1] as string).toUpperCase()} is not allowed in a run image fragment`,
+      );
+    continued = trimmed.endsWith('\\');
+  });
+  return { text, problems };
+}
+
+function fragmentProblems(
+  value: Record<string, unknown>,
+  bakersDir: string,
+): SchemaProblem[] {
+  const runtime = value.runtime as
+    | { image?: { dockerfile?: unknown } }
+    | undefined;
+  const dockerfile = runtime?.image?.dockerfile;
+  if (typeof dockerfile !== 'string' || !dockerfile) return [];
+  return runtimeFragment(bakersDir, dockerfile).problems.map((message) => ({
+    key: 'runtime.image.dockerfile',
+    code: 'invalid_value',
+    severity: 'error',
+    message,
+  }));
+}
+
 /** `config check`'s offline field check of one file's source text. */
 export function checkConfigText(
   kind: ConfigKind,
   text: string,
-  opts: { bases?: string[] } = {},
+  /** `bakersDir`: the project file's `.bakers/`, for its run image fragment. */
+  opts: { bases?: string[]; bakersDir?: string } = {},
 ): SchemaProblem[] {
   const parsed = staticConfig(text);
   if (!parsed) return [];
   return [
     ...validateConfig(kind, parsed.value, parsed),
     ...(opts.bases ? addonOptionProblems(kind, parsed, opts.bases) : []),
+    ...(kind === 'project' && opts.bakersDir
+      ? fragmentProblems(parsed.value, opts.bakersDir)
+      : []),
   ].map((problem) => {
     let key = problem.key;
     let location = parsed.locations.get(key);

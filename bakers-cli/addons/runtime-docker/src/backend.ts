@@ -1,13 +1,17 @@
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  copyFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
+  mkdtempSync,
+  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
@@ -16,7 +20,12 @@ import type {
   BbRuntime,
   RuntimeLaunch,
 } from '@bakers-build/conductor/contract';
-import { type ConductorLogger, shellQuote } from '@bakers-build/core';
+import {
+  type ConductorLogger,
+  type ProjectConfig,
+  runtimeFragment,
+  shellQuote,
+} from '@bakers-build/core';
 import {
   API_KEY_PLACEHOLDER,
   type DockerOptions,
@@ -41,12 +50,17 @@ export interface RuntimeDockerOptions {
   shared?: boolean;
 }
 
+/** The project's `runtime.image`. */
+export type RuntimeImageAdditions = NonNullable<
+  NonNullable<ProjectConfig['runtime']>['image']
+>;
+
 export interface BackendDeps {
-  /** `opts.env` is merged over the conductor's env for that one command. */
+  /** `opts.env` is merged over the conductor's env for that one command; `opts.input` is its stdin. */
   exec(
     file: string,
     args: string[],
-    opts?: { env?: Record<string, string> },
+    opts?: { env?: Record<string, string>; input?: string },
   ): Promise<{ stdout: string }>;
   /** The conductor's own environment; the credential source without `agent.secrets`. */
   env: Record<string, string | undefined>;
@@ -60,6 +74,8 @@ export interface BackendDeps {
   bakersEntry?: string;
   /** Names this conductor's proxy sidecar, so conductors on one host never share one. */
   conductorKey?: string;
+  /** The project's `runtime.image` and its `.bakers/`, the layer's build context. */
+  imageAdditions?: { image: RuntimeImageAdditions; bakersDir: string };
 }
 
 /** The first 12 hex chars of the sha256 of `text`. */
@@ -67,8 +83,73 @@ export const shortHash = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
 const run = promisify(execFile);
-export const realExec: BackendDeps['exec'] = (file, args, opts) =>
-  run(file, args, opts?.env ? { env: { ...process.env, ...opts.env } } : {});
+export const realExec: BackendDeps['exec'] = (file, args, opts) => {
+  const p = run(
+    file,
+    args,
+    opts?.env ? { env: { ...process.env, ...opts.env } } : {},
+  );
+  if (opts?.input !== undefined) p.child.stdin?.end(opts.input);
+  return p;
+};
+
+// Same as runtime.image.packages in the project schema: no whitespace, no option.
+const PACKAGE = /^[A-Za-z0-9@][A-Za-z0-9@/._+:=~-]*$/;
+
+/**
+ * The build context: the regular files Git tracks under `dir`. The conductor's log and
+ * the operator's local config there are untracked; a symlink is never followed.
+ */
+const contextFiles = (dir: string) => {
+  let listed: string;
+  try {
+    listed = execFileSync('git', ['ls-files', '-z'], {
+      cwd: dir,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    throw new Error(
+      `runtime-docker: a run image fragment needs ${dir} in a Git checkout (${String(err)})`,
+    );
+  }
+  return listed
+    .split('\0')
+    .filter(
+      (f) => f && lstatSync(join(dir, f), { throwIfNoEntry: false })?.isFile(),
+    )
+    .sort();
+};
+
+const PLAYWRIGHT = /^(?:@playwright\/test|playwright)(?:@|$)/;
+
+/** The layer on the shipped image: apt, npm, Playwright's Chromium, then the fragment. */
+export function layerDockerfile(
+  base: string,
+  apt: string[],
+  npm: string[],
+  fragment: string,
+): string {
+  const lines = [`FROM ${base}`];
+  if (apt.length > 0)
+    lines.push(
+      `RUN apt-get update && apt-get install -y --no-install-recommends ${apt.map(shellQuote).join(' ')} && rm -rf /var/lib/apt/lists/*`,
+    );
+  if (npm.length > 0)
+    lines.push(
+      `RUN npm install -g ${npm.map(shellQuote).join(' ')}`,
+      // Node does not search the global modules: without it require('playwright') fails.
+      'ENV NODE_PATH=/usr/local/lib/node_modules',
+    );
+  // Runs start under the host uid: browsers go where any uid can read them.
+  if (npm.some((p) => PLAYWRIGHT.test(p)))
+    lines.push(
+      'ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright',
+      'RUN playwright install --with-deps chromium && chmod -R a+rX /opt/ms-playwright',
+    );
+  if (fragment) lines.push(fragment.replace(/\n+$/, ''));
+  return `${lines.join('\n')}\n`;
+}
 
 export function dockerRuntime(
   options: RuntimeDockerOptions,
@@ -98,27 +179,65 @@ export function dockerRuntime(
       );
     return join(cacheHome, 'bakers/runtime', uuid);
   };
-  // One image per agent install; built once each.
+  // One image per tag (agent install, additions); built once each.
   const imagesReady = new Map<string, Promise<void>>();
 
-  const ensureImage = async (image: string, install: string) => {
-    try {
-      await deps.exec(docker, ['image', 'inspect', image]);
-    } catch (err) {
-      if (options.image !== undefined)
-        throw new Error(
-          `runtime-docker: image ${image} is not available (${String(err)}); pull or build it first`,
-        );
-      deps.logger.info({ image }, 'building the run image');
-      await deps.exec(docker, [
-        'build',
-        '-t',
-        image,
-        '--build-arg',
-        `AGENT_INSTALL=${install}`,
-        join(deps.packageDir, 'image'),
-      ]);
+  const ensureImage = (image: string, build: () => Promise<unknown>) => {
+    let ready = imagesReady.get(image);
+    if (!ready) {
+      ready = (async () => {
+        try {
+          await deps.exec(docker, ['image', 'inspect', image]);
+        } catch (err) {
+          if (options.image !== undefined)
+            throw new Error(
+              `runtime-docker: image ${image} is not available (${String(err)}); pull or build it first`,
+            );
+          deps.logger.info({ image }, 'building the run image');
+          await build();
+        }
+      })().catch((err) => {
+        imagesReady.delete(image);
+        throw err;
+      });
+      imagesReady.set(image, ready);
     }
+    return ready;
+  };
+
+  /** The project's layer, or none; the fragment is reread and rechecked on every run. */
+  const layerOf = (base: string) => {
+    const additions = options.image ? undefined : deps.imageAdditions;
+    if (!additions) return undefined;
+    const { packages = {}, dockerfile } = additions.image;
+    const apt = packages.apt ?? [];
+    const npm = packages.npm ?? [];
+    for (const p of [...apt, ...npm])
+      if (!PACKAGE.test(p))
+        throw new Error(`runtime-docker: invalid package ${JSON.stringify(p)}`);
+    let fragment = '';
+    if (dockerfile) {
+      const { text, problems } = runtimeFragment(
+        additions.bakersDir,
+        dockerfile,
+      );
+      if (problems.length > 0)
+        throw new Error(`runtime-docker: ${problems.join('; ')}`);
+      fragment = text ?? '';
+    }
+    if (apt.length + npm.length === 0 && !fragment.trim()) return undefined;
+    const dir = additions.bakersDir;
+    const files = fragment ? contextFiles(dir) : [];
+    const digest = files.map((f) => [
+      f,
+      shortHash(readFileSync(join(dir, f), 'latin1')),
+    ]);
+    return {
+      tag: `${base}-${shortHash(JSON.stringify([base, apt, npm, fragment, digest]))}`,
+      dockerfile: layerDockerfile(base, apt, npm, fragment),
+      dir,
+      files,
+    };
   };
 
   const ensureNetwork = async (name: string, internal: boolean) => {
@@ -223,18 +342,48 @@ export function dockerRuntime(
         throw new Error(
           `runtime-docker: agent ${launch.harness} has no installCommand; configure an image`,
         );
-      const image =
-        options.image ??
-        `bakers-runtime:${deps.version}-${shortHash(launch.installCommand ?? '')}`;
-      if (!imagesReady.has(image))
-        imagesReady.set(
-          image,
-          ensureImage(image, launch.installCommand ?? '').catch((err) => {
-            imagesReady.delete(image);
-            throw err;
-          }),
+      const install = launch.installCommand ?? '';
+      const base =
+        options.image ?? `bakers-runtime:${deps.version}-${shortHash(install)}`;
+      const layer = layerOf(base);
+      await ensureImage(base, () =>
+        deps.exec(docker, [
+          'build',
+          '-t',
+          base,
+          '--build-arg',
+          `AGENT_INSTALL=${install}`,
+          join(deps.packageDir, 'image'),
+        ]),
+      );
+      if (layer)
+        await ensureImage(layer.tag, async () => {
+          // Docker sends its whole context directory: hand it only the tracked files.
+          const context = mkdtempSync(join(tmpdir(), 'bb-runtime-context-'));
+          try {
+            for (const f of layer.files) {
+              mkdirSync(dirname(join(context, f)), { recursive: true });
+              copyFileSync(join(layer.dir, f), join(context, f));
+            }
+            await deps.exec(
+              docker,
+              ['build', '-t', layer.tag, '-f', '-', context],
+              { input: layer.dockerfile },
+            );
+          } finally {
+            rmSync(context, { recursive: true, force: true });
+          }
+        });
+      const image = layer?.tag ?? base;
+      const agentVersion = options.image
+        ? 'operator image'
+        : (/@(\d[\w.+-]*)\s*$/.exec(install)?.[1] ?? 'unpinned');
+      if (agentVersion === 'unpinned')
+        deps.logger.warn(
+          { image, agentVersion },
+          'run image: the agent version is not pinned to the host',
         );
-      await imagesReady.get(image);
+      else deps.logger.info({ image, agentVersion }, 'run image');
       if (allowlist) {
         if (!gateway || !toolsPort)
           throw new Error(

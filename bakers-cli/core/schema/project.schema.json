@@ -197,6 +197,11 @@
       "minLength": 1,
       "pattern": "\\S"
     },
+    "runtimePackage": {
+      "type": "string",
+      "description": "A package name with an optional version: no whitespace, no leading dash.",
+      "pattern": "^[A-Za-z0-9@][A-Za-z0-9@/._+:=~-]*$"
+    },
     "permissions": {
       "type": "object",
       "description": "Shared run permissions for every agent.",
@@ -301,6 +306,34 @@
             "type": "string",
             "pattern": "^(?:(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*?/$)[^\\\\:\\u0000$]+)$"
           }
+        },
+        "image": {
+          "type": "object",
+          "description": "runtime-docker: additions built as a cached layer on the shipped run image. Ignored when the machine sets with.image.",
+          "properties": {
+            "packages": {
+              "type": "object",
+              "properties": {
+                "apt": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/runtimePackage" },
+                  "description": "Debian packages, installed with apt-get install --no-install-recommends."
+                },
+                "npm": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/runtimePackage" },
+                  "description": "npm packages, installed globally; playwright@<v> also installs Chromium."
+                }
+              },
+              "additionalProperties": false
+            },
+            "dockerfile": {
+              "type": "string",
+              "minLength": 1,
+              "description": "A Dockerfile fragment under .bakers/, relative to it, appended after the packages. FROM and USER are refused."
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false,

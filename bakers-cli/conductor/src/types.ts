@@ -4,7 +4,7 @@
 // move with them — otherwise the surface-agnostic kernel would have to edge the
 // engine, violating the acyclic rule "core has zero @bakers-build/* edges".
 
-import type { AgentRoutes } from '@bakers-build/core';
+import type { AgentRoutes, ProjectConfig } from '@bakers-build/core';
 import type { DropSHPlugin } from 'dropsh/plugin';
 import type { ResolvedBbProjectContext } from './bakers-project-context.js';
 import type { BbProjectSelection } from './cli/project-context.js';
@@ -139,6 +139,8 @@ export interface ConductorFileConfig extends ConductorSettings {
   runtime?: RuntimePlugin;
   /** The project's `runtime.read_only`: paths an isolated run sees read-only. */
   readOnly?: string[];
+  /** The project's `runtime.image`: additions an image-building runtime layers on its run image. */
+  runtimeImage?: NonNullable<ProjectConfig['runtime']>['image'];
   /** The project's agent plugin marketplaces; empty when it declares none. */
   marketplaces: MarketplaceDeclaration[];
   /**

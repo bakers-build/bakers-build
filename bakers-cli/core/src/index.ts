@@ -71,6 +71,7 @@ export {
   checkConfigText,
   configAjv,
   coreSchemaPath,
+  runtimeFragment,
   type SchemaProblem,
   type StaticConfig,
   staticConfig,

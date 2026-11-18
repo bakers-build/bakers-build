@@ -134,6 +134,7 @@ export const SIDEBAR = {
       ["Conductor slots", "/addons/slots"],
       ["Tailscale", "/addons/tailscale"],
       ["Docker runtime", "/addons/runtime-docker"],
+      ["Docker run image additions", "/addons/runtime-docker/image"],
       ["Bubblewrap runtime", "/addons/runtime-bwrap"],
     ]),
     group("Runtimes", [

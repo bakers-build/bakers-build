@@ -3,8 +3,11 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
+  symlinkSync,
+  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,7 +16,7 @@ import { type ConductorLogger, createRunClone } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type BackendDeps, dockerRuntime, shortHash } from '../src/backend.js';
 
-type Call = [string, string[]];
+type Call = [string, string[], string?];
 
 let root: string;
 let ws: string;
@@ -516,5 +519,249 @@ describe('runtime-docker allowlist mode', () => {
       .flatMap(([, a]) => a)
       .filter((a) => a.includes('bb-runtime-proxy-'));
     expect(names.every((n) => n.includes('bb-runtime-proxy-aaa'))).toBe(true);
+  });
+});
+
+describe('runtime-docker: project additions to the run image', () => {
+  const base = `bakers-runtime:1.2.3-${shortHash('install-agent')}`;
+  let bakersDir: string;
+  let infos: object[];
+  let warns: object[];
+  /** The files each layer build was handed as its context. */
+  let contexts: string[][];
+  beforeEach(() => {
+    bakersDir = join(root, 'project/.bakers');
+    mkdirSync(bakersDir, { recursive: true });
+    execFileSync('git', ['init', '-q'], { cwd: join(root, 'project') });
+    infos = [];
+    warns = [];
+    contexts = [];
+  });
+  /** Stages files in `.bakers/`; only what Git tracks is the layer's context. */
+  const track = (...files: string[]) =>
+    execFileSync('git', ['add', '--', ...files], { cwd: bakersDir });
+  /** Images that exist start out as `present`; every build adds its tag. */
+  const fakeDocker = (present: string[] = []) => {
+    const images = new Set(present);
+    return deps({
+      logger: {
+        ...logger,
+        info: (o: object) => infos.push(o),
+        warn: (o: object) => warns.push(o),
+      },
+      exec: async (file, args, opts) => {
+        calls.push([file, args, ...(opts?.input ? [opts.input] : [])]);
+        if (args[0] === 'image' && !images.has(args[2] as string))
+          throw new Error('No such image');
+        if (args[0] === 'build') images.add(args[2] as string);
+        if (args[0] === 'build' && args.includes('-f'))
+          contexts.push(
+            readdirSync(args.at(-1) as string, {
+              recursive: true,
+              encoding: 'utf8',
+            }).sort(),
+          );
+        return { stdout: '' };
+      },
+    });
+  };
+  const builds = () => calls.filter(([, a]) => a[0] === 'build');
+  const additions = (image: object) => ({
+    imageAdditions: { image, bakersDir },
+  });
+
+  it('builds the layer from the base with apt, npm, Playwright and the fragment', async () => {
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'RUN echo extra\n');
+    const d = fakeDocker();
+    const rt = dockerRuntime(
+      {},
+      {
+        ...d,
+        ...additions({
+          packages: { apt: ['jq'], npm: ['playwright@1.65.0'] },
+          dockerfile: 'run.Dockerfile',
+        }),
+      },
+    );
+    await rt.wrap(launch());
+    const [baseBuild, layer] = builds();
+    expect(baseBuild?.[1][2]).toBe(base);
+    const tag = layer?.[1][2] as string;
+    expect(tag).toMatch(
+      new RegExp(`^${base.replace(/[.]/g, '\\.')}-[0-9a-f]{12}$`),
+    );
+    expect(layer?.[1]).toEqual([
+      'build',
+      '-t',
+      tag,
+      '-f',
+      '-',
+      expect.any(String),
+    ]);
+    expect(layer?.[2]).toBe(
+      [
+        `FROM ${base}`,
+        "RUN apt-get update && apt-get install -y --no-install-recommends 'jq' && rm -rf /var/lib/apt/lists/*",
+        "RUN npm install -g 'playwright@1.65.0'",
+        'ENV NODE_PATH=/usr/local/lib/node_modules',
+        'ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright',
+        'RUN playwright install --with-deps chromium && chmod -R a+rX /opt/ms-playwright',
+        'RUN echo extra',
+        '',
+      ].join('\n'),
+    );
+    expect(warns).toContainEqual({ image: tag, agentVersion: 'unpinned' });
+    expect((await rt.wrap(launch())).command).toContain(`'${tag}'`);
+  });
+
+  it('builds a layer once per content and again after the fragment changed', async () => {
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'RUN echo one\n');
+    const opts = {
+      ...fakeDocker(),
+      ...additions({ dockerfile: 'run.Dockerfile' }),
+    };
+    const rt = dockerRuntime({}, opts);
+    await rt.wrap(launch());
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(2);
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'RUN echo two\n');
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(3);
+    expect(builds()[2]?.[2]).toContain('RUN echo two');
+  });
+
+  it('rebuilds the layer after a file the fragment copies changed', async () => {
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'COPY tool.sh /opt/\n');
+    writeFileSync(join(bakersDir, 'tool.sh'), 'echo one\n');
+    track('tool.sh');
+    const rt = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+    );
+    await rt.wrap(launch());
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(2);
+    writeFileSync(join(bakersDir, 'tool.sh'), 'echo two\n');
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(3);
+  });
+
+  it('keeps the layer when only untracked runtime files in .bakers/ change', async () => {
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'COPY tool.sh /opt/\n');
+    writeFileSync(join(bakersDir, 'tool.sh'), 'echo one\n');
+    track('run.Dockerfile', 'tool.sh');
+    const rt = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+    );
+    await rt.wrap(launch());
+    writeFileSync(join(bakersDir, 'log.txt'), 'a log line\n');
+    writeFileSync(join(bakersDir, 'connection.config.js'), 'secret\n');
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(2);
+  });
+
+  it('hands the build only the tracked files of .bakers/', async () => {
+    mkdirSync(join(bakersDir, 'scripts'));
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'COPY scripts /opt/\n');
+    writeFileSync(join(bakersDir, 'scripts/tool.sh'), 'echo one\n');
+    writeFileSync(join(bakersDir, 'connection.config.js'), 'secret\n');
+    track('run.Dockerfile', 'scripts/tool.sh');
+    const rt = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+    );
+    await rt.wrap(launch());
+    expect(contexts).toEqual([
+      ['run.Dockerfile', 'scripts', join('scripts', 'tool.sh')],
+    ]);
+  });
+
+  it('follows no symlink in .bakers/', async () => {
+    const outside = join(root, 'outside');
+    mkdirSync(outside);
+    writeFileSync(join(outside, 'x'), 'one\n');
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'RUN echo one\n');
+    symlinkSync('.', join(bakersDir, 'loop'));
+    symlinkSync(outside, join(bakersDir, 'out'));
+    track('run.Dockerfile', 'loop', 'out');
+    const rt = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+    );
+    await rt.wrap(launch());
+    writeFileSync(join(outside, 'x'), 'two\n');
+    await rt.wrap(launch());
+    expect(builds()).toHaveLength(2);
+    expect(contexts).toEqual([['run.Dockerfile']]);
+  });
+
+  it('refuses a package that is not a plain name before building anything', async () => {
+    await expect(
+      dockerRuntime(
+        {},
+        {
+          ...fakeDocker(),
+          ...additions({ packages: { apt: ['jq\nUSER root'] } }),
+        },
+      ).wrap(launch()),
+    ).rejects.toThrow('runtime-docker: invalid package');
+    expect(builds()).toEqual([]);
+  });
+
+  it('reuses a layer another conductor built', async () => {
+    const first = dockerRuntime(
+      {},
+      { ...fakeDocker(), ...additions({ packages: { npm: ['x'] } }) },
+    );
+    await first.wrap(launch());
+    const tags = builds().map(([, a]) => a[2] as string);
+    calls = [];
+    const second = dockerRuntime(
+      {},
+      { ...fakeDocker(tags), ...additions({ packages: { npm: ['x'] } }) },
+    );
+    await second.wrap(launch());
+    expect(builds()).toEqual([]);
+  });
+
+  it('logs the agent version the install pins', async () => {
+    await dockerRuntime({}, { ...fakeDocker(), ...additions({}) }).wrap(
+      launch({ installCommand: 'npm install -g agent@2.1.3' }),
+    );
+    expect(warns).toEqual([]);
+    expect(infos).toContainEqual({
+      image: `bakers-runtime:1.2.3-${shortHash('npm install -g agent@2.1.3')}`,
+      agentVersion: '2.1.3',
+    });
+  });
+
+  it('refuses a fragment with USER before building anything', async () => {
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'USER root\n');
+    await expect(
+      dockerRuntime(
+        {},
+        { ...fakeDocker(), ...additions({ dockerfile: 'run.Dockerfile' }) },
+      ).wrap(launch()),
+    ).rejects.toThrow(
+      'run.Dockerfile:1: USER is not allowed in a run image fragment',
+    );
+    expect(builds()).toEqual([]);
+  });
+
+  it('with.image builds nothing and ignores the additions', async () => {
+    writeFileSync(join(bakersDir, 'run.Dockerfile'), 'USER root\n');
+    const out = await dockerRuntime(
+      { image: 'mine:1' },
+      {
+        ...fakeDocker(['mine:1']),
+        ...additions({
+          packages: { apt: ['jq'] },
+          dockerfile: 'run.Dockerfile',
+        }),
+      },
+    ).wrap(launch());
+    expect(builds()).toEqual([]);
+    expect(out.command).toContain("'mine:1'");
   });
 });
