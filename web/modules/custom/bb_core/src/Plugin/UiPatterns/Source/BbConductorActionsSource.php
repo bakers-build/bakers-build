@@ -10,11 +10,13 @@ use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Form\BbConductorActionForm;
+use Drupal\bb_core\Form\BbRestartRunsForm;
+use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 
 /**
- * The conductor Properties footer: Disable conductor or Enable conductor.
+ * The conductor Properties footer: Disable or Enable conductor, Restart runs.
  */
 #[Source(
   id: 'bb_conductor_actions',
@@ -59,6 +61,9 @@ final class BbConductorActionsSource extends SourcePluginBase {
           'attributes' => $attributes,
         ],
       ];
+    }
+    if (TicketInterventions::mayRestartRuns($conductor, \Drupal::currentUser())) {
+      $build['restart'] = BbRestartRunsForm::button($conductor);
     }
     CacheableMetadata::createFromObject($conductor)
       ->addCacheContexts(['user', 'url.path'])

@@ -9,8 +9,10 @@ use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Access\BbMachineOwnerAccessCheck;
 use Drupal\bb_core\Entity\BbConductorInterface;
@@ -61,6 +63,31 @@ final class BbRestartRunsForm extends EntityForm {
       $query['_wrapper_format'] = 'island_dialog';
     }
     return Url::fromRoute('entity.' . $target->getEntityTypeId() . '.restart_form', $target->toUrl()->getRouteParameters(), ['query' => $query]);
+  }
+
+  /**
+   * The Restart runs button that opens the dialog over the overlay.
+   *
+   * @return array<string, mixed>
+   *   The button render array.
+   */
+  public static function button(BbMachineInterface|BbConductorInterface $target): array {
+    // The create-trigger contract: the overlay is the target, and only the
+    // answer's `dialog` element is swapped in.
+    $attributes = (new Htmx())->get(self::confirmationUrl($target, TRUE))
+      ->target('#bakers-overlay')->select('dialog')->swap('innerHTML')->getAttributes();
+    return [
+      '#type' => 'component',
+      '#component' => 'bb_theme:button',
+      // The dialog's own libraries arrive too late for the first click.
+      '#attached' => ['library' => ['core/drupal.htmx']],
+      '#props' => [
+        'label' => (string) new TranslatableMarkup('Restart runs'),
+        'href' => self::confirmationUrl($target, FALSE)->toString(),
+        'variant' => 'neutral',
+        'attributes' => $attributes,
+      ],
+    ];
   }
 
   /**

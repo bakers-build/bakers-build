@@ -12,6 +12,7 @@ use Drupal\bb_core\Controller\RetiredEditSurfaceController;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Routing\BbMachineRouteProvider;
 use Drupal\user\UserInterface;
+use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\ParameterBag;
@@ -41,7 +42,7 @@ final class MachineOverviewTest extends KernelTestBase {
   protected static $modules = [
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
-    'field', 'og', 'island', 'link', 'text', 'views',
+    'field', 'og', 'island', 'link', 'text', 'views', 'path_alias',
     'better_exposed_filters', 'ui_patterns', 'ui_patterns_views',
     'ui_patterns_field', 'ui_patterns_field_formatters',
     'display_builder', 'display_builder_views', 'display_builder_entity_view',
@@ -73,7 +74,7 @@ final class MachineOverviewTest extends KernelTestBase {
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_team',
       'bb_project', 'bb_machine', 'bb_conductor', 'bb_ticket',
-      'bb_run',
+      'bb_run', 'path_alias',
     ] as $type) {
       $this->installEntitySchema($type);
     }
@@ -223,6 +224,34 @@ final class MachineOverviewTest extends KernelTestBase {
     $zero = $this->renderFull($this->labelled);
     self::assertStringContainsString('Current load', $zero);
     self::assertStringContainsString('>0<', $zero);
+  }
+
+  /**
+   * The Overview lists the machine's conductors, Restart runs for the owner.
+   */
+  public function testOverviewListsConductorsWithRestartRunsForTheOwner(): void {
+    $shipped = (string) file_get_contents(dirname(DRUPAL_ROOT) . '/recipes/bakers/config/core.entity_view_display.bb_machine.bb_machine.full.yml');
+    self::assertStringContainsString("plugin_id: 'views_block:conductors-machine_conductors'", $shipped);
+    self::assertStringContainsString('source_id: bb_machine_actions', $shipped);
+
+    $this->installShippedView('views.view.conductors');
+    $group = $this->create('bb_group', ['name' => 'Core', 'workspace_id' => $this->home->id()]);
+    $project = $this->create('bb_project', ['name' => 'Platform', 'group_id' => $group->id()]);
+    $conductor = ['project_id' => $project->id(), 'owner_user_id' => $this->accounts['lead']->id(), 'status' => 'online'];
+    $this->create('bb_conductor', $conductor + ['conductor_id' => 'c-north', 'label' => 'North conductor', 'machine' => $this->labelled->id()]);
+    $this->create('bb_conductor', $conductor + ['conductor_id' => 'c-south', 'label' => 'South conductor']);
+
+    $this->container->get('account_switcher')->switchTo($this->accounts['lead']);
+    $html = $this->renderMachineConductors();
+    self::assertStringContainsString('North conductor', $html);
+    self::assertStringNotContainsString('South conductor', $html);
+    self::assertStringContainsString('Restart runs', $html);
+
+    $admin = $this->createAccount('admin', ['administer bakers']);
+    $this->container->get('account_switcher')->switchTo($admin);
+    $html = $this->renderMachineConductors();
+    self::assertStringContainsString('North conductor', $html);
+    self::assertStringNotContainsString('Restart runs', $html);
   }
 
   /**
@@ -393,6 +422,14 @@ final class MachineOverviewTest extends KernelTestBase {
       ->getViewBuilder('bb_machine')
       ->view($machine, 'full');
     return (string) $this->container->get('renderer')->renderInIsolation($build);
+  }
+
+  /**
+   * Renders the machine's conductor block.
+   */
+  private function renderMachineConductors(): string {
+    $build = Views::getView('conductors')->executeDisplay('machine_conductors', [(string) $this->labelled->id()]);
+    return $build === NULL ? '' : (string) $this->container->get('renderer')->renderInIsolation($build);
   }
 
   /**
