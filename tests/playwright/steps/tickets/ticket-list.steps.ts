@@ -899,6 +899,7 @@ Then('the ticket listing lists exactly my open tickets', async ({ page }) => {
 
   const stable = before.filter((identifier) => after.includes(identifier));
   expect(stable.length, 'The signed-in member has no open work to show.').toBeGreaterThan(0);
+  expect(new Set(shown).size, 'A ticket is listed twice').toBe(shown.length);
   expect(stable.filter((identifier) => !shown.includes(identifier)), 'Open tickets of mine missing from the list').toEqual([]);
   expect(shown.filter((identifier) => !before.includes(identifier) && !after.includes(identifier)), 'Listed tickets that are not my open work').toEqual([]);
 });
