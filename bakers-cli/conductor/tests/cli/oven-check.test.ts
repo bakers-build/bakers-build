@@ -105,7 +105,7 @@ describe('bakers conductor check / start sandbox report', () => {
       spawner,
       {
         kind: 'runtime',
-        id: 'docker',
+        id: 'bwrap',
         isolates: true,
         requiredModules: [],
         createRuntime: async () => {
@@ -114,7 +114,7 @@ describe('bakers conductor check / start sandbox report', () => {
       },
     );
     expect(out).toContainEqual(
-      expect.stringMatching(/warning:.*host only.*docker.*not checked/),
+      expect.stringMatching(/warning:.*host only.*bwrap.*not checked/),
     );
     if (command === 'check') expect(process.exitCode).toBeUndefined();
     else expect(spawner.spawned).toHaveLength(1);
