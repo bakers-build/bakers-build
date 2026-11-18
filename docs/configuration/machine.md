@@ -91,6 +91,8 @@ The plugins a run installs are the project's [`marketplaces`](/configuration/pro
 addons: [{ use: '@bakers-build/addon-claude', with: { plugins: false } }],
 ```
 
+Claude in `system` or `yolo` uses your own `~/.claude`; `home: 'individual'` keeps a separate [agent home](/configuration/project#agent-plugins).
+
 ## Secrets file
 
 The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start: foreground, detached, the restart after a config change or an update, and `bakers conductor once`. Never put it in the project's committed `.bakers/`.

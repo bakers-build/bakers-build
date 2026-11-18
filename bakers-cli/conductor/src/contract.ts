@@ -61,6 +61,7 @@ export {
   ensureHome,
   homeKey,
   homePath,
+  lock,
   type MarketplaceDeclaration,
   validateMarketplaces,
 } from './plugins/agent-home.js';

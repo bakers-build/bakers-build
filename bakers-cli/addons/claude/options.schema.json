@@ -22,8 +22,12 @@
     },
     "plugins": {
       "type": "boolean",
-      "description": "`false` runs this agent in your own `~/.claude`, without the project's `marketplaces` plugins. Plugins are on whenever the project declares `marketplaces`.",
+      "description": "`false` skips the project's `marketplaces` plugins in every mode and runs this agent in your own `~/.claude` without installing anything.",
       "default": true
+    },
+    "home": {
+      "enum": ["host", "individual"],
+      "description": "Where the project's `marketplaces` plugins live. `host`, the default in `system` and `yolo` mode without an isolating runtime, installs missing ones into your own `~/.claude` and changes nothing you installed. `individual` runs in a separate agent home per marketplace declaration with the pinned plugin versions; `sandbox`, `custom` and isolating runtimes always use it."
     }
   },
   "unevaluatedProperties": false
