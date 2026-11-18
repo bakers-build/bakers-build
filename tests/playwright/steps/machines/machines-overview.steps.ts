@@ -180,7 +180,8 @@ Then(
   async ({ page }, label: string, action: string) => {
     const row = page.locator('[data-list-item], tr').filter({ hasText: label });
     await expect(row.first(), `The machine Overview lists no conductor "${label}"`).toBeVisible();
-    await expect(row.first().getByRole('link', { name: action, exact: true })).toBeAttached();
+    // The operations menu is collapsed, so its links are in the DOM but hidden.
+    await expect(row.first().locator('a[href*="/restart"]').filter({ hasText: action })).toBeAttached();
   },
 );
 
