@@ -121,6 +121,29 @@ export function dockerRuntime(
     }
   };
 
+  // A read-only mount over the image's install dirs hides the agent; fail here, not at launch.
+  const probeAgent = async (image: string, command: string) => {
+    const mounts = [deps.cliRoot, ...opts.mounts];
+    try {
+      await deps.exec(docker, [
+        'run',
+        '--rm',
+        '--user',
+        `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`,
+        ...mounts.flatMap((m) => ['-v', `${m}:${m}:ro`]),
+        '--entrypoint',
+        'sh',
+        image,
+        '-c',
+        `command -v ${shellQuote(command)}`,
+      ]);
+    } catch (err) {
+      throw new Error(
+        `runtime-docker: ${command} is not found in ${image} with the run's mounts (${mounts.join(', ')}); a mount shadows the image's install (${String(err)})`,
+      );
+    }
+  };
+
   const ensureNetwork = async (name: string, internal: boolean) => {
     try {
       await deps.exec(docker, ['network', 'inspect', name]);
@@ -226,15 +249,20 @@ export function dockerRuntime(
       const image =
         options.image ??
         `bakers-runtime:${deps.version}-${shortHash(launch.installCommand ?? '')}`;
-      if (!imagesReady.has(image))
+      // An agent with an installCommand is installed in the image as its harness id.
+      const probe = launch.installCommand ? launch.harness : undefined;
+      const ready = `${image}\0${probe ?? ''}`;
+      if (!imagesReady.has(ready))
         imagesReady.set(
-          image,
-          ensureImage(image, launch.installCommand ?? '').catch((err) => {
-            imagesReady.delete(image);
-            throw err;
-          }),
+          ready,
+          ensureImage(image, launch.installCommand ?? '')
+            .then(() => (probe ? probeAgent(image, probe) : undefined))
+            .catch((err) => {
+              imagesReady.delete(ready);
+              throw err;
+            }),
         );
-      await imagesReady.get(image);
+      await imagesReady.get(ready);
       if (allowlist) {
         if (!gateway || !toolsPort)
           throw new Error(
