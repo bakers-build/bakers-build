@@ -58,13 +58,29 @@ const serverWith = (runs: Run[] = RUNS, failGet = false) => {
     const newestOf = /filter\[ticket_id\.id\]=([^&]+)/.exec(query)?.[1];
     if (newestOf)
       return { data: [{ type: 'bb_run--bb_run', id: NEWEST[newestOf] }] };
+    // Like the server: state and ticket-closed filters, sort, page limit.
+    const states = [
+      ...query.matchAll(
+        /filter\[(?:state|\d+)\](?:\[condition\]\[value\](?:\[\d+\])?)?=(\w+)/g,
+      ),
+    ].map((m) => m[1]);
+    const openOnly = query.includes('filter[ticket_id.closed]=0');
+    const limit = Number(/page\[limit\]=(\d+)/.exec(query)?.[1] ?? 50);
+    const rows = runs
+      .map((run, i) => ({ run, n: i + 1 }))
+      .filter(({ run }) => states.length === 0 || states.includes(run.state))
+      .filter(
+        ({ run }) =>
+          !openOnly || !TICKETS.find((t) => t.id === run.ticket)?.closed,
+      );
+    if (query.includes('sort=-drupal_internal__id')) rows.reverse();
     return {
-      data: runs.map((run, i) => ({
+      data: rows.slice(0, limit).map(({ run, n }) => ({
         type: 'bb_run--bb_run',
         id: run.id,
         attributes: {
           state: run.state,
-          drupal_internal__id: i + 1,
+          drupal_internal__id: n,
           error_log: run.log ?? null,
         },
         relationships: {
@@ -120,6 +136,22 @@ describe('restart runs covered set', () => {
     const query = queryStringOf(vi.mocked(client.get).mock.calls[0]?.[1]);
     expect(query).toContain('filter[conductor_id.id][condition][value][0]=c-1');
     expect(query).toContain('filter[conductor_id.id][condition][value][1]=c-2');
+  });
+
+  it('covers a running run behind more than a page of old failed runs', async () => {
+    const old: Run[] = Array.from({ length: 60 }, (_, i) => ({
+      id: `r-old-${i}`,
+      state: 'failed',
+      ticket: 't-4',
+    }));
+    const covered = await restartCoveredRuns(
+      serverWith([
+        ...old,
+        { id: 'r-running', state: 'running', ticket: 't-1' },
+      ]),
+      ['c-1'],
+    );
+    expect(covered.map((run) => run.id)).toEqual(['r-running']);
   });
 });
 

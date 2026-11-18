@@ -148,6 +148,14 @@ export class ConductorsScreen extends ListScreen<
     };
   }
 
+  /** Restart runs only on a conductor of a machine the operator owns. */
+  private owned(): ConductorRow | undefined {
+    const row = this.rows[this.selectedIndex];
+    return row && this.ownerId && row.machineOwnerUserId === this.ownerId
+      ? row
+      : undefined;
+  }
+
   /**
    * BB-450 review B9 — `s`/`x` are advertised only when the SELECTED row can
    * actually be acted on: `mine` is the identity gate (B10), not `isLocal`'s
@@ -158,14 +166,6 @@ export class ConductorsScreen extends ListScreen<
    * scope for every row, and the log tab inside it is the one place that still
    * withholds a foreign conductor's log (its `mine` derivation lives there).
    */
-  /** Restart runs only on a conductor the operator owns. */
-  private owned(): ConductorRow | undefined {
-    const row = this.rows[this.selectedIndex];
-    return row && this.ownerId && row.ownerUserId === this.ownerId
-      ? row
-      : undefined;
-  }
-
   actionForInput(input: string): ScreenAction | undefined {
     const row = input === 'r' ? this.owned() : undefined;
     if (!row) return undefined;

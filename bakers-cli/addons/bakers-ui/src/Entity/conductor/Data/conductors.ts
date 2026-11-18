@@ -107,6 +107,8 @@ export interface ConductorRow extends Conductor {
   hostKey: string | undefined;
   /** The sideloaded machine's name — its display label. */
   machineLabel: string | undefined;
+  /** The sideloaded machine's owner; Restart runs is theirs alone. */
+  machineOwnerUserId: string | null;
   /** Liveness, derived — never the raw `status`. */
   derivedStatus: ConductorStatus;
   /**
@@ -484,12 +486,17 @@ function capacityOf(
 function machineOf(
   raw: JsonApiResource,
   machinesById: Map<string, JsonApiResource>,
-): { hostKey: string | undefined; machineLabel: string | undefined } {
+): {
+  hostKey: string | undefined;
+  machineLabel: string | undefined;
+  machineOwnerUserId: string | null;
+} {
   const machineId = singleRelId(raw.relationships?.machine);
   const machine = machineId ? machinesById.get(machineId) : undefined;
   return {
     hostKey: str(machine?.attributes?.host_key),
     machineLabel: str(machine?.attributes?.name),
+    machineOwnerUserId: singleRelId(machine?.relationships?.owner_user_id),
   };
 }
 
@@ -505,7 +512,10 @@ const toConductorRow = (
   const lastSeen = toUnixSeconds(r.attr('last_seen')) ?? 0;
   const leaseExpiresAt = toUnixSeconds(r.attr('lease_expires_at')) ?? 0;
   const { currentLoad, maxParallel } = capacityOf(raw, machinesById);
-  const { hostKey, machineLabel } = machineOf(raw, machinesById);
+  const { hostKey, machineLabel, machineOwnerUserId } = machineOf(
+    raw,
+    machinesById,
+  );
   return {
     ...toConductor(r),
     workspaceRoot,
@@ -517,6 +527,7 @@ const toConductorRow = (
     conductorName: str(r.attr('conductor_name')),
     hostKey,
     machineLabel,
+    machineOwnerUserId,
     // `present: true` because the row IS a control-plane record — which is why
     // `registry-only` can never come out of this screen.
     derivedStatus: deriveConductorStatus(

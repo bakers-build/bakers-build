@@ -28,8 +28,6 @@ interface Resource {
   relationships?: { ticket_id?: { data?: { id?: string } | null } };
 }
 
-const COVERED_STATES = ['claimed', 'running', 'failed'];
-
 /** Whether `runId` is its ticket's newest run, in the failed-run breaker's order. */
 const isNewest = async (
   client: DropshClient,
@@ -48,22 +46,17 @@ const isNewest = async (
   return doc.data?.[0]?.id === runId;
 };
 
-/**
- * The runs Restart runs cancels: every claimed or running run of these
- * conductors, plus each open ticket's newest run when it failed on one of them.
- *
- * shortcut: the server's rule (`TicketInterventions::restartCoveredRuns`) is
- * mirrored here, and only the first 50 runs are read; unify once the site
- * offers a restart endpoint.
- */
-export const restartCoveredRuns = async (
+/** One page of these conductors' runs in `states`, tickets included. */
+const readRuns = async (
   client: DropshClient,
   conductorIds: readonly string[],
-): Promise<CoveredRun[]> => {
-  if (conductorIds.length === 0) return [];
+  states: string[],
+  order: 'ASC' | 'DESC',
+  openTicketsOnly = false,
+) => {
   const params = new DrupalJsonApiParams()
     .addFilter('conductor_id.id', [...conductorIds], 'IN')
-    .addFilter('state', COVERED_STATES, 'IN')
+    .addFilter('state', states, 'IN')
     .addInclude(['ticket_id'])
     .addFields('bb_run--bb_run', [
       'state',
@@ -71,9 +64,10 @@ export const restartCoveredRuns = async (
       'error_log',
       'ticket_id',
     ])
-    .addFields('bb_ticket--bb_ticket', ['identifier', 'closed', 'frozen'])
-    .addSort('drupal_internal__id', 'ASC')
+    .addFields('bb_ticket--bb_ticket', ['identifier', 'frozen'])
+    .addSort('drupal_internal__id', order)
     .addPageLimit(50);
+  if (openTicketsOnly) params.addFilter('ticket_id.closed', '0');
   const doc = (await client.get('bb_run/bb_run', params)) as {
     data?: Resource[];
     included?: Resource[];
@@ -81,25 +75,51 @@ export const restartCoveredRuns = async (
   const tickets = new Map(
     (doc.included ?? []).map((t) => [t.id ?? '', t.attributes ?? {}]),
   );
-  const covered: CoveredRun[] = [];
-  for (const run of doc.data ?? []) {
+  return (doc.data ?? []).map((run) => {
     const ticketId = run.relationships?.ticket_id?.data?.id ?? '';
     const ticket = tickets.get(ticketId) ?? {};
-    const state = String(run.attributes?.state ?? '');
-    if (
-      state === 'failed' &&
-      (ticket.closed === true ||
-        !(await isNewest(client, ticketId, run.id ?? '')))
-    )
-      continue;
-    covered.push({
-      id: run.id ?? '',
-      number: String(run.attributes?.drupal_internal__id ?? ''),
-      state,
-      identifier: String(ticket.identifier ?? '?'),
-      frozen: ticket.frozen === true,
-      errorLog: String(run.attributes?.error_log ?? ''),
-    });
+    return {
+      ticketId,
+      run: {
+        id: run.id ?? '',
+        number: String(run.attributes?.drupal_internal__id ?? ''),
+        state: String(run.attributes?.state ?? ''),
+        identifier: String(ticket.identifier ?? '?'),
+        frozen: ticket.frozen === true,
+        errorLog: String(run.attributes?.error_log ?? ''),
+      } satisfies CoveredRun,
+    };
+  });
+};
+
+/**
+ * The runs Restart runs cancels: every claimed or running run of these
+ * conductors, plus each open ticket's newest run when it failed on one of them.
+ *
+ * shortcut: the server's rule (`TicketInterventions::restartCoveredRuns`) is
+ * mirrored here, and each of the two reads takes one page of 50 (active runs
+ * stay below a machine's capacity; failed runs are read newest first); unify
+ * once the site offers a restart endpoint.
+ */
+export const restartCoveredRuns = async (
+  client: DropshClient,
+  conductorIds: readonly string[],
+): Promise<CoveredRun[]> => {
+  if (conductorIds.length === 0) return [];
+  const active = await readRuns(
+    client,
+    conductorIds,
+    ['claimed', 'running'],
+    'ASC',
+  );
+  const failed = await readRuns(client, conductorIds, ['failed'], 'DESC', true);
+  const covered = active.map(({ run }) => run);
+  const seen = new Set<string>();
+  for (const { ticketId, run } of failed) {
+    // Newest first: only a ticket's latest failed run can be its newest run.
+    if (seen.has(ticketId)) continue;
+    seen.add(ticketId);
+    if (await isNewest(client, ticketId, run.id)) covered.push(run);
   }
   return covered;
 };

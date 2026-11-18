@@ -35,7 +35,10 @@ const conductor = (over: Record<string, unknown> = {}) => ({
 // only the process host stubbed it; the wire read never carried it.
 const MACHINE = 'machine-1';
 
-function harness(rows: ReturnType<typeof conductor>[] = [conductor()]) {
+function harness(
+  rows: ReturnType<typeof conductor>[] = [conductor()],
+  machineOwner = 'user-cw',
+) {
   const collection = (type: string): Collection => {
     const c = {
       where: () => c,
@@ -103,6 +106,9 @@ function harness(rows: ReturnType<typeof conductor>[] = [conductor()]) {
                 id: MACHINE,
                 type: 'bb_machine--bb_machine',
                 attributes: { host_key: 'test-host', max_parallel: 5 },
+                relationships: {
+                  owner_user_id: { data: { id: machineOwner } },
+                },
               },
             ],
             meta: { count: rows.length },
@@ -147,6 +153,21 @@ describe('the Conductors screen', () => {
       expect(vi.getTimerCount()).toBe(0);
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it('offers Restart runs only when the operator owns the machine', async () => {
+    for (const [owner, offered] of [
+      ['user-cw', true],
+      ['user-other', false],
+    ] as const) {
+      const screen = new ConductorsScreen();
+      const context = harness([conductor()], owner);
+      screen.enter(context);
+      await tick();
+      await tick();
+      expect(screen.actionForInput('r') !== undefined).toBe(offered);
+      screen.leave();
     }
   });
 
