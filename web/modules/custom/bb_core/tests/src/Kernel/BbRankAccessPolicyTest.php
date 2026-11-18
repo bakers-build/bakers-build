@@ -86,6 +86,10 @@ final class BbRankAccessPolicyTest extends KernelTestBase {
       $account->hasPermission('delete own bb_project'),
       'the contributor rank deletes the projects it created',
     );
+    self::assertTrue(
+      $account->hasPermission('update own bb_project'),
+      'the contributor rank edits the projects it created',
+    );
     self::assertFalse(
       $account->hasPermission('administer bakers'),
       'no rank grants administer bakers; uid 1 stays the only bypass (D6)',
