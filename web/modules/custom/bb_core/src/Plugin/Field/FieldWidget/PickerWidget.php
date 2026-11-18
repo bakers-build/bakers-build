@@ -470,6 +470,10 @@ final class PickerWidget extends WidgetBase implements PickerWidgetInterface, Co
       return $this->plainOptions($this->referenceOptions->for(
         $entity,
         $this->fieldDefinition->getName(),
+        // Every candidate, so the browser-side search reaches all of them.
+        // shortcut: renders the whole candidate set; switch to a server-side
+        // search when one project's open tickets reach the thousands.
+        limit: 0,
         handler: (string) $this->getSetting('selection_handler'),
       ));
     }

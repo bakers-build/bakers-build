@@ -25,8 +25,8 @@ Container `bb-run-<run uuid>`, under your uid, mounts:
 - the workspace: a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket branch at the worktree path, made at every run start;
 - the run's Git directory as `.git`. It lives in the conductor's cache; the parent repository is not mounted. The option `shared` adds the parent's `objects`, read-only;
 - `.bakers/` and the project's [`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) paths, read-only;
-- the bakers CLI build, read-only. The runtime refuses to start when that build's root would
-  contain your home directory;
+- the bakers CLI package, read-only, never the global `node_modules`; a root containing your home
+  refuses to start;
 - `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` at its host path;
 - the read/write paths from neutral agent preparation: Claude plugins read-only and the worktree transcript directory writable. Docker has no Claude-specific adapter;
 - with `network: host` and no API credential, the host's Claude login file, read-write inside the run home, so a token refresh reaches the host and every other run.
@@ -36,7 +36,7 @@ No `~/.ssh`, `~/.bakers` or Docker socket. Secrets use `-e KEY`, never values in
 Hook scripts are not copied; unreachable ones fail open. Grant them via `mounts`; automatic mounts
 expose host files.
 
-Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
+Permissions stay unchanged. Each image's first run checks that the mounts leave its agent visible.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
 See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes the container and home.
 

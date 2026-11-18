@@ -225,9 +225,6 @@ Feature: bakers.build sign-up
     And I create the workspace "No Script GmbH"
     Then the address is "/no-script-gmbh/tickets"
 
-  Scenario: Signed-out workspace entry preserves the existing 404
-    When I check anonymous workspace privacy
-
   Scenario: A workspace cannot be created without a team name
     Given no account exists for "teamless@example.com"
     And no workspace is slugged "teamless-gmbh"

@@ -228,6 +228,34 @@ describe('runtime-docker wrap', () => {
     ]);
   });
 
+  it("probes the installed agent once per image with the run's mounts", async () => {
+    const rt = dockerRuntime({ mounts: ['/srv/tools'] }, deps());
+    await rt.wrap(launch());
+    await rt.wrap(launch({ run: { uuid: 'r-2', id: 8 } }));
+    const probes = calls.filter(([, a]) => a.includes('--entrypoint'));
+    expect(probes).toHaveLength(1);
+    expect(probes[0]?.[1]).toEqual(
+      expect.arrayContaining([
+        '/opt/cli:/opt/cli:ro',
+        '/srv/tools:/srv/tools:ro',
+        "command -v 'fake'",
+      ]),
+    );
+  });
+
+  it('refuses the run when a mount hides the agent, naming the mounts', async () => {
+    const d = deps({
+      exec: async (file, args) => {
+        if (args.includes('--entrypoint'))
+          throw new Error('exit 127: sh: 1: fake: not found');
+        return deps().exec(file, args);
+      },
+    });
+    await expect(dockerRuntime({}, d).wrap(launch())).rejects.toThrow(
+      /fake is not found in bakers-runtime:.* with the run's mounts \(\/opt\/cli\)/,
+    );
+  });
+
   it('never builds an operator image', async () => {
     const d = deps({
       exec: async (file, args) => {
@@ -507,7 +535,9 @@ describe('runtime-docker allowlist mode', () => {
       ?.split('=')[1];
     calls = [];
     await wrapped({ networks: new Set(), label: hash });
-    expect(calls.some(([, a]) => a[0] === 'rm' || a[0] === 'run')).toBe(false);
+    const sidecar = ([, a]: Call) =>
+      a[0] === 'rm' || (a[0] === 'run' && !a.includes('--entrypoint'));
+    expect(calls.some(sidecar)).toBe(false);
   });
 
   it("never touches another conductor's sidecar", async () => {

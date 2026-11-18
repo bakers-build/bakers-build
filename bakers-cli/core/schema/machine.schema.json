@@ -42,15 +42,45 @@
         "enabled": { "$ref": "#/$defs/alias_list" },
         "disabled": { "$ref": "#/$defs/alias_list" },
         "routes": {
-          "type": "object",
-          "description": "Named routes from states (or *) to aliases; routes.default is the automatic one.",
-          "additionalProperties": {
+          "$ref": "#/$defs/routes",
+          "description": "Named routes from states (or *) to aliases; routes.default is the automatic one."
+        },
+        "select": {
+          "function": true,
+          "description": "Function (aliases, ticket) => alias replacing the default agent order."
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtime": {
+      "type": "object",
+      "description": "Where agent runs start, chosen per ticket. Absent: the addon runtime, else the host (system).",
+      "properties": {
+        "catalog": {
+          "type": "array",
+          "description": "Runtime entries; the alias system is the host and always present.",
+          "items": {
             "type": "object",
-            "minProperties": 1,
-            "additionalProperties": {
-              "$ref": "project.schema.json#/$defs/nonempty"
-            }
+            "properties": {
+              "alias": { "$ref": "project.schema.json#/$defs/nonempty" },
+              "use": { "$ref": "project.schema.json#/$defs/nonempty" },
+              "with": { "description": "The runtime addon's options." }
+            },
+            "required": ["alias", "use"],
+            "additionalProperties": false
           }
+        },
+        "routes": {
+          "$ref": "#/$defs/routes",
+          "description": "Named routes from states (or *) to aliases; routes.default is the automatic one."
+        },
+        "select": {
+          "function": true,
+          "description": "Function (aliases, ticket) => alias replacing the default runtime order."
+        },
+        "allow_unsandboxed": {
+          "type": "boolean",
+          "description": "Let a runtime:<alias> label choose a runtime that does not isolate. Default false."
         }
       },
       "additionalProperties": false
@@ -73,6 +103,16 @@
   "required": ["machine_id", "label"],
   "additionalProperties": false,
   "$defs": {
+    "routes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "additionalProperties": {
+          "$ref": "project.schema.json#/$defs/nonempty"
+        }
+      }
+    },
     "alias_list": {
       "type": "array",
       "items": { "$ref": "project.schema.json#/$defs/nonempty" }

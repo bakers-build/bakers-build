@@ -169,6 +169,13 @@ export class MyWorkScreen extends AsyncScreen<MyWorkResult> {
     ];
   }
 
+  select(index: number, context: ScreenContext): boolean {
+    if (index < 0 || index >= this.rows.length) return false;
+    this.cursor.index = index;
+    context.requestDraw();
+    return true;
+  }
+
   activate(index: number, context: ScreenContext): boolean {
     const row = this.rows[index];
     if (!row || !context.navigate) return false;

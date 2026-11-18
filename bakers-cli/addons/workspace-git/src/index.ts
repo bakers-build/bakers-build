@@ -23,6 +23,7 @@ import { loadInstructions } from './instructions.js';
 import { removeGitWorktree, ticketWorktrees } from './remove-git-worktree.js';
 import {
   ensureRunClone,
+  leaveRunClone,
   removeRunCloneWorkspace,
   targetOf,
 } from './run-clone.js';
@@ -40,6 +41,7 @@ export {
 } from './remove-git-worktree.js';
 export {
   ensureRunClone,
+  leaveRunClone,
   removeRunCloneWorkspace,
   targetOf,
 } from './run-clone.js';
@@ -112,6 +114,7 @@ export class GitWorkspace implements BbWorkspace {
     _identifier: string,
     branch?: string,
     baseRef?: string,
+    options?: { clone?: boolean; shared?: boolean },
   ): Promise<EnsuredWorkspace> {
     if (!branch) throw new Error('git workspace requires a branch name');
     // A ref git accepts has no `..`, leading `/`, `-` or `.`, so the path
@@ -133,7 +136,7 @@ export class GitWorkspace implements BbWorkspace {
       ? undefined
       : await runBranchGit(this.root, this.logger);
     const extra = env ? { env } : {};
-    if (this.clone) {
+    if (options?.clone ?? this.clone) {
       const created = !existsSync(path);
       await this.ensureBranch(branch);
       const target = targetOf(baseRef);
@@ -152,7 +155,7 @@ export class GitWorkspace implements BbWorkspace {
         workspace: path,
         branch,
         ...(target ? { target } : {}),
-        shared: this.shared,
+        shared: options?.shared ?? this.shared,
       });
       return {
         path,
@@ -162,6 +165,7 @@ export class GitWorkspace implements BbWorkspace {
         ...extra,
       };
     }
+    leaveRunClone(path);
     // Reuse the branch's worktree wherever it lives: old `<root>-worktrees/`
     // checkouts keep working and are never moved.
     const listed = await this.runGit(

@@ -77,6 +77,8 @@ export interface ClaimedRun {
 
 export interface Ticket {
   uuid: string;
+  /** Display name of the owner of the ticket's conductor, when the remote knows it. */
+  conductorOwner?: string;
   identifier: string;
   title: string;
   state: string;

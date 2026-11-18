@@ -165,6 +165,15 @@ export abstract class ListScreen<
     return true;
   }
 
+  /** A click on a row that is not selected (`Kernel/regions.ts`); a click on
+   *  the selected row goes to the subclass's `activate()`. */
+  select(index: number, context: ScreenContext): boolean {
+    if (index < 0 || index >= this.rows.length) return false;
+    this.selectedIndex = index;
+    context.requestDraw();
+    return true;
+  }
+
   /**
    * Show `rows` in place of the loaded page until the next read answers — the
    * optimistic narrowing of a search. It keeps the LOADED page number so a

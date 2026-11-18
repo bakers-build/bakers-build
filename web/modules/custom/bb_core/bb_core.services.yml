@@ -82,8 +82,8 @@ services:
     arguments: ['@current_user', '@current_route_match']
     tags:
       - { name: event_subscriber }
-  bb_core.my_work_sign_in_subscriber:
-    class: Drupal\bb_core\EventSubscriber\MyWorkSignInSubscriber
+  bb_core.workspace_sign_in_subscriber:
+    class: Drupal\bb_core\EventSubscriber\WorkspaceSignInSubscriber
     arguments: ['@current_user']
     tags:
       - { name: event_subscriber }
