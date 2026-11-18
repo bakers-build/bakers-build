@@ -11,8 +11,10 @@ use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Profile\Profiles;
 use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTermInterface;
+use Drupal\bb_core\ProtectedLabelPermissions;
 use Drupal\bb_core\Ticket\BranchName;
 use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\og\OgRoleInterface;
 use Drupal\user\UserInterface;
 
 /**
@@ -161,6 +163,30 @@ function bb_core_post_update_conductor_assignment(): void {
   }
   \Drupal::entityTypeManager()->getStorage('bb_machine')->resetCache();
   \Drupal::entityTypeManager()->getStorage('bb_conductor')->resetCache();
+}
+
+/**
+ * Grants the protected label permissions on the existing workspace ranks.
+ *
+ * Lead gets `any`, contributor `own`, for every protected namespace. The
+ * namespace setting is written first when the site does not carry it yet.
+ */
+function bb_core_post_update_protected_label_permissions(): void {
+  $settings = \Drupal::configFactory()->getEditable('bb_core.settings');
+  if ($settings->get('protected_label_namespaces') === NULL) {
+    $settings->set('protected_label_namespaces', ['runtime'])->save();
+  }
+  $storage = \Drupal::entityTypeManager()->getStorage('og_role');
+  foreach (['lead' => 'any', 'contributor' => 'own'] as $rank => $scope) {
+    $role = $storage->load("bb_workspace-bb_workspace-$rank");
+    if (!$role instanceof OgRoleInterface) {
+      continue;
+    }
+    foreach ($settings->get('protected_label_namespaces') as $namespace) {
+      $role->grantPermission(ProtectedLabelPermissions::$scope($namespace));
+    }
+    $role->save();
+  }
 }
 
 /**

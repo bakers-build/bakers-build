@@ -819,7 +819,7 @@ describe('ClaudeAgent.sandboxPreflight', () => {
     ).toEqual({
       ok: false,
       cause: 'socat not found',
-      fix: 'install it with sudo apt-get install -y socat',
+      fix: 'install socat with sudo apt-get install -y socat, then restart the agent session',
     });
   });
 
@@ -830,7 +830,7 @@ describe('ClaudeAgent.sandboxPreflight', () => {
     ).toEqual({
       ok: false,
       cause: 'bwrap and socat not found',
-      fix: 'install it with sudo dnf install -y bubblewrap socat',
+      fix: 'install bubblewrap and socat with sudo dnf install -y bubblewrap socat, then restart the agent session',
     });
     expect(calls).toEqual([]);
   });

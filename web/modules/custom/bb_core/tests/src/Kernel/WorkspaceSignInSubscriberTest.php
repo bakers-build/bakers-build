@@ -110,6 +110,17 @@ final class WorkspaceSignInSubscriberTest extends KernelTestBase {
   }
 
   /**
+   * A signed-out write keeps its denial; it has no URL to return to.
+   */
+  public function testUnsafeMethodsKeepTheirDenial(): void {
+    $this->setCurrentUser(new AnonymousUserSession());
+    $uri = '/north/ticket/n-1/property';
+    self::assertNull($this->respond($uri, new AccessDeniedHttpException(), 'POST'));
+    self::assertNull($this->respond($uri, new AccessDeniedHttpException(), 'PATCH'));
+    self::assertNull($this->respond($uri, new NotFoundHttpException(), 'POST'));
+  }
+
+  /**
    * Other errors than a denial or a 404 pass through.
    */
   public function testOtherErrorsPassThrough(): void {
@@ -138,10 +149,10 @@ final class WorkspaceSignInSubscriberTest extends KernelTestBase {
   /**
    * The response the subscriber gives a failed request, if any.
    */
-  private function respond(string $uri, \Throwable $exception): ?Response {
+  private function respond(string $uri, \Throwable $exception, string $method = 'GET'): ?Response {
     $event = new ExceptionEvent(
       $this->container->get('http_kernel'),
-      Request::create($uri),
+      Request::create($uri, $method),
       HttpKernelInterface::MAIN_REQUEST,
       $exception,
     );

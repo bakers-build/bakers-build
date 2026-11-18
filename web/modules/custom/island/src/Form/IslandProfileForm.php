@@ -17,6 +17,8 @@ use Drupal\Core\Plugin\Context\ContextRepositoryInterface;
 use Drupal\Core\Render\Element;
 use Drupal\island\Entity\App;
 use Drupal\island\Entity\IslandProfile;
+use Drupal\island\Entity\IslandProfileInterface;
+use Drupal\island\IslandProfileEmbedding;
 use Drupal\island\IslandLayoutManager;
 use Drupal\island\IslandConfigurationValidationInterface;
 use Drupal\island\AppProviderManager;
@@ -57,6 +59,11 @@ final class IslandProfileForm extends EntityForm {
   protected ContextRepositoryInterface $contextRepository;
 
   /**
+   * Validates embedded placements.
+   */
+  protected IslandProfileEmbedding $embedding;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container): static {
@@ -66,6 +73,7 @@ final class IslandProfileForm extends EntityForm {
     $form->providerManager = $container->get('island.app_provider_manager');
     $form->conditionManager = $container->get('plugin.manager.condition');
     $form->contextRepository = $container->get('context.repository');
+    $form->embedding = $container->get('island.profile_embedding');
     return $form;
   }
 
@@ -149,7 +157,7 @@ final class IslandProfileForm extends EntityForm {
       '#title' => $this->t('Island placements'),
     ];
     $layout_id = (string) ($form_state->getValue('layout') ?: $profile->getLayoutId());
-    $slots = $this->layoutManager->getSlots($layout_id);
+    $slots = $this->profileSlots($layout_id);
     $slot_options = array_map(static fn(array $slot): string => (string) ($slot['title'] ?? ''), $slots);
     foreach ($slots as $slot_id => $slot) {
       $form['placements'][$slot_id] = [
@@ -463,6 +471,18 @@ final class IslandProfileForm extends EntityForm {
   }
 
   /**
+   * The layout's slots plus the reserved slot of embedded placements.
+   *
+   * @return array<string, array<string, mixed>>
+   *   Slot definitions keyed by slot id.
+   */
+  private function profileSlots(string $layout_id): array {
+    return $this->layoutManager->getSlots($layout_id) + [
+      IslandProfileInterface::EMBEDDED_SLOT => ['title' => (string) $this->t('Embedded (rendered inside another placement)')],
+    ];
+  }
+
+  /**
    * Returns selectable island plugins, including standard and app plugins.
    *
    * @return array<string, string>
@@ -574,7 +594,7 @@ final class IslandProfileForm extends EntityForm {
     /** @var \Drupal\island\Entity\IslandProfile $profile */
     $profile = $this->entity;
     $layout_id = (string) $form_state->getValue('layout');
-    $slots = $this->layoutManager->getSlots($layout_id);
+    $slots = $this->profileSlots($layout_id);
     if (!isset($this->layoutManager->getDefinitions()[$layout_id])) {
       $form_state->setErrorByName('layout', $this->t('Select an available layout component.'));
     }
@@ -598,6 +618,7 @@ final class IslandProfileForm extends EntityForm {
         }
       }
     }
+    $this->validateEmbedding($profile, $placements, $layout_id, $form_state);
     $unassigned = $profile->getUnassignedPlacements($slots);
     $values = $form_state->getValue(['placements', '_unassigned', 'placements'], []);
     foreach (array_keys($unassigned) as $placement_id) {
@@ -612,6 +633,17 @@ final class IslandProfileForm extends EntityForm {
           $this->t('Placement @id must be reassigned to a valid slot or removed.', ['@id' => $placement_id]),
         );
       }
+    }
+  }
+
+  /**
+   * Reports embedding errors of the submitted placements and layout.
+   */
+  private function validateEmbedding(IslandProfile $profile, array $placements, string $layout_id, FormStateInterface $form_state): void {
+    $draft = clone $profile;
+    $draft->set('placements', $placements)->set('layout', $layout_id);
+    foreach ($this->embedding->errors($draft) as $error) {
+      $form_state->setErrorByName('placements', $error);
     }
   }
 

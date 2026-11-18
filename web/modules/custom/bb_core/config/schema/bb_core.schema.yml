@@ -33,6 +33,12 @@ bb_core.settings:
     min_client_version:
       type: string
       label: 'Minimum bakers CLI version (semver) allowed to claim work'
+    protected_label_namespaces:
+      type: sequence
+      label: 'Label namespaces whose labels need a workspace permission to add'
+      sequence:
+        type: string
+        label: 'Namespace (the label text before the first colon)'
 
 bb_core.bb_vocabulary.*:
   type: config_entity

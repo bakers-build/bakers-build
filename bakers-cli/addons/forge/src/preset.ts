@@ -1,5 +1,5 @@
-// The forge addon: six conductor tools a sandboxed run delivers through,
-// while the token stays with the conductor. Without a forge entry no tool is
+// The forge addon: the conductor tools a sandboxed run delivers and updates
+// its origin issue through, while the token stays with the conductor. Without a forge entry no tool is
 // served and runs deliver as before.
 
 import type { Preset } from '@bakers-build/conductor/contract';
