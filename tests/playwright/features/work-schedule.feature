@@ -41,5 +41,7 @@ Feature: Employees maintain one personal weekday schedule
     When I open the personal schedule of "fixture-settings"
     And I type "8" into the personal Tuesday and leave it
     Then the personal Tuesday shows "8:00"
+    When I type "07" into the personal Tuesday and leave it
+    Then the personal Tuesday shows "7:00"
     When I type "abc" into the personal Tuesday and leave it
     Then the personal Tuesday shows "abc"

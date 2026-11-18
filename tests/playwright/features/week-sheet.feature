@@ -17,7 +17,7 @@ Feature: Employees record their week in an editable grid
 
   Scenario: A bare hour typed into the week becomes whole hours
     When I visit "/bakers/time?mode=week&date=2026-09-07"
-    And I type "2" into the week grid row "Bread · Time capture" on "Fri 11" and leave it
+    And I type "02" into the week grid row "Bread · Time capture" on "Fri 11" and leave it
     Then the week grid row "Bread · Time capture" shows "2:00" on "Fri 11"
     When I save the week
     And I reload the page
