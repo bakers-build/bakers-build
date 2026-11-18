@@ -7,11 +7,15 @@ namespace Drupal\bb_core\Ticket;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\bb_core\Claim\TicketStallReason;
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Routing\BbConductorRouteProvider;
+use Drupal\bb_core\Routing\BbMachineRouteProvider;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
 
 /**
@@ -311,6 +315,121 @@ final class TicketInterventions {
     /** @var array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs */
     $runs = $storage->loadMultiple($ids);
     return $runs;
+  }
+
+  /**
+   * The runs Restart runs cancels on a machine or one conductor.
+   *
+   * Every claimed or running run of the target's conductors, plus each open
+   * ticket's newest run when it failed on one of them. Loaded without access
+   * checks; callers decide who may restart.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The covered runs keyed by id.
+   */
+  public static function restartCoveredRuns(BbMachineInterface|BbConductorInterface $target): array {
+    $conductor_ids = self::conductorIds($target);
+    $runs = self::conductorRuns($conductor_ids, self::ACTIVE_RUN_STATES);
+    foreach (self::conductorRuns($conductor_ids, ['failed']) as $id => $run) {
+      $ticket = $run->getTicket();
+      if ($ticket instanceof BbTicketInterface && !$ticket->isClosed() && self::isNewestByChange($run)) {
+        $runs[$id] = $run;
+      }
+    }
+    ksort($runs);
+    return $runs;
+  }
+
+  /**
+   * Whether the account owns the machine of the target.
+   *
+   * A conductor without a machine falls back to its own owner.
+   */
+  public static function mayRestartRuns(BbMachineInterface|BbConductorInterface $target, AccountInterface $account): bool {
+    $machine = $target instanceof BbMachineInterface ? $target : $target->get('machine')->entity;
+    $owner = $machine instanceof BbMachineInterface ? $machine->get('owner_user_id')->target_id : $target->get('owner_user_id')->target_id;
+    return $account->isAuthenticated() && (int) $owner === (int) $account->id();
+  }
+
+  /**
+   * Cancels every covered run with the restart note.
+   *
+   * The ticket keeps its state, labels and freeze; a cancelled run counts
+   * neither as active nor towards the failed-run breaker, so the claim logic
+   * gives each ticket one fresh run.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The cancelled runs keyed by id.
+   */
+  public static function restartRuns(BbMachineInterface|BbConductorInterface $target, AccountInterface $account): array {
+    $runs = self::restartCoveredRuns($target);
+    $note = self::restartNote($target, $account);
+    foreach ($runs as $run) {
+      self::cancelRun($run, $note);
+    }
+    return $runs;
+  }
+
+  /**
+   * The error-log line naming Restart runs, its level and the person.
+   */
+  public static function restartNote(BbMachineInterface|BbConductorInterface $target, AccountInterface $account): string {
+    return $target instanceof BbMachineInterface
+      ? sprintf('Restart runs (machine %s) by %s', BbMachineRouteProvider::title($target), $account->getAccountName())
+      : sprintf('Restart runs (conductor %s) by %s', BbConductorRouteProvider::title($target), $account->getAccountName());
+  }
+
+  /**
+   * The ids of a machine's conductors, or of the one conductor.
+   *
+   * @return array<int|string>
+   *   Conductor ids.
+   */
+  private static function conductorIds(BbMachineInterface|BbConductorInterface $target): array {
+    if ($target instanceof BbConductorInterface) {
+      return [$target->id()];
+    }
+    return \Drupal::entityTypeManager()->getStorage('bb_conductor')->getQuery()->accessCheck(FALSE)
+      ->condition('machine', $target->id())
+      ->execute();
+  }
+
+  /**
+   * The runs of these conductors in these states, without access checks.
+   *
+   * @param array<int|string> $conductor_ids
+   *   Conductor ids.
+   * @param list<string> $states
+   *   Run states.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The runs keyed by id.
+   */
+  private static function conductorRuns(array $conductor_ids, array $states): array {
+    if ($conductor_ids === []) {
+      return [];
+    }
+    $storage = \Drupal::entityTypeManager()->getStorage('bb_run');
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('conductor_id', $conductor_ids, 'IN')
+      ->condition('state', $states, 'IN')
+      ->execute();
+    /** @var array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs */
+    $runs = $storage->loadMultiple($ids);
+    return $runs;
+  }
+
+  /**
+   * Whether the run is its ticket's newest in the failed-run breaker's order.
+   */
+  private static function isNewestByChange(BbRunInterface $run): bool {
+    $newest = \Drupal::entityTypeManager()->getStorage('bb_run')->getQuery()->accessCheck(FALSE)
+      ->condition('ticket_id', $run->getTicketId())
+      ->sort('changed', 'DESC')
+      ->sort('id', 'DESC')
+      ->range(0, 1)
+      ->execute();
+    return (int) reset($newest) === (int) $run->id();
   }
 
   /**
