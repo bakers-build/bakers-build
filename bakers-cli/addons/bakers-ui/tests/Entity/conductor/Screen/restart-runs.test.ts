@@ -16,7 +16,12 @@ import { fakeClient, queryStringOf } from '../../../test-support.js';
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 type Run = { id: string; state: string; ticket: string; log?: string };
-type Ticket = { id: string; identifier: string; closed?: boolean; frozen?: boolean };
+type Ticket = {
+  id: string;
+  identifier: string;
+  closed?: boolean;
+  frozen?: boolean;
+};
 
 /**
  * The same shape as the PHP kernel fixture (RestartRunsTest): active runs,
@@ -137,7 +142,9 @@ describe('restart runs dialog', () => {
       restartRunsRequest({ ...TARGET, online: false }),
       serverWith(),
     );
-    expect(renderTree(screen.present(context).body).join(' ')).toContain('next start');
+    expect(renderTree(screen.present(context).body).join(' ')).toContain(
+      'next start',
+    );
   });
 
   it('confirming cancels each run with an appended note naming level and person', async () => {
@@ -150,15 +157,32 @@ describe('restart runs dialog', () => {
     await settle();
     const note = 'Restart runs (machine workstation) by cw';
     expect(client.writes).toEqual([
-      { type: 'bb_run--bb_run', id: 'r-running', body: { attributes: { state: 'cancelled', error_log: note } } },
-      { type: 'bb_run--bb_run', id: 'r-claimed', body: { attributes: { state: 'cancelled', error_log: note } } },
-      { type: 'bb_run--bb_run', id: 'r-failed', body: { attributes: { state: 'cancelled', error_log: `boom\n${note}` } } },
+      {
+        type: 'bb_run--bb_run',
+        id: 'r-running',
+        body: { attributes: { state: 'cancelled', error_log: note } },
+      },
+      {
+        type: 'bb_run--bb_run',
+        id: 'r-claimed',
+        body: { attributes: { state: 'cancelled', error_log: note } },
+      },
+      {
+        type: 'bb_run--bb_run',
+        id: 'r-failed',
+        body: {
+          attributes: { state: 'cancelled', error_log: `boom\n${note}` },
+        },
+      },
     ]);
   });
 
   it('Esc writes nothing; a failed read writes nothing', async () => {
     const client = serverWith();
-    const { screen, context } = await dialogFor(restartRunsRequest(TARGET), client);
+    const { screen, context } = await dialogFor(
+      restartRunsRequest(TARGET),
+      client,
+    );
     screen.handleInput('escape', context);
     await settle();
     expect(client.writes).toEqual([]);
@@ -177,11 +201,16 @@ describe('restart runs dialog', () => {
     client.get = vi.fn((path: string, params?: unknown) =>
       (serverWith(runs).get as typeof base)(path, params),
     ) as never;
-    const { screen, context } = await dialogFor(restartRunsRequest(TARGET), client);
+    const { screen, context } = await dialogFor(
+      restartRunsRequest(TARGET),
+      client,
+    );
     runs = RUNS.slice(0, 2);
     screen.handleInput('enter', context);
     await settle();
     expect(client.writes).toEqual([]);
-    expect(renderTree(screen.present(context).body).join(' ')).toContain('changed');
+    expect(renderTree(screen.present(context).body).join(' ')).toContain(
+      'changed',
+    );
   });
 });

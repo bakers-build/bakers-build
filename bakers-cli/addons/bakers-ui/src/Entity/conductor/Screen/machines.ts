@@ -5,13 +5,13 @@ import type { FullScreenChrome } from '../../../Screen/full-screen.js';
 import { ListScreen } from '../../../Screen/list-screen.js';
 import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
 import type { Page } from '../../collection.js';
-import { OwnerIdentity } from '../Data/own-rows.js';
 import { resolveWhoCandidate } from '../../user/Data/users.js';
 import {
   listMachineRows,
   MACHINE_TABLE,
   type MachineRow,
 } from '../Data/machines.js';
+import { OwnerIdentity } from '../Data/own-rows.js';
 import { restartRunsRequest } from './restart-runs.js';
 
 /**
@@ -72,7 +72,9 @@ export class MachinesScreen extends ListScreen<MachineRow> {
 
   protected actions() {
     return [
-      ...(this.owned() ? [actionItem('machines-restart', 'r', 'restart runs')] : []),
+      ...(this.owned()
+        ? [actionItem('machines-restart', 'r', 'restart runs')]
+        : []),
       actionItem('machines-enter', 'Enter', 'conductors'),
       actionItem('machines-tab', 'Tab', 'tabs'),
     ];

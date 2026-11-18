@@ -65,13 +65,22 @@ async function openMachines() {
             {
               id: OWNER,
               type: 'user--user',
-              attributes: { name: 'cw', display_name: 'cw', drupal_internal__uid: 5 },
+              attributes: {
+                name: 'cw',
+                display_name: 'cw',
+                drupal_internal__uid: 5,
+              },
             },
           ],
         };
       if (path.startsWith('bb_conductor/bb_conductor/')) {
-        const id = path.slice('bb_conductor/bb_conductor/'.length).split('?')[0];
-        return { data: conductors.find((c) => c.id === id), included: machines };
+        const id = path
+          .slice('bb_conductor/bb_conductor/'.length)
+          .split('?')[0];
+        return {
+          data: conductors.find((c) => c.id === id),
+          included: machines,
+        };
       }
       if (path === 'bb_conductor/bb_conductor') {
         const only = /filter\[machine\.id\]=([^&]+)/.exec(query)?.[1];

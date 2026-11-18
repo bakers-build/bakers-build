@@ -78,7 +78,7 @@ export const listMachineRows = async (
     row.online ||= status === 'online';
   }
   const rows = [...machines.values()].filter((m) => m.conductorIds.length > 0);
-  return { rows, hasNext: false, page: 0, total: rows.length };
+  return { rows, hasNext: false, page: 0, total: rows.length, window: null };
 };
 
 export const MACHINE_TABLE: ListTable<MachineRow> = {

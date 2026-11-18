@@ -2,13 +2,12 @@ import { existsSync } from 'node:fs';
 import { actionItem } from '../../../Component/footer-actions/index.js';
 import type { ListFilterBadge } from '../../../Component/list-chrome/index.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
+import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
 import { ListScreen } from '../../../Screen/list-screen.js';
 import { runRowAction } from '../../../Screen/row-action.js';
-import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
 import type { Page } from '../../collection.js';
-import { restartRunsRequest } from './restart-runs.js';
 import { resolveWhoCandidate } from '../../user/Data/users.js';
 import {
   CONDUCTOR_TABLE,
@@ -26,6 +25,7 @@ import {
   OwnerIdentity,
 } from '../Data/own-rows.js';
 import { createConductorProcessHost } from '../Data/process.js';
+import { restartRunsRequest } from './restart-runs.js';
 
 /**
  * Conductors list — an ordinary {@link ListScreen}, paged and filtered to the
