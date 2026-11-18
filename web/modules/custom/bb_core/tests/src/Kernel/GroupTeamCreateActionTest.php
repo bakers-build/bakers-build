@@ -163,7 +163,7 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
         [
           'bb_ticket_create_action',
           'bb_project_create_action',
-          'bb_project_favorite_action',
+          'island_placement',
           'bb_ticket_template_create_action',
           'bb_term_create_action',
           'bb_ticket_trigger_create_action',

@@ -525,19 +525,3 @@ bb_core.user.profile:
   options:
     _auth: ['cookie']
     _bb_user_area: TRUE
-
-# The project overview's favorite toggle, a form on its own route so its POST
-# is main content here; the form token guards it, and only an account that may
-# view the project reaches it.
-bb_core.project.favorite:
-  path: '/_workspace/{bb_workspace}/project/{bb_project}/favorite'
-  defaults:
-    _form: '\Drupal\bb_core\Form\ProjectFavoriteForm'
-    _title: 'Favorite'
-  requirements:
-    _entity_access: 'bb_project.view'
-    _user_is_logged_in: 'TRUE'
-  options:
-    parameters:
-      bb_project:
-        type: 'entity:bb_project'

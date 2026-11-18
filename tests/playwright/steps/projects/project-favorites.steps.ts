@@ -16,7 +16,10 @@ Given('the account {string} has no favorite projects', async ({}, name: string) 
 
 When('I click the favorite toggle {string}', async ({ page }, label: string) => {
   const toggle = page.locator(PAGE_HEADER_ISLAND).getByRole('button', { name: label, exact: true });
-  const response = page.waitForResponse((r) => r.url().includes('/favorite') && r.request().method() === 'POST' && r.status() < 400);
+  // The island action posts to the page itself, naming its action.
+  const response = page.waitForResponse(
+    (r) => r.request().method() === 'POST' && (r.request().postData() ?? '').includes('_island_action=toggle') && r.status() < 400,
+  );
   await toggle.click();
   await response;
 });

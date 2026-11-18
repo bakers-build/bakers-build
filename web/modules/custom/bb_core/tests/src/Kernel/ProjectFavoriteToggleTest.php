@@ -6,20 +6,21 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
-use Drupal\bb_core\Form\ProjectFavoriteForm;
-use Drupal\Core\Form\FormState;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Profile\Profiles;
-use Drupal\ui_patterns\SourcePluginBase;
+use Drupal\island\IslandContextProviderInterface;
+use Drupal\island\IslandInterface;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
- * The project overview's favorite form: form token, project access, ownership.
+ * The project overview's favorite toggle island: state, access, ownership.
+ *
+ * The action's CSRF token and the page wiring belong to the island module;
+ * the browser scenario covers the toggle on the real page.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -79,86 +80,125 @@ final class ProjectFavoriteToggleTest extends KernelTestBase {
   }
 
   /**
-   * A submission with a forged form token is refused and stores nothing.
-   */
-  public function testForgedFormTokenIsRefused(): void {
-    $this->lead();
-    self::assertArrayHasKey('form_token', $this->submitForged());
-    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_profile')->loadMultiple());
-  }
-
-  /**
    * A viewer marks and unmarks; another account's favorites stay untouched.
    */
   public function testViewerTogglesOwnFavoriteOnly(): void {
     $lead = $this->lead();
     $colleague = $this->lead();
     $this->setCurrentUser($lead);
+    $this->visit('entity.bb_project.canonical', $this->parameters());
     $profiles = $this->container->get(Profiles::class);
 
-    self::assertTrue($this->access($lead));
-    $this->submit();
+    self::assertTrue($this->island()->accessAction('toggle', [], $lead)->isAllowed());
+    $this->toggle();
     self::assertSame([(int) $this->project->id()], $profiles->forAccount((int) $lead->id(), (int) $this->workspace->id())->favoriteProjectIds());
     self::assertTrue($profiles->forAccount((int) $colleague->id(), (int) $this->workspace->id())->isNew(), 'another account is untouched');
 
-    $this->submit();
+    $this->toggle();
     self::assertSame([], $profiles->forAccount((int) $lead->id(), (int) $this->workspace->id())->favoriteProjectIds());
   }
 
   /**
-   * An account that may not view the project, or anonymous, is refused.
+   * A toggle swaps the island itself and announces the change to the page.
    */
-  public function testNonViewerAndAnonymousAreRefused(): void {
+  public function testToggleRebuildsItselfAndAnnouncesTheChange(): void {
+    $this->lead();
+    $this->visit('entity.bb_project.canonical', $this->parameters());
+    $response = $this->island()->applyAction('toggle', []);
+    self::assertTrue($response->shouldRebuildSelf());
+    self::assertSame(['bakers.favorites.changed'], array_keys($response->getEvents()));
+  }
+
+  /**
+   * Accounts that may not view the project, anonymous and other pages: no.
+   */
+  public function testNonViewerAnonymousAndOtherPagesAreRefused(): void {
     $outsider = $this->createUser();
     self::assertInstanceOf(UserInterface::class, $outsider);
     $this->setCurrentUser($outsider);
-    self::assertFalse($this->access($outsider));
+    $this->visit('entity.bb_project.canonical', $this->parameters());
+    self::assertFalse($this->island()->accessAction('toggle', [], $outsider)->isAllowed(), 'non-viewer');
+    self::assertArrayNotHasKey('#component', $this->island()->build(), 'non-viewer sees no toggle');
 
     $anonymous = User::getAnonymousUser();
     $this->setCurrentUser($anonymous);
-    self::assertFalse($this->access($anonymous));
+    self::assertFalse($this->island()->accessAction('toggle', [], $anonymous)->isAllowed(), 'anonymous');
+
+    $lead = $this->lead();
+    self::assertFalse($this->island()->accessAction('unknown', [], $lead)->isAllowed(), 'unknown action');
+    $this->visit('bb_core.home');
+    self::assertFalse($this->island()->accessAction('toggle', [], $lead)->isAllowed(), 'another route');
+    self::assertArrayNotHasKey('#component', $this->island()->build(), 'another route shows no toggle');
   }
 
   /**
-   * The overview offers the toggle form, naming the state; elsewhere nothing.
+   * The toggle names and shows the state, per account.
    */
-  public function testOverviewActionNamesTheState(): void {
+  public function testToggleNamesTheState(): void {
     $this->lead();
     $this->visit('entity.bb_project.canonical', $this->parameters());
-    $action = $this->action();
-    self::assertSame(ProjectFavoriteForm::WRAPPER_ID, $action['#attributes']['id']);
-    self::assertSame('Add to favorites', (string) $action['form']['toggle']['#value']);
-    self::assertFalse($action['form']['toggle']['#bb_pressed']);
-    self::assertSame('/acme/project/' . $this->project->id() . '/favorite', $action['form']['#action']);
-    self::assertContains('user', $action['#cache']['contexts']);
+    $toggle = $this->island()->build();
+    self::assertSame('bb_theme:button', $toggle['#component']);
+    self::assertSame('Add to favorites', (string) $toggle['#props']['label']);
+    self::assertFalse($toggle['#props']['pressed']);
+    self::assertTrue($toggle['#props']['icon_only']);
+    self::assertContains('user', $toggle['#cache']['contexts']);
+    self::assertContains('bb_profile_list', $toggle['#cache']['tags']);
 
-    $this->submit();
-    $action = $this->action();
-    self::assertSame('Remove from favorites', (string) $action['form']['toggle']['#value']);
-    self::assertTrue($action['form']['toggle']['#bb_pressed']);
-
-    $this->setCurrentUser(User::getAnonymousUser());
-    self::assertArrayNotHasKey('form', $this->action(), 'anonymous');
-    $this->lead();
-    $this->visit('bb_core.home');
-    self::assertArrayNotHasKey('form', $this->action(), 'another route');
+    $this->toggle();
+    $toggle = $this->island()->build();
+    self::assertSame('Remove from favorites', (string) $toggle['#props']['label']);
+    self::assertTrue($toggle['#props']['pressed']);
   }
 
   /**
-   * The favorite action's value on the current route.
-   *
-   * @return array<string, mixed>
-   *   The render array.
+   * The toggle island as the shell page header embeds it.
    */
-  private function action(): array {
-    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance(
-      'bb_project_favorite_action',
-      SourcePluginBase::buildConfiguration('actions', ['type' => 'object'], ['source' => []], []),
-    );
-    self::assertInstanceOf(SourcePluginBase::class, $source);
-    $value = $source->getPropValue();
-    self::assertIsArray($value);
-    return $value;
+  private function island(): IslandInterface {
+    $host = new class() implements IslandContextProviderInterface {
+
+      /**
+       * {@inheritdoc}
+       */
+      public function hostId(): string {
+        return 'bb_shell';
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function getIslandIds(): array {
+        return ['shell_project_favorite'];
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function getIslandConfiguration(string $island_id): array {
+        return [];
+      }
+
+      /**
+       * {@inheritdoc}
+       */
+      public function getIslandData(string $island_id): array {
+        return [];
+      }
+
+    };
+    $island = $this->container->get('plugin.manager.island')->createInstance('bb_project_favorite', [
+      'contexts' => ['host' => $host, 'placement_id' => 'shell_project_favorite'],
+    ]);
+    self::assertInstanceOf(IslandInterface::class, $island);
+    return $island;
+  }
+
+  /**
+   * Applies the toggle as the current account.
+   */
+  private function toggle(): void {
+    $this->island()->applyAction('toggle', []);
+    $this->container->get('entity_type.manager')->getStorage('bb_profile')->resetCache();
   }
 
   /**
@@ -170,51 +210,6 @@ final class ProjectFavoriteToggleTest extends KernelTestBase {
     $this->addMembership($this->workspace, $lead, ['lead']);
     $this->setCurrentUser($lead);
     return $lead;
-  }
-
-  /**
-   * Whether the route admits the account.
-   */
-  private function access(UserInterface $account): bool {
-    return $this->container->get('access_manager')->checkNamedRoute('bb_core.project.favorite', $this->parameters(), $account);
-  }
-
-  /**
-   * Submits the toggle form as the current account, without JavaScript.
-   */
-  private function submit(): void {
-    $this->container->get('request_stack')->push(Request::create('/favorite', 'POST'));
-    try {
-      $form_state = (new FormState())->addBuildInfo('args', [$this->project]);
-      $this->container->get('form_builder')->submitForm(ProjectFavoriteForm::class, $form_state);
-      self::assertSame([], $form_state->getErrors());
-    }
-    finally {
-      $this->container->get('request_stack')->pop();
-      $this->container->get('entity_type.manager')->getStorage('bb_profile')->resetCache();
-    }
-  }
-
-  /**
-   * Posts the toggle form with a forged form token.
-   *
-   * @return string[]
-   *   The form errors.
-   */
-  private function submitForged(): array {
-    $request = Request::create('/favorite', 'POST');
-    $request->setSession($this->container->get('session'));
-    $this->container->get('request_stack')->push($request);
-    try {
-      $form_state = (new FormState())
-        ->addBuildInfo('args', [$this->project])
-        ->setUserInput(['form_id' => 'bb_project_favorite_form', 'form_token' => 'forged']);
-      $this->container->get('form_builder')->buildForm(ProjectFavoriteForm::class, $form_state);
-      return array_map('strval', $form_state->getErrors());
-    }
-    finally {
-      $this->container->get('request_stack')->pop();
-    }
   }
 
   /**

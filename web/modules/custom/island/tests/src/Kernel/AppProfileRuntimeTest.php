@@ -108,33 +108,6 @@ final class AppProfileRuntimeTest extends KernelTestBase {
   }
 
   /**
-   * A routed form answers with itself; only its event's subscribers come along.
-   */
-  public function testFormResponseCarriesTheFormAndItsSubscribers(): void {
-    $host = $this->container->get('island.profile_renderer')->registerHost($this->profile, 'one');
-    $request = Request::create('/form', 'POST');
-    $request->attributes->set('_island_profile_host', $host);
-    $form = ['#markup' => 'form:after'];
-
-    $http = $this->container->get('island.responder')->toFormResponse(IslandResponse::make()->dispatch('tasks.changed', ['count' => 17]), $request, 'form-wrapper', $form);
-
-    $html = (string) $http->getContent();
-    self::assertMatchesRegularExpression('/<div id="form-wrapper"(?![^>]*hx-swap-oob)[^>]*>\s*form:after/', $html);
-    self::assertMatchesRegularExpression('/id="island-' . self::HOST . '-first"[^>]*hx-swap-oob="outerHTML"/', $html);
-    self::assertStringContainsString('count:17', $html);
-    self::assertStringNotContainsString(self::HOST . '-second', $html, 'a placement subscribed to another event stays out');
-    self::assertStringNotContainsString(self::HOST . '-action', $html, 'the form names no island to rebuild');
-  }
-
-  /**
-   * Without an active page profile there is nothing to fan out to.
-   */
-  public function testFormResponseNeedsAnActiveProfile(): void {
-    $this->expectException(\LogicException::class);
-    $this->container->get('island.responder')->toFormResponse(IslandResponse::make(), Request::create('/form', 'POST'), 'form-wrapper', []);
-  }
-
-  /**
    * A fresh action request reconstructs the persisted profile host by identity.
    */
   public function testColdRequestResolvesProfileHost(): void {
