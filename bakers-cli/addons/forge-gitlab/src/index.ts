@@ -298,6 +298,47 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       })) as { id: number };
       return { id: note.id, url: `${i.url}#note_${note.id}` };
     },
+    addReviewers: async (pr, mails) => {
+      const requested: string[] = [];
+      const skipped: { mail: string; reason: string }[] = [];
+      const ids: number[] = [];
+      for (const mail of mails) {
+        // `email` is only returned to an admin token; others see `public_email`.
+        const found = (
+          (await apiAt(
+            `${base}/api/v4`,
+            `/users?search=${encodeURIComponent(mail)}`,
+          )) as { id: number; public_email?: string; email?: string }[]
+        ).find((u) =>
+          [u.public_email, u.email].some(
+            (e) => e?.toLowerCase() === mail.toLowerCase(),
+          ),
+        );
+        if (found) {
+          ids.push(found.id);
+          requested.push(mail);
+        } else
+          skipped.push({
+            mail,
+            reason: 'no GitLab user with this public e-mail',
+          });
+      }
+      if (ids.length === 0) return { requested, skipped };
+      const current = (
+        (
+          (await api(`/merge_requests/${pr.number}`)) as {
+            reviewers?: { id: number }[];
+          }
+        ).reviewers ?? []
+      ).map((r) => r.id);
+      const added = ids.filter((id) => !current.includes(id));
+      if (added.length > 0)
+        await api(`/merge_requests/${pr.number}`, {
+          method: 'PUT',
+          body: { reviewer_ids: [...new Set([...current, ...added])] },
+        });
+      return { requested, skipped };
+    },
   };
   return backend;
 };

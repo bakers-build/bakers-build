@@ -46,6 +46,8 @@ Without a `forge` entry no tool is served. An entry without `backend.use` stops 
 
 `overall` is `success` only when every required check, including one named `required`, is green; none required gives `no_required_checks`.
 
+`request_reviewers: true` adds the ticket's reviewers by public forge e-mail, removes none, lists skips.
+
 Human approval stays the merge gate.
 
 ## Ownership and merge
@@ -54,10 +56,10 @@ Tools take the ticket, `branch_name` and `base_branch` from the calling run; a c
 
 ## Isolation
 
-Network git runs in a throwaway repository on the clone's object store, without config or hooks, against the backend's configured URL. Config and hooks planted in the clone have no effect; a clone whose `objects/info/alternates` lists another object store is refused. The token travels as an environment header and is redacted from every result.
+Network git runs in a throwaway repository on the clone's object store, without config or hooks, against the backend's configured URL. A clone whose `objects/info/alternates` lists another object store is refused. The token travels as a header, redacted from every result.
 
 ## Good to know
 
-- Without these tools a run falls back to `git` and the service's client, allowed in `sandbox` permissions only as trusted commands.
+- Without these tools a run falls back to `git` and the service's client, in `sandbox` permissions only as trusted commands.
 
 Package source in a checkout: `bakers-cli/addons/forge`.

@@ -113,6 +113,8 @@ export interface Ticket {
   labels: string[];
   /** Ticket environments (bb_environment refs), each as name + tier, sideloaded for agent selection. Empty when none. */
   environments: { name: string; tier: string }[];
+  /** Ticket reviewers; `mail` is absent when the server hides it. Omitted when none. */
+  reviewers?: { name: string; mail?: string }[];
 }
 
 export interface ActiveRun {
