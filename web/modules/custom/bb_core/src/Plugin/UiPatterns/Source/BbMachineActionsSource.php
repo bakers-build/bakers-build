@@ -6,12 +6,14 @@ namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
+use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Form\BbRestartRunsForm;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * The machine inspector footer: Restart runs, for the machine's owner.
@@ -28,6 +30,20 @@ use Drupal\ui_patterns\SourcePluginBase;
 final class BbMachineActionsSource extends SourcePluginBase {
 
   /**
+   * The current-session account proxy, injected in `create()`.
+   */
+  private AccountProxyInterface $currentUser;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->currentUser = $container->get('current_user');
+    return $instance;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getPropValue(): mixed {
@@ -41,7 +57,7 @@ final class BbMachineActionsSource extends SourcePluginBase {
       return [];
     }
     $build = [];
-    if (TicketInterventions::mayRestartRuns($machine, \Drupal::currentUser())) {
+    if (TicketInterventions::mayRestartRuns($machine, $this->currentUser)) {
       $build['restart'] = BbRestartRunsForm::button($machine);
     }
     CacheableMetadata::createFromObject($machine)->addCacheContexts(['user'])->applyTo($build);

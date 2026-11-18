@@ -40,7 +40,7 @@ final class RestartRunsTest extends ClaimKernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('bb_machine');
-    $owner = $this->conductor->getOwner();
+    $owner = $this->conductor->get('owner_user_id')->entity;
     assert($owner instanceof UserInterface);
     $this->owner = $owner;
     $this->machine = $this->createMachine('workstation');
@@ -87,9 +87,9 @@ final class RestartRunsTest extends ClaimKernelTestBase {
     $frozen->save();
     $active = $this->seedRun($frozen, 'working', 'running');
     $parked = $this->seedAssignedTicket('plan');
-    foreach ([1, 2, 3] as $ignored) {
-      $last_failed = $this->seedRun($parked, 'plan', 'failed');
-    }
+    $this->seedRun($parked, 'plan', 'failed');
+    $this->seedRun($parked, 'plan', 'failed');
+    $last_failed = $this->seedRun($parked, 'plan', 'failed');
     $breaker = $this->container->get('bb_core.failed_run_circuit_breaker');
     self::assertTrue($breaker->isTripped($parked));
 

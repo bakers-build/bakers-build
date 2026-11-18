@@ -237,8 +237,16 @@ final class MachineOverviewTest extends KernelTestBase {
     $this->installShippedView('views.view.conductors');
     $group = $this->create('bb_group', ['name' => 'Core', 'workspace_id' => $this->home->id()]);
     $project = $this->create('bb_project', ['name' => 'Platform', 'group_id' => $group->id()]);
-    $conductor = ['project_id' => $project->id(), 'owner_user_id' => $this->accounts['lead']->id(), 'status' => 'online'];
-    $this->create('bb_conductor', $conductor + ['conductor_id' => 'c-north', 'label' => 'North conductor', 'machine' => $this->labelled->id()]);
+    $conductor = [
+      'project_id' => $project->id(),
+      'owner_user_id' => $this->accounts['lead']->id(),
+      'status' => 'online',
+    ];
+    $this->create('bb_conductor', $conductor + [
+      'conductor_id' => 'c-north',
+      'label' => 'North conductor',
+      'machine' => $this->labelled->id(),
+    ]);
     $this->create('bb_conductor', $conductor + ['conductor_id' => 'c-south', 'label' => 'South conductor']);
 
     $this->container->get('account_switcher')->switchTo($this->accounts['lead']);

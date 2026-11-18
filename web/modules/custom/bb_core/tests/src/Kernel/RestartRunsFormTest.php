@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\Element;
@@ -53,7 +54,7 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('bb_machine');
-    $owner = $this->conductor->getOwner();
+    $owner = $this->conductor->get('owner_user_id')->entity;
     assert($owner instanceof UserInterface);
     $this->owner = $owner;
     $machine = $this->container->get('entity_type.manager')->getStorage('bb_machine')->create([
@@ -122,7 +123,8 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
    */
   public function testOnlyTheOwnerMayRestart(): void {
     $run = $this->seedRun($this->seedAssignedTicket('working'), 'working', 'running');
-    $other = $this->container->get('entity_type.manager')->getStorage('user')->create(['name' => 'north-lead', 'status' => 1]);
+    $other = $this->container->get('entity_type.manager')->getStorage('user')
+      ->create(['name' => 'north-lead', 'status' => 1]);
     $other->save();
     $access = $this->container->get('access_manager');
     $parameters = ['user' => $this->owner->id(), 'bb_machine' => $this->machine->id()];
@@ -130,6 +132,7 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
     self::assertTrue($access->checkNamedRoute('entity.bb_machine.restart_form', $parameters, $this->owner));
     foreach ([$other, new AnonymousUserSession()] as $account) {
       $result = $access->checkNamedRoute('entity.bb_machine.restart_form', $parameters, $account, TRUE);
+      self::assertInstanceOf(AccessResultReasonInterface::class, $result);
       self::assertTrue($result->isForbidden());
       self::assertSame(BbMachineOwnerAccessCheck::OWNER_MISMATCH_REASON, $result->getReason());
       self::assertFalse(TicketInterventions::mayRestartRuns($this->machine, $account));
@@ -167,8 +170,8 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
    * The covered run ids as the form posts them back.
    */
   private function coveredValue(): string {
-    $ids = array_map(static fn (BbRunInterface $run): string => (string) $run->id(), TicketInterventions::restartCoveredRuns($this->fresh($this->machine)));
-    return implode(',', $ids);
+    $runs = TicketInterventions::restartCoveredRuns($this->machine);
+    return implode(',', array_map(static fn (BbRunInterface $run): string => (string) $run->id(), $runs));
   }
 
   /**
@@ -177,7 +180,10 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
   private function confirm(ContentEntityInterface $target, string $covered): void {
     $form = $this->container->get('entity_type.manager')->getFormObject($target->getEntityTypeId(), 'restart');
     $form->setEntity($this->fresh($target));
-    $state = (new FormState())->setRequestMethod('POST')->setValues(['bb_confirm' => 'Restart runs', 'bb_covered' => $covered]);
+    $state = (new FormState())->setRequestMethod('POST')->setValues([
+      'bb_confirm' => 'Restart runs',
+      'bb_covered' => $covered,
+    ]);
     $this->container->get('form_builder')->submitForm($form, $state);
   }
 

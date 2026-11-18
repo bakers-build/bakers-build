@@ -30,6 +30,7 @@ use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
  *
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
+ * @SuppressWarnings("PHPMD.TooManyMethods")
  */
 final class TicketInterventions {
 

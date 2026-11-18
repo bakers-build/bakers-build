@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
+use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Form\BbConductorActionForm;
@@ -14,6 +15,7 @@ use Drupal\bb_core\Form\BbRestartRunsForm;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * The conductor Properties footer: Disable or Enable conductor, Restart runs.
@@ -28,6 +30,20 @@ use Drupal\ui_patterns\SourcePluginBase;
   ],
 )]
 final class BbConductorActionsSource extends SourcePluginBase {
+
+  /**
+   * The current-session account proxy, injected in `create()`.
+   */
+  private AccountProxyInterface $currentUser;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->currentUser = $container->get('current_user');
+    return $instance;
+  }
 
   /**
    * {@inheritdoc}
@@ -62,7 +78,7 @@ final class BbConductorActionsSource extends SourcePluginBase {
         ],
       ];
     }
-    if (TicketInterventions::mayRestartRuns($conductor, \Drupal::currentUser())) {
+    if (TicketInterventions::mayRestartRuns($conductor, $this->currentUser)) {
       $build['restart'] = BbRestartRunsForm::button($conductor);
     }
     CacheableMetadata::createFromObject($conductor)
