@@ -27,7 +27,6 @@ export interface BbCommandHost {
   projectContext?: {
     resolveConfigPath(cwd: string): string;
     readWorkspace(configPath: string): string | undefined;
-    writeWorkspace(configPath: string, name: string): Promise<void>;
     resolveContext?(
       configPath: string,
       connection: BbConnectionConfig,
