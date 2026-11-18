@@ -1588,14 +1588,26 @@ export class Conductor {
     Object.assign(entry, { state: 'on', hash, home, marketplaces });
     let launch: PluginLaunch;
     try {
-      launch = await chosen.agent.installPlugins(marketplaces, home);
+      launch = await chosen.agent.installPlugins(
+        marketplaces,
+        home,
+        pickSecrets(chosen.agent.secretEnv ?? [], this.secrets),
+      );
+      // A host install used the person's own config dir, not this home.
+      if (launch.home === 'host') {
+        delete entry.hash;
+        delete entry.home;
+      }
       Object.assign(entry, {
         outcome: launch.home,
         ...(launch.trust_bypass?.length
           ? { trust_bypass: launch.trust_bypass }
           : {}),
         ...(launch.gaps?.length ? { gaps: launch.gaps } : {}),
+        ...(launch.warnings?.length ? { warnings: launch.warnings } : {}),
       });
+      for (const warning of launch.warnings ?? [])
+        this.logger.warn({ ticket: t.identifier, run: run.runUuid }, warning);
     } catch (err) {
       entry.failure = err instanceof Error ? err.message : String(err);
       log();
