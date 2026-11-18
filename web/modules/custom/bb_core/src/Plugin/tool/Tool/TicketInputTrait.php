@@ -77,12 +77,15 @@ trait TicketInputTrait {
    *   Each blocker's identifier, title and state, in stored order.
    */
   protected function blockers(BbTicketInterface $ticket): array {
-    $items = $ticket->get('blocked_by');
-    if (!$items->access('view', $this->currentUser)) {
+    $ids = $ticket->getBlockedByIds();
+    if (!$ids || !$ticket->get('blocked_by')->access('view', $this->currentUser)) {
       return [];
     }
+    $storage = $this->entities()->getStorage('bb_ticket');
+    // Entity access alone admits other workspaces; the scoped query does not.
+    $readable = array_map('intval', $storage->getQuery()->accessCheck(TRUE)->condition('id', $ids, 'IN')->execute());
     $rows = [];
-    foreach ($items->referencedEntities() as $blocker) {
+    foreach ($storage->loadMultiple(array_intersect($ids, $readable)) as $blocker) {
       if ($blocker instanceof BbTicketInterface && $blocker->access('view', $this->currentUser)) {
         $rows[] = [
           'identifier' => $blocker->getIdentifier(),

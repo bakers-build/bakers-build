@@ -65,7 +65,7 @@ final class TicketCreateToolTest extends BakersToolTestBase {
       'title' => 'Waits',
       'workflow' => 'bb_work',
       'project' => $this->project->uuid(),
-      'blocked_by' => ['TC-B1', $second->uuid()],
+      'blocked_by' => [$first->getIdentifier(), $second->uuid()],
     ]));
     $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
     self::assertInstanceOf(BbTicketInterface::class, $stored);
@@ -83,8 +83,8 @@ final class TicketCreateToolTest extends BakersToolTestBase {
       'teams' => [$this->project->get('teams')->target_id],
     ]);
     $other->save();
-    $this->ticket('TC-OTHER', ['project_id' => $other->id()]);
-    $this->ticket('TC-DONE', ['state' => 'done']);
+    $elsewhere = $this->ticket('TC-OTHER', ['project_id' => $other->id()])->getIdentifier();
+    $done = $this->ticket('TC-DONE', ['state' => 'done'])->getIdentifier();
     $foreign = $etm->getStorage('bb_workspace')->create([
       'name' => 'foreign',
       'slug' => 'foreign',
@@ -95,13 +95,13 @@ final class TicketCreateToolTest extends BakersToolTestBase {
     $group->save();
     $hidden = $etm->getStorage('bb_project')->create(['name' => 'foreign-project', 'group_id' => $group->id()]);
     $hidden->save();
-    $this->ticket('TC-HIDDEN', ['project_id' => $hidden->id()]);
+    $unreadable = $this->ticket('TC-HIDDEN', ['project_id' => $hidden->id()])->getIdentifier();
     $storage = $etm->getStorage('bb_ticket');
     $before = $storage->getQuery()->accessCheck(FALSE)->count()->execute();
     foreach ([
-      'TC-OTHER' => "Choose open blocking tickets from this ticket's project.",
-      'TC-DONE' => "Choose open blocking tickets from this ticket's project.",
-      'TC-HIDDEN' => 'Ticket TC-HIDDEN does not exist or is not readable.',
+      $elsewhere => 'Choose open blocking tickets from this ticket',
+      $done => 'Choose open blocking tickets from this ticket',
+      $unreadable => "Ticket $unreadable does not exist or is not readable.",
       'NOPE-3' => 'Ticket NOPE-3 does not exist or is not readable.',
     ] as $blocker => $message) {
       $this->assertFailure($this->runTool('bakers_ticket_create', [

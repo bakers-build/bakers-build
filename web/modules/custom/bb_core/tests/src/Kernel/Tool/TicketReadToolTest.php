@@ -364,8 +364,8 @@ final class TicketReadToolTest extends BakersToolTestBase {
     $hidden = $this->ticket('TR-B3', ['project_id' => $project->id()]);
     $ticket = $this->ticket('TR-B', ['blocked_by' => [$open->id(), $hidden->id(), $done->id()]]);
     self::assertSame([
-      ['identifier' => 'TR-B1', 'title' => 'Open blocker', 'state' => 'qualification'],
-      ['identifier' => 'TR-B2', 'title' => 'Done blocker', 'state' => 'done'],
+      ['identifier' => $open->getIdentifier(), 'title' => 'Open blocker', 'state' => 'qualification'],
+      ['identifier' => $done->getIdentifier(), 'title' => 'Done blocker', 'state' => 'done'],
     ], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]))['blocked_by']);
     self::assertSame([], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $open->getIdentifier()]))['blocked_by']);
   }
