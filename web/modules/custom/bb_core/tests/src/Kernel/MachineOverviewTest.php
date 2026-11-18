@@ -254,6 +254,9 @@ final class MachineOverviewTest extends KernelTestBase {
     self::assertStringContainsString('North conductor', $html);
     self::assertStringNotContainsString('South conductor', $html);
     self::assertStringContainsString('Restart runs', $html);
+    // The row action opens its confirmation in the overlay, like the buttons.
+    self::assertStringContainsString('hx-target="#bakers-overlay"', $html);
+    self::assertStringContainsString('_wrapper_format=island_dialog', $html);
 
     $admin = $this->createAccount('admin', ['administer bakers']);
     $this->container->get('account_switcher')->switchTo($admin);

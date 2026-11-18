@@ -10,12 +10,14 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\bb_core\Access\BbMachineOwnerAccessCheck;
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * The Restart runs confirmation on a machine or conductor, and who gets it.
@@ -87,6 +89,20 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
   }
 
   /**
+   * Keep runs is the dialog's close target: the page it was opened over.
+   */
+  public function testKeepRunsReturnsToTheScreenTheDialogOpenedOver(): void {
+    $request = Request::create('/restart', 'GET', ['destination' => '/bakers/machine/7']);
+    $request->setSession($this->container->get('request_stack')->getCurrentRequest()->getSession());
+    $this->container->get('request_stack')->push($request);
+    foreach ([$this->conductor, $this->machine] as $target) {
+      $keep = $this->form($target)['actions']['keep']['#props'];
+      self::assertSame('/bakers/machine/7', $keep['href']);
+      self::assertTrue($keep['attributes']->hasAttribute('data-dialog-cancel'), 'island.dialog.js closes on Esc only through [data-dialog-cancel].');
+    }
+  }
+
+  /**
    * An offline target says the cleanup and the fresh runs follow its start.
    */
   public function testOfflineTargetSaysCleanupFollowsNextStart(): void {
@@ -144,6 +160,17 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
     self::assertSame([], $this->buttonLabels($this->form($this->conductor)));
     $this->confirm($this->conductor, (string) $run->id());
     self::assertSame('running', $this->reloadRun($run)->getRunState());
+  }
+
+  /**
+   * A conductor whose machine no longer loads is no one's to restart.
+   */
+  public function testConductorOfAnUnloadableMachineIsNotOwned(): void {
+    $this->conductor->set('machine', 999999)->save();
+    $conductor = $this->fresh($this->conductor);
+    assert($conductor instanceof BbConductorInterface);
+    self::assertNull($conductor->get('machine')->entity);
+    self::assertFalse(TicketInterventions::mayRestartRuns($conductor, $this->owner));
   }
 
   /**

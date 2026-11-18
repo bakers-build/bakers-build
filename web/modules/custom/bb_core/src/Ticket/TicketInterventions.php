@@ -348,6 +348,10 @@ final class TicketInterventions {
    */
   public static function mayRestartRuns(BbMachineInterface|BbConductorInterface $target, AccountInterface $account): bool {
     $machine = $target instanceof BbMachineInterface ? $target : $target->get('machine')->entity;
+    // A referenced machine that no longer loads is no one's.
+    if (!$machine instanceof BbMachineInterface && $target->get('machine')->target_id !== NULL) {
+      return FALSE;
+    }
     $owner = $machine instanceof BbMachineInterface ? $machine->get('owner_user_id')->target_id : $target->get('owner_user_id')->target_id;
     return $account->isAuthenticated() && (int) $owner === (int) $account->id();
   }

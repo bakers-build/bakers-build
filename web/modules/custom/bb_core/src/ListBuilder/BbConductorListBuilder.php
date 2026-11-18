@@ -66,7 +66,9 @@ final class BbConductorListBuilder extends EntityListBuilder {
       $operations['restart'] = [
         'title' => $this->t('Restart runs'),
         'weight' => 50,
-        'url' => BbRestartRunsForm::confirmationUrl($entity, FALSE),
+        // The href is the page; htmx opens the dialog over this listing.
+        'url' => BbRestartRunsForm::confirmationUrl($entity, FALSE, $this->getRedirectDestination()->get())
+          ->setOption('attributes', BbRestartRunsForm::dialogAttributes($entity, $this->getRedirectDestination()->get())->toArray()),
       ];
     }
     return $operations;

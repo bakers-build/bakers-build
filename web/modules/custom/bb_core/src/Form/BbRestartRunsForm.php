@@ -12,6 +12,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Access\BbMachineOwnerAccessCheck;
@@ -57,12 +58,22 @@ final class BbRestartRunsForm extends EntityForm {
   /**
    * The confirmation, as a dialog or as a plain page.
    */
-  public static function confirmationUrl(BbMachineInterface|BbConductorInterface $target, bool $dialog): Url {
-    $query = ['destination' => $target->toUrl()->toString()];
+  public static function confirmationUrl(BbMachineInterface|BbConductorInterface $target, bool $dialog, ?string $destination = NULL): Url {
+    $query = ['destination' => $destination ?? $target->toUrl()->toString()];
     if ($dialog) {
       $query['_wrapper_format'] = 'island_dialog';
     }
     return Url::fromRoute('entity.' . $target->getEntityTypeId() . '.restart_form', $target->toUrl()->getRouteParameters(), ['query' => $query]);
+  }
+
+  /**
+   * The htmx attributes that open the confirmation in the overlay.
+   */
+  public static function dialogAttributes(BbMachineInterface|BbConductorInterface $target, ?string $destination = NULL): Attribute {
+    // The create-trigger contract: the overlay is the target, and only the
+    // answer's `dialog` element is swapped in.
+    return (new Htmx())->get(self::confirmationUrl($target, TRUE, $destination))
+      ->target('#bakers-overlay')->select('dialog')->swap('innerHTML')->getAttributes();
   }
 
   /**
@@ -72,10 +83,7 @@ final class BbRestartRunsForm extends EntityForm {
    *   The button render array.
    */
   public static function button(BbMachineInterface|BbConductorInterface $target): array {
-    // The create-trigger contract: the overlay is the target, and only the
-    // answer's `dialog` element is swapped in.
-    $attributes = (new Htmx())->get(self::confirmationUrl($target, TRUE))
-      ->target('#bakers-overlay')->select('dialog')->swap('innerHTML')->getAttributes();
+    $attributes = self::dialogAttributes($target);
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:button',
@@ -126,8 +134,10 @@ final class BbRestartRunsForm extends EntityForm {
       '#component' => 'bb_theme:button',
       '#props' => [
         'label' => (string) $this->t('Keep runs'),
-        'href' => $target->toUrl()->toString(),
+        'href' => ($this->getRequest()->query->has('destination') ? $this->returnUrl() : $target->toUrl())->toString(),
         'variant' => 'ghost',
+        // island.dialog.js closes on Esc and the close control through this.
+        'attributes' => new Attribute(['data-dialog-cancel' => 'data-dialog-cancel']),
       ],
       '#weight' => 0,
     ];

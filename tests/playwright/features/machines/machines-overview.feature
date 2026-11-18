@@ -66,6 +66,10 @@ Feature: User Machines listing and View
     Then a dialog asks "e2e default host"
     When I choose "Keep runs" in the dialog
     Then the machine Overview lists the conductor "srv01-bakers" with "Restart runs"
+    When I open "Restart runs" on the conductor "srv01-bakers"
+    Then a dialog asks "srv01-bakers"
+    When I press Escape in the Restart runs dialog
+    Then the machine Overview lists the conductor "srv01-bakers" with "Restart runs"
 
   Scenario Outline: Restart runs is the owner's alone
     Given I am logged in as the account "<account>"

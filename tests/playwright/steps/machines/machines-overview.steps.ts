@@ -189,6 +189,17 @@ When('I open {string} on the machine', async ({ page }, name: string) => {
   await page.locator('[data-component-id="bb_theme:inspector"]').getByRole('link', { name, exact: true }).click();
 });
 
+When('I open {string} on the conductor {string}', async ({ page }, name: string, label: string) => {
+  const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
+  await row.locator('[data-action-menu] summary').click();
+  await row.getByRole('menuitem', { name, exact: true }).click();
+});
+
+When('I press Escape in the Restart runs dialog', async ({ page }) => {
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#bakers-overlay dialog')).toBeHidden();
+});
+
 let restartStatus = 0;
 
 When('I request Restart runs on the machine {string}', async ({ page }, name: string) => {
