@@ -30,14 +30,14 @@ describe('self-restart watcher', () => {
 
   function watch(
     paths: { files: string[]; dirs: string[] },
-    trigger: (path: string) => Promise<void> = async () => {},
-  ): string[] {
-    const fired: string[] = [];
+    trigger: (paths: string[]) => Promise<void> = async () => {},
+  ): string[][] {
+    const fired: string[][] = [];
     const watcher = watchForRestart(
       paths,
-      async (path) => {
-        fired.push(path);
-        await trigger(path);
+      async (changed) => {
+        fired.push(changed);
+        await trigger(changed);
       },
       DEBOUNCE,
     );
@@ -72,12 +72,12 @@ else { console.log('before', process.pid);
 
     writeFileSync(file, 'export default { a: 1 };');
     await settle();
-    expect(fired).toEqual([file]);
+    expect(fired).toEqual([[file]]);
 
     writeFileSync(join(dir, '.project.config.js.swp'), 'x');
     renameSync(join(dir, '.project.config.js.swp'), file);
     await settle();
-    expect(fired).toEqual([file, file]);
+    expect(fired).toEqual([[file], [file]]);
   });
 
   it('ignores an unrelated file next to a watched one', async () => {
@@ -96,7 +96,7 @@ else { console.log('before', process.pid);
 
     writeFileSync(local, 'export default {};');
     await settle();
-    expect(fired).toEqual([local]);
+    expect(fired).toEqual([[local]]);
   });
 
   it('fires for a write deep inside a watched addon directory', async () => {
@@ -106,7 +106,7 @@ else { console.log('before', process.pid);
 
     writeFileSync(join(dist, 'nested', 'index.js'), 'export {};');
     await settle();
-    expect(fired).toEqual([join(dist, 'nested', 'index.js')]);
+    expect(fired).toEqual([[join(dist, 'nested', 'index.js')]]);
   });
 
   it('coalesces several changes in quick succession into one trigger', async () => {
@@ -120,6 +120,24 @@ else { console.log('before', process.pid);
     }
     await settle();
     expect(fired).toHaveLength(1);
+  });
+
+  it('reports every watched file changed within one window in one trigger', async () => {
+    const config = join(dir, 'project.config.js');
+    const secrets = join(dir, '.bakers.env');
+    writeFileSync(config, '');
+    const fired = watch({ files: [config, secrets], dirs: [] });
+
+    writeFileSync(config, '// 1');
+    writeFileSync(secrets, 'A=1');
+    writeFileSync(config, '// 2');
+    await settle();
+    expect(fired).toHaveLength(1);
+    expect([...(fired[0] ?? [])].sort()).toEqual([secrets, config].sort());
+
+    writeFileSync(secrets, 'A=2');
+    await settle();
+    expect(fired[1]).toEqual([secrets]);
   });
 
   it('never runs two triggers at once; a change during one re-checks after it', async () => {

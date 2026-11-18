@@ -17,6 +17,8 @@ skill's decision matrix groups its rows into **blocks**; these rules run them.
 
 ## One block per turn
 
+- After *Derive first*, count the blocks still to ask as m; m stays fixed for the run and a
+  block skipped later still counts as done. Every block question starts `Step n of m — <block>`.
 - Ask **one block per turn** and wait. The question previews every value the block writes, per
   target file (the row's **Writes**), one line each: `key: value — source`, the source being the evidence command or
   file, `recommended` or `your answer`. An open value reads `key: ? — asked`. Name each value:
@@ -32,6 +34,11 @@ skill's decision matrix groups its rows into **blocks**; these rules run them.
 - Unattended, keep unknown choices unresolved and report them.
 - A decision belongs to the scope that stores it: machine blocks to `bb-init`, project blocks to
   `bb-init-project`. Hand a row of the other scope to its skill, then resume.
+
+## Show what was written
+
+After the last write, show each written configuration file: its path, then its content in a
+code block, with every secret and every `*_env` value replaced by `***`.
 
 ## Read syntax in full
 

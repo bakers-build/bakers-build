@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\ProtectedLabelPermissions;
 use Drupal\Component\Serialization\Yaml;
 use Drupal\KernelTests\KernelTestBase;
 use PHPUnit\Framework\Attributes\Group;
@@ -227,6 +228,22 @@ final class RankPermissionContractTest extends KernelTestBase {
   }
 
   /**
+   * Only the workspace contributor rank grants own-project update.
+   *
+   * Lead ranks already edit through `edit bb_project`; the contributor edits
+   * just the projects it created.
+   */
+  public function testOnlyContributorGrantsOwnProjectUpdate(): void {
+    $holders = [];
+    foreach ($this->shippedRanks() as $id => $rank) {
+      if (in_array('update own bb_project', $rank['permissions'] ?? [], TRUE)) {
+        $holders[] = $id;
+      }
+    }
+    self::assertSame(['bb_workspace-bb_workspace-contributor'], $holders);
+  }
+
+  /**
    * The retired import permission is granted by no shipped rank.
    */
   public function testImportPermissionIsNotGranted(): void {
@@ -285,6 +302,14 @@ final class RankPermissionContractTest extends KernelTestBase {
     // report none. The shipped figure files are the same source it reads.
     foreach ($this->shippedFigureIds() as $figure_id) {
       $names[] = 'view bakers figure ' . $figure_id;
+    }
+    // The protected label permissions are generated per namespace by
+    // ProtectedLabelPermissions::permissions(), from the shipped settings.
+    foreach ([$this->installDir(), $this->syncDir()] as $directory) {
+      foreach ($this->decode($directory . '/bb_core.settings.yml')['protected_label_namespaces'] ?? [] as $namespace) {
+        $names[] = ProtectedLabelPermissions::any($namespace);
+        $names[] = ProtectedLabelPermissions::own($namespace);
+      }
     }
 
     return array_values(array_unique($names));

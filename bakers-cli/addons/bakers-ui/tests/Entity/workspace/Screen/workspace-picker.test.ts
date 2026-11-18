@@ -24,7 +24,6 @@ function makeContext(overrides: Partial<ScreenContext> = {}): ScreenContext {
       workspace: 'keytec',
       configPath: '/tmp/bakers.config.js',
       bakersDir: '/work/.bakers',
-      selectWorkspace: vi.fn(async () => {}),
       restartProcess: vi.fn(),
     },
     requestDraw: vi.fn(),
@@ -57,7 +56,7 @@ describe('WorkspacePickerScreen', () => {
     expect(text).toMatch(/●\s*keytec/);
   });
 
-  it('choosing a DIFFERENT workspace writes the selection then restarts', async () => {
+  it('choosing a DIFFERENT workspace restarts on it without writing a selection', async () => {
     const context = makeContext();
     const screen = new WorkspacePickerScreen();
     screen.enter(context);
@@ -66,8 +65,9 @@ describe('WorkspacePickerScreen', () => {
     screen.select(1, context);
     screen.handleInput('enter', context);
     await tick();
-    expect(context.services?.selectWorkspace).toHaveBeenCalledWith('acme');
-    expect(context.services?.restartProcess).toHaveBeenCalledTimes(1);
+    expect(context.services?.restartProcess).toHaveBeenCalledExactlyOnceWith(
+      'acme',
+    );
   });
 
   it('choosing the ALREADY-active workspace is a no-op that says so', async () => {
@@ -78,7 +78,6 @@ describe('WorkspacePickerScreen', () => {
     screen.select(0, context); // ws-1, already active
     screen.handleInput('enter', context);
     await tick();
-    expect(context.services?.selectWorkspace).not.toHaveBeenCalled();
     expect(context.services?.restartProcess).not.toHaveBeenCalled();
     expect(screen.present(context).status ?? '').toMatch(/already/i);
   });

@@ -306,3 +306,21 @@ it('the executor opens a clone another workspace addon made', async () => {
 
   expect(herdr.open).toEqual([{ id: 'ws-new', label: BRANCH }]);
 });
+
+it('refuses a run whose runtime clone mode differs from the workspace', async () => {
+  const herdr = fakeHerdr();
+  const isolating = new HerdrWorkspace({
+    root,
+    clone: true,
+    execHerdr: herdr.exec,
+  });
+  const host = new HerdrWorkspace({ root, execHerdr: herdr.exec });
+
+  await expect(
+    isolating.ensure('BB-1', BRANCH, 'origin/next', { clone: false }),
+  ).rejects.toThrow(/herdr workspace.*mix isolating and host runtimes/);
+  await expect(
+    host.ensure('BB-1', BRANCH, 'origin/next', { clone: true }),
+  ).rejects.toThrow(/herdr workspace.*mix isolating and host runtimes/);
+  expect(herdr.calls).toEqual([]);
+});

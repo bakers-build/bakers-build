@@ -88,6 +88,25 @@ it('creates a run clone instead of a linked worktree and refreshes it on every e
   expect(second.clone?.gitDir).toBe(first.clone?.gitDir);
 });
 
+it('lets the call override the clone mode set at build time', async () => {
+  const cloned = await new GitWorkspace({ root }).ensure(
+    'GL-1',
+    'feat/gl-1',
+    undefined,
+    { clone: true },
+  );
+  expect(cloned.clone?.branch).toBe('feat/gl-1');
+
+  const linked = await new GitWorkspace({ root, clone: true }).ensure(
+    'GL-2',
+    'feat/gl-2',
+    undefined,
+    { clone: false },
+  );
+  expect(linked.clone).toBeUndefined();
+  expect(git(root, 'worktree', 'list', '--porcelain')).toContain('feat/gl-2');
+});
+
 it('keeps the ticket branch where it is when it already exists', async () => {
   git(root, 'checkout', '-qb', 'feat/gl-9');
   writeFileSync(join(root, 'work'), 'done');
@@ -111,6 +130,23 @@ it('borrows the parent objects with the shared option', async () => {
     'feat/gl-9',
   );
   expect(ws.clone?.shared).toBe(true);
+});
+
+it('lets the call override the shared option set at build time', async () => {
+  const on = await new GitWorkspace({ root, clone: true }).ensure(
+    'GL-1',
+    'feat/gl-1',
+    undefined,
+    { shared: true },
+  );
+  expect(on.clone?.shared).toBe(true);
+
+  const off = await new GitWorkspace({
+    root,
+    clone: true,
+    shared: true,
+  }).ensure('GL-2', 'feat/gl-2', undefined, { shared: false });
+  expect(off.clone?.shared).toBeFalsy();
 });
 
 it('refreshes a tree the site hardened read-only', async () => {
@@ -141,6 +177,54 @@ it('removes the clone directory and its Git directory', async () => {
   expect(existsSync(ws.clone?.gitDir as string)).toBe(false);
   expect(loadRunClone(ws.path)).toBeUndefined();
   expect(await workspace.remove('feat/gl-9', ws.path)).toBe('already_absent');
+});
+
+it('turns a run clone into a linked worktree when the next run does not isolate', async () => {
+  const workspace = new GitWorkspace({ root });
+  const cloned = await workspace.ensure('GL-9', 'feat/gl-9', undefined, {
+    clone: true,
+  });
+  const gitDir = cloned.clone?.gitDir as string;
+  const inClone = (...args: string[]) =>
+    git(
+      cloned.path,
+      `--git-dir=${gitDir}`,
+      `--work-tree=${cloned.path}`,
+      ...args,
+    );
+  writeFileSync(join(cloned.path, 'work'), 'done');
+  inClone('add', 'work');
+  inClone(...ident, 'commit', '-qm', 'run work');
+  const tip = inClone('rev-parse', 'HEAD');
+
+  const linked = await workspace.ensure('GL-9', 'feat/gl-9', undefined, {
+    clone: false,
+  });
+
+  expect(linked.path).toBe(cloned.path);
+  expect(linked.clone).toBeUndefined();
+  expect(loadRunClone(linked.path)).toBeUndefined();
+  expect(existsSync(gitDir)).toBe(false);
+  expect(git(root, 'rev-parse', 'feat/gl-9')).toBe(tip);
+  expect(git(linked.path, 'rev-parse', 'HEAD')).toBe(tip);
+  expect(git(linked.path, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe(
+    'feat/gl-9',
+  );
+  expect(readFileSync(join(linked.path, 'work'), 'utf8')).toBe('done');
+});
+
+it('refuses to turn a run clone with uncommitted work into a worktree', async () => {
+  const workspace = new GitWorkspace({ root });
+  const cloned = await workspace.ensure('GL-9', 'feat/gl-9', undefined, {
+    clone: true,
+  });
+  writeFileSync(join(cloned.path, 'pending'), 'unsaved');
+
+  await expect(
+    workspace.ensure('GL-9', 'feat/gl-9', undefined, { clone: false }),
+  ).rejects.toThrow(/uncommitted work/);
+  expect(readFileSync(join(cloned.path, 'pending'), 'utf8')).toBe('unsaved');
+  expect(loadRunClone(cloned.path)).toBeDefined();
 });
 
 it('clones only under an isolating runtime', async () => {

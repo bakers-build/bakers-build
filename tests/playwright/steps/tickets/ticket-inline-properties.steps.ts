@@ -374,11 +374,13 @@ Then('the inline {string} panel is closed', async ({ page }, label: string) => {
 
 Then('the inline {string} chips are {string}', async ({ page }, label: string, chips: string) => {
     const control = picker(page, label);
-    const expected = chips === '' ? [] : chips.split(', ').map(name => name.trim());
+    // Chips follow the unsorted candidate list, not pick order, so they compare as a set.
+    const expected = chips === '' ? [] : chips.split(', ').map(name => name.trim()).sort();
     await expect.poll(async () =>
         (await control.locator('[data-option-picker-chip]').allTextContents())
             .map(text => text.trim())
-            .filter(Boolean),
+            .filter(Boolean)
+            .sort(),
     ).toEqual(expected);
 });
 
@@ -429,6 +431,10 @@ Then('the inline {string} selection is empty', async ({ page }, label: string) =
 Then('the inline {string} selection includes {string}', async ({ page }, label: string, value: string) => {
     await expect(picker(page, label).locator('[data-option-picker-trigger]')).toHaveAccessibleName(new RegExp(value));
     if (label === 'Labels') expect((await values(page)).labels).toEqual(expect.arrayContaining(snapshots.get(page)!.values.labels));
+});
+
+Then('the inline {string} selection does not include {string}', async ({ page }, label: string, value: string) => {
+    await expect(picker(page, label).locator('[data-option-picker-trigger]')).not.toHaveAccessibleName(new RegExp(value));
 });
 
 Then('dismissing the current priority sends no save and leaves it unchanged', async ({ page }) => {

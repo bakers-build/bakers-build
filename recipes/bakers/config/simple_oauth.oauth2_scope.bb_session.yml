@@ -40,10 +40,10 @@
 #
 # The children are one file per permission, `simple_oauth.oauth2_scope.
 # bb_session_<slug>.yml`, and Oauth2ScopeProvider::getPermissions() returns
-# their union for this umbrella. There are 29 of them, and the set is pinned
+# their union for this umbrella. There are 33 of them, and the set is pinned
 # EXACTLY — not as a lower bound — by SiteWideRoleResidueTest, because a child
 # quietly deleted is a hard 403 on a shipped surface and a child quietly added
-# widens what every machine identity may do. Both install paths ship all 29
+# widens what every machine identity may do. Both install paths ship all 33
 # (WORKFLOW.md), and ConfigCopyDriftTest compares them structurally rather than by
 # permission name alone: a child that drifts in `parent` still names the right
 # permission and grants nothing, because getPermissions() reaches a child through

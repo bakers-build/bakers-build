@@ -32,7 +32,7 @@ When the cockpit talks to a server you did not expect, run `bakers ui --print-co
 
 ## Which workspace
 
-Inside a checkout the workspace comes from `project.workspace` in the project config, otherwise from the connection; `--workspace` overrides both for one run. `W` opens the workspace picker, and `Enter` writes the choice to `project.workspace` and restarts the cockpit.
+Inside a checkout the workspace comes from `project.workspace` in the project config, otherwise from the connection; `--workspace` overrides both for one run. `W` opens the workspace picker, and `Enter` restarts the cockpit with `--workspace` set to the choice. The switch lasts for that run and writes no configuration file.
 
 ## Navigation - five scopes
 

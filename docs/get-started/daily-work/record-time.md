@@ -27,6 +27,10 @@
 | Team → **Time** | The team's recorded hours; team leads only |
 | Project → **Time** | Your hours on the project, plus your team's if you lead it |
 
+## Your schedule
+
+Under Account → **Schedule** you enter the hours you usually work on each weekday; `0:00` means a day off. Your agent uses them as a planning total when it prepares your time proposals (see [time evidence](/addons/track)). The optional proposal-day cap is the most time your agent should propose for one day. Nothing is booked, capped or enforced from these values, and only you can open the page.
+
 ## Who sees what
 
 | Who | Sees your entries | Edits them |
@@ -35,7 +39,7 @@
 | A lead of your team | Recorded entries in that team's workspace | No |
 | Anyone else | No | No |
 
-Historical approved entries are read-only. Managing billing accounts gives no access to other people's hours. Your weekly schedule under Account → **Schedule** is private planning input for your agent.
+Historical approved entries are read-only. Managing billing accounts gives no access to other people's hours.
 
 **Done when:** your saved entries match your work.
 
