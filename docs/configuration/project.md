@@ -45,17 +45,17 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `poll_interval_ms` | Positive integer, default `5000`. |
 | `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |
 | `restart_on_change` | Boolean, default `true`: a running conductor restarts itself when a config file, the [secrets file](/configuration/machine#secrets-file) or the installed CLI version changes. Needs Node.js 22.15 or later. |
-| `capture_logs` | Boolean, default `true`. Transcripts upload only where the server's [run-log storage policy](/self-hosting/server#run-log-storage) allows it; `false` keeps this conductor's transcripts local even then. Metrics are unaffected. |
+| `capture_logs` | Boolean, default `true`. Transcripts upload only where the server's [run-log storage policy](/self-hosting/server#run-log-storage) allows it; `false` keeps this conductor's transcripts local; metrics are unaffected. |
 | `hooks` | Optional command object. [Lifecycle hooks](/configuration/project/hooks) owns its keys, timing, environment, failure behavior and on-demand `provision_up` profiles. |
 | `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume`, `hooks.provision_up`, `hooks.provision_exec` | The lifecycle hooks and the on-demand `provision_up` and `provision_exec` commands; see [Lifecycle hooks](/configuration/project/hooks). |
 | `marketplaces` | Optional array of agent plugin marketplaces every run of this project installs: `{ url, ref, plugins }`. See [Agent plugins](#agent-plugins). |
 | `marketplaces[].url`, `marketplaces[].ref`, `marketplaces[].plugins` | The marketplace's Git URL, the ref to check out and the plugins to install from it. |
-| `runtime.enabled`, `runtime.default` | Restrict only: allowed machine runtime aliases, and the default. A project `select` is refused. See [Slot catalogs](/configuration/slot-catalogs). |
-| `runtime`, `runtime.read_only` | Worktree-relative paths an isolated run sees read-only and cannot change in a commit, for example `['.ddev', '.github']`. `.bakers` is always protected. A listed path must exist, or dispatch fails. Project config only. See [Protected paths](/provision/security/shared-settings#host-executed-paths). |
+| `runtime.enabled`, `runtime.default` | Restrict only: allowed machine runtime aliases and the default; a project `select` is refused ([Slot catalogs](/configuration/slot-catalogs)). |
+| `runtime`, `runtime.read_only` | Worktree-relative paths an isolated run sees read-only and cannot change in a commit, for example `['.ddev', '.github']`. `.bakers` is always protected. A listed path must exist, or dispatch fails; project config only. See [Protected paths](/provision/security/shared-settings#host-executed-paths). |
 | `permissions` | Run permissions for every agent of every machine that runs this project: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
 | `permissions.mode` | `sandbox`, `system` or `yolo`. |
 | `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
-| `select_agent` | Deprecated, warns at load. Function `(candidates, ticket) => candidate` replacing the agent choice; use the machine's `agents.select`. |
+| `select_agent` | Deprecated, warns at load; use the machine's `agents.select`. |
 
 Unknown keys fail.
 
