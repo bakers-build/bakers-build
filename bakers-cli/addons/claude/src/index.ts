@@ -213,7 +213,11 @@ const inConfigDir = (dir: string): NodeJS.ProcessEnv => ({
 });
 
 /** A Git URL without a trailing `/` or `.git`, so both spellings match. */
-const sameRepo = (url: string) => url.replace(/\/+$/, '').replace(/\.git$/, '');
+const sameRepo = (url: string) =>
+  url
+    .replace(/^git@([^:]+):/, 'https://$1/')
+    .replace(/\/+$/, '')
+    .replace(/\.git$/, '');
 
 interface ListedMarketplace {
   name: string;
@@ -364,32 +368,43 @@ export class ClaudeAgent implements BbAgent {
       }
     });
     // Every use: skip the first-run onboarding and approve the current API key;
-    // the CLI wrote the rest of this file.
-    const state = join(home, '.claude.json');
-    const seeded = existsSync(state)
-      ? JSON.parse(readFileSync(state, 'utf8'))
-      : {};
-    const apiKey = secrets.ANTHROPIC_API_KEY;
-    writeFileSync(
-      state,
-      `${JSON.stringify(
-        {
-          ...seeded,
-          hasCompletedOnboarding: true,
-          ...(apiKey
-            ? {
-                customApiKeyResponses: {
-                  approved: [apiKey.slice(-20)],
-                  rejected: [],
-                },
-              }
-            : {}),
-        },
-        null,
-        2,
-      )}\n`,
-      { mode: 0o600 },
-    );
+    // the CLI wrote the rest of this file. Written only on a change, under the
+    // home lock, so parallel run starts never interleave.
+    const release = await lock(home);
+    try {
+      const state = join(home, '.claude.json');
+      const seeded = existsSync(state)
+        ? JSON.parse(readFileSync(state, 'utf8'))
+        : {};
+      const approved = secrets.ANTHROPIC_API_KEY?.slice(-20);
+      if (
+        seeded.hasCompletedOnboarding !== true ||
+        (approved &&
+          !seeded.customApiKeyResponses?.approved?.includes(approved))
+      )
+        writeFileSync(
+          state,
+          `${JSON.stringify(
+            {
+              ...seeded,
+              hasCompletedOnboarding: true,
+              ...(approved
+                ? {
+                    customApiKeyResponses: {
+                      approved: [approved],
+                      rejected: [],
+                    },
+                  }
+                : {}),
+            },
+            null,
+            2,
+          )}\n`,
+          { mode: 0o600 },
+        );
+    } finally {
+      release();
+    }
     // Every use: a token refresh inside the home replaced the link with a copy.
     if (loginFile) shareLogin(credentials, join(home, '.credentials.json'));
     return { env: { CLAUDE_CONFIG_DIR: home }, args: [], home: outcome };
@@ -492,6 +507,8 @@ export class ClaudeAgent implements BbAgent {
     // A new worktree path would stop the run at Claude Code's trust dialog.
     // With plugins on, the agent home already holds the installed plugins.
     const parts = [
+      // The plugins went into ~/.claude; a CLAUDE_CONFIG_DIR inherited from the conductor would hide them.
+      ...(this.hostHome ? ['env', '-u', 'CLAUDE_CONFIG_DIR'] : []),
       ...(this.pluginsOn ? [] : ['CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1']),
       ...(workspacePath
         ? ['node', shellQuote(TRUST_WRAPPER), shellQuote(workspacePath)]

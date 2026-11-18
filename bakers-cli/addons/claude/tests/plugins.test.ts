@@ -9,6 +9,8 @@ import {
   readlinkSync,
   renameSync,
   rmSync,
+  statSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -189,6 +191,19 @@ describe('ClaudeAgent.installPlugins', () => {
     expect(existsSync(join(home, '.credentials.json'))).toBe(false);
   });
 
+  it('leaves the home state file alone when onboarding and the API key are already recorded', async () => {
+    const agent = await agentFor();
+    const home = join(root, 'home');
+    const key = 'sk-ant-0123456789-abcdefghijklmnopqrst';
+    await agent.installPlugins([probe], home, { ANTHROPIC_API_KEY: key });
+    const state = join(home, '.claude.json');
+    const past = new Date('2020-01-01T00:00:00Z');
+    utimesSync(state, past, past);
+    await agent.installPlugins([probe], home, { ANTHROPIC_API_KEY: key });
+    expect(statSync(state).mtime).toEqual(past);
+    expect(existsSync(`${home}.lock`)).toBe(false);
+  });
+
   it('fails, naming the plugin and the harness output, when an install fails', async () => {
     stubClaude('plugin install');
     const agent = await agentFor();
@@ -262,9 +277,10 @@ describe('ClaudeAgent home selection', () => {
     const agent = new ClaudeAgent({ permissions }, user);
     agent.useMarketplaces([probe]);
     expect(agent.configDir).toBe(join(user, '.claude'));
-    // Project-declared plugins still install before the first turn.
+    // The conductor's own CLAUDE_CONFIG_DIR never reaches the run; project-declared
+    // plugins still install before the first turn.
     expect(agent.launchCommand('go')).toMatch(
-      /^CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 /,
+      /^env -u CLAUDE_CONFIG_DIR CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 /,
     );
   });
 
@@ -286,14 +302,19 @@ describe('ClaudeAgent home selection', () => {
 
   it.each([
     ['sandbox', false],
+    ['custom', false],
     ['system', true],
   ] as const)('%s mode (isolating runtime: %s) keeps the agent home', async (permissions, isolates) => {
-    const plugin = claudeAgent({ permissions });
+    const plugin = claudeAgent({
+      permissions,
+      ...(permissions === 'custom' ? { config: {} } : {}),
+    });
     const agent = (await plugin.createAgent({
       marketplaces: [probe],
       runtime: { isolates },
     } as never)) as ClaudeAgent;
     inAgentHome(agent);
+    expect(agent.launchCommand('go')).not.toContain('env -u');
   });
 
   it("an explicit home: 'host' where only the agent home works fails, naming the option", () => {
@@ -388,6 +409,30 @@ describe('ClaudeAgent.installPlugins in the host ~/.claude', () => {
     expect(log()).toHaveLength(2);
   });
 
+  it.each([
+    [
+      'a github repo',
+      { source: 'github', repo: 'o/r' },
+      'https://github.com/o/r.git',
+    ],
+    [
+      'an ssh url',
+      { source: 'git', url: 'git@github.com:o/r.git' },
+      'https://github.com/o/r',
+    ],
+  ])('matches a marketplace listed as %s to the declared https url', async (_, source, url) => {
+    listed(
+      [{ name: 'probe-market', ref: 'vA', ...source }],
+      [{ id: 'probe-plugin@probe-market', scope: 'user', enabled: true }],
+    );
+    const launch = await hostAgent().installPlugins(
+      [{ ...probe, url }],
+      join(root, 'home'),
+    );
+    expect(launch.warnings).toBeUndefined();
+    expect(log()).toHaveLength(2);
+  });
+
   it('installs a missing plugin from a marketplace already added without a ref', async () => {
     listed(
       [
@@ -415,9 +460,11 @@ describe('plugins: false', () => {
     'system',
     'yolo',
     'sandbox',
+    'custom',
   ] as const)('skips every plugin install in %s mode', async (permissions) => {
     const agent = await claudeAgent({
       permissions,
+      ...(permissions === 'custom' ? { config: {} } : {}),
       plugins: false,
     }).createAgent({ marketplaces: [probe] } as never);
     expect(agent.pluginsDisabled).toBe(true);
