@@ -33,8 +33,52 @@ final class IslandResponder {
    * A routed dialog may dispatch events without being a placed island.
    */
   public function toResponse(IslandResponse $response, ?IslandInterface $triggering, IslandContextProviderInterface $host): CacheableResponse {
-    $fragments = [];
     $access = new CacheableMetadata();
+    $http = $this->toFragmentResponse($this->fragments($response, $triggering, $host, $access));
+    $http->addCacheableDependency($access);
+    $this->applyHtmxHeaders($response, $http);
+
+    return $http;
+  }
+
+  /**
+   * Answers a routed form's submit: the form itself, its events out of band.
+   *
+   * The form names what happened, never who listens: the placements that
+   * subscribe to its events come along out of band, built in this request.
+   * The form replaces the wrapper it was rendered in, by that wrapper's id.
+   *
+   * @param \Drupal\island\IslandResponse $response
+   *   The events and headers of the submit.
+   * @param \Symfony\Component\HttpFoundation\Request $request
+   *   The submit request, on a page with an active profile.
+   * @param string $html_id
+   *   The id of the wrapper the form is rendered in.
+   * @param array $form
+   *   The form as it reads after the submit.
+   */
+  public function toFormResponse(IslandResponse $response, Request $request, string $html_id, array $form): CacheableResponse {
+    $host = $request->attributes->get('_island_profile_host');
+    if (!$host instanceof IslandProfileHost) {
+      throw new \LogicException('A form event response requires an active page profile.');
+    }
+    $access = new CacheableMetadata();
+    $fragments = ['form' => ['id' => $html_id, 'content' => $form, 'oob' => FALSE]]
+      + $this->fragments($response, NULL, $host, $access);
+    $http = $this->toFragmentResponse($fragments);
+    $http->addCacheableDependency($access);
+    $this->applyHtmxHeaders($response, $http);
+    return $http;
+  }
+
+  /**
+   * The fragments a mutation result names: itself, its peers, its events.
+   *
+   * @return array<string, array{id: string, content: array, oob: bool, boost: \Drupal\island\IslandBoost|null, events: string[]}>
+   *   Fragment descriptors, the triggering island first.
+   */
+  private function fragments(IslandResponse $response, ?IslandInterface $triggering, IslandContextProviderInterface $host, CacheableMetadata $access): array {
+    $fragments = [];
     $eligible = $this->eligiblePlacements($host, $access);
     $triggering_id = $triggering === NULL ? '' : $this->runtimeIslandId($triggering);
 
@@ -57,12 +101,7 @@ final class IslandResponder {
     foreach ($response->getEvents() as $event_name => $payload) {
       $fragments += $this->buildEventFragments($event_name, $payload, $triggering_id, $host, $eligible);
     }
-
-    $http = $this->toFragmentResponse($fragments);
-    $http->addCacheableDependency($access);
-    $this->applyHtmxHeaders($response, $http);
-
-    return $http;
+    return $fragments;
   }
 
   /**
