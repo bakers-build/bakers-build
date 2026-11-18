@@ -715,12 +715,18 @@ props:
                     id and version a save checks for staleness.
                   additionalProperties:
                     type: string
-                duration:
-                  type: boolean
-                  title: Duration input
+                time:
+                  type: string
+                  title: Time input
+                  enum:
+                    - duration
+                    - clock
                   description: >-
-                    An `input` cell that takes a duration: a bare whole hour
-                    becomes H:00 when the input loses focus.
+                    An `input` cell that takes a time typed as whole hours or
+                    H:MM. On blur a valid value is completed: `duration`
+                    rewrites a bare whole hour to H:00 (`8` → `8:00`); `clock`
+                    rewrites a bare hour or H:MM to zero-padded HH:MM (`8` →
+                    `08:00`, `8:30` → `08:30`). Other input stays as typed.
                 autofocus:
                   type: boolean
                   title: Focus this input

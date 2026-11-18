@@ -6,6 +6,7 @@ namespace Drupal\bb_track\Form;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\bb_core\Form\HtmxTransport;
+use Drupal\bb_track\WorkTimeRules;
 use Drupal\bb_track\WorkTimeSettings;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -65,9 +66,10 @@ final class WorkScheduleForm extends FormBase {
       'Sunday',
     ] as $index => $day) {
       $form['days'][$index] = [
-        '#type' => 'bb_duration',
-        '#minimum' => 0,
+        '#type' => 'bb_time',
+        '#maximum' => WorkTimeRules::MAX_ENTRY_SECONDS,
         '#format_error' => $format_error,
+        '#range_error' => $format_error,
         '#title' => $this->t('@day (H:MM)', [
           '@day' => $day,
         ]),
@@ -79,9 +81,10 @@ final class WorkScheduleForm extends FormBase {
     }
     $form['days']['#tree'] = TRUE;
     $form['cap'] = [
-      '#type' => 'bb_duration',
-      '#minimum' => 0,
+      '#type' => 'bb_time',
+      '#maximum' => WorkTimeRules::MAX_ENTRY_SECONDS,
       '#format_error' => $format_error,
+      '#range_error' => $format_error,
       '#title' => $this->t('Optional proposal-day cap (H:MM)'),
       '#description' => $this->t('Whole hours or H:MM. The most time your agent should propose for one day. Leave empty for no limit. bakers.build does not cap recorded time.'),
       '#default_value' => isset($schedule['cap']) ? WorklogFormLayout::formatDuration((int) $schedule['cap']) : '',

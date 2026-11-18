@@ -1,0 +1,22 @@
+{#
+/**
+ * @file
+ * Presenter override for the bb_time element: the form_input SDC, plus
+ * completing a valid value when the field loses focus. A duration's bare whole
+ * hour becomes H:00; a clock time becomes zero-padded HH:MM. The server does
+ * the same, so the field works without JS.
+ *
+ * @see web/themes/custom/bb_theme/templates/input.html.twig
+ */
+#}
+{% set blur = element['#mode'] == 'clock'
+  ? "const m = /^([01]?[0-9]|2[0-3])(?::([0-5][0-9]))?$/.exec($el.value.trim()); if (m) { $el.value = m[1].padStart(2, '0') + ':' + (m[2] || '00'); $el.dispatchEvent(new Event('input', { bubbles: true })) }"
+  : "const v = $el.value.trim(); if (/^[0-9]{1,6}$/.test(v)) { $el.value = v + ':00'; $el.dispatchEvent(new Event('input', { bubbles: true })) }" %}
+{{ include('bb_theme:form_input', {
+  attributes: attributes
+    .setAttribute('x-data', '{}')
+    .setAttribute('x-on:blur', blur),
+  disabled: attributes.offsetExists('disabled'),
+  readonly: attributes.offsetExists('readonly'),
+  compact: element['#compact']|default(false),
+}, with_context = false) }}{{ children }}

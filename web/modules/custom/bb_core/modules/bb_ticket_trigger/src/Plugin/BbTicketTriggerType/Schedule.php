@@ -169,16 +169,15 @@ final class Schedule extends TicketTriggerTypeBase {
       '#default_value' => $config['day'] ?? '1',
       '#description' => $this->t('Days 29–31 fall on the last day of shorter months.'),
     ];
-    // The browser's own time picker (`HH:MM`) in a plain form element, so
-    // label and description render like the other fields; core's datetime
-    // element would bring its own wrapper. The zone that matters is the one
-    // chosen below, not the viewer's.
+    // Typed text, not the browser's time picker: it takes a bare hour (`8`)
+    // and saves it as `08:00`. The zone that matters is the one chosen below,
+    // not the viewer's.
     $form['time'] = [
-      '#type' => 'textfield',
+      '#type' => 'bb_time',
+      '#mode' => 'clock',
       '#title' => $this->t('Time'),
-      '#description' => $this->t('In the time zone below.'),
+      '#description' => $this->t('Whole hours or HH:MM, for example 8 or 14:30. In the time zone below.'),
       '#default_value' => (string) $config['time'],
-      '#attributes' => ['type' => 'time', 'step' => 60],
       '#size' => 5,
       '#required' => TRUE,
     ];

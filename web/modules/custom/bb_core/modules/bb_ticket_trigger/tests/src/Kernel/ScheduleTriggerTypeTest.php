@@ -135,16 +135,16 @@ final class ScheduleTriggerTypeTest extends KernelTestBase {
   }
 
   /**
-   * The time is a native time input in a plain form element, stored as HH:MM.
+   * The time is typed as a clock time, stored as HH:MM.
    *
-   * A textfield, not core's datetime element, so the label and description
-   * render like every other field.
+   * Text, not the browser's time picker, so a bare hour (`8`) is accepted.
    */
-  public function testTimeIsPickedWithTheBrowsersTimeInput(): void {
+  public function testTimeIsTypedAsClockTime(): void {
     $plugin = $this->schedule([]);
     $form = $plugin->buildConfigurationForm([], new FormState());
-    $this->assertSame('textfield', $form['time']['#type']);
-    $this->assertSame('time', $form['time']['#attributes']['type'] ?? NULL);
+    $this->assertSame('bb_time', $form['time']['#type']);
+    $this->assertSame('clock', $form['time']['#mode']);
+    $this->assertArrayNotHasKey('type', $form['time']['#attributes'] ?? []);
     $this->assertSame('09:00', $form['time']['#default_value']);
 
     $form = ['#parents' => ['settings']];
