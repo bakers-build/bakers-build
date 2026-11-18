@@ -12,6 +12,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_track\Entity\Worklog;
 use Drupal\simple_oauth\Authentication\TokenAuthUserInterface;
 use Drupal\simple_oauth\Entity\Oauth2TokenInterface;
+use Drupal\tool\FormattedToolResultInterface;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -58,7 +59,10 @@ final class WorklogUpdateToolTest extends TimeToolTestBase {
       'version' => $row['version'],
       'description' => 'Pairing on the fix',
     ]));
-    self::assertSame(['2026-08-04', 1800, 'Pairing on the fix', $ticket->uuid()], [$row['work_date'], $row['duration_seconds'], $row['description'], $row['ticket_id']]);
+    self::assertSame('2026-08-04', $row['work_date']);
+    self::assertSame(1800, $row['duration_seconds']);
+    self::assertSame('Pairing on the fix', $row['description']);
+    self::assertSame($ticket->uuid(), $row['ticket_id']);
 
     // A chosen account of the project.
     $other = $this->container->get('bb_track.assignments')->saveAccount((int) $this->project->id(), ['name' => 'Support']);
@@ -191,17 +195,18 @@ final class WorklogUpdateToolTest extends TimeToolTestBase {
 
     // Recording rights come from the rank in the project's workspace only.
     $ranked = $this->createUser(['view bb_project', 'view bb_ticket', 'view bb_group'], 'ranked');
+    self::assertInstanceOf(UserInterface::class, $ranked);
     $this->addMembership($this->fixtureWorkspace(), $ranked, ['lead']);
     $this->container->get('current_user')->setAccount($ranked);
     $own = $this->recorded('ranked');
     $elsewhere = $this->foreignWorkspaceProject();
     self::assertTrue($elsewhere->access('view', $ranked));
-    $result = $this->runTool('bakers_worklog_update', ['worklog' => $own->uuid(), 'version' => $own->version(), 'project' => $elsewhere->uuid()]);
+    $result = $this->update($own, ['project' => $elsewhere->uuid()]);
     $this->assertFailure($result, 'Project is unavailable for recording.');
     self::assertSame($own->version(), $this->stored($own));
 
     $this->container->get('current_user')->setAccount(new AnonymousUserSession());
-    self::assertFalse($this->runTool('bakers_worklog_update', ['worklog' => $entry->uuid(), 'version' => $entry->version(), 'description' => 'Changed'])->isSuccess());
+    self::assertFalse($this->update($entry, ['description' => 'Changed'])->isSuccess());
     self::assertSame('Meeting', $this->reload($entry)->get('description')->value);
   }
 
@@ -214,7 +219,7 @@ final class WorklogUpdateToolTest extends TimeToolTestBase {
     $this->addMembership($this->project->get('teams')->entity, $this->employee, ['lead']);
     $this->container->get('current_user')->setAccount($this->employee);
     self::assertTrue($foreign->access('view', $this->employee));
-    $result = $this->runTool('bakers_worklog_update', ['worklog' => $foreign->uuid(), 'version' => $foreign->version(), 'description' => 'Changed']);
+    $result = $this->update($foreign, ['description' => 'Changed']);
     $this->assertFailure($result, 'You may not change this worklog: only its owner may, while it is recorded or proposed, with record own worklog in its project’s workspace.');
     self::assertStringNotContainsString('peer', (string) $result->getMessage());
     self::assertSame($foreign->version(), $this->stored($foreign));
@@ -225,12 +230,14 @@ final class WorklogUpdateToolTest extends TimeToolTestBase {
    */
   public function testSessionTokenNeedsRecordOwnWorklog(): void {
     $entry = $this->recorded('own');
-    $this->container->get('current_user')->setAccount($this->delegatedSessionAccount($this->employee, []));
-    $this->assertFailure($this->runTool('bakers_worklog_update', ['worklog' => $entry->uuid(), 'version' => $entry->version(), 'description' => 'Changed']), 'You may not change this worklog');
+    $views = ['view bb_project', 'view bb_ticket', 'view bb_group'];
+    $this->container->get('current_user')->setAccount($this->delegatedSessionAccount($this->employee, $views));
+    $this->assertFailure($this->update($entry, ['description' => 'Changed']), 'You may not change this worklog');
     self::assertSame($entry->version(), $this->stored($entry));
     $this->container->get('entity_type.manager')->getAccessControlHandler('bb_track_worklog')->resetCache();
-    $this->container->get('current_user')->setAccount($this->delegatedSessionAccount($this->employee, ['record own worklog']));
-    $row = $this->outputs($this->runTool('bakers_worklog_update', ['worklog' => $entry->uuid(), 'version' => $entry->version(), 'description' => 'Changed']));
+    $scoped = $this->delegatedSessionAccount($this->employee, [...$views, 'record own worklog']);
+    $this->container->get('current_user')->setAccount($scoped);
+    $row = $this->outputs($this->update($entry, ['description' => 'Changed']));
     self::assertSame('Changed', $row['description']);
   }
 
@@ -256,6 +263,19 @@ final class WorklogUpdateToolTest extends TimeToolTestBase {
     $account->method('getToken')->willReturn($token);
     $account->method('hasPermission')->willReturnCallback(static fn(string $permission): bool => in_array($permission, $permissions, TRUE));
     return $account;
+  }
+
+  /**
+   * Updates an entry at its current version unless the values say otherwise.
+   *
+   * @param \Drupal\bb_track\Entity\Worklog $entry
+   *   The entry.
+   * @param array<string, mixed> $values
+   *   Tool inputs.
+   */
+  private function update(Worklog $entry, array $values): FormattedToolResultInterface {
+    $values += ['worklog' => $entry->uuid(), 'version' => $entry->version()];
+    return $this->runTool('bakers_worklog_update', $values);
   }
 
   /**
@@ -332,11 +352,13 @@ final class WorklogUpdateToolTest extends TimeToolTestBase {
    */
   private function foreignWorkspaceProject(): BbProjectInterface {
     $types = $this->container->get('entity_type.manager');
-    $workspace = $types->getStorage('bb_workspace')->create(['name' => 'Elsewhere', 'slug' => 'elsewhere', 'owner_user_id' => $this->peer->id()]);
+    $owner = ['owner_user_id' => $this->peer->id()];
+    $workspace = $types->getStorage('bb_workspace')->create(['name' => 'Elsewhere', 'slug' => 'elsewhere'] + $owner);
     $workspace->save();
-    $group = $types->getStorage('bb_group')->create(['name' => 'Other customer', 'workspace_id' => $workspace->id(), 'owner_user_id' => $this->peer->id()]);
+    $group = $types->getStorage('bb_group')->create(['name' => 'Other customer', 'workspace_id' => $workspace->id()] + $owner);
     $group->save();
-    $project = $types->getStorage('bb_project')->create(['name' => 'Elsewhere', 'key' => 'ELSE', 'group_id' => $group->id(), 'owner_user_id' => $this->peer->id()]);
+    $values = ['name' => 'Elsewhere', 'key' => 'ELSE', 'group_id' => $group->id()];
+    $project = $types->getStorage('bb_project')->create($values + $owner);
     assert($project instanceof BbProjectInterface);
     $project->save();
     return $project;

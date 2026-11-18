@@ -7,6 +7,7 @@ namespace Drupal\Tests\bb_track\Kernel\Tool;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Tests\bb_track\Kernel\LegacyWorklogFixture;
 use Drupal\bb_track\Entity\Worklog;
+use Drupal\tool\FormattedToolResultInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -26,15 +27,17 @@ final class WorklogDeleteToolTest extends TimeToolTestBase {
     $listed = $this->outputs($this->runTool('bakers_worklog_list', ['from' => '2026-08-01', 'to' => '2026-08-09']))['data'];
     $versions = array_column($listed, 'version', 'id');
 
-    $out = $this->outputs($this->runTool('bakers_worklog_delete', ['worklog' => $manual->uuid(), 'version' => $versions[$manual->uuid()]]));
+    $out = $this->outputs($this->delete($manual, ['version' => $versions[$manual->uuid()]]));
     self::assertSame(['id' => $manual->uuid(), 'voided' => FALSE], $out);
     self::assertNull($this->stored($manual));
 
-    $out = $this->outputs($this->runTool('bakers_worklog_delete', ['worklog' => $sourced->uuid(), 'version' => $versions[$sourced->uuid()]]));
+    $out = $this->outputs($this->delete($sourced, ['version' => $versions[$sourced->uuid()]]));
     self::assertSame(['id' => $sourced->uuid(), 'voided' => TRUE], $out);
     $voided = $this->container->get('entity_type.manager')->getStorage('bb_track_worklog')->loadUnchanged($sourced->id());
+    self::assertInstanceOf(Worklog::class, $voided);
     self::assertTrue((bool) $voided->get('voided')->value);
-    self::assertSame([], $this->outputs($this->runTool('bakers_worklog_list', ['from' => '2026-08-01', 'to' => '2026-08-09']))['data']);
+    $week = ['from' => '2026-08-01', 'to' => '2026-08-09'];
+    self::assertSame([], $this->outputs($this->runTool('bakers_worklog_list', $week))['data']);
   }
 
   /**
@@ -55,7 +58,7 @@ final class WorklogDeleteToolTest extends TimeToolTestBase {
     ];
     foreach ($cases as $case => [$target, $override, $message]) {
       $before = $this->stored($target);
-      $result = $this->runTool('bakers_worklog_delete', $override + ['worklog' => $target->uuid(), 'version' => $target->version()]);
+      $result = $this->delete($target, $override);
       self::assertFalse($result->isSuccess(), $case);
       self::assertStringContainsString($message, (string) $result->getMessage(), $case);
       self::assertSame($before, $this->stored($target), $case);
@@ -67,11 +70,24 @@ final class WorklogDeleteToolTest extends TimeToolTestBase {
     $this->outputs($this->runTool('bakers_worklog_delete', ['worklog' => $sourced->uuid(), 'version' => $version]));
     // The next call is a new request.
     $this->container->get('entity_type.manager')->getAccessControlHandler('bb_track_worklog')->resetCache();
-    $this->assertFailure($this->runTool('bakers_worklog_delete', ['worklog' => $sourced->uuid(), 'version' => $this->stored($sourced)]), 'Worklog unavailable.');
+    $this->assertFailure($this->delete($sourced, ['version' => $this->stored($sourced)]), 'Worklog unavailable.');
 
     $this->container->get('current_user')->setAccount(new AnonymousUserSession());
-    self::assertFalse($this->runTool('bakers_worklog_delete', ['worklog' => $entry->uuid(), 'version' => $entry->version()])->isSuccess());
+    self::assertFalse($this->delete($entry)->isSuccess());
     self::assertNotNull($this->stored($entry));
+  }
+
+  /**
+   * Deletes an entry at its current version unless the values say otherwise.
+   *
+   * @param \Drupal\bb_track\Entity\Worklog $entry
+   *   The entry.
+   * @param array<string, mixed> $values
+   *   Tool inputs.
+   */
+  private function delete(Worklog $entry, array $values = []): FormattedToolResultInterface {
+    $values += ['worklog' => $entry->uuid(), 'version' => $entry->version()];
+    return $this->runTool('bakers_worklog_delete', $values);
   }
 
   /**

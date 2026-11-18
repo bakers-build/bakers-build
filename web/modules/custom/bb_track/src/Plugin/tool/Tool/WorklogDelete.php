@@ -6,7 +6,6 @@ namespace Drupal\bb_track\Plugin\tool\Tool;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
-use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tool\Attribute\Tool;
@@ -38,11 +37,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 final class WorklogDelete extends ToolBase {
 
   use WorklogReferenceTrait;
-
-  /**
-   * Resolves UUIDs.
-   */
-  private EntityRepositoryInterface $repository;
 
   /**
    * {@inheritdoc}

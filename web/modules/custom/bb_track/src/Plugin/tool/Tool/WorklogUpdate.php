@@ -7,7 +7,6 @@ namespace Drupal\bb_track\Plugin\tool\Tool;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\EntityConstraintViolationListInterface;
-use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -72,11 +71,6 @@ final class WorklogUpdate extends ToolBase {
    * Loads the saved worklog and its references.
    */
   private EntityTypeManagerInterface $entities;
-
-  /**
-   * Resolves UUIDs.
-   */
-  private EntityRepositoryInterface $repository;
 
   /**
    * Checks the recording target.
@@ -151,8 +145,24 @@ final class WorklogUpdate extends ToolBase {
       }
       $entry->set('description', $description);
     }
+    $this->retarget($entry, $changes);
+  }
+
+  /**
+   * Sets project, ticket and account; a new target clears what depends on it.
+   *
+   * @param \Drupal\bb_track\Entity\Worklog $entry
+   *   The worklog.
+   * @param array<string, mixed> $changes
+   *   The given fields.
+   *
+   * @throws \InvalidArgumentException
+   * @throws \DomainException
+   */
+  private function retarget(Worklog $entry, array $changes): void {
     $project = (int) $entry->get('project_id')->target_id;
     $ticket = $entry->get('ticket_id')->target_id ? (int) $entry->get('ticket_id')->target_id : NULL;
+    $original = [$project, $ticket];
     if (isset($changes['project'])) {
       $project = $this->reference('bb_project', $changes['project']);
       $ticket = NULL;
@@ -160,8 +170,7 @@ final class WorklogUpdate extends ToolBase {
     if (isset($changes['ticket'])) {
       $ticket = $changes['ticket'] === '' ? NULL : $this->reference('bb_ticket', $changes['ticket']);
     }
-    $retargeted = $project !== (int) $entry->get('project_id')->target_id
-      || $ticket !== ($entry->get('ticket_id')->target_id ? (int) $entry->get('ticket_id')->target_id : NULL);
+    $retargeted = [$project, $ticket] !== $original;
     if ($retargeted) {
       $this->assignments->recordingTarget($project, $ticket);
     }

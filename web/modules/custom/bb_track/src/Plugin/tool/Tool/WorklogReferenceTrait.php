@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Drupal\bb_track\Plugin\tool\Tool;
 
 use Drupal\Component\Uuid\Uuid;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\bb_track\Entity\Worklog;
 
 /**
  * Resolves worklog and reference UUIDs the caller may use.
- *
- * The using tool provides the entity repository as $repository.
  */
 trait WorklogReferenceTrait {
+
+  /**
+   * Resolves UUIDs; the using tool sets it in create().
+   */
+  private EntityRepositoryInterface $repository;
 
   /**
    * Loads a worklog the caller may change or delete.

@@ -7,6 +7,7 @@ namespace Drupal\Tests\bb_track\Kernel\Tool;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\bb_track\Entity\Submission;
 use Drupal\bb_track\Entity\Worklog;
+use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -56,6 +57,7 @@ final class WorklogListToolTest extends TimeToolTestBase {
    */
   public function testUnreadableAccountIsOmitted(): void {
     $owner = $this->createUser(['record own worklog'], 'viewless');
+    self::assertInstanceOf(UserInterface::class, $owner);
     $this->addMembership($this->fixtureWorkspace(), $owner, ['contributor']);
     $this->container->get('current_user')->setAccount($owner);
     // Stored directly: the owner may not read the project or its account.

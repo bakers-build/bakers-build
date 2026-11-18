@@ -6,7 +6,6 @@ namespace Drupal\bb_track\Plugin\tool\Tool;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
-use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_track\Entity\Submission;
@@ -98,11 +97,6 @@ final class WorklogPropose extends ToolBase {
    * The shared activity rules.
    */
   private WorkActivityInput $activities;
-
-  /**
-   * Resolves reference UUIDs.
-   */
-  private EntityRepositoryInterface $repository;
 
   /**
    * {@inheritdoc}
