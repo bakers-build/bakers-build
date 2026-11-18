@@ -151,9 +151,12 @@ export class ConductorsScreen extends ListScreen<
   /** Restart runs only on a conductor of a machine the operator owns. */
   private owned(): ConductorRow | undefined {
     const row = this.rows[this.selectedIndex];
-    return row && this.ownerId && row.machineOwnerUserId === this.ownerId
-      ? row
-      : undefined;
+    // Like the site: a conductor without a machine falls back to its owner.
+    const owner =
+      row?.machineOwnerUserId === undefined
+        ? row?.ownerUserId
+        : row.machineOwnerUserId;
+    return row && this.ownerId && owner === this.ownerId ? row : undefined;
   }
 
   /**

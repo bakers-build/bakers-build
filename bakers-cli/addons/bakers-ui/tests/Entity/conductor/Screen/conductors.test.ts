@@ -37,7 +37,7 @@ const MACHINE = 'machine-1';
 
 function harness(
   rows: ReturnType<typeof conductor>[] = [conductor()],
-  machineOwner = 'user-cw',
+  machineOwner: string | null = 'user-cw',
 ) {
   const collection = (type: string): Collection => {
     const c = {
@@ -93,7 +93,12 @@ function harness(
               type: 'bb_conductor--bb_conductor',
               attributes: row,
               relationships: {
-                machine: { data: { id: MACHINE, type: 'bb_machine' } },
+                machine: {
+                  data:
+                    machineOwner === null
+                      ? null
+                      : { id: MACHINE, type: 'bb_machine' },
+                },
                 // BB-460 — every row this harness answers is the current
                 // user's own, so the list's default `mine` filter never hides
                 // it: these tests exercise the table and the log, not the
@@ -160,6 +165,8 @@ describe('the Conductors screen', () => {
     for (const [owner, offered] of [
       ['user-cw', true],
       ['user-other', false],
+      // No machine: the conductor's own owner decides, as on the site.
+      [null, true],
     ] as const) {
       const screen = new ConductorsScreen();
       const context = harness([conductor()], owner);

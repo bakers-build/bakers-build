@@ -107,8 +107,8 @@ export interface ConductorRow extends Conductor {
   hostKey: string | undefined;
   /** The sideloaded machine's name — its display label. */
   machineLabel: string | undefined;
-  /** The sideloaded machine's owner; Restart runs is theirs alone. */
-  machineOwnerUserId: string | null;
+  /** The sideloaded machine's owner, `undefined` without a machine. */
+  machineOwnerUserId: string | null | undefined;
   /** Liveness, derived — never the raw `status`. */
   derivedStatus: ConductorStatus;
   /**
@@ -489,14 +489,16 @@ function machineOf(
 ): {
   hostKey: string | undefined;
   machineLabel: string | undefined;
-  machineOwnerUserId: string | null;
+  machineOwnerUserId: string | null | undefined;
 } {
   const machineId = singleRelId(raw.relationships?.machine);
   const machine = machineId ? machinesById.get(machineId) : undefined;
   return {
     hostKey: str(machine?.attributes?.host_key),
     machineLabel: str(machine?.attributes?.name),
-    machineOwnerUserId: singleRelId(machine?.relationships?.owner_user_id),
+    machineOwnerUserId: machine
+      ? singleRelId(machine.relationships?.owner_user_id)
+      : undefined,
   };
 }
 
