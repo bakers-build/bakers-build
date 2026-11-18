@@ -280,7 +280,7 @@ it.each([
   for (const [level, tabs] of [
     [
       'Root',
-      '**My work** · **Projects** · **Members** (workspace lead only) · **Conductors**',
+      '**My work** · **Projects** · **Members** (workspace lead only) · **Machines**',
     ],
     ['Project', '**Overview** · **Tickets** · **Runs** · **Conductors**'],
     [

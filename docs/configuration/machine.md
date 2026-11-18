@@ -1,6 +1,6 @@
 # Machine
 
-`machine.config.js` is the private file that identifies one execution host and owns its preview-tunnel policy, agent harnesses and agent routes. The web UI lists this account's machines at `/user/{user}/machines`; a row opens View (UUID, max parallel, current load) and, for the owner holding `update own bb_machine`, Settings. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`.
+`machine.config.js` is the private file that identifies one execution host and owns its preview-tunnel policy, agent harnesses and agent routes. The web UI lists this account's machines at `/user/{user}/machines`; a row opens View (UUID, max parallel, current load) and, for the owner holding `update own bb_machine`, Settings. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`. The Overview lists the machine's conductors. **Restart runs**, on the machine or a conductor row and only for its owner, cancels their active runs and each open ticket's newest failed run after a confirmation; each ticket then gets one fresh run. `bakers ui` offers the same on its **Machines** tab.
 
 ## Location
 
