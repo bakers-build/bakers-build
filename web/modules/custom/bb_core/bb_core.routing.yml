@@ -378,6 +378,19 @@ entity.bb_conductor.action_form:
       bb_conductor:
         type: 'entity:bb_conductor'
 
+# Restart runs: a dialog over the Overview with JavaScript, a page without it.
+entity.bb_conductor.restart_form:
+  path: '/_workspace/{bb_workspace}/conductor/{bb_conductor}/restart'
+  defaults:
+    _entity_form: 'bb_conductor.restart'
+    _title: 'Restart runs'
+  requirements:
+    _custom_access: '\Drupal\bb_core\Form\BbRestartRunsForm::access'
+  options:
+    parameters:
+      bb_conductor:
+        type: 'entity:bb_conductor'
+
 entity.bb_group.create_form:
   path: '/_workspace/{bb_workspace}/group/create'
   defaults:
