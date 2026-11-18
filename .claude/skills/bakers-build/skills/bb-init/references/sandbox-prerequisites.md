@@ -1,15 +1,14 @@
 # Sandbox prerequisites
 
-Claude's native sandbox on Linux needs `bwrap`, `socat` and unprivileged user namespaces. This check
-needs no connected project. macOS ships Seatbelt; other platforms skip it with that reason.
+The harness's OS sandbox has per-platform prerequisites, listed in
+[Sandbox prerequisites](https://bakers.build/provision/security/execution.md#sandbox-prerequisites).
+This check needs no connected project.
 
-## Probes
+## Check
 
-Read-only:
-
-- `command -v bwrap socat`
-- when both exist: `bwrap --unshare-user --unshare-net --die-with-parent --ro-bind / / true`
-- the package manager: the first of `apt-get`, `dnf`, `pacman` on `PATH`
+Read the documented row for this host's platform and each harness on it. Check every listed
+prerequisite read-only with the host's own means. A platform whose row needs nothing to install
+passes; a harness without an OS sandbox is not checked.
 
 All pass: report it and continue.
 
@@ -18,16 +17,14 @@ All pass: report it and continue.
 Anything missing: send **one** message that names
 
 - what is missing;
-- for missing tools, the install command for those packages only: `sudo apt-get install -y <pkgs>`,
-  `sudo dnf install -y <pkgs>`, `sudo pacman -S --needed <pkgs>`, else the package manager with the
-  package names (`bwrap` is package `bubblewrap`);
-- for a refused user namespace, allowing unprivileged user namespaces, with no install command;
+- for missing packages, the install command for those packages only, in the host's package manager;
+- for a missing system setting, the documented fix, with no install command;
 - that the person runs the command themselves (`! <command>` in Claude Code), since the agent
   session has no `sudo`;
 - that the agent session must be restarted afterwards, because a running session does not find the
   new tools;
 - that they then re-run `bb-init` in the new session, which rechecks at *Sandbox prerequisites*;
-- [Sandbox prerequisites](https://bakers.build/provision/security/execution.md#sandbox-prerequisites);
+- the documentation link above;
 - that replying *continue without the sandbox* goes on, offering neither `sandbox` nor
   `runtime-bwrap`.
 
