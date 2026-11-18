@@ -58,7 +58,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | bakers.build CLI source | Dependencies installed (see provision), then `cd bakers-cli && pnpm -r run build` |
 | PHP implementation | PHP coding standards, mess detection and static analysis through `provision_exec('phpcs')`, `('phpmd')` and `('phpstan')` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
-| Update or post-update hooks (`*.install`, `*.post_update.php`), or entity/field schema changes | `bash scripts/ci/update-from-release.sh`: the latest release image (`ghcr.io/bakers-build/bakers-build/php:<version>`) with seeded content, then the branch's image, `drush updb -y`, `drush cim -y`, and the hook's data checks (values carried over, removed storage gone) |
+| Update or post-update hooks (`*.install`, `*.post_update.php`), or entity/field schema changes | `bash scripts/ci/update-from-release.sh`: the latest release image (`ghcr.io/bakers-build/bakers-build/php:<version>`) with seeded content, then the branch's image, `drush updb -y`, `drush cim -y`, and the hook's data checks (values carried over, removed storage gone). The CI job `update_from_release` runs it on pull requests that touch these paths; a run without Docker reads that job through `forge_checks` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
 | `.ddev/**` or `.bakers/provision.sh` | `bash tests/contract/ddev-provision.sh` |
 | `.bakers/scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |

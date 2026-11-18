@@ -3,7 +3,7 @@
 # swaps in this checkout's php image and deploys (updb + cim), then checks the data.
 # Only for disposable Docker hosts. `--self-check` tests the version lookup without Docker.
 # Env: RELEASE_VERSION (default: newest vX.Y.Z tag), BRANCH_IMAGE_PHP (default: built here),
-# UPDATE_REPORT_DIR (default: assets-ai/update-from-release).
+# UPDATE_REPORT_DIR (default: assets-ai/update-from-release), COMPOSER_AUTH (optional build secret).
 set -euo pipefail
 repo=${GITHUB_REPOSITORY:-bakers-build/bakers-build}
 
@@ -30,7 +30,9 @@ version=${RELEASE_VERSION:-$(git ls-remote --tags --refs "https://github.com/$re
 release_image="ghcr.io/$repo/php:$version"
 branch_image=${BRANCH_IMAGE_PHP:-bakers-update/php:branch}
 if [ -z "${BRANCH_IMAGE_PHP:-}" ]; then
-  docker build --target php -t "$branch_image" .
+  secrets=()
+  if [ -n "${COMPOSER_AUTH:-}" ]; then secrets+=(--secret id=composer_auth,env=COMPOSER_AUTH); fi
+  docker build "${secrets[@]}" --target php -t "$branch_image" .
 fi
 echo "release $release_image -> branch $branch_image"
 
