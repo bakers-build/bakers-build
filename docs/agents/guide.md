@@ -92,7 +92,7 @@ These results assume the shown files and no other selectors. On an existing mach
 
 ### Choose the runtime per ticket
 
-The `runtime` slot works the same way: a catalog, routes and the `runtime:<alias>` label (with `@<state>`), see [Slot catalogs](/configuration/slot-catalogs). Adding a `runtime:` label needs a workspace permission, see [protected namespaces](/skills-and-workflows/types-recipes-labels#protected-label-namespaces).
+The `runtime` slot works the same way: a catalog, routes and the `runtime:<alias>` label (with `@<state>`), see [Slot catalogs](/configuration/slot-catalogs). Adding a `runtime:` label needs a workspace permission, see [protected namespaces](/skills-and-workflows/collaboration#protected-label-namespaces).
 
 ### Verify the run
 

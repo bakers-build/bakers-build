@@ -21,7 +21,7 @@ The runtime catalog holds the built-in `system` entry (the host, a reserved alia
 
 The first match wins, for `runtime` and for `agent` through its [own chain](/agents/reference#which-agent-runs-a-state):
 
-1. A permitted ticket label `runtime:<alias>` (or `runtime:<route>`), also with `@<state>` ([labels](/skills-and-workflows/types-recipes-labels#runtime-labels)).
+1. A permitted ticket label `runtime:<alias>` (or `runtime:<route>`), also with `@<state>` ([labels](/skills-and-workflows/collaboration#runtime-labels)).
 2. The route for the ticket's state, `routes.default[<state>]`.
 3. `routes.default['*']`.
 4. The project's `runtime.default`.
@@ -39,7 +39,7 @@ runtime: {
 
 ## Unsandboxed runs
 
-A label may put a run on an entry that does not isolate (`system`) only when `runtime.allow_unsandboxed` is `true` on the machine. Otherwise the label is ignored, the order continues and the conductor logs a warning naming the ticket and alias. The server decides who may add the label ([protected namespaces](/skills-and-workflows/types-recipes-labels#protected-label-namespaces)); this flag is the machine's own lock.
+A label may put a run on an entry that does not isolate (`system`) only when `runtime.allow_unsandboxed` is `true` on the machine. Otherwise the label is ignored, the order continues and the conductor logs a warning naming the ticket and alias. The server decides who may add the label ([protected namespaces](/skills-and-workflows/collaboration#protected-label-namespaces)); this flag is the machine's own lock.
 
 Each run appends a run note with the agent and runtime alias, the reason (`label`, `function`, `route`, `default-route`, `project`, `preset`, `fallback`) and the conductor's owner. A run that a label put on a runtime that does not isolate also posts a ticket comment saying so; a host default posts none. Clone mode follows the run's runtime, so a catalog may mix isolating and host entries (a herdr workspace keeps the clone mode it was built with and refuses a run that needs the other one).
 
