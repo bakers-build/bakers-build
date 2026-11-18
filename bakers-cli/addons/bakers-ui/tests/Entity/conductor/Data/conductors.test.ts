@@ -322,6 +322,22 @@ it('falls back to process telemetry / legacy conductor capacity when machine is 
   expect(c?.maxParallel).toBe(4);
 });
 
+it('a machine owner stays unknown (null) when the referenced machine is not readable', async () => {
+  const unreadable = fakeClient({
+    documents: {
+      'bb_conductor/bb_conductor': { data: [cockpitConductor()], included: [] },
+    },
+  });
+  const [c] = (await listConductorRowPage(unreadable, rowCtx, {})).rows;
+  expect(c?.machineOwnerUserId).toBeNull();
+
+  const none = fakeClient({
+    documents: { 'bb_conductor/bb_conductor': cockpitDoc({}, null) },
+  });
+  const [d] = (await listConductorRowPage(none, rowCtx, {})).rows;
+  expect(d?.machineOwnerUserId).toBeUndefined();
+});
+
 it('derives liveness through the shared deriver', async () => {
   const client = fakeClient({
     documents: { 'bb_conductor/bb_conductor': cockpitDoc() },

@@ -107,7 +107,7 @@ export interface ConductorRow extends Conductor {
   hostKey: string | undefined;
   /** The sideloaded machine's name — its display label. */
   machineLabel: string | undefined;
-  /** The sideloaded machine's owner, `undefined` without a machine. */
+  /** The sideloaded machine's owner; `null` when the machine is unreadable, `undefined` without a machine. */
   machineOwnerUserId: string | null | undefined;
   /** Liveness, derived — never the raw `status`. */
   derivedStatus: ConductorStatus;
@@ -496,9 +496,13 @@ function machineOf(
   return {
     hostKey: str(machine?.attributes?.host_key),
     machineLabel: str(machine?.attributes?.name),
+    // An unreadable referenced machine is an unknown owner (null), never the
+    // conductor's: only a conductor without a machine falls back to its owner.
     machineOwnerUserId: machine
       ? singleRelId(machine.relationships?.owner_user_id)
-      : undefined,
+      : machineId
+        ? null
+        : undefined,
   };
 }
 

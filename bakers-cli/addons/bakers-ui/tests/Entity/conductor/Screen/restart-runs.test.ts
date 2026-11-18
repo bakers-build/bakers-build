@@ -15,7 +15,13 @@ import { fakeClient, queryStringOf } from '../../../test-support.js';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-type Run = { id: string; state: string; ticket: string; log?: string };
+type Run = {
+  id: string;
+  state: string;
+  ticket: string;
+  log?: string;
+  changed?: number;
+};
 type Ticket = {
   id: string;
   identifier: string;
@@ -39,6 +45,7 @@ const NEWEST: Record<string, string> = {
   't-3': 'r-failed',
   't-4': 'r-later-done',
   't-5': 'r-closed-failed',
+  't-6': 'r-a',
 };
 const TICKETS: Ticket[] = [
   { id: 't-1', identifier: 'BB-1', frozen: true },
@@ -46,6 +53,7 @@ const TICKETS: Ticket[] = [
   { id: 't-3', identifier: 'BB-3' },
   { id: 't-4', identifier: 'BB-4' },
   { id: 't-5', identifier: 'BB-5', closed: true },
+  { id: 't-6', identifier: 'BB-6' },
 ];
 
 /** A client answering the covered-set read and each ticket's newest run. */
@@ -73,7 +81,11 @@ const serverWith = (runs: Run[] = RUNS, failGet = false) => {
         ({ run }) =>
           !openOnly || !TICKETS.find((t) => t.id === run.ticket)?.closed,
       );
-    if (query.includes('sort=-drupal_internal__id')) rows.reverse();
+    if (query.includes('sort=-changed'))
+      rows.sort(
+        (a, b) => (b.run.changed ?? 0) - (a.run.changed ?? 0) || b.n - a.n,
+      );
+    else if (query.includes('sort=-drupal_internal__id')) rows.reverse();
     return {
       data: rows.slice(0, limit).map(({ run, n }) => ({
         type: 'bb_run--bb_run',
@@ -136,6 +148,17 @@ describe('restart runs covered set', () => {
     const query = queryStringOf(vi.mocked(client.get).mock.calls[0]?.[1]);
     expect(query).toContain('filter[conductor_id.id][condition][value][0]=c-1');
     expect(query).toContain('filter[conductor_id.id][condition][value][1]=c-2');
+  });
+
+  it('covers a ticket whose newest failed run has the lower id but changed last', async () => {
+    const covered = await restartCoveredRuns(
+      serverWith([
+        { id: 'r-a', state: 'failed', ticket: 't-6', changed: 2 },
+        { id: 'r-b', state: 'failed', ticket: 't-6', changed: 1 },
+      ]),
+      ['c-1'],
+    );
+    expect(covered.map((run) => run.id)).toEqual(['r-a']);
   });
 
   it('covers a running run behind more than a page of old failed runs', async () => {

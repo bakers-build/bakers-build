@@ -65,6 +65,7 @@ const readRuns = async (
       'ticket_id',
     ])
     .addFields('bb_ticket--bb_ticket', ['identifier', 'frozen'])
+    .addSort('changed', order)
     .addSort('drupal_internal__id', order)
     .addPageLimit(50);
   if (openTicketsOnly) params.addFilter('ticket_id.closed', '0');
@@ -98,7 +99,8 @@ const readRuns = async (
  *
  * shortcut: the server's rule (`TicketInterventions::restartCoveredRuns`) is
  * mirrored here, and each of the two reads takes one page of 50 (active runs
- * stay below a machine's capacity; failed runs are read newest first); unify
+ * stay below a machine's capacity; failed runs are read newest first by
+ * `changed`, then id, as `isNewest`); unify
  * once the site offers a restart endpoint.
  */
 export const restartCoveredRuns = async (
@@ -116,7 +118,7 @@ export const restartCoveredRuns = async (
   const covered = active.map(({ run }) => run);
   const seen = new Set<string>();
   for (const { ticketId, run } of failed) {
-    // Newest first: only a ticket's latest failed run can be its newest run.
+    // Newest first in isNewest's order: only a ticket's first failed run here can be its newest.
     if (seen.has(ticketId)) continue;
     seen.add(ticketId);
     if (await isNewest(client, ticketId, run.id)) covered.push(run);
