@@ -91,6 +91,8 @@ The plugins a run installs are the project's [`marketplaces`](/configuration/pro
 addons: [{ use: '@bakers-build/addon-claude', with: { plugins: false } }],
 ```
 
+Claude in `system` or `yolo` uses your own `~/.claude`; `home: 'individual'` keeps a separate [agent home](/configuration/project#agent-plugins).
+
 ## Secrets file
 
 The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start: foreground, detached, the restart after a config change or an update, and `bakers conductor once`. Never put it in the project's committed `.bakers/`.
@@ -109,6 +111,7 @@ export OPENAI_API_KEY='sk-...'
 | Shell wins | A variable exported in the shell that starts the conductor overrides the file, so `( . ~/.bakers/.backer.env; bakers conductor start )` keeps working. To switch, rename that file to `.bakers.env` and `chmod 600` it. |
 | Hand-out | A run receives a value only when its agent addon declares the variable. Every other value stays in the conductor, under every runtime, the host included. |
 | Redaction | Logs name the loaded variables, never values. `bakers agents` shows each declared variable as `set` or `unset`. |
+| Change | A running conductor [restarts itself](/cli/conductor#restart-on-change) on every write, adopting its running sessions, and logs `secrets file changed; restarting conductor`. A file that fails to load restarts and stops nothing, also before a config or upgrade restart: the conductor logs the error with its fix and keeps its last good values. |
 
 | Addon | Declared variables |
 |---|---|

@@ -519,8 +519,8 @@ Feature: The ticket list is the nav home
   # from as a full URL; the box accepts `#19`, `<repo>#19` and the URL in any
   # spelling, and compares a normalised `<repo path>#<number>` exactly, so issue
   # 19 never matches issue 190. The "bakers.build Platform" fixture project's repository
-  # is `https://gitlab.example.com/bakers/bakers`, which makes `bakers` its alias and
-  # the only repository a member can read — so a bare `#19` is unambiguous.
+  # is `https://gitlab.example.com/bakers/bakers`, which makes `bakers` its alias. The
+  # lead also reads the `owner-edit` fixture repository, so a bare `#19` is ambiguous.
   # Each scenario searches twice, because a search is a navigation and a boost
   # lost in a swap works exactly once per page load.
   Scenario: The search finds tickets by the origin issue they came from
@@ -528,6 +528,9 @@ Feature: The ticket list is the nav home
     And the workspace has tickets from origin issues 19, 190 and twice 20
     When I visit the ticket list
     And I search the ticket list for "#19"
+    Then the page says '"#19" is ambiguous — name the repository, for example bakers#19. Known in your projects: bakers, owner-edit.'
+
+    When I search the ticket list for "bakers#19"
     Then the ticket list shows the origin tickets "issue 19"
     And the ticket list does not show the origin ticket "issue 190"
 
@@ -550,10 +553,10 @@ Feature: The ticket list is the nav home
     Given I am signed in as a member of the "bakers" workspace
     When I visit the ticket list
     And I search the ticket list for "nosuchrepo#1"
-    Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers.'
+    Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers, owner-edit.'
 
     When I search the ticket list for "nosuchrepo#2"
-    Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers.'
+    Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers, owner-edit.'
 
   # BAKERS-56 D11/D12: the State facet counts the tickets each state would list
   # under the list's other filters, and its footer offers "Only open states",

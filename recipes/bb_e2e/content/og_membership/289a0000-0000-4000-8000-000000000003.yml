@@ -1,0 +1,23 @@
+# Plain North Crew member, so project.owner is in the owner's read scope.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: 289a0000-0000-4000-8000-000000000003
+  default_langcode: en
+  bundle: default
+  depends:
+    289a0000-0000-4000-8000-000000000001: user
+    fb355227-fe83-5482-819f-51f8011a78eb: bb_team
+default:
+  entity_type:
+  - value: bb_team
+  entity_bundle:
+  - value: bb_team
+  entity_id:
+  - value: fb355227-fe83-5482-819f-51f8011a78eb
+  state:
+  - value: active
+  uid:
+  - entity: 289a0000-0000-4000-8000-000000000001
+  type:
+  - target_id: default

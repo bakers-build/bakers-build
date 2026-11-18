@@ -1,6 +1,6 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadConductorConfig } from '../src/config.js';
 
@@ -300,10 +300,26 @@ describe('restart_on_change and the watched files', () => {
     const dir = join(project, '..');
 
     expect(cfg.restart_on_change).toBe(true);
-    expect(cfg.watch_paths?.files).toEqual([project, machine]);
+    expect(cfg.watch_paths?.files).toEqual([
+      project,
+      machine,
+      join(dirname(machine), '.bakers.env'),
+    ]);
     // The directory of the resolved addon module, not the package name.
     expect(cfg.watch_paths?.dirs).toHaveLength(1);
     expect(cfg.watch_paths?.dirs[0]).toMatch(/codex.*[/\\](dist|src)$/);
+  });
+
+  it('watches the secrets file under BAKERS_HOME', async () => {
+    const machine = writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex'] };`,
+    );
+    const bakersHome = mkdtempSync(join(tmpdir(), 'bakers-scope-bh-'));
+    copyFileSync(machine, join(bakersHome, 'machine.config.js'));
+    vi.stubEnv('BAKERS_HOME', bakersHome);
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+
+    expect(cfg.watch_paths?.files).toContain(join(bakersHome, '.bakers.env'));
   });
 
   it('honours restart_on_change: false', async () => {

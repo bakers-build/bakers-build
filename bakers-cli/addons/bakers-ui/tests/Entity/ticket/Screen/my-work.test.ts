@@ -1,7 +1,8 @@
 import type { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import { expect, it, vi } from 'vitest';
 import { MyWorkScreen } from '../../../../src/Entity/ticket/Screen/my-work.js';
-import type { ScreenContext } from '../../../../src/Screen/screen.js';
+import { Router } from '../../../../src/Routing/router.js';
+import type { Screen, ScreenContext } from '../../../../src/Screen/screen.js';
 import { nodeById, renderTree } from '../../../render-tree.js';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -177,4 +178,180 @@ it('honours criteria.project as a server-side filter when set', async () => {
       nodeById(screen.present(context).body, 'my-work-filter-project-chip')!,
     ).join(''),
   ).toBe('r project: Alpha');
+});
+
+it('a click selects an unselected row, opens the selected one and rejects out-of-range rows', async () => {
+  const ticket = (id: string, identifier: string) => ({
+    id,
+    attributes: { identifier, title: identifier, closed: false },
+    relationships: { labels: { data: [] } },
+  });
+  const get = vi.fn(async (path: string) =>
+    path === 'user/user'
+      ? { data: [{ id: 'user-1', attributes: { name: 'cw' } }] }
+      : { data: [ticket('ticket-1', 'BB-1'), ticket('ticket-2', 'BB-2')] },
+  );
+  const requestDraw = vi.fn();
+  const navigate = vi.fn();
+  const context: ScreenContext = {
+    sessionGeneration: 1,
+    services: {
+      client: { get, collection: vi.fn() } as never,
+      currentUser: 'cw',
+      workspace: 'bakers',
+    },
+    requestDraw,
+    navigate,
+    isActive: () => true,
+  };
+  const screen = new MyWorkScreen();
+  screen.enter(context);
+  await tick();
+  expect(screen.present(context).rowIds).toHaveLength(2);
+  requestDraw.mockClear();
+
+  expect(screen.select(1, context)).toBe(true);
+  expect(screen.present(context).selectedIndex).toBe(1);
+  expect(requestDraw).toHaveBeenCalled();
+
+  expect(screen.select(-1, context)).toBe(false);
+  expect(screen.select(2, context)).toBe(false);
+  expect(screen.present(context).selectedIndex).toBe(1);
+
+  expect(screen.activate(1, context)).toBe(true);
+  expect(navigate).toHaveBeenCalledWith('ticket.detail', {
+    ticketId: 'ticket-2',
+  });
+});
+
+// A real Router with the real My work screen; the pickers are stubs, so each
+// test drives the hand-off through `back(result)` the way a picker does.
+function myWorkRouter() {
+  const ticketQueries: string[] = [];
+  const get = vi.fn(async (path: string, params?: unknown) => {
+    if (path === 'user/user')
+      return { data: [{ id: 'user-1', attributes: { name: 'cw' } }] };
+    ticketQueries.push(
+      decodeURIComponent(
+        (params as DrupalJsonApiParams | undefined)?.getQueryString() ?? '',
+      ),
+    );
+    return { data: [], meta: { count: 0 } };
+  });
+  const picker = (id: string) =>
+    ({
+      id,
+      enter: vi.fn(),
+      leave: vi.fn(),
+      render: vi.fn(() => []),
+      handleInput: vi.fn(() => false),
+      reset: vi.fn(),
+    }) as unknown as Screen;
+  const myWork = new MyWorkScreen();
+  const router = new Router(
+    new Map<string, Screen>([
+      ['my.work', myWork],
+      ['my.work.project-filter', picker('my.work.project-filter')],
+      ['my.work.parent-filter', picker('my.work.parent-filter')],
+      [
+        'project.tickets.parent-filter',
+        picker('project.tickets.parent-filter'),
+      ],
+    ]),
+    vi.fn(),
+    1,
+    {
+      services: {
+        client: { get, collection: vi.fn() } as never,
+        currentUser: 'cw',
+        workspace: 'bakers',
+      },
+    } as never,
+  );
+  const chip = (id: string) =>
+    renderTree(
+      nodeById(
+        myWork.present(router.context()).body,
+        `my-work-filter-${id}-chip`,
+      )!,
+    ).join('');
+  return { router, myWork, ticketQueries, chip };
+}
+
+it('filters My work by the project picked in the project filter', async () => {
+  const { router, myWork, ticketQueries, chip } = myWorkRouter();
+  router.navigate('my.work');
+  await tick();
+  myWork.handleInput('r', router.context());
+  expect(router.active?.id).toBe('my.work.project-filter');
+
+  router.back({
+    type: 'project-filter-set',
+    project: { id: 'p1', label: 'Alpha' },
+  });
+  await tick();
+
+  expect(ticketQueries.at(-1)).toMatch(/project_id\.id/);
+  expect(ticketQueries.at(-1)).toMatch(/p1/);
+  expect(chip('project')).toBe('r project: Alpha');
+});
+
+it('clears only the project criterion when the project picker clears', async () => {
+  const { router, myWork, ticketQueries, chip } = myWorkRouter();
+  router.navigate('my.work');
+  await tick();
+  const kept = {
+    query: 'login',
+    state: 'working',
+    closed: null,
+    parent: { id: 't1', identifier: 'BAKERS-1' },
+    who: null,
+    owner: null,
+  };
+  myWork.setCriteria(
+    { ...kept, project: { id: 'p1', label: 'Alpha' } },
+    router.context(),
+  );
+  await tick();
+  myWork.handleInput('r', router.context());
+
+  router.back({ type: 'project-filter-set', project: null });
+  await tick();
+
+  expect(myWork.criteria).toEqual({ ...kept, project: null });
+  expect(ticketQueries.at(-1)).not.toMatch(/project_id\.id/);
+  expect(chip('project')).toBe('r project');
+});
+
+it('filters My work by the parent picked, and a cleared pick drops only it', async () => {
+  const { router, myWork, chip } = myWorkRouter();
+  router.navigate('my.work');
+  await tick();
+  const project = { id: 'p1', label: 'Alpha' };
+  myWork.setCriteria({ ...myWork.criteria, project }, router.context());
+  await tick();
+
+  router.navigate('my.work.parent-filter');
+  router.back({
+    type: 'parent-filter-set',
+    parent: { id: 't1', identifier: 'BAKERS-1' },
+  });
+  await tick();
+  expect(myWork.criteria.parent).toEqual({ id: 't1', identifier: 'BAKERS-1' });
+  expect(chip('parent')).toBe('p parent: BAKERS-1');
+
+  router.navigate('my.work.parent-filter');
+  router.back({ type: 'parent-filter-set', parent: null });
+  await tick();
+  expect(myWork.criteria.parent).toBeNull();
+  expect(myWork.criteria.project).toEqual(project);
+  expect(chip('parent')).toBe('p parent');
+});
+
+it('opens the My work parent picker on p', async () => {
+  const { router, myWork } = myWorkRouter();
+  router.navigate('my.work');
+  await tick();
+  myWork.handleInput('p', router.context());
+  expect(router.active?.id).toBe('my.work.parent-filter');
 });

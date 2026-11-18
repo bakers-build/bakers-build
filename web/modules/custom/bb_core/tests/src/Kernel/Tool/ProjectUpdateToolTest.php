@@ -65,7 +65,7 @@ final class ProjectUpdateToolTest extends BakersToolTestBase {
       'project' => 'TOOLPROJEC',
       'repository' => ['default_branch' => 'develop'],
     ]);
-    $this->assertFailure($result, 'You may not edit project TOOLPROJEC: it needs edit bb_project, held by team leads, team owners and workspace leads of its workspace, or administer bakers.');
+    $this->assertFailure($result, 'You may not edit project TOOLPROJEC: it needs edit bb_project, held by team leads, team owners and workspace leads of its workspace, update own bb_project as its owner, or administer bakers.');
     $this->assertBranch('main');
   }
 

@@ -68,7 +68,7 @@ The skills and commands are examples; name your own for other stacks. A runtime 
 
 ## Origin labels
 
-An authorized agent transition can mirror a GitLab origin issue's progress; manual state changes are not mirrored. Install and sign in to `glab` on the conductor host. Other origin adapters are not supplied by this rule. The mapping comes only from `## bb-phase-transition`:
+An authorized agent transition can mirror a GitLab origin issue's progress; manual state changes are not mirrored. The run writes through the conductor's `forge_issue_update` tool, so the [Forge for GitLab](/addons/forge-gitlab) backend's credentials must reach the origin's project; without that tool the run records the step for a person. Other origin adapters are not supplied by this rule. The mapping comes only from `## bb-phase-transition`:
 
 ```md
 ## bb-phase-transition
