@@ -8,6 +8,7 @@ use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\bb_core\Form\HtmxTransport;
 use Drupal\bb_activity\Entity\NotificationSettingInterface;
 use Drupal\bb_activity\Activity\ActivityKindManager;
 use Drupal\bb_activity\NotificationSettings;
@@ -25,12 +26,12 @@ final class NotificationSettingsForm extends ContentEntityForm {
   /**
    * The row service.
    */
-  private NotificationSettings $settings;
+  protected NotificationSettings $settings;
 
   /**
    * The activity kinds and the mails they offer.
    */
-  private ActivityKindManager $kinds;
+  protected ActivityKindManager $kinds;
 
   /**
    * {@inheritdoc}
@@ -61,6 +62,9 @@ final class NotificationSettingsForm extends ContentEntityForm {
     $form = parent::form($form, $form_state);
     // A full-page submit with its own messages, as on the personal schedule.
     $form['#attributes']['data-hx-boost'] = 'false';
+    // Opened by a boosted link, core's action keeps `ajax_page_state`; a
+    // page re-rendered after an error would then arrive without assets.
+    $form['#action'] = HtmxTransport::currentUrl($this->getRequest())->toString();
     $form['status'] = ['#type' => 'status_messages', '#weight' => -100];
     $row = $this->entity;
     assert($row instanceof NotificationSettingInterface);

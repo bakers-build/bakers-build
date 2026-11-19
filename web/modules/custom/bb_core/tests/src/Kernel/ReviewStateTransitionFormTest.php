@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbCommentInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Form\ReviewStateTransitionForm;
@@ -73,6 +74,7 @@ final class ReviewStateTransitionFormTest extends KernelTestBase {
     // A programmed submission reports no redirect; read the one it set.
     self::assertInstanceOf(FormState::class, $form_state);
     $redirect = (fn() => $this->redirect)->call($form_state);
+    self::assertInstanceOf(Url::class, $redirect);
     self::assertSame($actors['ticket']->toUrl()->toString(), $redirect->toString());
   }
 
@@ -137,7 +139,7 @@ final class ReviewStateTransitionFormTest extends KernelTestBase {
   private function assertRefusedBackToTheTicket(FormStateInterface $form_state, BbTicketInterface $ticket): void {
     self::assertInstanceOf(FormState::class, $form_state);
     $redirect = (fn() => $this->redirect)->call($form_state);
-    self::assertNotNull($redirect, 'A refused transition stays on the bare widget page.');
+    self::assertInstanceOf(Url::class, $redirect, 'A refused transition stays on the bare widget page.');
     self::assertSame($ticket->toUrl()->toString(), $redirect->toString());
     $errors = $this->container->get('messenger')->messagesByType('error');
     self::assertNotSame([], $errors);

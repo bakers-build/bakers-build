@@ -3,19 +3,19 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_measurement.closed_tickets
-  - bb_core.bb_measurement.runs
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.runs
 _core:
   default_config_hash: uZz614dxo7s7VUj5jtLlI8Cjj8Lxj3I8_YO1HjiHqqw
 id: tickets_per_run
-label: Tickets per run
+label: 'Tickets per run'
 value_type: decimal
 unit: tickets_per_run
-source: {}
+source: {  }
 operation:
   type: divide
   numerator: closed_tickets
   denominator: runs
-predicates: {}
-bindings: {}
-dimensions: {}
+predicates: {  }
+bindings: {  }
+dimensions: {  }

@@ -77,6 +77,8 @@ export interface ClaimedRun {
 
 export interface Ticket {
   uuid: string;
+  /** Display name of the owner of the ticket's conductor, when the remote knows it. */
+  conductorOwner?: string;
   identifier: string;
   title: string;
   state: string;
@@ -111,6 +113,8 @@ export interface Ticket {
   labels: string[];
   /** Ticket environments (bb_environment refs), each as name + tier, sideloaded for agent selection. Empty when none. */
   environments: { name: string; tier: string }[];
+  /** Ticket reviewers; `mail` is absent when the server hides it. Omitted when none. */
+  reviewers?: { name: string; mail?: string }[];
 }
 
 export interface ActiveRun {

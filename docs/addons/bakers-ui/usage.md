@@ -17,7 +17,7 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
 
    | Level | Tabs |
    |---|---|
-   | Root | My work, Projects, Members (workspace leads only), Conductors |
+   | Root | My work, Projects, Members (workspace leads only), Machines |
    | Project | Overview, Tickets, Runs, Conductors |
    | Ticket | Overview, Planning, History, Runs, then addon tabs such as Artifacts; Ports is an Overview message card |
 
@@ -37,7 +37,7 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
 
 4. **Read a ticket.** Overview leads with the latest `summary`, then the description. Planning holds the latest `spec`, `plan` and `test`. History lists every comment, rendered as Markdown. Runs lists the runs; `Enter` opens one. `Enter` or `Space` expands the selected entry.
 
-5. **Edit.** On a ticket press `e`: assignee, conductor, estimate and spent, parent and labels. `Ctrl+S` saves. `x` cancels the ticket, or on a run the run; `r` restarts the ticket's active run. Each asks first in a confirmation dialog with the buttons **Confirm** and **Close**. `Esc` writes nothing.
+5. **Edit.** On a ticket press `e`: assignee, conductor, estimate and spent, parent and labels. `Ctrl+S` saves. `x` cancels the ticket, or on a run the run; `r` restarts the ticket's active run. On **Machines**, `Enter` opens a machine's conductors, and `r` on your own machine or conductor restarts its runs. Each asks first in a confirmation dialog with the buttons **Confirm** and **Close**. `Esc` writes nothing.
 
 6. **Reload** with `R`. Anything that can write a file can do the same with `touch .bakers/ui-refresh` inside the project.
 

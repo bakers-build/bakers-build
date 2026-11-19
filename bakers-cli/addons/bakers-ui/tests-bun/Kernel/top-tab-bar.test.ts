@@ -592,8 +592,8 @@ describe('BB-256 AC-2 — the root Projects tab still reaches the overview', () 
 
     await tui.press(TAB); // my work -> projects
     expect(frameOf(tui)).toContain('bakers.build projects');
-    await tui.press(TAB); // projects -> conductors
-    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('conductors'));
+    await tui.press(TAB); // projects -> machines
+    expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('machines'));
 
     // Had either swap pushed a frame, this Esc would unwind it instead.
     await tui.press('\x1b');
@@ -1051,8 +1051,8 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
     expect(rowsOf(tui)[BAR_ROW - 1]).toBe(rootBarRow('projects'));
 
     await tui.press(TAB);
-    expect(rowsOf(tui)[BAR_ROW - 1], 'then Conductors').toBe(
-      rootBarRow('conductors'),
+    expect(rowsOf(tui)[BAR_ROW - 1], 'then Machines').toBe(
+      rootBarRow('machines'),
     );
 
     await tui.press(TAB);
@@ -1060,7 +1060,7 @@ describe('BB-239 AC-6 — Tab cycles the current level', () => {
 
     await tui.press(SHIFT_TAB);
     expect(rowsOf(tui)[BAR_ROW - 1], 'Shift-Tab goes the other way').toBe(
-      rootBarRow('conductors'),
+      rootBarRow('machines'),
     );
     // …all the way back round: one Shift-Tab per remaining root tab.
     await tui.press(SHIFT_TAB);

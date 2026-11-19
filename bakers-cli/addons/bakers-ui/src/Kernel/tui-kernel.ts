@@ -84,10 +84,13 @@ export async function runTicketTui(
         ? { conductorProcess: options.conductorProcess }
         : {}),
       ...(options.restartProcess
-        ? { restartProcess: options.restartProcess }
-        : {}),
-      ...(options.selectWorkspace
-        ? { selectWorkspace: options.selectWorkspace }
+        ? {
+            // Tear down first, so the child draws on a restored terminal.
+            restartProcess: (workspace: string): void => {
+              finish();
+              options.restartProcess?.(workspace);
+            },
+          }
         : {}),
       ...(options.workspace !== undefined
         ? { workspace: options.workspace }

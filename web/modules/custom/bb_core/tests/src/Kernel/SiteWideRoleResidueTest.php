@@ -103,12 +103,16 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     'create bb_term',
     'create bb_ticket',
     'edit bb_project',
+    // The time tools record, correct and delete the owner's own worklogs.
+    'record own worklog',
     'register bakers conductor',
     'update any bb_group',
     'update any bb_term',
     'update any bb_ticket',
     'update any bb_workspace',
     'update own bb_machine',
+    // A project's creator fixes its settings over the session.
+    'update own bb_project',
     'use text format bb_rich',
     // Membership is the model's central relation and the source of every rank,
     // and OG reserves reading it to site-wide `administer organic groups` or an

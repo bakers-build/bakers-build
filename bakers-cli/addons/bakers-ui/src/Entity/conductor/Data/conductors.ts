@@ -107,6 +107,8 @@ export interface ConductorRow extends Conductor {
   hostKey: string | undefined;
   /** The sideloaded machine's name — its display label. */
   machineLabel: string | undefined;
+  /** The sideloaded machine's owner; `null` when the machine is unreadable, `undefined` without a machine. */
+  machineOwnerUserId: string | null | undefined;
   /** Liveness, derived — never the raw `status`. */
   derivedStatus: ConductorStatus;
   /**
@@ -484,12 +486,23 @@ function capacityOf(
 function machineOf(
   raw: JsonApiResource,
   machinesById: Map<string, JsonApiResource>,
-): { hostKey: string | undefined; machineLabel: string | undefined } {
+): {
+  hostKey: string | undefined;
+  machineLabel: string | undefined;
+  machineOwnerUserId: string | null | undefined;
+} {
   const machineId = singleRelId(raw.relationships?.machine);
   const machine = machineId ? machinesById.get(machineId) : undefined;
   return {
     hostKey: str(machine?.attributes?.host_key),
     machineLabel: str(machine?.attributes?.name),
+    // An unreadable referenced machine is an unknown owner (null), never the
+    // conductor's: only a conductor without a machine falls back to its owner.
+    machineOwnerUserId: machine
+      ? singleRelId(machine.relationships?.owner_user_id)
+      : machineId
+        ? null
+        : undefined,
   };
 }
 
@@ -505,7 +518,10 @@ const toConductorRow = (
   const lastSeen = toUnixSeconds(r.attr('last_seen')) ?? 0;
   const leaseExpiresAt = toUnixSeconds(r.attr('lease_expires_at')) ?? 0;
   const { currentLoad, maxParallel } = capacityOf(raw, machinesById);
-  const { hostKey, machineLabel } = machineOf(raw, machinesById);
+  const { hostKey, machineLabel, machineOwnerUserId } = machineOf(
+    raw,
+    machinesById,
+  );
   return {
     ...toConductor(r),
     workspaceRoot,
@@ -517,6 +533,7 @@ const toConductorRow = (
     conductorName: str(r.attr('conductor_name')),
     hostKey,
     machineLabel,
+    machineOwnerUserId,
     // `present: true` because the row IS a control-plane record — which is why
     // `registry-only` can never come out of this screen.
     derivedStatus: deriveConductorStatus(
@@ -543,6 +560,8 @@ export interface ConductorQuery {
   projectId?: string | undefined;
   /** The conductors this user OWNS (BB-460 D3) — by owner, never by machine. */
   ownerUserId?: string | undefined;
+  /** One machine's conductors, opened from the Machines tab. */
+  machineId?: string | undefined;
 }
 
 /**
@@ -562,6 +581,7 @@ const conductorParams = (query: ConductorQuery): DrupalJsonApiParams => {
   if (query.projectId) params.addFilter('project_id.id', query.projectId);
   if (query.ownerUserId)
     params.addFilter('owner_user_id.id', query.ownerUserId);
+  if (query.machineId) params.addFilter('machine.id', query.machineId);
   return params;
 };
 

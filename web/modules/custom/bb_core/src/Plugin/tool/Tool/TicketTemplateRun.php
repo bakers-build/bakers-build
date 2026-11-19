@@ -114,7 +114,7 @@ final class TicketTemplateRun extends ToolBase {
   /**
    * Creates the ticket.
    */
-  private TicketTemplateInstantiator $instantiator;
+  protected TicketTemplateInstantiator $instantiator;
 
   /**
    * {@inheritdoc}

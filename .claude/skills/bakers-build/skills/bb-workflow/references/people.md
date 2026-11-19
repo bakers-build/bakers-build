@@ -1,8 +1,8 @@
 # People and conductors
 
 Your user: `bakers_user_read`, read once per run ([read ticket](read-ticket.md)); retain it.
-Position and background say who they are; team `role` says what they may do. `user` (e-mail or
-username) reads another visible user.
+Position and background, from the `profiles` entry of the ticket's workspace, say who they are;
+team `role` says what they may do. `user` (e-mail or username) reads another visible user.
 
 Pass people and conductors by UUID only, from `bakers_user_read` or ticket outputs.
 

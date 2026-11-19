@@ -14,6 +14,7 @@ import { createBdd } from 'playwright-bdd';
 import { Drush } from '../../support/drush';
 import type { Page, Request } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
+import { RAIL_ISLAND } from '../../support/shell';
 
 const { Given, When, Then, After } = createBdd(test);
 
@@ -295,4 +296,8 @@ When('a stranger requests the project Settings', async ({ page, authProvider, ap
 Then('the stranger is denied', async () => {
   expect(strangerStatus).toBe(403);
   expect(storedField('project', 'name')).toBe(world!.names.project);
+});
+
+Then('the rail links {string}', async ({ page }, name: string) => {
+  await expect(page.locator(RAIL_ISLAND).getByRole('link', { name, exact: true })).toBeVisible();
 });

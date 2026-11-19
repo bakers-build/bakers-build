@@ -55,5 +55,7 @@ Start the conductor and let a run call `forge_checks` with `ref` set to the defa
 - Required means the head pipeline and every job without `allow_failure`; a manual job that may not fail stays `pending` until it is played.
 - Every merge sends `squash` and `should_remove_source_branch`, so nothing stored on the MR decides them. A stored `force_remove_source_branch: true` on a source that must be kept blocks the merge until the branch owner clears it.
 - bakers.build does not watch the token's expiry date.
+- `request_reviewers` finds a reviewer by their public e-mail; an admin token also finds private e-mails. A reviewer it cannot find is skipped and named.
+- `forge_issue_update` acts on the ticket's origin issue, which may sit in another project on the same host. A Project Access Token reaches only its own project: for an origin elsewhere use a Group Access Token or `auth: 'glab'`; otherwise GitLab answers 403 or 404.
 
 Package source in a checkout: `bakers-cli/addons/forge-gitlab`.

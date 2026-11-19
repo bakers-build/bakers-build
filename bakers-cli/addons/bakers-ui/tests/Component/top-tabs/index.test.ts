@@ -7,7 +7,7 @@ import { buildRoutes } from '../../../src/Routing/routes.js';
 
 const routes = buildRoutes();
 it.each([
-  ['root', 'projects', ' My work   [Projects]   Conductors '],
+  ['root', 'projects', ' My work   [Projects]   Machines '],
   ['project', 'tickets', ' Overview   [Tickets]   Runs    Conductors '],
   ['ticket', 'comments', ' Overview    Planning   [History]   Runs '],
 ])('renders the registered %s bar and its clickable parts', (level, tab, expected) => {

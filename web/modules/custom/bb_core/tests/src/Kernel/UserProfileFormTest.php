@@ -10,7 +10,14 @@ use Drupal\Core\StringTranslation\Translator\StaticTranslation;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\ui_patterns\SourcePluginBase;
+use Drupal\bb_core\Controller\UserProfileController;
+use Drupal\bb_core\Entity\BbProfileInterface;
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\user\UserInterface;
+use Drupal\views\Entity\View;
+use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\HttpFoundation\InputBag;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +32,7 @@ final class UserProfileFormTest extends KernelTestBase {
 
   use UserCreationTrait;
   use UserProfileTestTrait;
+  use OgScopeFixtureTrait;
 
   /**
    * {@inheritdoc}
@@ -43,8 +51,11 @@ final class UserProfileFormTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    $this->installEntitySchema('user');
+    foreach (['user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group', 'bb_project'] as $type) {
+      $this->installEntitySchema($type);
+    }
     $this->installConfig(['user']);
+    $this->installOgScopeFixture();
     // UID 1 dummy so no test account is the superuser.
     $this->createUser([], 'uid1-dummy');
     $this->installUserProfileConfig();
@@ -60,48 +71,154 @@ final class UserProfileFormTest extends KernelTestBase {
   }
 
   /**
-   * A user saves their own position and background, then clears them.
+   * Creates a workspace.
    */
-  public function testOwnProfileSavesAndClears(): void {
-    $user = $this->person();
-    $this->setCurrentUser($user);
-
-    $formState = $this->submitUserProfile($user, 'Product Lead', 'Drupal and product work');
-    self::assertSame([], $formState->getErrors());
-    self::assertSame(['Product Lead', 'Drupal and product work'], $this->storedUserProfile($user));
-
-    $formState = $this->submitUserProfile($user, '', '');
-    self::assertSame([], $formState->getErrors());
-    self::assertSame([NULL, NULL], $this->storedUserProfile($user));
+  private function workspace(string $name): BbWorkspaceInterface {
+    $workspace = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
+      ->create(['name' => $name, 'slug' => strtolower($name)]);
+    self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
+    $workspace->save();
+    return $workspace;
   }
 
   /**
-   * The form holds position and background, never name, mail or password.
+   * A user saves their own position and background in one workspace only.
+   */
+  public function testOwnProfileSavesPerWorkspaceAndClears(): void {
+    $user = $this->person();
+    $north = (int) $this->workspace('North')->id();
+    $south = (int) $this->workspace('South')->id();
+    $this->setCurrentUser($user);
+
+    $formState = $this->submitUserProfile($user, $north, 'Product Lead', 'Drupal and product work');
+    self::assertSame([], $formState->getErrors());
+    self::assertSame(['Product Lead', 'Drupal and product work'], $this->storedUserProfile($user, $north));
+    self::assertSame(['', ''], $this->storedUserProfile($user, $south), 'the other workspace is untouched');
+
+    $formState = $this->submitUserProfile($user, $north, '', '');
+    self::assertSame([], $formState->getErrors());
+    self::assertSame(['', ''], $this->storedUserProfile($user, $north));
+  }
+
+  /**
+   * The form holds position and background, not owner, workspace, favorites.
    */
   public function testFormHoldsOnlyTheProfileFields(): void {
     $user = $this->person();
     $this->setCurrentUser($user);
-    $form = $this->container->get('entity.form_builder')->getForm($user, 'profile');
+    $profile = $this->container->get(Profiles::class)->forAccount((int) $user->id(), (int) $this->workspace('North')->id());
+    $form = $this->container->get('entity.form_builder')->getForm($profile, 'default');
 
-    self::assertArrayHasKey('field_developer_title', $form);
-    self::assertArrayHasKey('field_bb_background', $form);
-    foreach (['mail', 'name', 'pass', 'current_pass', 'status', 'roles'] as $key) {
-      self::assertArrayNotHasKey($key, $form['account'] ?? [], "no $key element");
+    self::assertArrayHasKey('position', $form);
+    self::assertArrayHasKey('background', $form);
+    foreach (['uid', 'workspace_id', 'favorite_projects', 'created'] as $key) {
+      self::assertFalse(isset($form[$key]) && ($form[$key]['#access'] ?? TRUE) !== FALSE, "no $key element");
     }
-    self::assertArrayNotHasKey('preferred_langcode', $form['language'] ?? []);
   }
 
   /**
-   * Position and background are edited on Profile only, not on Account › Edit.
+   * The account fields are gone from both config homes.
    */
-  public function testAccountEditFormNoLongerHoldsTheProfileFields(): void {
-    $storage = new FileStorage(dirname($this->root) . '/config/sync');
-    $display = $storage->read('core.entity_form_display.user.user.default');
-    self::assertIsArray($display);
-    foreach (['field_developer_title', 'field_bb_background'] as $field) {
-      self::assertArrayNotHasKey($field, $display['content'], "$field leaves the edit form");
-      self::assertTrue($display['hidden'][$field] ?? FALSE, "$field is hidden on the edit form");
+  public function testAccountFieldsAreGone(): void {
+    foreach (['config/sync', 'recipes/bakers/config'] as $home) {
+      $storage = new FileStorage(dirname($this->root) . '/' . $home);
+      foreach (['field_developer_title', 'field_bb_background'] as $field) {
+        self::assertFalse($storage->exists("field.storage.user.$field"), "$home: $field");
+      }
     }
+  }
+
+  /**
+   * The page edits the workspace in context, else the first; none: empty state.
+   */
+  public function testPageEditsTheWorkspaceInContext(): void {
+    $user = $this->person();
+    $south = $this->workspace('South');
+    $north = $this->workspace('North');
+    $this->addMembership($south, $user, ['member']);
+    $this->addMembership($north, $user, ['member']);
+    $this->installMyWorkRoute();
+    $this->setCurrentUser($user);
+
+    $this->openProfile($user);
+    self::assertSame((int) $north->id(), $this->pageProfile($user)->workspaceId(), 'first by label');
+    $this->openProfile($user, $south->uuid());
+    self::assertSame((int) $south->id(), $this->pageProfile($user)->workspaceId(), 'the origin');
+    self::assertSame('Profile in South', (string) $this->controller()->title($user));
+
+    $homeless = $this->person();
+    $this->setCurrentUser($homeless);
+    $this->openProfile($homeless);
+    self::assertSame(0, $this->pageProfile($homeless)->workspaceId(), 'no workspace');
+    $form = $this->container->get('entity.form_builder')->getForm($this->pageProfile($homeless), 'default');
+    self::assertArrayNotHasKey('position', $form, 'an empty state, no fields');
+    self::assertArrayNotHasKey('actions', $form, 'nothing to save');
+  }
+
+  /**
+   * Registers the My work page, which the workspace origin must reach.
+   */
+  private function installMyWorkRoute(): void {
+    $this->enableModules(['views']);
+    $shipped = Yaml::parseFile(dirname(DRUPAL_ROOT) . '/recipes/bakers/config/views.view.tickets.yml');
+    View::create([
+      'id' => 'tickets',
+      'label' => 'tickets',
+      'base_table' => 'users_field_data',
+      'base_field' => 'uid',
+      'display' => [
+        'default' => [
+          'id' => 'default',
+          'display_title' => 'Default',
+          'display_plugin' => 'default',
+          'position' => 0,
+          'display_options' => ['access' => ['type' => 'none']],
+        ],
+        'my_work' => [
+          'id' => 'my_work',
+          'display_title' => 'My work',
+          'display_plugin' => 'page',
+          'position' => 1,
+          'display_options' => ['path' => $shipped['display']['my_work']['display_options']['path']],
+        ],
+      ],
+    ])->save();
+    $this->container->get('router.builder')->rebuild();
+  }
+
+  /**
+   * Pushes a request for a user's Profile page.
+   */
+  private function openProfile(UserInterface $user, ?string $workspace = NULL): void {
+    $request = Request::create('/user/' . $user->id() . '/profile', 'GET', $workspace === NULL ? [] : ['workspace' => $workspace]);
+    $request->setSession($this->container->get('request_stack')->getSession());
+    $route = $this->container->get('router.route_provider')->getRouteByName('bb_core.user.profile');
+    $request->attributes->add([
+      RouteObjectInterface::ROUTE_NAME => 'bb_core.user.profile',
+      RouteObjectInterface::ROUTE_OBJECT => $route,
+      'user' => $user,
+      '_raw_variables' => new InputBag(['user' => $user->id()]),
+    ]);
+    $this->container->get('request_stack')->push($request);
+    $this->container->get('current_route_match')->resetRouteMatch();
+  }
+
+  /**
+   * The profile the page's entity form edits for the pushed request.
+   */
+  private function pageProfile(UserInterface $user): BbProfileInterface {
+    $form = $this->container->get('entity_type.manager')->getFormObject('bb_profile', 'default');
+    $profile = $form->getEntityFromRouteMatch($this->container->get('current_route_match'), 'bb_profile');
+    self::assertInstanceOf(BbProfileInterface::class, $profile);
+    self::assertSame((int) $user->id(), $profile->getOwnerId());
+    return $profile;
+  }
+
+  /**
+   * The Profile page controller.
+   */
+  private function controller(): UserProfileController {
+    return $this->container->get('class_resolver')->getInstanceFromDefinition(UserProfileController::class);
   }
 
   /**
@@ -127,9 +244,11 @@ final class UserProfileFormTest extends KernelTestBase {
     self::assertSame('/user/{user}/profile', $route->getPath());
     self::assertSame(['cookie'], $route->getOption('_auth'));
     self::assertSame('user.edit profile', $route->getRequirement('_entity_access'));
+    self::assertSame('bb_profile.default', $route->getDefault('_entity_form'), 'the form token guards the POST');
+    self::assertSame('entity:user', $route->getOption('parameters')['user']['type'] ?? NULL);
     self::assertTrue($route->getOption('_bb_user_area'), 'the profile page sits in the account area');
 
-    $label = $this->container->get('entity_field.manager')->getFieldDefinitions('user', 'user')['field_developer_title']->getLabel();
+    $label = $this->container->get('entity_field.manager')->getFieldDefinitions('bb_profile', 'bb_profile')['position']->getLabel();
     self::assertSame('Position', (string) $label);
   }
 

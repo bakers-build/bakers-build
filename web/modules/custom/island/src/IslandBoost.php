@@ -146,7 +146,8 @@ final class IslandBoost implements TrustedCallbackInterface {
    * site where they are compiled out.
    *
    * Partial by nature: a declaration inside a `#lazy_builder` (placed
-   * blocks, BigPipe) is not resolved yet and cannot be seen.
+   * blocks, BigPipe) or a UI Patterns component slot (built in the
+   * component's own `#pre_render`) is not resolved yet and cannot be seen.
    *
    * @param array $element
    *   The boosted container.

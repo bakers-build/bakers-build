@@ -25,19 +25,19 @@ final class BbRelatedMaxTimestamp extends FieldPluginBase {
   /**
    * Formats the latest timestamp as a relative interval.
    */
-  private BbDate $date;
+  protected BbDate $date;
 
   /**
    * Loads the related entity type.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * Latest timestamps keyed by the row entity id, filled on the first row.
    *
    * @var array<int|string, int>|null
    */
-  private ?array $latest = NULL;
+  protected ?array $latest = NULL;
 
   /**
    * {@inheritdoc}

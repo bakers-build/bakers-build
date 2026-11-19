@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { BbCommandHost, BbConnectionConfig } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cmdUi, type RunBbUiOptions } from '../src/ui.js';
+import { cmdUi, type RunBbUiOptions, runLogReader } from '../src/ui.js';
 
 // BB-201 (AC-3): `bakers ui` reads its connection scope + the registry and
 // delegates to `runBbUi`.
@@ -850,6 +850,52 @@ describe('cmdUi attaches the ambient workspace plugin to its own chain (BB-495)'
     });
     expect(opts?.connection.authPlugins?.map((p) => p.id)).not.toContain(
       'bakers-workspace',
+    );
+  });
+});
+
+describe('runLogReader', () => {
+  const reader = (status: number, body = '') => {
+    const sent: { url: string; auth?: string }[] = [];
+    const read = runLogReader({
+      baseUrl: 'https://bakers.example/',
+      auth: {
+        apply: async (request) => ({
+          ...request,
+          headers: { ...request.headers, Authorization: 'Bearer t' },
+        }),
+      },
+      http: {
+        send: async (request) => {
+          sent.push({
+            url: request.url,
+            auth: request.headers?.Authorization,
+          });
+          return { status, headers: {}, body };
+        },
+      },
+    } as never);
+    return { read, sent };
+  };
+
+  it('reads the stored log through the signed-in download route', async () => {
+    const { read, sent } = reader(200, 'boom');
+    await expect(read('run-1', 'error_log')).resolves.toBe('boom');
+    expect(sent).toEqual([
+      {
+        url: 'https://bakers.example/_bakers-api/run/run-1/log/error_log',
+        auth: 'Bearer t',
+      },
+    ]);
+  });
+
+  it('reads no stored log as empty', async () => {
+    await expect(reader(204).read('run-1', 'error_log')).resolves.toBe('');
+  });
+
+  it('refuses any other answer rather than read it as empty', async () => {
+    await expect(reader(404, 'nope').read('run-1', 'log')).rejects.toThrow(
+      '404',
     );
   });
 });

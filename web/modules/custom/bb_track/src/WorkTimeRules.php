@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_track;
 
+use Drupal\bb_core\Element\Time;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
@@ -15,11 +16,6 @@ final class WorkTimeRules {
    * The single shared upper bound for one recorded entry: 1440 minutes.
    */
   public const MAX_ENTRY_SECONDS = 86400;
-
-  /**
-   * The shared H:MM duration pattern, hours then minutes.
-   */
-  public const DURATION_PATTERN = '/^(\d{1,6}):([0-5]\d)$/';
 
   /**
    * Validates whole-minute bounded duration, distinguishing explicit zero.
@@ -35,13 +31,12 @@ final class WorkTimeRules {
   }
 
   /**
-   * Explains why a typed H:MM duration was rejected, format vs. out-of-range.
+   * Explains why a typed duration was rejected, format vs. out-of-range.
    */
   public static function durationError(mixed $raw): TranslatableMarkup {
-    $value = is_string($raw) || is_int($raw) ? trim((string) $raw) : '';
-    return preg_match(self::DURATION_PATTERN, $value)
+    return Time::parse($raw) !== NULL
       ? new TranslatableMarkup('Duration must be between 0:01 and 24:00.')
-      : new TranslatableMarkup('Enter duration as hours:minutes, for example 0:30 or 1:15.');
+      : new TranslatableMarkup('Enter duration as whole hours or hours:minutes, for example 8, 0:30 or 1:15.');
   }
 
   /**

@@ -3,8 +3,6 @@ status: true
 dependencies:
   config:
     - core.entity_view_mode.user.full
-    - field.field.user.user.field_bb_background
-    - field.field.user.user.field_developer_title
     - field.field.user.user.field_full_name
     - field.field.user.user.field_onboarding_completed
     - field.field.user.user.user_picture
@@ -58,9 +56,6 @@ third_party_settings:
                           picture:
                             source_id: bb_user_person_props
                             source: {  }
-                          subtitle:
-                            source_id: 'field_property:user:field_developer_title:value'
-                            source: {  }
                         slots: {  }
                     node_id: user_full_person
         node_id: user_full_zone
@@ -70,8 +65,6 @@ bundle: user
 mode: full
 content: {  }
 hidden:
-  field_bb_background: true
-  field_developer_title: true
   field_full_name: true
   field_onboarding_completed: true
   member_for: true

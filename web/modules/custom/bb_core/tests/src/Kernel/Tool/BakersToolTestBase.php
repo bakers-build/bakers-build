@@ -53,6 +53,7 @@ abstract class BakersToolTestBase extends KernelTestBase {
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_team', 'bb_project',
       'bb_conductor', 'bb_ticket', 'bb_run', 'bb_comment', 'bb_term',
+      'bb_profile',
     ] as $type) {
       $this->installEntitySchema($type);
     }

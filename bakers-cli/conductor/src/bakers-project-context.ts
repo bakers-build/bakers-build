@@ -15,6 +15,7 @@ export class AmbiguousProjectNameError extends Error {
 export async function resolveBbProjectContext(
   client: JsonApiClient,
   selection: BbProjectSelection,
+  configPath?: string,
 ): Promise<ResolvedBbProjectContext> {
   let selectedWorkspace: { id: string; name: string } | undefined;
   if (selection.workspace) {
@@ -43,13 +44,17 @@ export async function resolveBbProjectContext(
     query = query.where('group_id.workspace_id.id', '=', selectedWorkspace.id);
   const projects = await query.page(2).list();
   if (projects.length === 0) {
-    const reachable = selectedWorkspace
-      ? selectedWorkspace.name
-      : (await client.collection('bb_workspace').page(100).list())
-          .map((row) => row.attr<string>('name') ?? row.id)
-          .join(', ');
+    const reachable = (await client.collection('bb_workspace').page(100).list())
+      .map((row) => row.attr<string>('name') ?? row.id)
+      .join(', ');
+    const pinned = selectedWorkspace
+      ? ` in workspace "${selectedWorkspace.name}"`
+      : '';
+    const fix = selectedWorkspace
+      ? ` Fix project.workspace${configPath ? ` in ${configPath}` : ''}.`
+      : '';
     throw new Error(
-      `bakers.build project "${selection.project}" not found. Reachable workspaces: ${reachable || '(none)'}.`,
+      `bakers.build project "${selection.project}" not found${pinned}. Reachable workspaces: ${reachable || '(none)'}.${fix}`,
     );
   }
   const contexts = await Promise.all(

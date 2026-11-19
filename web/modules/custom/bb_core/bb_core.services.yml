@@ -82,8 +82,8 @@ services:
     arguments: ['@current_user', '@current_route_match']
     tags:
       - { name: event_subscriber }
-  bb_core.my_work_sign_in_subscriber:
-    class: Drupal\bb_core\EventSubscriber\MyWorkSignInSubscriber
+  bb_core.workspace_sign_in_subscriber:
+    class: Drupal\bb_core\EventSubscriber\WorkspaceSignInSubscriber
     arguments: ['@current_user']
     tags:
       - { name: event_subscriber }
@@ -418,7 +418,7 @@ services:
   # and bb_conductor. They are JSON:API surface read by bakers-cli.
   bb_core.ticket_run_deriver:
     class: Drupal\bb_core\Derive\TicketRunDeriver
-    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.date']
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.date', '@bb_core.workspace_resolver', '@Drupal\bb_core\Profile\Profiles']
   Drupal\bb_core\Derive\TicketRunDeriver:
     alias: bb_core.ticket_run_deriver
   bb_core.project_health:
@@ -548,3 +548,5 @@ services:
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_run_deriver', '@bb_core.conductor_owner_access']
   Drupal\bb_core\Ticket\TicketHealth:
     alias: bb_core.ticket_health
+  Drupal\bb_core\Profile\Profiles:
+    autowire: true

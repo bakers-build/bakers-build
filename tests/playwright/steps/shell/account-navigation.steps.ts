@@ -67,8 +67,10 @@ Then('logout works from my account rail in {string}', async ({ page }, slug: str
   await page.goto(profile);
   await fullPageAction(page, 'Log out', '/user/logout/confirm');
   await page.getByRole('button', { name: 'Log out', exact: true }).click();
-  const protectedResponse = await page.goto(`/${slug}/tickets`);
-  expect(protectedResponse?.status()).toBe(404);
+  await page.goto(`/${slug}/tickets`);
+  const signIn = new URL(page.url());
+  expect(signIn.pathname).toBe('/user/login');
+  expect(signIn.searchParams.get('destination')).toBe(`/${slug}/tickets`);
   await expect(rail(page)).toHaveCount(0);
 });
 

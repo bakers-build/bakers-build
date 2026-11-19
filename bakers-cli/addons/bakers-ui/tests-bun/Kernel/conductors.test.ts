@@ -53,17 +53,15 @@ describe('the Conductors screen', () => {
   it('paints the header row bold, and the rows under it plain', async () => {
     const tui = await openConductors();
 
-    // Row 4 gap, row 5 tab bar, row 6 frame top, rows 7-9 the `mine`/`c clear`
-    // badge strip (BB-460 D6), row 10 list header.
+    // A machine's Conductors has no tab bar: row 4 frame top, rows 5-7 the
+    // `mine`/`c clear` badge strip (BB-460 D6), row 8 list header.
     const spans = tui.captureSpans().lines;
     const bold = (line: { spans: { attributes: number }[] } | undefined) =>
       (line?.spans ?? []).some((span) => (span.attributes & BOLD) !== 0);
-    expect(tui.rows()[4], 'row 4 is the gap above the tabs').toBe('');
-    expect(tui.rows()[5], 'row 5 is the tab bar').toMatch(/\[/);
-    expect(tui.rows()[6], 'row 6 is the frame top').toMatch(/╭/);
-    expect(tui.rows()[10], 'row 10 is the list header').toContain('WORKSPACE');
-    expect(bold(spans[10]), 'the header row is bold').toBe(true);
-    expect(bold(spans[11]), 'the conductor row under it is not').toBe(false);
+    expect(tui.rows()[4], 'row 4 is the frame top').toMatch(/╭/);
+    expect(tui.rows()[8], 'row 8 is the list header').toContain('WORKSPACE');
+    expect(bold(spans[8]), 'the header row is bold').toBe(true);
+    expect(bold(spans[9]), 'the conductor row under it is not').toBe(false);
 
     await quit(tui);
   });
@@ -507,9 +505,14 @@ describe('the Conductors screen', () => {
       tui: { conductorProcess: host },
     });
     // Boot lands on My work. From there the product order is Projects →
-    // Conductors.
+    // Machines, and a machine opens its Conductors.
     await tui.press('\t');
     await tui.press('\t');
+    await settle();
+    await tui.renderOnce();
+    await tui.press('\r');
+    await settle();
+    await tui.renderOnce();
     return { ...tui, reads: () => conductorReads };
   }
 
