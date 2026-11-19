@@ -27,6 +27,18 @@ Feature: Everyone reads their own figures on My work › Stats
     Then the address carries "filter[period]=year"
     And the period compares with the previous year
 
+  Scenario: Choosing Today and then Yesterday shows one day per hour
+    Given I am logged in as the account "north-lead"
+    When I visit My work tab "Stats"
+    And I choose the period kind "Today"
+    Then the address carries "filter[period]=day"
+    And the period shows the day "Today"
+    And the period compares with the day before
+    And the page shows "Per hour, UTC"
+    When I choose the period kind "Yesterday"
+    Then the period shows the day "Yesterday"
+    And the period compares with the day before
+
   Scenario: The project filter narrows the page to one project
     Given I am logged in as the account "north-lead"
     When I visit My work tab "Stats"

@@ -585,6 +585,35 @@ final class MeasurementEvaluatorTest extends KernelTestBase {
   }
 
   /**
+   * A day cuts into 24 hour buckets; later hours are zero and unqueried.
+   */
+  public function testHourBucketsCoverOneDay(): void {
+    $project = $this->createProject('hours');
+    $user = $this->createAccount('alice-hours');
+    $this->createTicket($project, $user, self::at(2026, 10, 24, 0, 30));
+    $this->createTicket($project, $user, self::at(2026, 10, 24, 9, 10));
+    // A record dated after now must not leak into a later hour.
+    $this->createTicket($project, $user, self::at(2026, 10, 24, 15));
+    $measurement = BbMeasurement::load('closed_tickets');
+    self::assertNotNull($measurement);
+
+    $result = $this->evaluator()->evaluate($measurement, ['project' => $project], [
+      'type' => 'hours',
+      'from' => self::at(2026, 10, 24),
+      'to' => self::at(2026, 10, 24, 23, 59, 59),
+    ], self::at(2026, 10, 24, 9, 30));
+
+    $categories = $result->getCategories();
+    self::assertCount(24, $categories);
+    self::assertSame(['key' => '2026-10-24T00', 'label' => '00:00'], $categories[0]);
+    self::assertSame(['key' => '2026-10-24T09', 'label' => '09:00', 'partial' => TRUE], $categories[9]);
+    self::assertSame(['key' => '2026-10-24T23', 'label' => '23:00'], $categories[23]);
+    self::assertSame(1, $result->getValues()['2026-10-24T00']);
+    self::assertSame(1, $result->getValues()['2026-10-24T09']);
+    self::assertSame(0, $result->getValues()['2026-10-24T15']);
+  }
+
+  /**
    * A dimension counts only inside its range.
    */
   public function testDimensionUsesRange(): void {

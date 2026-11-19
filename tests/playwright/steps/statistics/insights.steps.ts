@@ -102,6 +102,33 @@ Then('the period compares with the previous year', async ({ page }) => {
   await expect(page.getByText(`vs. ${new Date().getUTCFullYear() - 1}`).first()).toBeVisible();
 });
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** A UTC day as the period range writes it: "19 Nov 2026". */
+const utcDay = (date: Date) => `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+/** The period range's trigger, which reads the chosen period. */
+const periodLabel = (page: Page) => page.locator('[x-ref="pickerTrigger"]').first();
+
+// Derived from today (UTC), never a literal date.
+Then('the period shows the day {string}', async ({ page }, name: string) => {
+  const back = { Today: 0, Yesterday: 1 }[name];
+  expect(back, `"${name}" is Today or Yesterday`).not.toBeUndefined();
+  const day = new Date(Date.now() - (back ?? 0) * 86400000);
+  await expect(periodLabel(page)).toHaveText(`${name} · ${utcDay(day)} (UTC)`);
+});
+
+Then('the period compares with the day before', async ({ page }) => {
+  const shown = /(\d{1,2} \w{3} \d{4}) \(UTC\)/.exec(await periodLabel(page).innerText())?.[1];
+  expect(shown, 'The period label names a day').toBeTruthy();
+  const before = new Date(Date.parse(`${shown} UTC`) - 86400000);
+  await expect(page.getByText(`vs. ${utcDay(before)}`).first()).toBeVisible();
+});
+
+Then('removing the {string} filter keeps {string}', async ({ page }, field: string, parameter: string) => {
+  const remove = page.getByRole('link', { name: `Remove the ${field} filter` }).first();
+  await expect(remove).toBeVisible();
+  expect(decodeURIComponent((await remove.getAttribute('href')) ?? '')).toContain(parameter);
+});
+
 When('I sort the table {string} by {string}', async ({ page }, table: string, column: string) => {
   const header = tableBlock(page, table).getByRole('columnheader', { name: column });
   await Promise.all([navigated(page), header.getByRole('link').click()]);

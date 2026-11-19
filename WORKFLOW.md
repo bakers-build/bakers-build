@@ -9,7 +9,7 @@ Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe
 `existing-config` install at the same revision. Commands in the web container run through
 fixed `provision_exec` keys: `phpcs`, `phpmd`, `phpstan`, `phpunit` and `phpunit-mariadb` (test paths), `paratest`
 (one suite or path), `uli` (`[<persona>, <url>?]`), `playwright`
-(spec paths), `playwright-cli` and `playground-ticket`; there is no free command. `ddev_status`/`ddev_start` replace
+(spec paths), `playwright-cli`, `designbook` (Storybook and captures) and `playground-ticket`; there is no free command. `ddev_status`/`ddev_start` replace
 project inspection and startup. Provisioning profiles use the fixed, protected `.bakers/provision.sh`
 entry point; their implementation is read from that file on each call.
 Under an isolating runtime (`BAKERS_RUNTIME_ISOLATES=1`) the run installs and builds itself:

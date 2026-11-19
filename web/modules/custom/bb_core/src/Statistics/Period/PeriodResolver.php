@@ -14,7 +14,7 @@ namespace Drupal\bb_core\Statistics\Period;
  */
 final class PeriodResolver {
 
-  public const KINDS = ['week', 'month', 'quarter', 'year', 'all', 'custom'];
+  public const KINDS = ['week', 'month', 'quarter', 'year', 'all', 'custom', 'day'];
 
   /**
    * Request keys that travel with the `period` filter.
@@ -36,7 +36,7 @@ final class PeriodResolver {
   public function resolve(array $selected, string $defaultKind, int $now, \Closure $earliest): PeriodRange {
     $utc = new \DateTimeZone('UTC');
     $today = (new \DateTimeImmutable('@' . $now))->setTimezone($utc)->setTime(0, 0);
-    if (!in_array($defaultKind, self::KINDS, TRUE) || in_array($defaultKind, ['all', 'custom'], TRUE)) {
+    if (!in_array($defaultKind, self::KINDS, TRUE) || in_array($defaultKind, ['all', 'custom', 'day'], TRUE)) {
       $defaultKind = 'week';
     }
 
@@ -76,17 +76,19 @@ final class PeriodResolver {
   }
 
   /**
-   * A week, month, quarter or year containing the anchor, with comparison.
+   * A day, week, month, quarter or year containing the anchor, with comparison.
    */
   private function calendar(string $kind, \DateTimeImmutable $anchor, \DateTimeImmutable $today): PeriodRange {
     $start = self::calendarStart($kind, $anchor);
     $previous = match ($kind) {
+      'day' => $start->modify('-1 day'),
       'week' => $start->modify('-1 week'),
       'month' => $start->modify('-1 month'),
       'quarter' => $start->modify('-3 months'),
       default => $start->modify('-1 year'),
     };
     $grouping = match ($kind) {
+      'day' => 'hour',
       'quarter' => 'week',
       'year' => 'month',
       default => 'day',
@@ -115,12 +117,14 @@ final class PeriodResolver {
    */
   private static function calendarRange(string $kind, \DateTimeImmutable $start, string $grouping, \DateTimeImmutable $today, ?PeriodRange $comparison = NULL): PeriodRange {
     $end = match ($kind) {
+      'day' => $start,
       'week' => $start->modify('+6 days'),
       'month' => $start->modify('last day of this month'),
       'quarter' => $start->modify('+2 months')->modify('last day of this month'),
       default => $start->setDate((int) $start->format('Y'), 12, 31),
     };
     $label = match ($kind) {
+      'day' => $start->format('j M Y'),
       'week' => $start->format('\WW o'),
       'month' => $start->format('M Y'),
       'quarter' => sprintf('Q%d %s', intdiv((int) $start->format('n') - 1, 3) + 1, $start->format('Y')),
@@ -145,6 +149,7 @@ final class PeriodResolver {
   private static function calendarStart(string $kind, \DateTimeImmutable $anchor): \DateTimeImmutable {
     $year = (int) $anchor->format('Y');
     return match ($kind) {
+      'day' => $anchor,
       'week' => $anchor->modify('monday this week'),
       'month' => $anchor->modify('first day of this month'),
       'quarter' => $anchor->setDate($year, intdiv((int) $anchor->format('n') - 1, 3) * 3 + 1, 1),
