@@ -16,8 +16,8 @@
 const DAY = 86400000
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-export const KINDS = ['week', 'month', 'quarter', 'year', 'all', 'custom']
-const KIND_LABELS = { week: 'Week', month: 'Month', quarter: 'Quarter', year: 'Year', all: 'All time', custom: 'Custom' }
+export const KINDS = ['day', 'week', 'month', 'quarter', 'year', 'all', 'custom']
+const KIND_LABELS = { day: 'Day', week: 'Week', month: 'Month', quarter: 'Quarter', year: 'Year', all: 'All time', custom: 'Custom' }
 
 const parse = (iso) => {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '')
@@ -33,9 +33,10 @@ const dayCountLabel = (count) => (count === 1 ? 'day' : `${count} days`)
 const usable = (element) => Boolean(element) && !element.disabled && element.offsetParent !== null
 
 /**
- * The week, month, quarter or year containing a day.
+ * The day, week, month, quarter or year containing a day.
  */
 export function periodOf(kind, dateIso) {
+  if (kind === 'day') return { start: dateIso, end: dateIso }
   const date = parse(dateIso)
   const year = date.getUTCFullYear()
   const month = date.getUTCMonth()
@@ -63,6 +64,7 @@ export function shift(kind, range, direction) {
   const year = start.getUTCFullYear()
   const month = start.getUTCMonth()
   const anchor = {
+    day: () => addDays(start, direction),
     week: () => addDays(start, 7 * direction),
     month: () => utc(year, month + direction, 1),
     quarter: () => utc(year, month + 3 * direction, 1),
@@ -155,10 +157,37 @@ export default function periodRange(config = {}) {
     // A popover opens on the month of the date it shows.
     view: (open === 'from' ? range.start : open === 'to' ? range.end : kind === 'all' ? today : range.start).slice(0, 7),
     submit: Boolean(config.submit),
-    kinds: KINDS,
+
+    /** Kind menu entries: Today and Yesterday (the day kind), then the other kinds. */
+    get menu() {
+      const yesterday = iso(addDays(parse(this.today), -1))
+      const dayEntry = (key, label, date) => ({
+        key, label, kind: 'day', date,
+        hint: day(parse(date), false),
+        selected: this.kind === 'day' && this.range.start === date,
+      })
+      return [
+        dayEntry('today', 'Today', this.today),
+        dayEntry('yesterday', 'Yesterday', yesterday),
+        ...KINDS.filter((value) => value !== 'day').map((value) => ({
+          key: value, label: KIND_LABELS[value], kind: value, hint: this.kindHint(value), selected: this.kind === value,
+        })),
+      ]
+    },
+    /** The relative name of a day period: Today, Yesterday or none. */
+    get dayName() {
+      if (this.range.start === this.today) return 'Today'
+      return this.range.start === iso(addDays(parse(this.today), -1)) ? 'Yesterday' : ''
+    },
+    /** The day calendar selects whole weeks only in the week picker. */
+    get weekPicker() {
+      return this.open === 'picker' && this.kind === 'week'
+    },
 
     get label() {
       const text = labelOf(this.kind, this.range)
+      // Days are UTC dates, like every period; a day says so in its label.
+      if (this.kind === 'day') return this.dayName ? `${this.dayName} · ${text} (UTC)` : `${text} (UTC)`
       return this.isCurrent && this.kind !== 'custom' && this.kind !== 'all'
         ? `This ${this.kind} · ${text}`
         : text
@@ -177,10 +206,10 @@ export default function periodRange(config = {}) {
       return `Next ${this.kind === 'custom' ? dayCountLabel(days(this.range)) : this.kind}`
     },
     get returnLabel() {
-      return `Return to this ${this.kind}`
+      return this.kind === 'day' ? 'Return to today' : `Return to this ${this.kind}`
     },
     get canReturn() {
-      return ['week', 'month', 'quarter', 'year'].includes(this.kind) && !this.isCurrent
+      return ['day', 'week', 'month', 'quarter', 'year'].includes(this.kind) && !this.isCurrent
     },
     get dayCount() {
       const count = days(this.range)
@@ -206,11 +235,15 @@ export default function periodRange(config = {}) {
       if (value === 'custom') return 'from – to'
       return labelOf(value, periodOf(value, this.today))
     },
-    setKind(value) {
+    /** Chooses a kind menu entry. */
+    choose(entry) {
+      this.setKind(entry.kind, entry.date)
+    },
+    setKind(value, date = this.today) {
       this.kind = value
       if (value === 'all') this.range = { start: this.today, end: this.today }
       else if (value === 'custom') this.draft = { ...this.range }
-      else this.range = periodOf(value, this.today)
+      else this.range = periodOf(value, date)
       this.view = this.range.start.slice(0, 7)
       this.close()
       if (value !== 'custom') this.navigated()
@@ -341,7 +374,7 @@ export default function periodRange(config = {}) {
      */
     dayTabindex(value) {
       // Mirrors the buttons' disabled state: the week picker disables whole weeks.
-      const picker = this.open === 'picker'
+      const picker = this.weekPicker
       const shown = this.weeks
         .flatMap((row) => row.cells.filter((cell) => cell && !(picker ? row.disabled : cell.disabled)))
         .map((cell) => cell.value)

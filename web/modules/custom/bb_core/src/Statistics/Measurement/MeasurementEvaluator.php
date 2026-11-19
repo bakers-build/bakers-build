@@ -37,7 +37,7 @@ final class MeasurementEvaluator implements MeasurementEvaluatorInterface {
     }
     return match ($categoryDefinition['type'] ?? '') {
       'windows' => $this->windows($measurement, $contexts, $categoryDefinition, $now),
-      'days', 'weeks', 'months', 'quarters', 'total' => $this->buckets($measurement, $contexts, $categoryDefinition, $now),
+      'hours', 'days', 'weeks', 'months', 'quarters', 'total' => $this->buckets($measurement, $contexts, $categoryDefinition, $now),
       'dimension' => $this->dimension($measurement, $contexts, $categoryDefinition, $now),
       default => throw new \InvalidArgumentException(sprintf('Unsupported measurement category type "%s".', $categoryDefinition['type'] ?? '')),
     };
