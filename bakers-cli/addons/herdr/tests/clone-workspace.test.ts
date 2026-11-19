@@ -46,23 +46,62 @@ afterEach(() => {
  * A herdr that knows workspaces by label and the worktrees it opened; it
  * opens a worktree only for a path the parent's `git worktree list` knows.
  */
-function fakeHerdr(open: Array<{ id: string; label: string }> = []) {
+function fakeHerdr(
+  open: Array<{ id: string; label: string }> = [],
+  focused?: string,
+) {
   const calls: string[][] = [];
   const worktrees: Array<{ path: string; branch: string; id: string }> = [];
   const exec = async (args: string[]) => {
     calls.push(args);
     const [noun, verb] = args;
     const arg = (flag: string) => args[args.indexOf(flag) + 1] as string;
-    if (noun === 'worktree' && verb === 'list')
+    if (noun === 'worktree' && verb === 'list') {
+      // Mirrors git: a path git no longer lists drops out.
+      const listed = git(arg('--cwd'), 'worktree', 'list', '--porcelain');
       return JSON.stringify({
         result: {
-          worktrees: worktrees.map(({ path, branch, id }) => ({
-            path,
-            branch,
-            open_workspace_id: open.some((w) => w.id === id) ? id : null,
-          })),
+          worktrees: worktrees
+            .filter(({ path }) => listed.includes(`worktree ${path}\n`))
+            .map(({ path, branch, id }) => ({
+              path,
+              branch,
+              open_workspace_id: open.some((w) => w.id === id) ? id : null,
+            })),
         },
       });
+    }
+    if (noun === 'worktree' && verb === 'create') {
+      const [cwd, path, branch] = [
+        arg('--cwd'),
+        arg('--path'),
+        arg('--branch'),
+      ];
+      const exists = git(cwd, 'branch', '--list', branch) !== '';
+      git(
+        cwd,
+        'worktree',
+        'add',
+        '-q',
+        ...(exists
+          ? [path, branch]
+          : [
+              '-b',
+              branch,
+              path,
+              ...(args.includes('--base') ? [arg('--base')] : []),
+            ]),
+      );
+      open.push({ id: 'ws-created', label: arg('--label') });
+      // One entry per path, as in git.
+      worktrees.splice(
+        0,
+        Infinity,
+        ...worktrees.filter((w) => w.path !== path),
+      );
+      worktrees.push({ path, branch, id: 'ws-created' });
+      return JSON.stringify({ result: { worktree: { path } } });
+    }
     if (noun === 'worktree' && verb === 'open') {
       const path = arg('--path');
       if (!git(arg('--cwd'), 'worktree', 'list').includes(path))
@@ -82,7 +121,7 @@ function fakeHerdr(open: Array<{ id: string; label: string }> = []) {
           workspaces: open.map(({ id, label }) => ({
             workspace_id: id,
             label,
-            focused: false,
+            focused: id === focused,
           })),
         },
       });
@@ -175,15 +214,14 @@ it('reads shared from the herdr addon options and clones only under an isolating
   }).createWorkspace(config(true));
   expect((await isolated.ensure('BB-1', BRANCH)).clone?.shared).toBe(true);
 
-  // runtime-host keeps herdr worktrees: the first call lists them.
+  // runtime-host keeps herdr worktrees.
   const host = fakeHerdr();
   const plain = await herdrWorkspace({
     shared: true,
     execHerdr: host.exec,
   }).createWorkspace(config(false));
-  await expect(plain.ensure('BB-2', 'feat/bb-2')).rejects.toThrow(
-    /unexpected herdr worktree create/,
-  );
+  expect((await plain.ensure('BB-2', 'feat/bb-2')).clone).toBeUndefined();
+  expect(verbs(host.calls)).toContainEqual(['worktree', 'create']);
 });
 
 it('takes shared from the isolating runtime, the workspace option as fallback', async () => {
@@ -307,20 +345,154 @@ it('the executor opens a clone another workspace addon made', async () => {
   expect(herdr.open).toEqual([{ id: 'ws-new', label: BRANCH }]);
 });
 
-it('refuses a run whose runtime clone mode differs from the workspace', async () => {
+const commit = (cwd: string, file: string) => {
+  writeFileSync(join(cwd, file), file);
+  git(cwd, 'add', file);
+  git(cwd, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', file);
+};
+
+it('switches an isolating workspace to a host worktree for a host run, keeping the clone commits', async () => {
   const herdr = fakeHerdr();
-  const isolating = new HerdrWorkspace({
+  const workspace = new HerdrWorkspace({
     root,
     clone: true,
     execHerdr: herdr.exec,
   });
-  const host = new HerdrWorkspace({ root, execHerdr: herdr.exec });
+  const { path } = await workspace.ensure('BB-1', BRANCH, 'origin/next');
+  commit(path, 'isolated.txt');
+
+  const host = await workspace.ensure('BB-1', BRANCH, 'origin/next', {
+    clone: false,
+  });
+
+  expect(host).toMatchObject({ path, created: true });
+  expect(host.clone).toBeUndefined();
+  expect(loadRunClone(path)).toBeUndefined();
+  expect(git(path, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe(BRANCH);
+  expect(git(root, 'log', '--format=%s', BRANCH)).toContain('isolated.txt');
+  expect(herdr.open).toEqual([{ id: 'ws-created', label: BRANCH }]);
+});
+
+it('switches a host worktree back to a run clone for an isolated run, keeping the worktree commits', async () => {
+  const herdr = fakeHerdr();
+  const workspace = new HerdrWorkspace({ root, execHerdr: herdr.exec });
+  const { path } = await workspace.ensure('BB-1', BRANCH, 'origin/next');
+  commit(path, 'host.txt');
+
+  const isolated = await workspace.ensure('BB-1', BRANCH, 'origin/next', {
+    clone: true,
+  });
+
+  expect(isolated.clone).toMatchObject({ workspace: path, branch: BRANCH });
+  expect(loadRunClone(path)).toBeDefined();
+  expect(git(path, 'log', '--format=%s')).toContain('host.txt');
+  expect(herdr.open.filter((w) => w.label === BRANCH)).toHaveLength(1);
+});
+
+it('refuses to leave a run clone with uncommitted work and keeps it', async () => {
+  const herdr = fakeHerdr();
+  const workspace = new HerdrWorkspace({
+    root,
+    clone: true,
+    execHerdr: herdr.exec,
+  });
+  const { path } = await workspace.ensure('BB-1', BRANCH, 'origin/next');
+  writeFileSync(join(path, 'draft.txt'), 'wip');
 
   await expect(
-    isolating.ensure('BB-1', BRANCH, 'origin/next', { clone: false }),
-  ).rejects.toThrow(/herdr workspace.*mix isolating and host runtimes/);
+    workspace.ensure('BB-1', BRANCH, 'origin/next', { clone: false }),
+  ).rejects.toThrow(`run clone: ${path} has uncommitted work`);
+
+  expect(readFileSync(join(path, 'draft.txt'), 'utf8')).toBe('wip');
+  expect(loadRunClone(path)).toBeDefined();
+  expect(verbs(herdr.calls)).not.toContainEqual(['worktree', 'create']);
+  expect(herdr.open.filter((w) => w.label === BRANCH)).toHaveLength(1);
+});
+
+it('refuses to leave a focused run clone no parent workspace can take focus from', async () => {
+  const herdr = fakeHerdr([], 'ws-new');
+  const workspace = new HerdrWorkspace({
+    root,
+    clone: true,
+    execHerdr: herdr.exec,
+  });
+  const { path } = await workspace.ensure('BB-1', BRANCH, 'origin/next');
+
   await expect(
-    host.ensure('BB-1', BRANCH, 'origin/next', { clone: true }),
-  ).rejects.toThrow(/herdr workspace.*mix isolating and host runtimes/);
-  expect(herdr.calls).toEqual([]);
+    workspace.ensure('BB-1', BRANCH, 'origin/next', { clone: false }),
+  ).rejects.toThrow(
+    `herdr workspace: ${path} is focused and no parent workspace can take focus`,
+  );
+
+  expect(loadRunClone(path)).toBeDefined();
+  expect(herdr.open.filter((w) => w.label === BRANCH)).toHaveLength(1);
+});
+
+it('refuses to turn a worktree with uncommitted work into a run clone and keeps it', async () => {
+  const herdr = fakeHerdr();
+  const workspace = new HerdrWorkspace({ root, execHerdr: herdr.exec });
+  const { path } = await workspace.ensure('BB-1', BRANCH, 'origin/next');
+  writeFileSync(join(path, 'draft.txt'), 'wip');
+
+  await expect(
+    workspace.ensure('BB-1', BRANCH, 'origin/next', { clone: true }),
+  ).rejects.toThrow(
+    `run clone: ${path} is a linked worktree with uncommitted work`,
+  );
+
+  expect(readFileSync(join(path, 'draft.txt'), 'utf8')).toBe('wip');
+  expect(loadRunClone(path)).toBeUndefined();
+});
+
+it('tears down whichever mode the last switch left', async () => {
+  const herdr = fakeHerdr();
+  const workspace = new HerdrWorkspace({
+    root,
+    clone: true,
+    execHerdr: herdr.exec,
+  });
+  const { path } = await workspace.ensure('BB-1', BRANCH, 'origin/next');
+  await workspace.ensure('BB-1', BRANCH, 'origin/next', { clone: false });
+  await workspace.ensure('BB-1', BRANCH, 'origin/next', { clone: true });
+
+  expect(await workspace.remove(BRANCH, path)).toBe('removed');
+  expect(existsSync(path)).toBe(false);
+  expect(loadRunClone(path)).toBeUndefined();
+  expect(git(root, 'worktree', 'list', '--porcelain')).not.toContain(path);
+});
+
+it('tears down a host worktree an isolating workspace switched to', async () => {
+  const herdr = fakeHerdr();
+  const removeExec = async (args: string[]) => {
+    if (args[0] === 'worktree' && args[1] === 'remove') {
+      herdr.calls.push(args);
+      git(
+        root,
+        'worktree',
+        'remove',
+        '--force',
+        join(root, '.bakers-worktrees', BRANCH),
+      );
+      return '{}';
+    }
+    return herdr.exec(args);
+  };
+  const workspace = new HerdrWorkspace({
+    root,
+    clone: true,
+    execHerdr: removeExec,
+  });
+  const { path } = await workspace.ensure('BB-1', BRANCH, 'origin/next');
+  await workspace.ensure('BB-1', BRANCH, 'origin/next', { clone: false });
+
+  expect(await workspace.remove(BRANCH, path)).toBe('removed');
+  expect(herdr.calls).toContainEqual([
+    'worktree',
+    'remove',
+    '--workspace',
+    'ws-created',
+    '--force',
+    '--json',
+  ]);
+  expect(existsSync(path)).toBe(false);
 });
