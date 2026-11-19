@@ -1,0 +1,131 @@
+Gathering patches for root package.
+Loading composer repositories with package information
+Updating dependencies
+Lock file operations: 0 installs, 36 updates, 1 removal
+  - Removing symfony/polyfill-php82 (v1.43.0)
+  - Upgrading brick/math (0.14.8 => 1.0.0)
+  - Upgrading composer/pcre (3.3.2 => 3.4.0)
+  - Upgrading doctrine/deprecations (1.1.6 => 1.2.0)
+  - Upgrading doctrine/instantiator (2.1.0 => 2.2.0)
+  - Upgrading drupal/config_inspector (2.1.10 => 2.1.12)
+  - Upgrading drupal/core (11.3.21 => 11.3.22)
+  - Upgrading drupal/core-composer-scaffold (11.3.21 => 11.3.22)
+  - Upgrading drupal/core-dev (11.3.11 => 11.3.22)
+  - Upgrading drupal/core-project-message (11.3.11 => 11.3.22)
+  - Upgrading drupal/core-recipe-unpack (11.3.11 => 11.3.22)
+  - Upgrading drupal/core-recommended (11.3.21 => 11.3.22)
+  - Upgrading drupal/facets (3.0.6 => 3.0.7)
+  - Upgrading drupal/migrate_plus (6.0.10 => 6.0.11)
+  - Upgrading drupal/tagify (1.2.53 => 1.2.55)
+  - Upgrading drupal/ui_patterns_library (2.0.15 => 2.0.23)
+  - Upgrading drupal/views_autocomplete_filters (2.0.3 => 2.0.4)
+  - Upgrading drupal/views_filters_summary (3.4.0 => 3.4.1)
+  - Upgrading google/protobuf (v4.33.6 => v5.36.2)
+  - Upgrading guzzlehttp/guzzle (7.16.1 => 7.16.3)
+  - Upgrading guzzlehttp/psr7 (2.13.2 => 2.13.4)
+  - Upgrading mglaman/phpstan-drupal (2.0.15 => 2.4.0)
+  - Upgrading myclabs/deep-copy (1.13.4 => 1.14.0)
+  - Upgrading nikic/php-parser (v5.7.0 => v5.9.0)
+  - Upgrading open-telemetry/api (1.9.0 => 1.11.0)
+  - Upgrading open-telemetry/context (1.5.0 => 1.6.0)
+  - Upgrading open-telemetry/exporter-otlp (1.4.0 => 1.5.0)
+  - Upgrading open-telemetry/gen-otlp-protobuf (1.9.0 => 1.11.1)
+  - Upgrading open-telemetry/sdk (1.14.0 => 1.16.1)
+  - Upgrading open-telemetry/sem-conv (1.38.0 => 1.45.0)
+  - Upgrading phpstan/phpstan (2.2.1 => 2.3.6)
+  - Upgrading phpstan/phpstan-deprecation-rules (2.0.4 => 2.0.5)
+  - Upgrading phpstan/phpstan-phpunit (2.0.16 => 2.1.2)
+  - Upgrading phpunit/phpunit (11.5.55 => 11.5.58)
+  - Upgrading ramsey/uuid (4.9.2 => 4.10.0)
+  - Upgrading symfony/polyfill-php85 (v1.43.0 => v1.44.0)
+  - Upgrading webmozart/assert (2.5.0 => 2.5.1)
+Writing lock file
+Installing dependencies from lock file (including require-dev)
+Package operations: 1 install, 36 updates, 1 removal
+  - Downloading phpunit/phpunit (11.5.58)
+  - Downloading composer/pcre (3.4.0)
+  - Downloading doctrine/instantiator (2.2.0)
+  - Downloading symfony/polyfill-php85 (v1.44.0)
+  - Downloading guzzlehttp/psr7 (2.13.4)
+  - Downloading guzzlehttp/guzzle (7.16.3)
+  - Downloading drupal/core (11.3.22)
+  - Downloading drupal/config_inspector (2.1.12)
+  - Downloading phpstan/phpstan (2.3.6)
+  - Downloading phpstan/phpstan-phpunit (2.1.2)
+  - Downloading webmozart/assert (2.5.1)
+  - Downloading ramsey/uuid (4.10.0)
+  - Downloading phpstan/phpstan-deprecation-rules (2.0.5)
+  - Downloading mglaman/phpstan-drupal (2.4.0)
+  - Downloading drupal/facets (3.0.7)
+  - Downloading drupal/migrate_plus (6.0.11)
+  - Downloading drupal/tagify (1.2.55)
+  - Downloading drupal/views_autocomplete_filters (2.0.4)
+  - Downloading drupal/views_filters_summary (3.4.1)
+  0/19 [>---------------------------]   0%
+  5/19 [=======>--------------------]  26%
+  8/19 [===========>----------------]  42%
+ 11/19 [================>-----------]  57%
+ 12/19 [=================>----------]  63%
+ 15/19 [======================>-----]  78%
+ 16/19 [=======================>----]  84%
+ 17/19 [=========================>--]  89%
+ 19/19 [============================] 100%
+  - Removing symfony/polyfill-php82 (v1.43.0)
+Gathering patches for root package.
+Gathering patches for dependencies. This might take a minute.
+  - Upgrading drupal/core-composer-scaffold (11.3.21 => 11.3.22): Extracting archive
+  - Upgrading drupal/core-project-message (11.3.11 => 11.3.22): Extracting archive
+  - Upgrading drupal/core-recipe-unpack (11.3.11 => 11.3.22): Extracting archive
+  - Upgrading nikic/php-parser (v5.7.0 => v5.9.0): Extracting archive
+  - Upgrading myclabs/deep-copy (1.13.4 => 1.14.0): Extracting archive
+  - Upgrading phpunit/phpunit (11.5.55 => 11.5.58): Extracting archive
+  - Upgrading composer/pcre (3.3.2 => 3.4.0): Extracting archive
+  - Upgrading doctrine/deprecations (1.1.6 => 1.2.0): Extracting archive
+  - Upgrading doctrine/instantiator (2.1.0 => 2.2.0): Extracting archive
+  - Upgrading symfony/polyfill-php85 (v1.43.0 => v1.44.0): Extracting archive
+  - Upgrading guzzlehttp/psr7 (2.13.2 => 2.13.4): Extracting archive
+  - Upgrading guzzlehttp/guzzle (7.16.1 => 7.16.3): Extracting archive
+  - Upgrading drupal/core (11.3.21 => 11.3.22): Extracting archive
+  - Upgrading drupal/config_inspector (2.1.10 => 2.1.12): Extracting archive
+  - Upgrading phpstan/phpstan (2.2.1 => 2.3.6): Extracting archive
+  - Upgrading phpstan/phpstan-phpunit (2.0.16 => 2.1.2): Extracting archive
+  - Upgrading webmozart/assert (2.5.0 => 2.5.1): Extracting archive
+  - Upgrading brick/math (0.14.8 => 1.0.0): Extracting archive
+  - Upgrading ramsey/uuid (4.9.2 => 4.10.0): Extracting archive
+  - Upgrading open-telemetry/sem-conv (1.38.0 => 1.45.0): Extracting archive
+  - Upgrading open-telemetry/context (1.5.0 => 1.6.0): Extracting archive
+  - Upgrading open-telemetry/api (1.9.0 => 1.11.0): Extracting archive
+  - Upgrading open-telemetry/sdk (1.14.0 => 1.16.1): Extracting archive
+  - Upgrading google/protobuf (v4.33.6 => v5.36.2): Extracting archive
+  - Upgrading open-telemetry/gen-otlp-protobuf (1.9.0 => 1.11.1): Extracting archive
+  - Upgrading open-telemetry/exporter-otlp (1.4.0 => 1.5.0): Extracting archive
+  - Upgrading phpstan/phpstan-deprecation-rules (2.0.4 => 2.0.5): Extracting archive
+  - Upgrading mglaman/phpstan-drupal (2.0.15 => 2.4.0): Extracting archive
+  - Upgrading drupal/core-dev (11.3.11 => 11.3.22)
+  - Upgrading drupal/core-recommended (11.3.21 => 11.3.22)
+  - Installing drupal/ui_patterns (2.0.23): Extracting archive
+  - Upgrading drupal/ui_patterns_library (2.0.15 => 2.0.23)
+  - Upgrading drupal/facets (3.0.6 => 3.0.7): Extracting archive
+  - Upgrading drupal/migrate_plus (6.0.10 => 6.0.11): Extracting archive
+  - Upgrading drupal/tagify (1.2.53 => 1.2.55): Extracting archive
+  - Upgrading drupal/views_autocomplete_filters (2.0.3 => 2.0.4): Extracting archive
+  - Upgrading drupal/views_filters_summary (3.4.0 => 3.4.1): Extracting archive
+  0/31 [>---------------------------]   0%
+ 12/31 [==========>-----------------]  38%
+ 23/31 [====================>-------]  74%
+ 29/31 [==========================>-]  93%
+ 30/31 [===========================>]  96%
+ 31/31 [============================] 100%
+  - Applying patches for drupal/ui_patterns
+
+Package doctrine/common is abandoned, you should avoid using it. No replacement was suggested.
+Generating autoload files
+108 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+phpstan/extension-installer: Extensions installed
+> composer/composer: installed
+> composer/pcre: installed
+> mglaman/phpstan-drupal: installed
+> phpstan/phpstan-deprecation-rules: installed
+> phpstan/phpstan-phpunit: installed
+No security vulnerability advisories found.
