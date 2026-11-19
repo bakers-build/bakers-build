@@ -11,6 +11,7 @@ use Drupal\bb_ticket_trigger\Form\TicketTriggerToggleForm;
 use Drupal\KernelTests\KernelTestBase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use PHPUnit\Framework\Attributes\TestWith;
 
 /**
  * The trigger form inside the template: type form, accounts, activation.
@@ -203,6 +204,42 @@ final class TicketTriggerFormTest extends KernelTestBase {
     );
     $this->assertTrue($trigger->isEnabled());
     $this->assertSame((new \DateTimeImmutable('2026-11-15T05:45:00Z'))->getTimestamp(), $trigger->getNextRun());
+  }
+
+  /**
+   * A typed time saves as HH:MM, a bare whole hour included.
+   */
+  #[TestWith(['8', '08:00'])]
+  #[TestWith(['8:30', '08:30'])]
+  #[TestWith([' 14:05 ', '14:05'])]
+  public function testTimeSavesAsHhMm(string $typed, string $stored): void {
+    $values = self::monthlyValues((string) $this->serviceAccount('a')->id(), TRUE);
+    $values['trigger_type'][0]['plugin_selector']['container']['plugin_form']['time'] = $typed;
+    $form_state = new FormState();
+    $trigger = $this->submitAddForm($values, $form_state);
+
+    $this->assertSame([], array_map('strval', $form_state->getErrors()));
+    $this->assertInstanceOf(BbTicketTriggerInterface::class, $trigger);
+    $this->assertSame($stored, $trigger->getTypePlugin()->getConfiguration()['time']);
+  }
+
+  /**
+   * An invalid time is reported at the time field and saves nothing.
+   */
+  #[TestWith(['24'])]
+  #[TestWith(['8:75'])]
+  #[TestWith(['abc'])]
+  public function testInvalidTimeErrsAtTheField(string $typed): void {
+    $values = self::monthlyValues((string) $this->serviceAccount('a')->id(), TRUE);
+    $values['trigger_type'][0]['plugin_selector']['container']['plugin_form']['time'] = $typed;
+    $form_state = new FormState();
+    $trigger = $this->submitAddForm($values, $form_state);
+
+    $this->assertNull($trigger);
+    $this->assertSame(
+      ['trigger_type][0][plugin_selector][container][plugin_form][time' => 'Enter the time as whole hours or HH:MM (24 hours), for example 8 or 14:30.'],
+      array_map('strval', $form_state->getErrors()),
+    );
   }
 
   /**

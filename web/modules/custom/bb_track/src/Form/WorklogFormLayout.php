@@ -16,6 +16,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbGroupInterface;
 use Drupal\bb_core\Element\PickerValue;
+use Drupal\bb_core\Element\Time;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_track\Entity\Worklog;
 use Drupal\bb_track\WorkTargetOptions;
@@ -331,19 +332,15 @@ final class WorklogFormLayout implements TrustedCallbackInterface {
   }
 
   /**
-   * Parses H:MM into a positive minute-precision second count.
+   * Parses whole hours or H:MM into a bounded minute-precision second count.
    */
-  public static function parseDuration(mixed $raw): ?int {
-    if (!is_string($raw) && !is_int($raw)) {
+  public static function parseDuration(mixed $raw, int $minimum = 60): ?int {
+    $seconds = Time::parse($raw);
+    if ($seconds === NULL) {
       return NULL;
     }
-    $value = trim((string) $raw);
-    if (!preg_match(WorkTimeRules::DURATION_PATTERN, $value, $matches)) {
-      return NULL;
-    }
-    $seconds = ((int) $matches[1]) * 3600 + ((int) $matches[2]) * 60;
     try {
-      WorkTimeRules::seconds($seconds);
+      WorkTimeRules::seconds($seconds, $minimum);
     }
     catch (\InvalidArgumentException) {
       return NULL;
@@ -370,9 +367,14 @@ final class WorklogFormLayout implements TrustedCallbackInterface {
       '#disabled' => $read_only,
     ];
     $form['duration'] = [
-      '#type' => 'textfield',
+      '#type' => 'bb_time',
+      '#minimum' => 60,
+      '#maximum' => WorkTimeRules::MAX_ENTRY_SECONDS,
+      // durationError() owns both texts: one for a bad format, one for range.
+      '#format_error' => WorkTimeRules::durationError('abc'),
+      '#range_error' => WorkTimeRules::durationError('0'),
       '#title' => $this->t('Duration (hours:minutes)'),
-      '#description' => $this->t('Hours and minutes as H:MM. Examples: 0:30, 1:15.'),
+      '#description' => $this->t('Whole hours or H:MM. Examples: 8, 0:30, 1:15.'),
       '#required' => TRUE,
       '#default_value' => $entry instanceof Worklog
         ? self::formatDuration((int) $entry->get('duration_seconds')->value)
