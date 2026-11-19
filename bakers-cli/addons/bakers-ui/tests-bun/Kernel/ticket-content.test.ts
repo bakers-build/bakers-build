@@ -600,6 +600,48 @@ describe('resize while scrolled', () => {
   );
 });
 
+// AC-1/AC-6/AC-8: the links sit at the top at both widths, and the section
+// node survives a resize across the 100-column breakpoint.
+describe('links at the top across the breakpoint', () => {
+  it(
+    'shows the PR without scrolling at 120 → 80 → 120 and keeps the node',
+    async () => {
+      const document = ticketDocument({
+        identifier: 'BAKERS-332',
+        title: 'links on top',
+        description: {
+          value: Array.from({ length: 200 }, (_l, i) => `body ${i}`).join(
+            '\n',
+          ),
+        },
+        links: [{ title: 'PR', uri: 'https://github.com/o/r/pull/229' }],
+      });
+      const tui = await bootDocument(document, 120, 40);
+      const links = 'ticket-content-overview-links';
+      try {
+        expect(tui.frame()).toContain('PR #229');
+        expect(tui.frame()).toContain('BAKERS-332');
+        const node = tui.renderer.root.findDescendantById(links);
+        expect(node, 'links section is mounted').toBeDefined();
+        for (const columns of [80, 120]) {
+          tui.resize(columns, 40);
+          await settle();
+          await tui.renderOnce();
+          expect(tui.frame(), `PR at ${columns} columns`).toContain('PR #229');
+          expect(
+            tui.renderer.root.findDescendantById(links) === node,
+            `same links node at ${columns} columns`,
+          ).toBe(true);
+        }
+        await quit(tui);
+      } finally {
+        await tui.stop();
+      }
+    },
+    { timeout: 20_000 },
+  );
+});
+
 describe('empty and missing ticket bodies', () => {
   it('shows No description. for absent, empty and whitespace-only bodies', async () => {
     for (const description of [
