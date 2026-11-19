@@ -169,9 +169,15 @@ describe('the conductor detail scope', () => {
       rows: 44,
       tui: { conductorProcess: host },
     });
-    // Same product order as `conductors.test.ts`: My work → Projects → Conductors.
+    // Same product order as `conductors.test.ts`: My work → Projects →
+    // Machines, and a machine opens its Conductors.
     await tui.press('\t');
     await tui.press('\t');
+    await settle();
+    await tui.renderOnce();
+    await tui.press('\r');
+    await settle();
+    await tui.renderOnce();
     return tui;
   }
 

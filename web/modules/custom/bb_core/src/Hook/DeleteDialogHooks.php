@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Hook;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Url;
@@ -25,9 +26,13 @@ final class DeleteDialogHooks {
    *   The entity's operations, altered in place.
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity the operations belong to.
+   * @param \Drupal\Core\Cache\CacheableMetadata $cacheability
+   *   The cacheability of the operations, unchanged here.
+   *
+   * @SuppressWarnings("PHPMD.UnusedFormalParameter")
    */
   #[Hook('entity_operation_alter')]
-  public function entityOperationAlter(array &$operations, EntityInterface $entity): void {
+  public function entityOperationAlter(array &$operations, EntityInterface $entity, CacheableMetadata $cacheability): void {
     $url = $operations['delete']['url'] ?? NULL;
     $form = $entity->getEntityType()->getFormClass('delete');
     if (!$url instanceof Url || !$form || !in_array(DeleteDialogFormTrait::class, class_uses($form) ?: [], TRUE)) {

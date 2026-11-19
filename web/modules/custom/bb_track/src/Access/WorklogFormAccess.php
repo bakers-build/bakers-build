@@ -86,6 +86,11 @@ final class WorklogFormAccess {
     AccountInterface $account,
     BbWorkspaceInterface $workspace,
   ): bool {
+    // The account's own set is a session token's ceiling; the scoped account
+    // narrows it to a rank in this workspace.
+    if (!$account->hasPermission('record own worklog')) {
+      return FALSE;
+    }
     $rank = \Drupal::service('bb_core.rank_capability');
     $scoped = new BbGroupScopedAccount($account, [$workspace], $rank);
     return $scoped->hasPermission('record own worklog');

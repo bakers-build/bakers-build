@@ -80,6 +80,12 @@ parameters:
       # kernel test pins that behaviour against the locked core version.
       identifier: classExtendsInternalClass.classExtendsInternalClass
       path: web/modules/custom/bb_core/src/Plugin/Mail/BbHtmlMail.php
+    -
+      # FailingSaveStorageDecorator is a test double that decorates one
+      # entity storage to fail a chosen save; holding the inner storage is
+      # what a storage decorator is, not a dependency-injection shortcut.
+      identifier: drupal.entityStorageDirectInjection
+      path: web/modules/custom/bb_core/tests/src/Kernel/ConductorDeactivationReassignmentTest.php
 
 services:
   errorFormatter.junit:

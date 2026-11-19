@@ -2,6 +2,7 @@ import { ConductorLogScreen } from '../Entity/conductor/Screen/conductor-log.js'
 import { ConductorOverviewScreen } from '../Entity/conductor/Screen/conductor-overview.js';
 import { ConductorRunsScreen } from '../Entity/conductor/Screen/conductor-runs.js';
 import { ConductorsScreen } from '../Entity/conductor/Screen/conductors.js';
+import { MachinesScreen } from '../Entity/conductor/Screen/machines.js';
 import { ProjectConductorsScreen } from '../Entity/conductor/Screen/project-conductors.js';
 import { ProjectOverviewScreen } from '../Entity/project/Screen/project-overview.js';
 import { ProjectPickerScreen } from '../Entity/project/Screen/project-picker.js';
@@ -67,6 +68,7 @@ export const bootLocationFor = (route?: ResolvedRoute): RouteLocation => {
 
 const BUILT_IN: readonly ScreenClass[] = [
   MyWorkScreen,
+  MachinesScreen,
   ConductorsScreen,
   ConductorOverviewScreen,
   ConductorRunsScreen,

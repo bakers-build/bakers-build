@@ -17,7 +17,8 @@ export interface SandboxHost {
 }
 
 export function runtimeSandboxWarning(runtime = 'host'): string | undefined {
-  if (runtime === 'host') return;
+  // runtime-docker probes its agent with a run's mounts before the first launch.
+  if (runtime === 'host' || runtime === 'docker') return;
   return `Sandbox preflight checks the host only; runtime ${runtime} is not checked. Sandbox tools and namespace support must be available inside the runtime; permissions remain unchanged.`;
 }
 

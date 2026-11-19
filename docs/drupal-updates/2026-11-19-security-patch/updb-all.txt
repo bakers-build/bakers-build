@@ -1,0 +1,35 @@
+audit=0
+ ------------------------ ----------------------------- ------------- --------------------------------------------------------------- 
+  Module                   Update ID                     Type          Description                                                    
+ ------------------------ ----------------------------- ------------- --------------------------------------------------------------- 
+  better_exposed_filters   no_reset_key                  post-update   Set default value for new per-filter "no_reset" option.        
+  better_exposed_filters   soft_limit_include_children   post-update   Add soft_limit_include_children param key.                     
+  better_exposed_filters   sort_no_reset_key             post-update   Set default value for the new exposed sort "no_reset" option.  
+  search_api               views_results_cache_access    post-update   Clear Views results cached before they varied by item access.  
+ ------------------------ ----------------------------- ------------- --------------------------------------------------------------- 
+
+
+ // Do you wish to run the specified pending updates?: yes.                                                             
+
+>  [notice] Update started: better_exposed_filters_post_update_no_reset_key
+>  [notice] Update completed: better_exposed_filters_post_update_no_reset_key
+>  [notice] Update started: better_exposed_filters_post_update_soft_limit_include_children
+>  [notice] Update completed: better_exposed_filters_post_update_soft_limit_include_children
+>  [notice] Update started: better_exposed_filters_post_update_sort_no_reset_key
+>  [notice] Update completed: better_exposed_filters_post_update_sort_no_reset_key
+>  [notice] Update started: search_api_post_update_views_results_cache_access
+>  [notice] Update completed: search_api_post_update_views_results_cache_access
+ [success] Finished performing updates.
+ [success] Cache rebuild complete.
+ ----------------------------- ----------- 
+  Name                          State      
+ ----------------------------- ----------- 
+  search_api.index.bb_tickets   Different  
+  views.view.conductors         Different  
+  views.view.groups             Different  
+  views.view.machines           Different  
+  views.view.project_board      Different  
+  views.view.projects           Different  
+  views.view.runs               Different  
+  views.view.tickets            Different  
+ ----------------------------- ----------- 

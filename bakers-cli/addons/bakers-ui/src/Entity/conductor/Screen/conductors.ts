@@ -2,10 +2,11 @@ import { existsSync } from 'node:fs';
 import { actionItem } from '../../../Component/footer-actions/index.js';
 import type { ListFilterBadge } from '../../../Component/list-chrome/index.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
+import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
 import { ListScreen } from '../../../Screen/list-screen.js';
 import { runRowAction } from '../../../Screen/row-action.js';
-import type { ScreenContext } from '../../../Screen/screen.js';
+import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
 import type { Page } from '../../collection.js';
 import { resolveWhoCandidate } from '../../user/Data/users.js';
 import {
@@ -24,6 +25,7 @@ import {
   OwnerIdentity,
 } from '../Data/own-rows.js';
 import { createConductorProcessHost } from '../Data/process.js';
+import { restartRunsRequest } from './restart-runs.js';
 
 /**
  * Conductors list — an ordinary {@link ListScreen}, paged and filtered to the
@@ -40,7 +42,7 @@ export class ConductorsScreen extends ListScreen<
   static readonly route = {
     id: 'conductors',
     path: '/conductors',
-    tab: { id: 'conductors', label: 'Conductors', scope: 'root', weight: 50 },
+    parent: 'machines',
   } satisfies RouteMetadata;
   readonly id = ConductorsScreen.route.id;
   readonly frameId = 'conductors';
@@ -89,20 +91,21 @@ export class ConductorsScreen extends ListScreen<
     this.projectNames = projectNames;
     this.ownerId = undefined;
     this.identityReason = '';
-    if (this.mine) {
-      const outcome = await this.identity.resolve(
-        client,
-        context.services.currentUser,
-      );
-      if (outcome.kind === 'resolved') {
-        this.ownerId = outcome.id;
-      } else {
-        this.identityReason = outcome.reason;
-      }
+    // Resolved even with `mine` off: Restart runs is offered on own rows only.
+    const outcome = await this.identity.resolve(
+      client,
+      context.services.currentUser,
+    );
+    if (outcome.kind === 'resolved') {
+      this.ownerId = outcome.id;
+    } else if (this.mine) {
+      this.identityReason = outcome.reason;
     }
-    const query: ConductorQuery = this.ownerId
-      ? { ownerUserId: this.ownerId }
-      : {};
+    const machineId = context.params?.machineId;
+    const query: ConductorQuery = {
+      ...(this.mine && this.ownerId ? { ownerUserId: this.ownerId } : {}),
+      ...(machineId ? { machineId } : {}),
+    };
     const rowCtx = {
       now: context.nowSeconds?.() ?? Math.floor(Date.now() / 1000),
       exists: existsSync,
@@ -113,7 +116,7 @@ export class ConductorsScreen extends ListScreen<
     // row count is bounded by the page, so it would under-report exactly when
     // the collection is large enough for the question to matter.
     this.hidden =
-      this.ownerId === undefined || rows.total === null
+      !query.ownerUserId || rows.total === null
         ? null
         : ((total) => (total === null ? null : total - (rows.total ?? 0)))(
             await countConductors(client, {}),
@@ -145,6 +148,17 @@ export class ConductorsScreen extends ListScreen<
     };
   }
 
+  /** Restart runs only on a conductor of a machine the operator owns. */
+  private owned(): ConductorRow | undefined {
+    const row = this.rows[this.selectedIndex];
+    // Like the site: a conductor without a machine falls back to its owner.
+    const owner =
+      row?.machineOwnerUserId === undefined
+        ? row?.ownerUserId
+        : row.machineOwnerUserId;
+    return row && this.ownerId && owner === this.ownerId ? row : undefined;
+  }
+
   /**
    * BB-450 review B9 — `s`/`x` are advertised only when the SELECTED row can
    * actually be acted on: `mine` is the identity gate (B10), not `isLocal`'s
@@ -155,9 +169,25 @@ export class ConductorsScreen extends ListScreen<
    * scope for every row, and the log tab inside it is the one place that still
    * withholds a foreign conductor's log (its `mine` derivation lives there).
    */
+  actionForInput(input: string): ScreenAction | undefined {
+    const row = input === 'r' ? this.owned() : undefined;
+    if (!row) return undefined;
+    return confirmNavigation(
+      restartRunsRequest({
+        level: 'conductor',
+        label: row.label,
+        conductorIds: [row.id],
+        online: row.derivedStatus === 'online',
+      }),
+    );
+  }
+
   protected actions() {
     const canAct = this.rows[this.selectedIndex]?.mine ?? false;
     return [
+      ...(this.owned()
+        ? [actionItem('conductors-restart', 'r', 'restart runs')]
+        : []),
       ...(canAct
         ? [
             actionItem('conductors-start', 's', 'start'),
@@ -187,7 +217,7 @@ export class ConductorsScreen extends ListScreen<
     return this.viewOnlyNotice() || this.identityReason;
   }
 
-  select(index: number, context: ScreenContext): boolean {
+  override select(index: number, context: ScreenContext): boolean {
     if (index < 0 || index >= this.rows.length) return false;
     this.selectedIndex = index;
     this.toast = '';

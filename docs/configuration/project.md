@@ -22,9 +22,9 @@ export default {
 };
 ```
 
-herdr's preset fills the executor and the worktree. The file names no server: the conductor takes it from the connection. The generator also writes a `hooks` block when you answered its questions. `--server`, `--executor` and `--worktree` write an explicit choice instead of the defaults ([Conductor slots](/addons/slots)).
+herdr's preset fills the executor and the worktree. The generator also writes a `hooks` block when you answered its questions. `--server`, `--executor` and `--worktree` write an explicit choice instead of the defaults ([Conductor slots](/addons/slots)).
 
-The file carries no identity and is identical for everyone. A conductor is identified by machine + project + variant: the machine's `machine_id` from the [machine file](/configuration/machine), `project.name`, and the variant (`conductor` for `project.config.js`, `review` for `project.review.config.js`). bakers derives the conductor id `<machine_id>-<project>-<variant>` from them at runtime; it is never written to a config, and `bakers conductor ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its Identity card. When this machine, project and variant already have a conductor under an older id, the first `bakers conductor start` offers to take it over ([bakers conductor](/cli/conductor)).
+The file carries no identity and is identical for everyone. bakers derives the conductor id `<machine_id>-<project>-<variant>` at runtime from the [machine file](/configuration/machine)'s `machine_id`, `project.name` and the variant (`conductor` for `project.config.js`, `review` for `project.review.config.js`); it is never written to a config, and `bakers conductor ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its Identity card. When this machine, project and variant already have a conductor under an older id, the first `bakers conductor start` offers to take it over ([bakers conductor](/cli/conductor)).
 
 ## Fields
 
@@ -44,17 +44,18 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `prompt` | Agent prompt template with `{identifier}`, `{state}`, `{run_uuid}` and `{ticket_uuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
 | `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |
-| `restart_on_change` | Boolean, default `true`: a running conductor restarts itself when a config file changes or the installed CLI version changes. Needs Node.js 22.15 or later. |
+| `restart_on_change` | Boolean, default `true`: a running conductor restarts itself when a config file, the [secrets file](/configuration/machine#secrets-file) or the installed CLI version changes. Needs Node.js 22.15 or later. |
 | `capture_logs` | Boolean, default `true`. Transcripts upload only where the server's [run-log storage policy](/self-hosting/server#run-log-storage) allows it; `false` keeps this conductor's transcripts local even then. Metrics are unaffected. |
 | `hooks` | Optional command object. [Lifecycle hooks](/configuration/project/hooks) owns its keys, timing, environment, failure behavior and on-demand `provision_up` profiles. |
-| `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume`, `hooks.provision_up`, `hooks.provision_exec` | The lifecycle hooks and the on-demand `provision_up` and `provision_exec` commands; see [Lifecycle hooks](/configuration/project/hooks). |
+| `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume`, `hooks.provision_up`, `hooks.provision_exec` | The lifecycle hooks and on-demand commands. |
 | `marketplaces` | Optional array of agent plugin marketplaces every run of this project installs: `{ url, ref, plugins }`. See [Agent plugins](#agent-plugins). |
 | `marketplaces[].url`, `marketplaces[].ref`, `marketplaces[].plugins` | The marketplace's Git URL, the ref to check out and the plugins to install from it. |
+| `runtime.enabled`, `runtime.default` | Restrict only: allowed machine runtime aliases, and the default. A project `select` is refused. See [Slot catalogs](/configuration/slot-catalogs). |
 | `runtime`, `runtime.read_only` | Worktree-relative paths an isolated run sees read-only and cannot change in a commit, for example `['.ddev', '.github']`. `.bakers` is always protected. A listed path must exist, or dispatch fails. Project config only. See [Protected paths](/provision/security/shared-settings#host-executed-paths). |
-| `permissions` | Run permissions for every agent of every machine that runs this project: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
+| `permissions` | Run permissions for every agent of every machine that runs this project. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
 | `permissions.mode` | `sandbox`, `system` or `yolo`. |
-| `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
-| `select_agent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/agents/guide). |
+| `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists. |
+| `select_agent` | Deprecated, warns at load. Function `(candidates, ticket) => candidate` replacing the agent choice; use the machine's `agents.select`. |
 
 Unknown keys fail.
 
@@ -89,9 +90,10 @@ marketplaces: [
 ```
 
 - `url` is a remote Git URL (`https://`, `ssh://` or `git@`); a local path or `file://` URL is rejected. `ref` is a tag (the fixed version) or a branch. `plugins` names the plugins to install from that marketplace.
-- Before each launch, in every `permissions` mode, the agent addon installs the list with the harness's own commands into an agent home at `~/.cache/bakers/agent-homes/<harness>/<hash>/` (`$XDG_CACHE_HOME` when set), keyed by a hash of the list. Runs with the same list reuse the home; a changed list builds a new one. The run uses only that home: the addon sets `CLAUDE_CONFIG_DIR` or `CODEX_HOME`, links only the credential file (`~/.claude/.credentials.json`, `~/.codex/auth.json`; a Claude token refreshed inside the home is kept as yours and the link restored on its next use), trusts the run's worktree and leaves your own agent home untouched. Codex then starts with `--dangerously-bypass-hook-trust`, so plugin hooks run without a trust prompt. A Claude login kept only in the macOS keychain cannot be linked, and the run start fails, saying so.
+- Claude in `system` or `yolo` without an isolating runtime uses your own `~/.claude`: it installs missing plugins there and warns, changing nothing, about a marketplace at another ref or a disabled plugin. `home: 'individual'` ([options](/addons/claude#options)) chooses the agent home.
+- Otherwise, before each launch, the agent addon installs the list with the harness's own commands into an agent home at `~/.cache/bakers/agent-homes/<harness>/<hash>/` (`$XDG_CACHE_HOME` when set), keyed by a hash of the list. The run uses only that home: the addon sets `CLAUDE_CONFIG_DIR` or `CODEX_HOME`, links only the credential file (`~/.claude/.credentials.json`, `~/.codex/auth.json`; a Claude refresh inside the home stays yours), trusts the run's worktree and leaves your own agent home untouched. Codex then starts with `--dangerously-bypass-hook-trust`, so plugin hooks run without a trust prompt. For a macOS keychain login, set `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` in the [secrets file](/configuration/machine#secrets-file); without any login the run start fails.
 - The conductor checks no skills before the launch: the install is the only gate. A skill a recipe or `WORKFLOW.md` requires but the run cannot load stops the run inside the agent, under the `bb-workflow` stop rule, which names the missing skill.
-- Each run writes one `plugins` entry to the conductor log: harness, alias, mode, on or off with the reason, hash, home, `built` or `reused`, the marketplaces and any trust bypass. A failed install fails the run with the reason in its error log.
+- Each run writes one `plugins` entry to the conductor log: harness, alias, mode, on or off with the reason, hash, home, `built`, `reused` or `host`, the marketplaces, trust bypass and warnings. A failed install fails the run with the reason in its error log.
 - Plugins are off, and the run uses your own agent home (Claude then installs the `.claude/settings.json` plugins before the first turn), when the project declares none, the harness addon cannot install plugins (only `claude` and `codex` can), or the machine's agent entry sets `plugins: false`.
 - `marketplaces` belongs to the project; in `machine.config.js` it fails loading.
 
@@ -103,7 +105,7 @@ states: ['working', 'review'],
 poll_interval_ms: 10000,
 ```
 
-Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). For an existing conductor, change its served states on the Identity card as well. Add `qualification` when it should qualify hand-written tickets.
+Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). Add `qualification` when it should qualify hand-written tickets.
 
 ## Named variants
 

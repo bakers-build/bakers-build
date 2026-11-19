@@ -2,8 +2,6 @@ langcode: en
 status: true
 dependencies:
   config:
-    - field.field.user.user.field_bb_background
-    - field.field.user.user.field_developer_title
     - field.field.user.user.field_full_name
     - field.field.user.user.field_onboarding_completed
     - field.field.user.user.user_picture
@@ -48,7 +46,5 @@ content:
       preview_image_style: avatar
     third_party_settings: {  }
 hidden:
-  field_bb_background: true
-  field_developer_title: true
   field_onboarding_completed: true
   social_auth: true

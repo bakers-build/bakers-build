@@ -2,7 +2,7 @@
 
 A ticket state is run by one frame skill, `bb-workflow`, which routes the state to its state file and binds the recipe, the runtime guide and the project's hints; this page states how those pieces fit together.
 
-bakers.build ships no workflow engine and no loader. It ships skills, which are Markdown instructions an agent reads, and the agent's native skill mechanism loads them. No CLI command reads or validates them. For the practical path, see [How it works](../skills-and-workflows/guide.md#how-it-works) and [Configure your workflow](../skills-and-workflows/workflow-file.md). The authoring reference is `.claude/skills/bakers-build/skills/bb-workflow/references/authoring.md`.
+bakers.build ships no workflow engine and no loader. It ships skills, which are Markdown instructions an agent reads, and the agent's native skill mechanism loads them. No CLI command reads or validates them. For the practical path, see [How it works](../skills-and-workflows/states.md#how-a-run-works) and [Configure your workflow](../skills-and-workflows/workflow-file.md). The authoring reference is `.claude/skills/bakers-build/skills/bb-workflow/references/authoring.md`.
 
 ## Skills and references
 

@@ -41,6 +41,12 @@ export interface ForgeMerge {
   readonly body: string;
 }
 
+export interface IssueLabel {
+  readonly name: string;
+  /** False for a label inherited from a group. */
+  readonly is_project_label: boolean;
+}
+
 export interface ForgeBackend {
   readonly id: string;
   /** Every credential value; the tools redact them from all output. */
@@ -76,6 +82,31 @@ export interface ForgeBackend {
   isMerged(pr: ForgePr): Promise<boolean>;
   /** The [tail] of a job's log; refuses a job outside the repository. */
   jobLog(jobId: number, maxBytes: number): Promise<LogTail>;
+  /**
+   * The origin issue's operations, by its web URL; a backend refuses a URL
+   * outside its host before any request. Labels include inherited ones.
+   */
+  issueLabels(issueUrl: string): Promise<IssueLabel[]>;
+  /** One update; returns the issue's labels afterwards. */
+  updateIssueLabels(
+    issueUrl: string,
+    change: { add?: string; remove: readonly string[] },
+  ): Promise<string[]>;
+  /**
+   * Adds the forge accounts found by these e-mails as reviewers of `pr`;
+   * removes none. A mail without an account or refused by the forge is skipped.
+   */
+  addReviewers(pr: ForgePr, mails: readonly string[]): Promise<ReviewerResult>;
+  /** One write, never retried: a lost answer must not post twice. */
+  commentIssue(
+    issueUrl: string,
+    body: string,
+  ): Promise<{ id: number; url: string }>;
+}
+
+export interface ReviewerResult {
+  readonly requested: string[];
+  readonly skipped: { mail: string; reason: string }[];
 }
 
 export interface LogTail {
@@ -102,6 +133,10 @@ const METHODS = [
   'merge',
   'isMerged',
   'jobLog',
+  'issueLabels',
+  'updateIssueLabels',
+  'commentIssue',
+  'addReviewers',
 ] as const;
 
 /** Reject a factory result that is not a `ForgeBackend`. */

@@ -86,7 +86,7 @@ function alive(pid: number): boolean {
 }
 
 /** Take `<home>.lock`; a lock whose owner process is gone is taken over. */
-async function lock(path: string): Promise<() => void> {
+export async function lock(path: string): Promise<() => void> {
   const file = `${path}.lock`;
   const owner = `${process.pid}:${Math.random()}`;
   for (;;) {

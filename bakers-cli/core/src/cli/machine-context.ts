@@ -20,6 +20,18 @@ export interface MachineAgentPolicy {
   enabled?: string[];
   disabled?: string[];
   routes?: AgentRoutes;
+  /** `(aliases, ticket) => alias`; replaces the default agent order. */
+  select?: (candidates: string[], ticket: unknown) => string;
+}
+
+/** Where runs start: runtime entries chosen per ticket. */
+export interface MachineRuntimePolicy {
+  catalog?: { alias: string; use: string; with?: unknown }[];
+  routes?: AgentRoutes;
+  /** `(aliases, ticket) => alias`; replaces the default runtime order. */
+  select?: (candidates: string[], ticket: unknown) => string;
+  /** Lets a label choose a runtime that does not isolate. */
+  allow_unsandboxed?: boolean;
 }
 
 /** Local host identity, display label and shared capacity. */
@@ -31,6 +43,8 @@ export interface MachineContext {
   connection_url?: string | null;
   /** Optional selection policy for the agents the machine `addons[]` contribute. */
   agents?: MachineAgentPolicy;
+  /** Runtime catalog, routes and selection; absent keeps the addon runtime. */
+  runtime?: MachineRuntimePolicy;
   /**
    * This host's addons, the same entry shape as a project conductor config's
    * `addons[]`. Each addon declares whether it may be listed here (its preset

@@ -98,6 +98,13 @@ export class UsersScreen extends AsyncScreen<{ rows: MemberRow[] }> {
     ];
   }
 
+  select(index: number, context: ScreenContext): boolean {
+    if (index < 0 || index >= this.rows.length) return false;
+    this.cursor.index = index;
+    context.requestDraw();
+    return true;
+  }
+
   activate(index: number, context: ScreenContext): boolean {
     const row = this.rows[index];
     const workspaceId = context.services?.workspaceId;

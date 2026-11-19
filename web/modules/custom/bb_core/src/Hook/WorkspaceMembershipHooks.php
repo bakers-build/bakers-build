@@ -12,6 +12,7 @@ use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspace;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\Og;
 use Drupal\og\OgMembershipInterface;
@@ -42,6 +43,7 @@ final class WorkspaceMembershipHooks {
     private readonly EntityTypeManagerInterface $entityTypeManager,
     #[Autowire(service: 'entity.last_installed_schema.repository')]
     private readonly EntityLastInstalledSchemaRepositoryInterface $installedSchema,
+    private readonly Profiles $profiles,
   ) {
   }
 
@@ -220,6 +222,11 @@ final class WorkspaceMembershipHooks {
   #[Hook('og_membership_insert')]
   public function ogMembershipInsert(EntityInterface $membership): void {
     $this->forgetReadScope($membership);
+    // Installs and updates may add memberships before the profile table exists.
+    if ($membership instanceof OgMembershipInterface && $membership->getGroupEntityType() === 'bb_workspace'
+      && $this->installedSchema->getLastInstalledDefinition('bb_profile') !== NULL) {
+      $this->profiles->provideFor((int) $membership->getOwnerId(), (int) $membership->getGroupId());
+    }
   }
 
   /**

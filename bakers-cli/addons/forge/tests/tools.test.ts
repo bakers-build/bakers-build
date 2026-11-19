@@ -8,12 +8,14 @@ import {
   type ForgeBackend,
   type ForgeCheck,
   type ForgePr,
+  type IssueLabel,
   tail,
 } from '../src/backend.js';
 import { mergeRule } from '../src/config.js';
 import { tools as presetTools } from '../src/preset.js';
 import { FORGE_TOOL_DEFINITIONS } from '../src/tool-definitions.js';
 import {
+  FORGE_NEEDS_ORIGIN,
   FORGE_NEEDS_RUN,
   forgeTools,
   overall,
@@ -30,6 +32,10 @@ function fakeBackend(options: {
   blocker?: string;
   failWith?: string;
   log?: string;
+  labels?: IssueLabel[];
+  issueFail?: string;
+  reviewersFail?: string;
+  refused?: string[];
 }) {
   const calls: string[] = [];
   const prs = [...(options.prs ?? [])];
@@ -79,6 +85,31 @@ function fakeBackend(options: {
     jobLog: async (jobId, maxBytes) => {
       calls.push(`log:${jobId}:${maxBytes}`);
       return tail(options.log ?? '', maxBytes);
+    },
+    issueLabels: async (issueUrl) => {
+      calls.push(`labels:${issueUrl}`);
+      if (options.issueFail) throw new Error(options.issueFail);
+      return options.labels ?? [];
+    },
+    updateIssueLabels: async (issueUrl, { add, remove }) => {
+      calls.push(`relabel:${issueUrl}:+${add ?? ''}:-${remove.join(',')}`);
+      return [add ?? ''];
+    },
+    addReviewers: async (pr, mails) => {
+      calls.push(`reviewers:${pr.number}:${mails.join(',')}`);
+      if (options.reviewersFail) throw new Error(options.reviewersFail);
+      const refused = options.refused ?? [];
+      return {
+        requested: mails.filter((m) => !refused.includes(m)),
+        skipped: mails
+          .filter((m) => refused.includes(m))
+          .map((mail) => ({ mail, reason: 'refused' })),
+      };
+    },
+    commentIssue: async (issueUrl, body) => {
+      calls.push(`comment:${issueUrl}:${body}`);
+      if (options.issueFail) throw new Error(options.issueFail);
+      return { id: 5, url: `${issueUrl}#note_5` };
     },
   };
   return { backend, calls };
@@ -140,10 +171,11 @@ const green: ForgeCheck[] = [
 ];
 
 describe('forge tools', () => {
-  it('serves the seven tools through the preset', () => {
+  it('serves the eight tools through the preset', () => {
     expect(Object.keys(presetTools!.tools).sort()).toEqual([
       'forge_checks',
       'forge_fetch',
+      'forge_issue_update',
       'forge_job_log',
       'forge_merge',
       'forge_pr_upsert',
@@ -255,6 +287,102 @@ describe('forge tools', () => {
       'create:feat/bb-7-work-2->feat/bb-7-work:feat: x',
     ]);
     expect(calls).toContain('update:1->feat/bb-7-work:feat(cli)!: y');
+  });
+
+  describe('forge_pr_upsert request_reviewers', () => {
+    const reviewed = {
+      ...RUN,
+      reviewers: [
+        { name: 'Ada', mail: 'ada@example.com' },
+        { name: 'Bob' },
+        { name: 'Cy', mail: 'cy@example.com' },
+      ],
+    };
+    const upsert = async (
+      backend: ForgeBackend,
+      args: Record<string, unknown>,
+    ) =>
+      JSON.parse(
+        (
+          await forgeTools({ backend: async () => backend, settings: {} })
+            .forge_pr_upsert!(request(args, '/nonexistent', reviewed))
+        ).text,
+      );
+
+    it("requests the ticket's reviewers by mail and names every skip with its reason", async () => {
+      const { backend, calls } = fakeBackend({ refused: ['cy@example.com'] });
+      const result = await upsert(backend, {
+        title: 'feat: x',
+        request_reviewers: true,
+      });
+      expect(calls).toContain('reviewers:1:ada@example.com,cy@example.com');
+      expect(result).toMatchObject({ created: true, number: 1 });
+      expect(result.reviewers).toEqual({
+        requested: ['Ada'],
+        skipped: [
+          { reviewer: 'Bob', reason: 'e-mail not readable' },
+          { reviewer: 'Cy', reason: 'refused' },
+        ],
+      });
+    });
+
+    it('adds reviewers on the update of an open PR the same way', async () => {
+      const { backend, calls } = fakeBackend({ prs: [pr()] });
+      const result = await upsert(backend, {
+        title: 'feat: x',
+        request_reviewers: true,
+      });
+      expect(result.created).toBe(false);
+      expect(calls).toContain('reviewers:1:ada@example.com,cy@example.com');
+    });
+
+    it('leaves reviewers untouched and the result unchanged without the flag', async () => {
+      for (const flag of [undefined, false]) {
+        const { backend, calls } = fakeBackend({});
+        const result = await upsert(backend, {
+          title: 'feat: x',
+          ...(flag === undefined ? {} : { request_reviewers: flag }),
+        });
+        expect(calls.some((c) => c.startsWith('reviewers'))).toBe(false);
+        expect(result).not.toHaveProperty('reviewers');
+      }
+    });
+
+    it('reads no ticket on a suffixed branch without the flag', async () => {
+      const { backend } = fakeBackend({});
+      let reads = 0;
+      await forgeTools({ backend: async () => backend, settings: {} })
+        .forge_pr_upsert!(
+        request(
+          { title: 'feat: x', branch: 'feat/bb-7-work-alt' },
+          '/nonexistent',
+          reviewed,
+          async () => {
+            reads++;
+            return reviewed;
+          },
+        ),
+      );
+      expect(reads).toBe(0);
+    });
+
+    it('still returns the PR when the forge fails, skipping every reviewer with the reason', async () => {
+      const { backend } = fakeBackend({ reviewersFail: 'HTTP 502' });
+      const result = await upsert(backend, {
+        title: 'feat: x',
+        request_reviewers: true,
+      });
+      expect(result).toMatchObject({
+        created: true,
+        url: 'https://forge/pr/1',
+      });
+      expect(result.reviewers.requested).toEqual([]);
+      expect(result.reviewers.skipped).toEqual([
+        { reviewer: 'Bob', reason: 'e-mail not readable' },
+        { reviewer: 'Ada', reason: 'HTTP 502' },
+        { reviewer: 'Cy', reason: 'HTTP 502' },
+      ]);
+    });
   });
 
   it("a deployment run opens and merges its branch into target_branch by that target's rule", async () => {
@@ -565,6 +693,159 @@ describe('forge tools', () => {
       (e: Error) => e.message,
     );
     expect(err).toBe('401 for token [redacted]');
+  });
+});
+
+const ISSUE = 'https://gitlab.example/acme/board/-/issues/4';
+const ORIGIN_RUN = { ...RUN, issueUrl: ISSUE };
+const LABELS: IssueLabel[] = [
+  { name: 'doing', is_project_label: true },
+  { name: 'review', is_project_label: false },
+];
+
+describe('forge_issue_update', () => {
+  const setup = (options: Parameters<typeof fakeBackend>[0] = {}) => {
+    const fake = fakeBackend({ labels: LABELS, ...options });
+    return {
+      ...fake,
+      tool: forgeTools({ backend: async () => fake.backend, settings: {} })
+        .forge_issue_update!,
+    };
+  };
+
+  it('refuses a ticket without an origin before any backend call', async () => {
+    const { tool, calls } = setup();
+    await expect(tool(request({ operation: 'list_labels' }))).rejects.toThrow(
+      FORGE_NEEDS_ORIGIN,
+    );
+    expect(calls).toEqual([]);
+  });
+
+  it("acts on the origin the server returns at call time, else the run's own", async () => {
+    const { tool, calls } = setup();
+    const moved = 'https://gitlab.example/acme/board/-/issues/9';
+    const out = JSON.parse(
+      (
+        await tool(
+          request(
+            { operation: 'list_labels' },
+            '/nonexistent',
+            ORIGIN_RUN,
+            async () => ({
+              ...ORIGIN_RUN,
+              issueUrl: moved,
+            }),
+          ),
+        )
+      ).text,
+    );
+    expect(out).toEqual({ issue_url: moved, labels: LABELS });
+    await tool(
+      request({ operation: 'list_labels' }, '/nonexistent', ORIGIN_RUN, null),
+    );
+    expect(calls).toEqual([`labels:${moved}`, `labels:${ISSUE}`]);
+  });
+
+  it('update_labels sets and removes listed labels in one update', async () => {
+    const { tool, calls } = setup();
+    const out = JSON.parse(
+      (
+        await tool(
+          request(
+            { operation: 'update_labels', add: 'review', remove: ['doing'] },
+            '/nonexistent',
+            ORIGIN_RUN,
+          ),
+        )
+      ).text,
+    );
+    expect(out).toEqual({ issue_url: ISSUE, labels: ['review'] });
+    expect(calls).toEqual([
+      `labels:${ISSUE}`,
+      `relabel:${ISSUE}:+review:-doing`,
+    ]);
+  });
+
+  it('update_labels refuses a name that is not listed exactly, and an empty change, writing nothing', async () => {
+    const { tool, calls } = setup();
+    const call = (args: Record<string, unknown>) =>
+      tool(
+        request(
+          { operation: 'update_labels', ...args },
+          '/nonexistent',
+          ORIGIN_RUN,
+        ),
+      );
+    await expect(call({ add: 'Review' })).rejects.toThrow(/Review/);
+    await expect(call({ add: 'done', remove: ['doing'] })).rejects.toThrow(
+      /done/,
+    );
+    await expect(call({})).rejects.toThrow(/add or remove/);
+    await expect(call({ add: '', remove: [] })).rejects.toThrow(
+      /add or remove/,
+    );
+    expect(calls.filter((c) => c.startsWith('relabel'))).toEqual([]);
+  });
+
+  it('update_labels writes nothing when the label list fails', async () => {
+    const { tool, calls } = setup({ issueFail: 'GET labels answered 500' });
+    await expect(
+      tool(
+        request(
+          { operation: 'update_labels', add: 'review' },
+          '/nonexistent',
+          ORIGIN_RUN,
+        ),
+      ),
+    ).rejects.toThrow(/500/);
+    expect(calls).toEqual([`labels:${ISSUE}`]);
+  });
+
+  it('comment sends the body unchanged and returns id and URL; a blank body sends nothing', async () => {
+    const { tool, calls } = setup();
+    const body = '**Done** — see MR\n';
+    const out = JSON.parse(
+      (
+        await tool(
+          request({ operation: 'comment', body }, '/nonexistent', ORIGIN_RUN),
+        )
+      ).text,
+    );
+    expect(out).toEqual({ id: 5, url: `${ISSUE}#note_5` });
+    await expect(
+      tool(
+        request(
+          { operation: 'comment', body: ' \n\t' },
+          '/nonexistent',
+          ORIGIN_RUN,
+        ),
+      ),
+    ).rejects.toThrow(/body/);
+    expect(calls).toEqual([`comment:${ISSUE}:${body}`]);
+  });
+
+  it('comment reports a failed write once, redacting the token', async () => {
+    const { tool, calls } = setup({
+      issueFail: `POST notes answered 500 for ${SECRET}`,
+    });
+    const err = await tool(
+      request({ operation: 'comment', body: 'x' }, '/nonexistent', ORIGIN_RUN),
+    ).catch((e: Error) => e.message);
+    expect(err).toBe('POST notes answered 500 for [redacted]');
+    expect(calls).toEqual([`comment:${ISSUE}:x`]);
+  });
+
+  it('refuses an unknown operation', async () => {
+    const { tool, calls } = setup();
+    expect(
+      validateArgs(FORGE_TOOL_DEFINITIONS.forge_issue_update!.input, {
+        operation: 'delete',
+      }).ok,
+    ).toBe(false);
+    await expect(
+      tool(request({ operation: 'delete' }, '/nonexistent', ORIGIN_RUN)),
+    ).rejects.toThrow(/operation/);
+    expect(calls).toEqual([]);
   });
 });
 

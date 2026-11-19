@@ -28,12 +28,12 @@ final class BbReferenceCount extends FieldPluginBase {
   /**
    * The request-cached reference counter.
    */
-  private ReferenceCounter $counter;
+  protected ReferenceCounter $counter;
 
   /**
    * Resolves the counted entity type's list cache tags.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}

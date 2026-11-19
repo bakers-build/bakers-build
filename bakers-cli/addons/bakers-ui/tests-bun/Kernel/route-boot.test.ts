@@ -1526,6 +1526,27 @@ describe('BB-241 — a click on the selected row activates it (AC-5, R2)', () =>
   });
 });
 
+describe('a click on a My work row selects it, a second click opens it', () => {
+  it('a click on the second row highlights it; a click on it again opens its detail', async () => {
+    const tui = await bootTty(undefined, { tickets: clickTicketListDoc });
+    // Found by text, not by offset: the claim is that the row clicked is the
+    // row highlighted, wherever My work draws its table.
+    const row = rowsOf(tui).findIndex((line) => line.includes('BB-302')) + 1;
+    expect(row).toBeGreaterThan(0);
+    expect(selectedRow(tui)).toContain('BB-301');
+
+    await click(tui, row);
+    expect(selectedRow(tui)).toContain('BB-302');
+
+    await click(tui, row);
+    expect(frameOf(tui), 'the clicked ticket opened').toContain(
+      'DETAIL-OF-BB-302',
+    );
+
+    await quit(tui);
+  });
+});
+
 describe('BB-241 — non-rows are inert (AC-6)', () => {
   it('a click on chrome is inert', async () => {
     const tui = await bootProjectTickets({ tickets: clickTicketListDoc });
@@ -2266,9 +2287,9 @@ describe('a bar click acts at the current level (AC-13)', () => {
     expect(styledFrame(tui), 'clicking [My work] itself').toBe(before);
     expect(tui.paints(), 'not one redraw in two clicks').toBe(painted);
 
-    // A root Conductors click remains a ROOT tab, never a project one.
+    // A root Machines click remains a ROOT tab, never a project one.
     await click(tui, TOP_TAB_ROW, COL_ROOT_CONDUCTORS);
-    expect(tabBarRow(tui), 'the root bar, still').toContain('[Conductors]');
+    expect(tabBarRow(tui), 'the root bar, still').toContain('[Machines]');
     expect(tabBarRow(tui)).not.toContain('Tickets');
 
     // The root bar's OTHER tab is live, which is what makes the sweep above a

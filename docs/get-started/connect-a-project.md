@@ -51,7 +51,7 @@ Start with the client, application environment and workflow. Keep existing setti
 <DocTiles :tiles="[
   { title: 'Use your client', text: 'Choose how you observe, discuss and act on ticket work with herdr-cli, herdr-app, Orca or Hermes. Keep working project settings.', link: '/get-started/use-your-client', icon: 'terminal', meta: 'Explore clients →' },
   { title: 'Prepare your environment', text: 'The environment runs your application and dependencies. Reuse your project scripts and make them work independently in each ticket worktree.', link: '/provision/guide', icon: 'layers', meta: 'Prepare the environment →' },
-  { title: 'Configure your workflow', text: 'WORKFLOW.md supplies project rules and checks. Keep the existing recipe, or start with the shipped Matt recipe.', link: '/skills-and-workflows/guide', icon: 'book', meta: 'Understand workflows →' }
+  { title: 'Configure your workflow', text: 'Set project rules, choose a method and decide when people approve the work.', link: '/skills-and-workflows/', icon: 'book', meta: 'Understand workflows →' }
 ]" />
 
 Return here after any changes. Before starting agents, install every skill the workflow names; a shipped recipe's plugin comes from the ready `marketplaces` entry in [shipped recipes](/skills-and-workflows/recipes#shipped-recipes-and-their-plugins). Review [tools and security](/provision/guide#check-tools-and-access).
@@ -60,7 +60,7 @@ Return here after any changes. Before starting agents, install every skill the w
 
 ::: details What changes
 
-The skill resolves the server project, prepares `.bakers/project.config.js` and `WORKFLOW.md`, and checks ignores. Credentials and a project `.bakers/connection.config.js` stay private. [Configuration](/configuration/) explains file ownership and precedence.
+The skill first checks for a Git repository; outside one it offers to clone the northbakery sample project. Each ticket runs in its own worktree, so the skill then adds and removes a temporary worktree and reports pass or fail with the reason. It resolves the server project, prepares `.bakers/project.config.js` and `WORKFLOW.md`, checks ignores and shows every written file back, secrets masked. Credentials and a project `.bakers/connection.config.js` stay private. [Configuration](/configuration/) explains file ownership and precedence.
 :::
 
 ::: details Manual equivalent
@@ -92,5 +92,7 @@ bakers conductor check
 The online check verifies sign-in; confirm project access separately. `conductor check` tests agent sandbox startup. Use your project's workflow checks to establish application readiness.
 
 **Done when:** project and account are correct, required skills are available, private files are ignored and the project's readiness checks pass.
+
+With the checks green, the skill offers to start the session: it runs `bakers conductor start` in your client (herdr: a new tab) and offers a first trial ticket through `bakers:bb-create-ticket` with an example you can accept as it is.
 
 **Next:** [Run the first ticket](/get-started/first-ticket).

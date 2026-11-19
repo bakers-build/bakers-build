@@ -224,7 +224,7 @@ final class IslandProfile extends ConfigEntityBase implements IslandProfileInter
   public function getUnassignedPlacements(array $slots): array {
     return array_filter(
       $this->placements,
-      static fn(array $placement): bool => !isset($slots[$placement['slot'] ?? '']),
+      static fn(array $placement): bool => ($placement['slot'] ?? '') !== self::EMBEDDED_SLOT && !isset($slots[$placement['slot'] ?? '']),
     );
   }
 

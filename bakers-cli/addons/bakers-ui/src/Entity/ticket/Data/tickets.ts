@@ -64,7 +64,9 @@ function indexIncluded(included: JsonApiResource[] | undefined): IncludedIndex {
 
 /** Read the id of a single-valued relationship linkage (`data` object), or
  *  null when the linkage is absent, null, or an (unexpected) array. */
-function singleRelId(rel: JsonApiRelationship | undefined): string | null {
+export function singleRelId(
+  rel: JsonApiRelationship | undefined,
+): string | null {
   const data = rel?.data;
   if (!data || Array.isArray(data)) return null;
   return data.id ?? null;

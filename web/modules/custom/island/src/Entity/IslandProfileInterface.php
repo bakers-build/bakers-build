@@ -12,6 +12,11 @@ use Drupal\Core\Config\Entity\ConfigEntityInterface;
 interface IslandProfileInterface extends ConfigEntityInterface {
 
   /**
+   * The reserved slot of placements rendered only inside another placement.
+   */
+  public const EMBEDDED_SLOT = 'embedded';
+
+  /**
    * Returns the owning app id.
    */
   public function getAppId(): string;

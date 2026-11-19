@@ -19,3 +19,10 @@ island.configuration.ui_patterns_component:
       label: 'Also placements'
       sequence:
         type: string
+ui_patterns_source.island_placement:
+  type: mapping
+  label: 'Source: Island placement'
+  mapping:
+    placement:
+      type: string
+      label: 'Embedded placement id'

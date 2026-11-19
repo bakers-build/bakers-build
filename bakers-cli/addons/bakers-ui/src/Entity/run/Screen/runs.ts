@@ -125,12 +125,6 @@ export class RunsScreen extends ListScreen<RunRow, number> {
     context.navigate('ticket.runs', { ticketId: id });
     return true;
   }
-  select(index: number, context: ScreenContext): boolean {
-    if (index < 0 || index >= this.rows.length) return false;
-    this.selectedIndex = index;
-    context.requestDraw();
-    return true;
-  }
   override handleInput(input: string, context: ScreenContext): boolean {
     if (super.handleInput(input, context)) return true;
     if (input === 'x') {

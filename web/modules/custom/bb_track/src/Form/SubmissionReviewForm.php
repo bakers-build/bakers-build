@@ -164,6 +164,7 @@ final class SubmissionReviewForm extends FormBase implements TrustedCallbackInte
         'name' => $duration['#name'],
         'value' => $duration['#value'],
         'label' => (string) t('Duration (hours:minutes)'),
+        'time' => 'duration',
         'stored' => $seconds,
         'error' => (string) ($duration['#errors'] ?? ''),
         'sums' => ['row:' . $id, 'day:' . $date, 'total'],

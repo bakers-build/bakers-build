@@ -114,8 +114,13 @@ Feature: bakers.build sign-in
     Then the address is "/admin/config"
     And I am logged in
 
-  Scenario: Signed-out workspace entry preserves the existing 404
-    When I check anonymous workspace privacy
+  @functional
+  Scenario: A signed-out ticket deep link returns to the ticket after sign-in
+    When I open the signed-out deep link "/bakers/ticket/{ticket.home}"
+    And I request an login link for "north-lead@example.test"
+    And I follow the login link for "north-lead@example.test"
+    Then the login destination is "/bakers/ticket/{ticket.home}" with status 200
+    And I am logged in
 
   Scenario: A login that sends no mail provisions nothing
     When I open anonymous login

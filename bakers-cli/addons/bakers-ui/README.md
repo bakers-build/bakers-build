@@ -14,11 +14,11 @@ tab navigation.
 
 | Level | Screens | Tabs |
 |-------|---------|------|
-| Root | Personal work, projects, conductors, and workspace members for leads | **My work** · **Projects** · **Members** (workspace lead only) · **Conductors** |
+| Root | Personal work, projects, machines, and workspace members for leads | **My work** · **Projects** · **Members** (workspace lead only) · **Machines** |
 | Project | Project-scoped screens | **Overview** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | Independent ticket screens | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
 | Workspace member | A selected workspace member, for workspace leads only | **Overview** · **Tickets** · **Runs** |
-| Conductor | A selected conductor, reached with Enter from any Conductors list | **Overview** · **Held work** · **Assigned** · **Log** |
+| Conductor | A selected conductor, reached with Enter from any Conductors list (a machine's, or a project's) | **Overview** · **Held work** · **Assigned** · **Log** |
 | — | Run detail | none — `Esc` returns to the preceding screen |
 
 Built-in and addon tabs are derived from the same route registry. Addons can

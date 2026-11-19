@@ -30,7 +30,7 @@ abstract class ActivityKindBase extends PluginBase implements ActivityKindInterf
   /**
    * Whether this instance already saved its row.
    */
-  private bool $recorded = FALSE;
+  protected bool $recorded = FALSE;
 
   /**
    * Constructs an activity kind.
@@ -57,7 +57,7 @@ abstract class ActivityKindBase extends PluginBase implements ActivityKindInterf
     protected readonly EntityTypeManagerInterface $entityTypeManager,
     protected readonly AccountProxyInterface $currentUser,
     protected readonly TimeInterface $time,
-    private readonly ActivityMailer $mailer,
+    protected readonly ActivityMailer $mailer,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }

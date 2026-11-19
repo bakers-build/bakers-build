@@ -174,3 +174,39 @@ After({ tags: '@machine-connection' }, async () => {
     `foreach ($etm->getStorage("bb_machine")->loadByProperties(["host_key" => "${connectionHost}"]) as $m) { $m->delete(); }`);
   connectionHost = undefined; connectionMachine = undefined;
 });
+
+Then(
+  'the machine Overview lists the conductor {string} with {string}',
+  async ({ page }, label: string, action: string) => {
+    const row = page.locator('[data-list-item], tr').filter({ hasText: label });
+    await expect(row.first(), `The machine Overview lists no conductor "${label}"`).toBeVisible();
+    // The operations menu is collapsed, so its links are in the DOM but hidden.
+    await expect(row.first().locator('a[href*="/restart"]').filter({ hasText: action })).toBeAttached();
+  },
+);
+
+When('I open {string} on the machine', async ({ page }, name: string) => {
+  await page.locator('[data-component-id="bb_theme:inspector"]').getByRole('link', { name, exact: true }).click();
+});
+
+When('I open {string} on the conductor {string}', async ({ page }, name: string, label: string) => {
+  const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
+  await row.locator('[data-action-menu] summary').click();
+  await row.getByRole('menuitem', { name, exact: true }).click();
+});
+
+When('I press Escape in the Restart runs dialog', async ({ page }) => {
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#bakers-overlay dialog')).toBeHidden();
+});
+
+let restartStatus = 0;
+
+When('I request Restart runs on the machine {string}', async ({ page }, name: string) => {
+  const response = await page.goto(`${machine(name).url}/restart`);
+  restartStatus = response?.status() ?? 0;
+});
+
+Then('the Restart runs address answers {int}', async ({}, status: number) => {
+  expect(restartStatus).toBe(status);
+});

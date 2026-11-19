@@ -378,6 +378,19 @@ entity.bb_conductor.action_form:
       bb_conductor:
         type: 'entity:bb_conductor'
 
+# Restart runs: a dialog over the Overview with JavaScript, a page without it.
+entity.bb_conductor.restart_form:
+  path: '/_workspace/{bb_workspace}/conductor/{bb_conductor}/restart'
+  defaults:
+    _entity_form: 'bb_conductor.restart'
+    _title: 'Restart runs'
+  requirements:
+    _custom_access: '\Drupal\bb_core\Form\BbRestartRunsForm::access'
+  options:
+    parameters:
+      bb_conductor:
+        type: 'entity:bb_conductor'
+
 entity.bb_group.create_form:
   path: '/_workspace/{bb_workspace}/group/create'
   defaults:
@@ -510,18 +523,21 @@ bb_core.onboarding:
   requirements:
     _user_is_logged_in: 'TRUE'
 
-# Position and background only, the profile a human sets in onboarding.
-# Access is the user entity operation `edit profile`, separate from `update`
-# (UserProfileAccessHooks); bearer clients are excluded. A tab beside View and
-# Edit, inside the account area.
+# Position and background of the user's profile in the workspace in context
+# (UserProfileController). Access is the user entity operation `edit profile`,
+# separate from `update` (UserProfileAccessHooks); bearer clients are excluded.
+# A tab beside View and Edit, inside the account area.
 bb_core.user.profile:
   path: '/user/{user}/profile'
   defaults:
-    _entity_form: 'user.profile'
-    _title: 'Profile'
+    _entity_form: 'bb_profile.default'
+    _title_callback: '\Drupal\bb_core\Controller\UserProfileController::title'
   requirements:
     _entity_access: 'user.edit profile'
     user: '\d+'
   options:
     _auth: ['cookie']
+    parameters:
+      user:
+        type: entity:user
     _bb_user_area: TRUE

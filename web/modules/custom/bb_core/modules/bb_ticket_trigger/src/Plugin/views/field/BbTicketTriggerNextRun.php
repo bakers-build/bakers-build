@@ -20,7 +20,7 @@ final class BbTicketTriggerNextRun extends FieldPluginBase {
   /**
    * Formats the next run.
    */
-  private BbDate $date;
+  protected BbDate $date;
 
   /**
    * {@inheritdoc}

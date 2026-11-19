@@ -44,7 +44,7 @@ final class BbCurrentUserPersonPropsSource extends SourcePluginBase {
   /**
    * The validated account navigation context.
    */
-  private AccountWorkspaceContext $workspaceContext;
+  protected AccountWorkspaceContext $workspaceContext;
 
   /**
    * Fallback for the anonymous branch, so a required prop is never empty.
@@ -61,17 +61,17 @@ final class BbCurrentUserPersonPropsSource extends SourcePluginBase {
   /**
    * The current-session account proxy, injected in `create()`.
    */
-  private AccountProxyInterface $currentUser;
+  protected AccountProxyInterface $currentUser;
 
   /**
    * The entity type manager, to load the full `user` entity and image style.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * The URL generator, for the fallback path when no `avatar` style exists.
    */
-  private FileUrlGeneratorInterface $fileUrlGenerator;
+  protected FileUrlGeneratorInterface $fileUrlGenerator;
 
   /**
    * {@inheritdoc}
