@@ -158,9 +158,9 @@ final class ActivityMailDeliveryTest extends ActivityMailKernelTestBase {
   }
 
   /**
-   * No mail names the person who made the change.
+   * A mail other than the assignment mail names nobody who made the change.
    */
-  public function testNoMailNamesTheActor(): void {
+  public function testOtherMailsNameNoActor(): void {
     $actor = $this->recipient('a', 'distinctive-actor');
     $this->container->get('account_switcher')->switchTo($actor);
     try {

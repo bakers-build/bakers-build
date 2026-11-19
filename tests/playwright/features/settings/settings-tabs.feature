@@ -43,6 +43,12 @@ Feature: Settings tabs edit their entity
     Then the name is reported as required
     And the page loaded its own assets without htmx transport keys
 
+  Scenario: A renamed team shows its new name in the rail
+    Given I lead a disposable workspace world
+    When I open the team Settings
+    And I set the name to "Renamed team" and save the Settings
+    Then the rail links "Renamed team"
+
   Scenario: The workspace slug and Settings address survive a rename
     Given I lead a disposable workspace world
     When I open the workspace Settings

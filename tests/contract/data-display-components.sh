@@ -1529,6 +1529,8 @@ check "B9 the prose selectors appear in rich-text.twig and in no other template"
 #      the `review` ticket state — is therefore dropped too: `state-flow` colours the STATE.
 #   3. `user` and `default` are dropped: they are Drupal/OG core nouns (`user.user`,
 #      `og_membership.default`), not bakers.build concepts, and every application has a user menu.
+#      `profile` is dropped too: it names the large layout of any person card (`person`'s `profile`
+#      variant), the way every application has a profile page; `bb_profile` stays caught.
 #   4. Nouns shorter than four characters are dropped — `run` is an English verb and would match
 #      prose everywhere. `run_row` is caught by B1 and B2 regardless.
 #   5. A NAME or PROP matches when its FIRST `-`/`_` segment is one of the nouns: the entity is the
@@ -1587,7 +1589,7 @@ def state_values(node):
     return found
 
 
-CORE_NOUNS = {'user', 'default'}          # rule 3
+CORE_NOUNS = {'user', 'default', 'profile'}  # rule 3
 TAILWIND_UTILITIES = {'group'}            # rule 6
 vocabulary = {n for n in nouns - CORE_NOUNS - state_values(model) if len(n) > 3}   # rules 2 and 4
 

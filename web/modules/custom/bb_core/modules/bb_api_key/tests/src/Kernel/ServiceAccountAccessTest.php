@@ -14,6 +14,7 @@ use Drupal\bb_api_key\Access\ServiceAccountAccess;
 use Drupal\bb_api_key\ServiceAccountManager;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\og\Entity\OgMembership;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\OgMembershipInterface;
@@ -83,6 +84,7 @@ final class ServiceAccountAccessTest extends KernelTestBase {
     $this->installEntitySchema('bb_team');
     $this->installEntitySchema('bb_group');
     $this->installEntitySchema('bb_project');
+    $this->installEntitySchema('bb_profile');
     $this->installEntitySchema('consumer');
     $this->installEntitySchema('oauth2_token');
     $this->installConfig(['system', 'user', 'og', 'bb_core', 'bb_api_key', 'simple_oauth']);
@@ -192,6 +194,33 @@ final class ServiceAccountAccessTest extends KernelTestBase {
     // workspace-scoped marker check must deny this even though `$this->lead`
     // genuinely administers SOME workspace.
     self::assertFalse($this->access()->manage($this->workspace, $this->lead, $foreignAccount)->isAllowed());
+  }
+
+  /**
+   * The workspace's lead edits its service account's profile there only.
+   */
+  public function testLeadEditsServiceAccountProfileInItsWorkspaceOnly(): void {
+    $expires = date('Y-m-d', $this->container->get('datetime.time')->getCurrentTime() + 86400 * 10);
+    // The fixture's lead is uid 1, which bypasses access; take a real lead.
+    $lead = $this->createUser();
+    self::assertInstanceOf(UserInterface::class, $lead);
+    $leadRole = OgRole::load('bb_workspace-bb_workspace-lead');
+    self::assertInstanceOf(OgRole::class, $leadRole);
+    OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+      ->setOwner($lead)->setGroup($this->workspace)->setRoles([$leadRole])
+      ->setState(OgMembershipInterface::STATE_ACTIVE)->save();
+    $service = $this->manager()->create($this->workspace, $this->team, 'profile-bot', 'guest', 'reporter', $expires, $lead)['user'];
+    $profiles = $this->container->get(Profiles::class);
+    $home = $profiles->forAccount((int) $service->id(), (int) $this->workspace->id());
+    $home->save();
+    $elsewhere = $profiles->forAccount((int) $service->id(), (int) $this->foreignWorkspace->id());
+    $elsewhere->save();
+
+    self::assertTrue($home->access('update', $lead));
+    self::assertTrue($home->access('view', $lead));
+    self::assertFalse($home->access('update', $this->member));
+    self::assertFalse($elsewhere->access('update', $lead), 'not in another workspace');
+    self::assertFalse($home->access('delete', $lead));
   }
 
   /**

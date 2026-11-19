@@ -68,6 +68,20 @@ bb_core.rail.settings:
   options:
     icon: settings
 
+# The account's favorite projects of the ambient workspace, filled by
+# `BbMenuSource` (`bb_children: favorites`); skipped while there are none.
+bb_core.rail.favorites_heading:
+  title: 'Favorites'
+  route_name: '<nolink>'
+  menu_name: bakers-rail
+  class: '\Drupal\bb_core\Plugin\Menu\WorkspaceMenuLink'
+  weight: 5
+  options:
+    icon: star
+    heading: true
+    open: true
+    bb_children: favorites
+
 # A heading without a destination. `bb_children: teams` makes
 # `BbMenuSource` fill it with the ambient workspace's teams and the team
 # create action at render time.
@@ -76,7 +90,7 @@ bb_core.rail.teams_heading:
   route_name: '<nolink>'
   menu_name: bakers-rail
   class: '\Drupal\bb_core\Plugin\Menu\WorkspaceMenuLink'
-  weight: 5
+  weight: 6
   options:
     icon: team
     heading: true

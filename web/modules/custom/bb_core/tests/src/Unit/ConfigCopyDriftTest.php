@@ -244,16 +244,14 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     // reason (BB-476 D8); credentials ship empty in both copies.
     'social_auth.settings',
     'social_auth_google.settings',
-    // The three consolidated user-profile fields (BB-507 D3/D4): the core
-    // image field that doubles as social_auth's avatar target, and two plain
-    // string fields. Config entities, so the recipe path skips them like any
-    // other field on this list.
+    // The consolidated user-profile fields (BB-507 D3/D4): the core image
+    // field that doubles as social_auth's avatar target, and the full name.
+    // Config entities, so the recipe path skips them like any other field on
+    // this list.
     'field.storage.user.user_picture',
     'field.field.user.user.user_picture',
     'field.storage.user.field_full_name',
     'field.field.user.user.field_full_name',
-    'field.storage.user.field_developer_title',
-    'field.field.user.user.field_developer_title',
     // The consolidated profile's displays and the avatar image style they
     // render through (BB-507 task 6).
     'image.style.avatar',
@@ -267,11 +265,9 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'core.entity_form_display.bb_group.bb_group.create',
     'core.entity_form_display.bb_group.bb_group.settings',
     'core.entity_form_display.bb_workspace.bb_workspace.settings',
-    // The onboarding welcome flow's profile fields (BB-432 task 1). The
+    // The onboarding welcome flow's completion flag (BB-432 task 1). The
     // wizard declares its Form API fields in PHP; later edits use
     // `user.user.default`.
-    'field.storage.user.field_bb_background',
-    'field.field.user.user.field_bb_background',
     'field.storage.user.field_onboarding_completed',
     'field.field.user.user.field_onboarding_completed',
     ...self::SCOPE_CONFIG_NAMES,

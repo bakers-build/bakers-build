@@ -10,8 +10,6 @@
   display_name: Christian Wiedemann
   initials: CW
   field_full_name: Christian Wiedemann
-  field_developer_title: Product Lead
-  field_bb_background: Drupal, Linear, or something else entirely.
   __designbook:
     section: bb_ticket
 - id: '2'

@@ -60,7 +60,7 @@ export class WorkspaceMemberOverviewScreen extends AsyncScreen<UserProfile> {
       workspaceId,
       userId,
     );
-    return loadUserProfile(context.services.client, userId);
+    return loadUserProfile(context.services.client, userId, workspaceId);
   }
 
   protected renderLoading(): string[] {
