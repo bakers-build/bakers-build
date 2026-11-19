@@ -19,7 +19,7 @@ use Drupal\bb_core\Statistics\Period\PeriodResolver;
  */
 final class FigureEvaluator {
 
-  private const TIME_TYPES = ['days', 'weeks', 'months', 'quarters'];
+  private const TIME_TYPES = ['hours', 'days', 'weeks', 'months', 'quarters'];
 
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
