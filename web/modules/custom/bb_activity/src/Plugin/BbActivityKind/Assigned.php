@@ -45,7 +45,7 @@ final class Assigned extends ActivityKindBase {
   /**
    * Whom a reader may be told about.
    */
-  private BbWorkspaceReadScopeInterface $readScope;
+  protected BbWorkspaceReadScopeInterface $readScope;
 
   /**
    * {@inheritdoc}
