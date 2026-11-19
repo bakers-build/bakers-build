@@ -313,11 +313,7 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
     $form = $this->buildAddForm();
     self::assertArrayHasKey('invite', $form, 'The affordance is rendered for a lead.');
     self::assertArrayHasKey('account', $form['invite']);
-    self::assertSame(
-      'bb_workspace_members',
-      $form['invite']['account']['#selection_handler'] ?? NULL,
-      'The add field offers only the parent workspace\'s members.',
-    );
+    self::assertSame('bb_picker_value', $form['invite']['account']['#type'] ?? NULL, 'The add field is the house picker.');
 
     $this->joinWorkspace($account);
     $errors = $this->submitAddForm($account);
@@ -328,6 +324,28 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
       $this->membershipCountFor($account),
       'Exactly one membership row is created for the added account.',
     );
+  }
+
+  /**
+   * The picker offers the workspace's people who are not in the team yet.
+   */
+  public function testTheAddPickerOffersOnlyWorkspaceMembersNotInTheTeam(): void {
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $candidate = $this->createUser([], 'candidate');
+    $crew = $this->createUser([], 'crew');
+    $outsider = $this->createUser([], 'outsider');
+    self::assertInstanceOf(UserInterface::class, $candidate);
+    self::assertInstanceOf(UserInterface::class, $crew);
+    self::assertInstanceOf(UserInterface::class, $outsider);
+    $this->joinWorkspace($candidate);
+    $this->joinWorkspace($crew);
+    Og::createMembership($this->team, $crew)->setState(OgMembershipInterface::STATE_ACTIVE)->save();
+
+    $options = $this->buildAddForm()['invite']['account']['#picker_options'] ?? [];
+
+    self::assertArrayHasKey((int) $candidate->id(), $options, 'a workspace member is offered');
+    self::assertArrayNotHasKey((int) $crew->id(), $options, 'someone already in the team is not');
+    self::assertArrayNotHasKey((int) $outsider->id(), $options, 'someone outside the workspace is not');
   }
 
   /**
@@ -378,11 +396,7 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
   /**
    * Submits the add form for one account, the way the island's POST does.
    *
-   * The value is the `Label (id)` string an `entity_autocomplete` element
-   * actually receives from a browser. `EntityAutocomplete` parses the id out
-   * of that suffix in its own element validation, and a bare uid takes the
-   * match-by-title path instead. Passing the browser's own form is what makes
-   * this driver exercise the element rather than route around it.
+   * The value is the bare uid the picker's option posts.
    *
    * @return array<string, string>
    *   The validation errors, so a silent validation failure cannot pass for a
@@ -391,7 +405,7 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
   private function submitAddForm(UserInterface $account): array {
     $form_state = new FormState();
     $form_state->setValues([
-      'account' => sprintf('%s (%d)', $account->getAccountName(), (int) $account->id()),
+      'account' => (string) $account->id(),
       // THE TRIGGER TRAVELS WITH THE REQUEST (BB-435). One form owns three
       // writes and decides which one ran by reading the pressed control out of
       // the user input, because the per-item controls are drawn by components

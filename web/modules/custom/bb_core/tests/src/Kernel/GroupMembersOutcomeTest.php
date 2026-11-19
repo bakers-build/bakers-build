@@ -173,7 +173,7 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
     $this->enterRoute($this->team);
 
     $page = $this->submitTeam([
-      'account' => sprintf('dee (%d)', (int) $dee->id()),
+      'account' => (string) $dee->id(),
       'add_member' => 'Add member',
     ]);
 

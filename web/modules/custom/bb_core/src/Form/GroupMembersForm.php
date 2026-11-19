@@ -13,7 +13,6 @@ use Drupal\bb_core\Members\MemberItemBuilder;
 use Drupal\bb_core\Members\MembershipWriter;
 use Drupal\bb_core\Members\OwnershipTransfer;
 use Drupal\bb_core\Members\WorkspaceInvite;
-use Drupal\bb_core\Plugin\EntityReferenceSelection\ActiveWorkspaceSelectionBase;
 use Drupal\island\Form\IslandFormBase;
 use Drupal\island\IslandHostResolver;
 use Drupal\island\IslandInterface;
@@ -129,7 +128,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    * {@inheritdoc}
    */
   public static function trustedCallbacks(): array {
-    return ['wrapInZone'];
+    return ['wrapInZone', 'renderAddPicker'];
   }
 
   /**
@@ -358,27 +357,87 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    */
   private function inviteZone(ContentEntityInterface $group): array {
     $account = [
+      '#type' => 'bb_picker_value',
       '#id' => self::ADD_ID,
-      '#type' => 'entity_autocomplete',
-      '#target_type' => 'user',
       '#title' => $this->t('Member'),
-      '#placeholder' => $this->t('Search by name'),
-      '#required' => FALSE,
+      '#title_display' => 'invisible',
       '#weight' => 0,
+      '#picker_options' => $this->addOptions($group),
+      '#pre_render' => [[self::class, 'renderAddPicker']],
     ];
-    if ($group->hasField('workspace_id') && !$group->get('workspace_id')->isEmpty()) {
-      $account['#selection_handler'] = 'bb_workspace_members';
-      $account['#selection_settings'] = [
-        ActiveWorkspaceSelectionBase::ACTIVE_WORKSPACE_SETTING => (int) $group->get('workspace_id')->target_id,
-        'include_anonymous' => FALSE,
-      ];
-    }
     return $this->inviteZoneFrom(
       $account,
       $this->t('Add member'),
       $this->t('Add a member'),
       $this->t('Only people who already belong to this workspace can join the team.'),
     );
+  }
+
+  /**
+   * The people a nested group may add: its parent's members not in it yet.
+   *
+   * shortcut: every candidate renders as an option and the picker filters
+   * them in the browser; move to a `search_url` route when a workspace
+   * outgrows a few hundred people.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $group
+   *   The nested group.
+   *
+   * @return array<int, string>
+   *   Display names keyed by uid, in name order.
+   */
+  private function addOptions(ContentEntityInterface $group): array {
+    $parent = $group->hasField('workspace_id') ? $group->get('workspace_id')->entity : NULL;
+    if (!$parent instanceof ContentEntityInterface) {
+      return [];
+    }
+    $in_group = array_flip($this->rosterUids($group));
+    $options = [];
+    foreach ($this->membershipWriter->memberships($parent) as $membership) {
+      $account = $membership->getOwner();
+      if ($membership->isActive() && $account !== NULL && !isset($in_group[(int) $account->id()])) {
+        $options[(int) $account->id()] = (string) $account->getDisplayName();
+      }
+    }
+    natcasesort($options);
+    return $options;
+  }
+
+  /**
+   * Renders the add field as a searchable picker from its processed value.
+   *
+   * @param array<string, mixed> $element
+   *   The processed picker element.
+   *
+   * @return array<string, mixed>
+   *   The element with its `control` child.
+   */
+  public static function renderAddPicker(array $element): array {
+    $value = (string) (($element['#value'] ?? [])[0] ?? '');
+    $rows = [];
+    foreach ($element['#picker_options'] as $uid => $label) {
+      $rows[] = ['value' => (string) $uid, 'label' => $label, 'selected' => (string) $uid === $value];
+    }
+    $chosen = $element['#picker_options'][$value] ?? NULL;
+    $element['control'] = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:property_pill',
+      '#props' => [
+        'name' => $element['#name'],
+        'label' => (string) $element['#title'],
+        'icon' => 'user',
+        'picker_id' => $element['#id'],
+        'multiple' => FALSE,
+        'open' => FALSE,
+        'searchable' => TRUE,
+        // Without JavaScript the panel cannot open; a select stands in.
+        'fallback' => !\Drupal::request()->isXmlHttpRequest(),
+        'values' => $chosen === NULL ? [] : [$value],
+        'value_label' => $chosen ?? '',
+        'options' => $rows,
+      ],
+    ];
+    return $element;
   }
 
   /**
@@ -480,9 +539,10 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       // must not be refused because the person control happens to be empty.
       return;
     }
-    $uid = $form_state->getValue('account');
-    if ($uid === NULL || $uid === '') {
+    $uid = $this->chosenAccount($form_state);
+    if ($uid === 0) {
       $form_state->setErrorByName('account', $this->t('Choose the person to add.'));
+      $form['#attributes'] = $this->outcome(self::ADD_ID, (string) $this->t('Choose the person to add.'), 'assertive') + ($form['#attributes'] ?? []);
       return;
     }
     // A second membership for the same account would be accepted by the
@@ -490,12 +550,27 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     // keeps the list a list of people rather than of memberships. The typed
     // value survives, because `validateIslandForm()` receives the
     // already-built form and a rejected submit is answered with it.
-    if ($this->membershipWriter->membershipOf($group, (int) $uid) !== NULL) {
-      $form_state->setErrorByName('account', $this->t(
+    $refusal = match (TRUE) {
+      $this->membershipWriter->membershipOf($group, $uid) !== NULL => $this->t(
         'That account is already a member of this @group.',
         ['@group' => $this->groupNoun($group)],
-      ));
+      ),
+      !isset($this->addOptions($group)[$uid]) => $this->t('Only people who already belong to this workspace can join the team.'),
+      default => NULL,
+    };
+    if ($refusal !== NULL) {
+      $form_state->setErrorByName('account', $refusal);
+      $form['#attributes'] = $this->outcome(self::ADD_ID, (string) $refusal, 'assertive') + ($form['#attributes'] ?? []);
     }
+  }
+
+  /**
+   * The uid the add picker submitted, or 0.
+   */
+  private function chosenAccount(FormStateInterface $form_state): int {
+    $value = $form_state->getValue('account');
+    $first = is_array($value) ? ($value[0] ?? '') : $value;
+    return is_scalar($first) ? (int) $first : 0;
   }
 
   /**
@@ -669,7 +744,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
 
     if ($prefix === self::ADD) {
       $this->applyAdd($group, $form_state);
-      $uid = (int) $form_state->getValue('account');
+      $uid = $this->chosenAccount($form_state);
       $membership = $this->membershipWriter->membershipOf($group, $uid);
       return $this->rememberOutcome(
         $this->rowFocus($group, $uid),
@@ -777,7 +852,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     if ($this->tenancyInvite->isTenancy($group)) {
       throw new AccessDeniedHttpException();
     }
-    $this->membershipWriter->add($group, $form_state->getValue('account'));
+    $this->membershipWriter->add($group, $this->chosenAccount($form_state));
   }
 
   /**
