@@ -14,6 +14,20 @@ Feature: The workspace Members screen keeps focus and says what happened
     And Invite members has focus
     And the screen reader hears "Invited 2 people."
 
+  Scenario: Typed addresses become chips the keyboard can remove
+    Given I am signed in as a workspace lead
+    When I open the workspace Members settings screen
+    And I open the invite dialog
+    And I type "ada@example.com, not-an-address" into the invite addresses
+    And I press the key "Enter"
+    Then the invite addresses show the chips "ada@example.com, not-an-address"
+    And the chip "not-an-address" is marked as not an e-mail address
+    When I press the key "Backspace"
+    Then the invite addresses show the chips "ada@example.com"
+    When I remove the chip "ada@example.com"
+    Then the invite addresses show no chips
+    And the invite addresses field has focus
+
   Scenario: Escape closes the invite dialog back to Invite members
     Given I am signed in as a workspace lead
     When I open the workspace Members settings screen

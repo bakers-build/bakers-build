@@ -158,8 +158,53 @@ async function enterAddresses(page: Page, baseURL: string, addresses: string[], 
     await clearMailboxFor(page, baseURL, address);
   }
   typedText = [...addresses, ...(extra ? [extra] : [])].join('\n');
-  await page.locator(DIALOG).getByRole('textbox', { name: 'Email addresses' }).fill(typedText);
+  // The chips input commits on Enter; the hidden textarea is what the form submits.
+  const input = addressInput(page);
+  await input.fill(typedText.replaceAll('\n', ', '));
+  await input.press('Enter');
 }
+
+/** The invite dialog's address input: the chips field's text input. */
+function addressInput(page: Page) {
+  return page.locator(DIALOG).getByRole('textbox', { name: 'Email addresses' });
+}
+
+/** The chips the invite dialog shows, one list item per entered address. */
+function addressChips(page: Page) {
+  return page.locator(`${DIALOG} [data-email-chips]`).getByRole('listitem');
+}
+
+When('I type {string} into the invite addresses', async ({ page }, text: string) => {
+  await addressInput(page).focus();
+  await page.keyboard.type(text);
+});
+
+Then('the invite addresses show the chips {string}', async ({ page }, list: string) => {
+  const addresses = list.split(',').map((address) => address.trim());
+  await expect(addressChips(page).locator('[data-email-chips-address]')).toHaveText(addresses);
+  await expect(page.locator(`${DIALOG} textarea[name="emails"]`)).toHaveValue(addresses.join('\n'));
+});
+
+Then('the invite addresses show no chips', async ({ page }) => {
+  await expect(addressChips(page)).toHaveCount(0);
+  await expect(page.locator(`${DIALOG} textarea[name="emails"]`)).toHaveValue('');
+});
+
+Then('the chip {string} is marked as not an e-mail address', async ({ page }, address: string) => {
+  const chip = addressChips(page).filter({ hasText: address });
+  await expect(chip).toContainText('Not an e-mail address');
+  await expect(chip).toHaveAttribute('data-invalid', '');
+});
+
+When('I remove the chip {string}', async ({ page }, address: string) => {
+  const remove = addressChips(page).getByRole('button', { name: `Remove ${address}`, exact: true });
+  await remove.focus();
+  await page.keyboard.press('Enter');
+});
+
+Then('the invite addresses field has focus', async ({ page }) => {
+  await expect(addressInput(page)).toBeFocused();
+});
 
 When('I enter two fresh, never-used e-mail addresses', async ({ page, baseURL }) => {
   await enterAddresses(page, baseURL!, [freshAddress(1), freshAddress(2)]);
@@ -266,9 +311,9 @@ Then('the first invited address is no longer listed as a pending invitation', as
 });
 
 Then('the invite dialog marks the addresses as refused and keeps them', async ({ page }) => {
-  const field = page.locator(DIALOG).getByRole('textbox', { name: 'Email addresses' });
-  await expect(field).toHaveAttribute('aria-invalid', 'true');
-  await expect(field).toHaveValue(typedText);
+  await expect(addressInput(page)).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator(`${DIALOG} textarea[name="emails"]`)).toHaveValue(typedText);
+  await expect(addressChips(page)).toHaveCount(typedText.split('\n').length);
 });
 
 Then('the invite dialog names {string} as not an e-mail address', async ({ page }, entry: string) => {

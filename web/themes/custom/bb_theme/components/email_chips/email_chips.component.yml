@@ -1,0 +1,39 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Email Chips
+status: stable
+group: Form
+description: >-
+  A list of e-mail addresses entered as removable chips over a plain textarea.
+  The textarea in the `field` slot stays the submitted value (one address per
+  line); the `emailChips` Alpine component hides it and keeps it in step with
+  the chips. Enter, comma, semicolon, space, blur and paste turn the typed text
+  into chips; Backspace in the empty input removes the last chip. An address
+  the browser does not accept as an e-mail is marked, in text as well as
+  colour. Without JavaScript the chip box stays hidden and the textarea is the
+  control. Distinct from option_picker's chips, which pick from a list.
+provider: bb_theme
+props:
+  type: object
+  required:
+    - label
+  properties:
+    label:
+      type: string
+      title: Accessible name of the text input
+    placeholder:
+      type: string
+      title: Placeholder of the text input
+    invalid_label:
+      type: string
+      title: Text that marks an invalid chip for assistive technology
+    remove_label:
+      type: string
+      title: Remove button name, with @address for the chip's address
+slots:
+  field:
+    title: Field
+    description: The textarea the form submits.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

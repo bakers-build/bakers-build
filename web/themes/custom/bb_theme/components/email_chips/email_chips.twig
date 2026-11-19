@@ -1,0 +1,39 @@
+{# E-mail addresses as removable chips over the textarea in `field`, which
+   stays the submitted value. The chip box starts `hidden`, so without
+   JavaScript only the textarea shows; `emailChips` reveals the box and hides
+   the textarea. The chip markup is a template Alpine clones per address. #}
+{% set chip_classes = 'inline-flex items-center gap-inline-xs h-6 max-w-full px-1.5 rounded-full border bg-surface text-meta text-text' %}
+<div{{ (attributes ?: create_attribute()).addClass(['w-full', 'min-w-0']) }}
+  x-data="emailChips"
+  data-email-chips
+  data-remove-label="{{ remove_label|default('Remove @address') }}">
+  {{ field }}
+  <div hidden x-bind:hidden="false" x-on:click.self="$refs.input.focus()"
+    class="flex flex-wrap items-center gap-inline-xs w-full min-h-[34px] px-[11px] py-inline-xs bg-app border border-control-border rounded-sm cursor-text focus-within:border-primary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus-ring">
+    <ul role="list" class="contents" aria-label="{{ label }}">
+      <template x-for="(chip, index) in chips" x-bind:key="index + chip.address">
+        <li class="{{ chip_classes }}"
+          x-bind:class="chip.valid ? 'border-control-border' : 'border-state-attention-mark text-state-attention-ink'"
+          x-bind:data-invalid="chip.valid ? null : ''">
+          <template x-if="!chip.valid">
+            <span class="inline-flex shrink-0">{{ include('bb_theme:icon', { name: 'alert-triangle', size: 'sm' }, with_context = false) }}<span class="sr-only">{{ invalid_label|default('Not an e-mail address') }}:</span></span>
+          </template>
+          <span data-email-chips-address class="min-w-0 truncate" x-text="chip.address" x-bind:title="chip.address"></span>
+          <button type="button"
+            class="shrink-0 inline-flex text-text-faint hover:text-text cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            x-bind:aria-label="removeLabel(chip)"
+            x-on:click="remove(index)">
+            {{ include('bb_theme:icon', { name: 'x-circle', size: 'sm' }, with_context = false) }}
+          </button>
+        </li>
+      </template>
+    </ul>
+    <input x-ref="input" type="text" inputmode="email" autocomplete="off"
+      class="flex-1 min-w-48 h-6 bg-transparent border-0 p-0 text-body text-text outline-none placeholder:text-text-faint"
+      aria-label="{{ label }}"
+      x-bind:placeholder="chips.length ? '' : placeholder"
+      x-on:keydown="keydown($event)"
+      x-on:paste="paste($event)"
+      x-on:blur="commit()">
+  </div>
+</div>

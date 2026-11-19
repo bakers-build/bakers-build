@@ -1,0 +1,15 @@
+name: Default
+props:
+  label: Email addresses
+  invalid_label: Not an e-mail address
+  remove_label: Remove @address
+slots:
+  field:
+    - type: component
+      component: bb_theme:form_textarea
+      props:
+        name: emails
+        id: emails
+        rows: 4
+        placeholder: Email addresses, one per line or separated by commas
+        value: "ada@example.com\nalan@example.com\nnot-an-address"

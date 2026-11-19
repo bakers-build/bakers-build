@@ -128,6 +128,8 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
     // says what it takes, the invisible title names it for assistive tech.
     $form['emails'] = [
       '#type' => 'textarea',
+      // Each address shows as a removable chip; the textarea stays the value.
+      '#theme' => 'textarea__bb_email_chips',
       '#title' => $this->t('Email addresses'),
       '#title_display' => 'invisible',
       '#placeholder' => $this->t('Email addresses, one per line or separated by commas'),

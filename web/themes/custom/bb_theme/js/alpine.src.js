@@ -15,6 +15,7 @@ import persist from '@alpinejs/persist';
 import optionPicker from '../components/option_picker/option_picker.src.js';
 import imageCrop from '../components/image_crop/image_crop.src.js';
 import periodRange from '../components/period-range/period-range.src.js';
+import emailChips from '../components/email_chips/email_chips.src.js';
 
 Alpine.plugin(persist);
 
@@ -22,6 +23,7 @@ document.addEventListener('alpine:init', () => {
   Alpine.data('optionPicker', optionPicker);
   Alpine.data('imageCrop', imageCrop);
   Alpine.data('periodRange', periodRange);
+  Alpine.data('emailChips', emailChips);
 });
 
 // Exposed so a component can reach the instance from the console while debugging;
