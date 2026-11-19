@@ -37,7 +37,7 @@ trait WorkspaceReadScopeTestTrait {
     'user', 'og_membership',
     'bb_workspace', 'bb_group', 'bb_team', 'bb_machine', 'bb_project',
     'bb_ticket', 'bb_run', 'bb_comment', 'bb_environment',
-    'bb_conductor', 'bb_term', 'bb_ticket_template', 'bb_invite',
+    'bb_conductor', 'bb_term', 'bb_ticket_template', 'bb_invite', 'bb_profile',
   ];
 
   /**

@@ -141,16 +141,18 @@ final class UserProfileFormTest extends KernelTestBase {
     $this->setCurrentUser($user);
 
     $this->openProfile($user);
-    self::assertSame((int) $north->id(), $this->pageProfile($user)?->workspaceId(), 'first by label');
+    self::assertSame((int) $north->id(), $this->pageProfile($user)->workspaceId(), 'first by label');
     $this->openProfile($user, $south->uuid());
-    self::assertSame((int) $south->id(), $this->pageProfile($user)?->workspaceId(), 'the origin');
+    self::assertSame((int) $south->id(), $this->pageProfile($user)->workspaceId(), 'the origin');
     self::assertSame('Profile in South', (string) $this->controller()->title($user));
 
     $homeless = $this->person();
     $this->setCurrentUser($homeless);
     $this->openProfile($homeless);
-    self::assertNull($this->pageProfile($homeless));
-    self::assertArrayNotHasKey('position', $this->controller()->edit($homeless), 'an empty state, no form');
+    self::assertSame(0, $this->pageProfile($homeless)->workspaceId(), 'no workspace');
+    $form = $this->container->get('entity.form_builder')->getForm($this->pageProfile($homeless), 'default');
+    self::assertArrayNotHasKey('position', $form, 'an empty state, no fields');
+    self::assertArrayNotHasKey('actions', $form, 'nothing to save');
   }
 
   /**
@@ -202,10 +204,14 @@ final class UserProfileFormTest extends KernelTestBase {
   }
 
   /**
-   * The profile the page's form edits, NULL for the empty state.
+   * The profile the page's entity form edits for the pushed request.
    */
-  private function pageProfile(UserInterface $user): ?BbProfileInterface {
-    return $this->controller()->profileFor($user);
+  private function pageProfile(UserInterface $user): BbProfileInterface {
+    $form = $this->container->get('entity_type.manager')->getFormObject('bb_profile', 'default');
+    $profile = $form->getEntityFromRouteMatch($this->container->get('current_route_match'), 'bb_profile');
+    self::assertInstanceOf(BbProfileInterface::class, $profile);
+    self::assertSame((int) $user->id(), $profile->getOwnerId());
+    return $profile;
   }
 
   /**
@@ -238,6 +244,8 @@ final class UserProfileFormTest extends KernelTestBase {
     self::assertSame('/user/{user}/profile', $route->getPath());
     self::assertSame(['cookie'], $route->getOption('_auth'));
     self::assertSame('user.edit profile', $route->getRequirement('_entity_access'));
+    self::assertSame('bb_profile.default', $route->getDefault('_entity_form'), 'the form token guards the POST');
+    self::assertSame('entity:user', $route->getOption('parameters')['user']['type'] ?? NULL);
     self::assertTrue($route->getOption('_bb_user_area'), 'the profile page sits in the account area');
 
     $label = $this->container->get('entity_field.manager')->getFieldDefinitions('bb_profile', 'bb_profile')['position']->getLabel();
