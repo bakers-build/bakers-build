@@ -101,7 +101,7 @@ final class BbOnboardingWizardForm extends FormBase {
   /**
    * Memo of ::projectWorkspace(): NULL unknown, FALSE none.
    */
-  private BbWorkspaceInterface|false|null $projectWorkspace = NULL;
+  protected BbWorkspaceInterface|false|null $projectWorkspace = NULL;
 
   public function __construct(
     protected EntityTypeManagerInterface $entityTypeManager,

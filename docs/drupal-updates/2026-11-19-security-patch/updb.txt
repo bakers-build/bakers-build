@@ -1,0 +1,7 @@
+ [success] No pending updates.
+ [success] Cache rebuild complete.
+ ----------------------------- ----------- 
+  Name                          State      
+ ----------------------------- ----------- 
+  search_api.index.bb_tickets   Different  
+ ----------------------------- ----------- 

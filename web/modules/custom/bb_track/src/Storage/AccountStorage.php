@@ -26,17 +26,17 @@ final class AccountStorage extends SqlContentEntityStorage {
   /**
    * Checked application service.
    */
-  private AccountGuard $guard;
+  protected AccountGuard $guard;
 
   /**
    * Checked application service.
    */
-  private WorkTimeMutation $mutation;
+  protected WorkTimeMutation $mutation;
 
   /**
    * The delete rules that cascade a project delete.
    */
-  private EntityDeleteRules $deleteRules;
+  protected EntityDeleteRules $deleteRules;
 
   /**
    * {@inheritdoc}

@@ -17,7 +17,7 @@ trait WorklogReferenceTrait {
   /**
    * Resolves UUIDs; the using tool sets it in create().
    */
-  private EntityRepositoryInterface $repository;
+  protected EntityRepositoryInterface $repository;
 
   /**
    * Loads a worklog the caller may change or delete.

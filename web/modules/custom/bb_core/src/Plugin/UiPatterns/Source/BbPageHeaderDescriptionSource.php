@@ -37,12 +37,12 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
   /**
    * Builds the Insights sub-line from the request's filters.
    */
-  private ?InsightsPage $insightsPage = NULL;
+  protected ?InsightsPage $insightsPage = NULL;
 
   /**
    * The current request, for the Insights filters.
    */
-  private ?RequestStack $requestStack = NULL;
+  protected ?RequestStack $requestStack = NULL;
 
   /**
    * {@inheritdoc}

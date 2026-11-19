@@ -1,0 +1,116 @@
+Gathering patches for root package.
+Removing package drupal/ui_patterns so that it can be re-installed and re-patched.
+  - Removing drupal/ui_patterns (2.0.23)
+Deleting /var/www/html/web/modules/contrib/ui_patterns - deleted
+Loading composer repositories with package information
+Updating dependencies
+Lock file operations: 5 installs, 24 updates, 0 removals
+  - Upgrading brianium/paratest (v7.8.5 => v7.8.6)
+  - Upgrading consolidation/annotated-command (4.10.5 => 4.10.6)
+  - Upgrading consolidation/config (3.2.1 => 3.2.2)
+  - Upgrading consolidation/log (3.1.2 => 3.1.3)
+  - Upgrading consolidation/output-formatters (4.7.1 => 4.7.2)
+  - Upgrading consolidation/robo (5.1.1 => 5.2.3)
+  - Locking consolidation/self-update (3.2.1)
+  - Upgrading drupal/better_exposed_filters (7.1.2 => 7.2.0)
+  - Upgrading drupal/core-dev (11.3.22 => 11.4.13)
+  - Upgrading drupal/core-project-message (11.3.22 => 11.4.13)
+  - Upgrading drupal/core-recipe-unpack (11.3.22 => 11.4.13)
+  - Upgrading drupal/display_builder (1.0.0-beta4 => 1.0.0-beta5)
+  - Upgrading drupal/jsonapi_resources (1.5.0 => 1.8.0)
+  - Upgrading drupal/mcp_server (2.0.0-beta6 => 2.0.0-beta7)
+  - Upgrading drupal/mcp_server_oauth (1.0.0-alpha1 => 1.0.0-alpha2)
+  - Upgrading drupal/schemata (1.0.0 => 1.1.0)
+  - Upgrading drupal/schemata_json_schema (1.0.0 => 1.1.0)
+  - Upgrading drupal/search_api (1.41.0 => 1.43.0)
+  - Upgrading drupal/state_machine (1.14.0 => 1.15.0)
+  - Locking drupal/ui_patterns_field (2.0.23)
+  - Upgrading e0ipso/simple_oauth_21 (v1.13.1 => v1.13.11)
+  - Upgrading fidry/cpu-core-counter (1.3.0 => 1.4.1)
+  - Locking kevinrob/guzzle-cache-middleware (6.0.0)
+  - Upgrading laravel/prompts (v0.3.18 => v0.3.27)
+  - Upgrading mcp/sdk (v0.7.1 => v0.9.0)
+  - Upgrading opis/json-schema (2.6.1 => 2.6.2)
+  - Upgrading psy/psysh (v0.12.23 => v0.12.24)
+  - Locking symfony/cache (v8.0.15)
+  - Locking symfony/cache-contracts (v3.8.1)
+Writing lock file
+Installing dependencies from lock file (including require-dev)
+Package operations: 6 installs, 24 updates, 0 removals
+  - Downloading drupal/core-project-message (11.4.13)
+  - Downloading drupal/core-recipe-unpack (11.4.13)
+  - Downloading fidry/cpu-core-counter (1.4.1)
+  - Downloading brianium/paratest (v7.8.6)
+  - Downloading consolidation/log (3.1.3)
+  - Downloading kevinrob/guzzle-cache-middleware (6.0.0)
+  - Downloading consolidation/self-update (3.2.1)
+  - Downloading drupal/better_exposed_filters (7.2.0)
+  - Downloading consolidation/config (3.2.2)
+  - Downloading consolidation/output-formatters (4.7.2)
+  - Downloading consolidation/annotated-command (4.10.6)
+  - Downloading consolidation/robo (5.2.3)
+  - Downloading drupal/display_builder (1.0.0-beta5)
+  - Downloading drupal/jsonapi_resources (1.8.0)
+  - Downloading e0ipso/simple_oauth_21 (v1.13.11)
+  - Downloading opis/json-schema (2.6.2)
+  - Downloading mcp/sdk (v0.9.0)
+  - Downloading drupal/mcp_server (2.0.0-beta7)
+  - Downloading drupal/mcp_server_oauth (1.0.0-alpha2)
+  - Downloading drupal/schemata (1.1.0)
+  - Downloading drupal/state_machine (1.15.0)
+  0/21 [>---------------------------]   0%
+  7/21 [=========>------------------]  33%
+ 12/21 [================>-----------]  57%
+ 16/21 [=====================>------]  76%
+ 17/21 [======================>-----]  80%
+ 18/21 [========================>---]  85%
+ 19/21 [=========================>--]  90%
+ 21/21 [============================] 100%
+Gathering patches for root package.
+Gathering patches for dependencies. This might take a minute.
+  - Upgrading drupal/core-project-message (11.3.22 => 11.4.13): Extracting archive
+  - Upgrading drupal/core-recipe-unpack (11.3.22 => 11.4.13): Extracting archive
+  - Upgrading fidry/cpu-core-counter (1.3.0 => 1.4.1): Extracting archive
+  - Upgrading brianium/paratest (v7.8.5 => v7.8.6): Extracting archive
+  - Upgrading consolidation/log (3.1.2 => 3.1.3): Extracting archive
+  - Installing symfony/cache-contracts (v3.8.1): Extracting archive
+  - Installing symfony/cache (v8.0.15): Extracting archive
+  - Installing kevinrob/guzzle-cache-middleware (6.0.0): Extracting archive
+  - Installing consolidation/self-update (3.2.1): Extracting archive
+  - Upgrading drupal/better_exposed_filters (7.1.2 => 7.2.0): Extracting archive
+  - Upgrading drupal/core-dev (11.3.22 => 11.4.13)
+  - Upgrading psy/psysh (v0.12.23 => v0.12.24): Extracting archive
+  - Upgrading laravel/prompts (v0.3.18 => v0.3.27): Extracting archive
+  - Upgrading consolidation/config (3.2.1 => 3.2.2): Extracting archive
+  - Upgrading consolidation/output-formatters (4.7.1 => 4.7.2): Extracting archive
+  - Upgrading consolidation/annotated-command (4.10.5 => 4.10.6): Extracting archive
+  - Upgrading consolidation/robo (5.1.1 => 5.2.3): Extracting archive
+  - Installing drupal/ui_patterns (2.0.23): Extracting archive
+  - Installing drupal/ui_patterns_field (2.0.23)
+  - Upgrading drupal/display_builder (1.0.0-beta4 => 1.0.0-beta5): Extracting archive
+  - Upgrading drupal/jsonapi_resources (1.5.0 => 1.8.0): Extracting archive
+  - Upgrading e0ipso/simple_oauth_21 (v1.13.1 => v1.13.11): Extracting archive
+  - Upgrading opis/json-schema (2.6.1 => 2.6.2): Extracting archive
+  - Upgrading mcp/sdk (v0.7.1 => v0.9.0): Extracting archive
+  - Upgrading drupal/mcp_server (2.0.0-beta6 => 2.0.0-beta7): Extracting archive
+  - Upgrading drupal/mcp_server_oauth (1.0.0-alpha1 => 1.0.0-alpha2): Extracting archive
+  - Upgrading drupal/schemata (1.0.0 => 1.1.0): Extracting archive
+  - Upgrading drupal/schemata_json_schema (1.0.0 => 1.1.0)
+  - Upgrading drupal/search_api (1.41.0 => 1.43.0): Extracting archive
+  - Upgrading drupal/state_machine (1.14.0 => 1.15.0): Extracting archive
+  0/25 [>---------------------------]   0%
+ 16/25 [=================>----------]  64%
+ 25/25 [============================] 100%
+  - Applying patches for drupal/ui_patterns
+    https://git.drupalcode.org/project/ui_patterns/-/merge_requests/514.patch (https://drupal.org/i/3604317 SourceValueItem: fix mainPropertyName and isEmpty so phantom field prototype items are filtered correctly)
+   Could not apply patch! Skipping. The error was: Cannot apply patch https://git.drupalcode.org/project/ui_patterns/-/merge_requests/514.patch
+
+In Patches.php line 331:
+                                                                                                                                                                                                   
+  Cannot apply patch https://drupal.org/i/3604317 SourceValueItem: fix mainPropertyName and isEmpty so phantom field prototype items are filtered correctly (https://git.drupalcode.org/project/u  
+  i_patterns/-/merge_requests/514.patch)!                                                                                                                                                          
+                                                                                                                                                                                                   
+
+update [--with WITH] [--prefer-source] [--prefer-dist] [--prefer-install PREFER-INSTALL] [--dry-run] [--dev] [--no-dev] [--lock] [--no-install] [--no-audit] [--audit-format AUDIT-FORMAT] [--no-security-blocking] [--no-blocking] [--no-cooldown] [--no-autoloader] [--no-suggest] [--no-progress] [-w|--with-dependencies] [-W|--with-all-dependencies] [-v|vv|vvv|--verbose] [-o|--optimize-autoloader] [-a|--classmap-authoritative] [--strict-psr-autoloader] [--apcu-autoloader] [--apcu-autoloader-prefix APCU-AUTOLOADER-PREFIX] [--ignore-platform-req IGNORE-PLATFORM-REQ] [--ignore-platform-reqs] [--prefer-stable] [--prefer-lowest] [-m|--minimal-changes] [--patch-only] [-i|--interactive] [--root-reqs] [--bump-after-update [BUMP-AFTER-UPDATE]] [--] [<packages>...]
+
+[31mFailed to execute command `composer update -W --no-interaction`: exit status 1[0m

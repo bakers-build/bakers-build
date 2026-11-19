@@ -43,7 +43,7 @@ final class BbInboxMessageAccessControlHandler extends EntityAccessControlHandle
    */
   public function __construct(
     EntityTypeInterface $entity_type,
-    private readonly ConductorRegistrar $registrar,
+    protected readonly ConductorRegistrar $registrar,
   ) {
     parent::__construct($entity_type);
   }

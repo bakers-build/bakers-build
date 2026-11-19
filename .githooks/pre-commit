@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Enable once per clone: git config core.hooksPath .githooks
+# Runs the config export check only when the commit touches config, and only if DDEV is up.
+git diff --cached --name-only | grep -qE '^(config/sync/|composer\.lock$|web/modules/.*/config/|recipes/)' || exit 0
+ddev describe >/dev/null 2>&1 || { echo "pre-commit: DDEV not running, skipping config export check" >&2; exit 0; }
+ddev exec scripts/check-config-export-clean.sh
