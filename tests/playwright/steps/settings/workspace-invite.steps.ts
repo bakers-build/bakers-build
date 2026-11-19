@@ -304,3 +304,26 @@ function inviteCount(address: string): string {
     `php:eval 'print count(\\Drupal::entityTypeManager()->getStorage("bb_invite")->loadByProperties(["email" => "${address}"]));'`,
   ).trim();
 }
+
+/** The `Invite members` trigger, where focus returns after its dialog. */
+Then('Invite members has focus', async ({ page }) => {
+  await expect(page.locator('#members-invite')).toBeFocused();
+});
+
+/** The fixture workspace's owner, whose removal the face refuses. */
+function workspaceOwnerUid(apiClient: { fixtureId(name: string): string }): string {
+  const uuid = apiClient.fixtureId('workspace.home');
+  return Drush.exec(
+    `php:eval '$w = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_workspace", "${uuid}"); print $w ? $w->getOwnerId() : "";'`,
+  ).trim();
+}
+
+When('I press remove for the workspace owner', async ({ page, apiClient }) => {
+  const answered = page.waitForResponse((response) => response.request().method() === 'POST', { timeout: 15000 });
+  await page.locator(`#members-remove-${workspaceOwnerUid(apiClient)}`).click();
+  await answered;
+});
+
+Then('the remove control of the workspace owner has focus', async ({ page, apiClient }) => {
+  await expect(page.locator(`#members-remove-${workspaceOwnerUid(apiClient)}`)).toBeFocused();
+});

@@ -50,6 +50,16 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    */
   public const string TRANSFER_PREFIX = 'transfer_owner_';
 
+  /**
+   * The id prefix of a member's role trigger, a focus target after a write.
+   */
+  public const string ROLE_ID = 'members-role-';
+
+  /**
+   * The id prefix of a member's remove control.
+   */
+  public const string REMOVE_ID = 'members-remove-';
+
   public function __construct(
     private readonly BbDate $date,
     TranslationInterface $string_translation,
@@ -422,7 +432,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
       return $controls;
     }
     $own = (int) $membership->getOwnerId() === $actor;
-    $controls['remove'] = $this->removeControl($membership, $own ? $this->leaveSentence($group) : $this->removeSentence($group, $name));
+    $controls['remove'] = $this->removeControl($membership, $this->removalSentence($group, $name, $own));
     if ($roles !== []) {
       $controls['role'] = $this->roleControl($membership, $roles, $name);
     }
@@ -517,7 +527,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
         // the accessible name from it on a pick, so it names the person too.
         'label' => $this->t("@name's role", ['@name' => $name]),
         'name' => 'role',
-        'id' => self::roleId((int) $membership->getOwnerId()),
+        'id' => self::ROLE_ID . $membership->getOwnerId(),
         'multiple' => FALSE,
         'open' => FALSE,
         'value_labels' => [$label],
@@ -587,7 +597,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
         'name' => self::REMOVE_PREFIX . $uid,
         'value' => (string) $uid,
         'formnovalidate' => 'formnovalidate',
-        'id' => self::removeId($uid),
+        'id' => self::REMOVE_ID . $uid,
         // The documented machine handle the browser suite addresses. Every
         // item's control carries the same label by design, so a caller that
         // has to pick one has only this: the account NAME is not a usable
@@ -601,7 +611,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   }
 
   /**
-   * What removing this member does, in the group's own noun.
+   * What removing this member does, or leaving on the actor's own row.
    *
    * The sentence differs by what the group GRANTS, and that is the reason it
    * cannot live in a template. A group whose roles carry permissions revokes
@@ -614,36 +624,26 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   The group.
    * @param string $name
    *   The person's display name.
+   * @param bool $own
+   *   Whether the row is the acting account's own, which reads Leave.
    *
    * @return string
    *   The accessible sentence.
    */
-  public function removeSentence(ContentEntityInterface $group, string $name): string {
-    $noun = (string) $group->getEntityType()->getSingularLabel();
+  public function removalSentence(ContentEntityInterface $group, string $name, bool $own): string {
+    if ($own) {
+      return (string) $this->t('Leave @group. Revokes your access.', ['@group' => (string) $group->label()]);
+    }
     if ($this->assignableRoles($group) === []) {
       return (string) $this->t(
         'Remove @name from the @group. A @group membership grants no permissions, so no access is revoked.',
-        ['@name' => $name, '@group' => $noun],
+        ['@name' => $name, '@group' => (string) $group->getEntityType()->getSingularLabel()],
       );
     }
     return (string) $this->t('Remove @name from @group. Revokes their access.', [
       '@name' => $name,
       '@group' => (string) $group->label(),
     ]);
-  }
-
-  /**
-   * The element id of a member's role trigger, the focus target after a write.
-   */
-  public static function roleId(int $uid): string {
-    return 'members-role-' . $uid;
-  }
-
-  /**
-   * The element id of a member's remove control.
-   */
-  public static function removeId(int $uid): string {
-    return 'members-remove-' . $uid;
   }
 
   /**
@@ -659,19 +659,6 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    */
   public function roleLabel(OgMembershipInterface $membership, ContentEntityInterface $group): string {
     return $this->currentRoleLabel($membership, $this->assignableRoles($group));
-  }
-
-  /**
-   * What leaving this group does, for the acting account's own row.
-   *
-   * @param \Drupal\Core\Entity\ContentEntityInterface $group
-   *   The group.
-   *
-   * @return string
-   *   The accessible sentence.
-   */
-  public function leaveSentence(ContentEntityInterface $group): string {
-    return (string) $this->t('Leave @group. Revokes your access.', ['@group' => (string) $group->label()]);
   }
 
   /**

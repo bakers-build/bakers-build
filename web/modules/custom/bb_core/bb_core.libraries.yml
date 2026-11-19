@@ -11,4 +11,3 @@ members:
   dependencies:
     - core/drupal
     - core/drupal.announce
-    - core/once

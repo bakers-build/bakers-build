@@ -15,7 +15,7 @@ import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { MEMBERS_ISLAND, RAIL_ISLAND, memberHandle, uidOf } from '../../support/shell';
+import { MEMBERS_ISLAND, RAIL_ISLAND, uidOf } from '../../support/shell';
 
 // BB-484 — the Overview body, which is the `full` view mode's own markup and
 // NOT a controller hull. There is deliberately no `[data-bakers-tab-body]` here:
@@ -106,22 +106,12 @@ Then('the members list has {int} rows', async ({ page }, count: number) => {
 
 // One step for the whole affordance, because a scenario that filled the field
 // and clicked separately would be asserting the widget rather than the island.
-//
-// The value is typed in entity_autocomplete's OWN "Label (id)" form rather
-// than picked from the suggestion list. That is not a shortcut around a broken
-// widget: the suggestion list is jQuery UI, it needs core/drupal.autocomplete
-// on the page, and a scenario that depends on it would be asserting Drupal's
-// widget instead of this island's submit. The raw form is what the element
-// parses either way.
+// The add field is the searchable picker: open it, pick the person's row (its
+// value is the uid), then press Add member.
 When('I add the member {string}', async ({ page }, value: string) => {
   const island = page.locator(MEMBERS_ISLAND);
-  await island.getByRole('textbox', { name: 'Member' }).fill(memberHandle(value));
-  // Waited on the submit's OWN response, not on a duration. An island submit
-  // answers with a fragment and fires no navigation event, so there is no
-  // navigation to await — but there is a POST, and its response is the moment
-  // the server has decided. A fixed sleep was standing in for that, and it made
-  // the SECOND add of the duplicate scenario assert nothing: `toHaveCount(4)`
-  // is satisfied instantly whether or not the submit was ever processed.
+  await island.locator('#members-add').click();
+  await island.locator(`[role="option"][data-value="${uidOf(value)}"]`).click();
   const answered = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' && response.url().includes('/members'),

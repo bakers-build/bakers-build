@@ -183,7 +183,7 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
   /**
    * A refused change focuses the refused control and is announced assertively.
    */
-  public function testARefusedChangeFocusesTheControlAndAnnouncesTheErrorAssertively(): void {
+  public function testRefusedChangeFocusesTheControlAndAnnouncesTheErrorAssertively(): void {
     self::assertInstanceOf(EntityOwnerInterface::class, $this->workspace);
     $owner_uid = (int) $this->workspace->getOwnerId();
     $lead = $this->createUser(['view bb_workspace', 'update any bb_workspace'], 'lena');
@@ -218,7 +218,7 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
     $this->setCurrentUser($lead);
     $this->enterRoute($this->workspace);
     $uid = (int) $lead->id();
-    // The fixture's owner holds the lead role too; strip it so lena is the last.
+    // The fixture's owner holds the lead role too; strip it, lena is last.
     $owner = $this->container->get('bb_core.membership_writer')->membershipOf($this->workspace, 1);
     self::assertNotNull($owner);
     $owner->setRoles([])->save();
@@ -231,9 +231,9 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
   }
 
   /**
-   * A confirmed leave sends the actor away with a message instead of rebuilding.
+   * A confirmed leave sends the actor away with a message, no rebuild.
    */
-  public function testAConfirmedLeaveLoadsAnotherPage(): void {
+  public function testConfirmedLeaveLoadsAnotherPage(): void {
     $lead = $this->createUser(['view bb_workspace', 'update any bb_workspace'], 'lena');
     self::assertInstanceOf(UserInterface::class, $lead);
     $this->addMembership($this->workspace, $lead, ['lead']);
@@ -296,9 +296,27 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
   }
 
   /**
+   * An empty roster shows the empty-state component, not a bare sentence.
+   */
+  public function testAnEmptyRosterShowsTheEmptyState(): void {
+    $this->actAsTeamManager();
+    foreach ($this->rosterUids() as $uid) {
+      $this->container->get('bb_core.membership_writer')->remove($this->team, $uid);
+    }
+    $form = $this->container->get('form_builder')->getForm(
+      GroupMembersForm::class,
+      ['island_id' => 'members', 'host_id' => 'team'],
+    );
+    $page = new Crawler((string) $this->container->get('renderer')->renderInIsolation($form));
+
+    self::assertCount(1, $page->filter('[data-component-id="bb_theme:empty-state"]'));
+    self::assertStringContainsString('Platform Crew has no members yet.', $page->filter('[data-component-id="bb_theme:empty-state"]')->text());
+  }
+
+  /**
    * A plain render carries no outcome, so a page load moves nothing.
    */
-  public function testAPlainRenderCarriesNoOutcome(): void {
+  public function testPlainRenderCarriesNoOutcome(): void {
     $this->actAsTeamManager();
     $form = $this->container->get('form_builder')->getForm(
       GroupMembersForm::class,

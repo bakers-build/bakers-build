@@ -258,28 +258,18 @@ Feature: The team screen's five tabs are routes inside one island
     And the tab "Runs" is current
     And the rail was not part of the swap
 
-  # NO DUPLICATE ROW, and that much is proved. What is NOT asserted here is that
-  # the visitor is TOLD — measured on 2026-08-30, the second add produces no
-  # aria-invalid, no error class and no status message, so the refusal is
-  # silent. That is a real defect and it is recorded as one rather than dressed
-  # up: this scenario locks in the property that matters for the data (the list
-  # cannot grow a duplicate) and deliberately claims nothing about feedback,
-  # because a scenario that asserted feedback would be asserting something that
-  # does not happen.
-  #
-  # WHAT MAKES THE SECOND ADD MEAN ANYTHING is the step's own wait: it awaits the
-  # submit's POST RESPONSE, so by the time the row count is read the server has
-  # decided. Under the fixed sleep this step used to carry, `4 rows` was
-  # satisfied instantly whether or not the second submit had been processed at
-  # all — the assertion was true of a request that had not happened yet.
-  Scenario: Adding the same member twice grows no second row
+  # NO DUPLICATE ROW: someone already on the team is not offered by the add
+  # picker at all, so a second add cannot be made; the server also refuses a
+  # forged one (`GroupMembersForm::validateIslandForm`).
+  Scenario: A member already on the team is not offered again
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
     Then the members list has 5 rows
-    When I add the member "both-bakeries"
-    Then the members list has 5 rows
+    And the add picker does not offer "both-bakeries"
     And the document was not reloaded
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
 
   # BB-489 — THE ENTRY PATH IS THE SUBJECT, and that is the whole difference
   # between these two scenarios and every members scenario around them. Those

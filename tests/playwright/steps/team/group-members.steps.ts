@@ -90,6 +90,13 @@ When('I remove the member {string}', async ({ page }, value: string) => {
   );
   await page.locator(`${MEMBERS_ISLAND} [data-bakers-member-uid="${uid}"]`).first().click();
   await answered;
+  // The first press only opens the confirmation; Remove in it is the write.
+  const removed = page.waitForResponse(
+    (response) => response.request().method() === 'POST',
+    { timeout: 15000 },
+  );
+  await page.locator(`${MEMBERS_ISLAND} button[name="confirm_remove_${uid}"]`).click();
+  await removed;
 });
 
 /**
@@ -271,3 +278,69 @@ Then(
     await expect(item.locator(`[data-bakers-member-uid="${uidOf(account)}"]`).first()).toBeVisible();
   },
 );
+
+/**
+ * FOCUS AND ANNOUNCEMENTS after a members action (spec focus table). The
+ * server names the target with `data-members-focus`; these steps assert the
+ * observable result, the focused element and the live region text.
+ */
+Then('the role control of the member {string} has focus', async ({ page }, value: string) => {
+  await expect(page.locator(`#members-role-${uidOf(value)}`)).toBeFocused();
+});
+
+Then('the remove control of the member {string} has focus', async ({ page }, value: string) => {
+  await expect(page.locator(`#members-remove-${uidOf(value)}`)).toBeFocused();
+});
+
+Then('focus is on a member control or the add field', async ({ page }) => {
+  await expect(page.locator(`${MEMBERS_ISLAND} :is([id^="members-role-"], #members-add):focus`)).toHaveCount(1);
+});
+
+// `Drupal.announce()` writes into core's one live region after a short delay.
+Then('the screen reader hears {string}', async ({ page }, text: string) => {
+  await expect(page.locator('#drupal-live-announce')).toContainText(text);
+});
+
+When('I move focus to the remove control of the member {string}', async ({ page }, value: string) => {
+  await page.locator(`#members-remove-${uidOf(value)}`).focus();
+});
+
+When('I move focus to the role control of the member {string}', async ({ page }, value: string) => {
+  await page.locator(`#members-role-${uidOf(value)}`).focus();
+});
+
+When('I move focus to the add field', async ({ page }) => {
+  await page.locator(`${MEMBERS_ISLAND} #members-add`).focus();
+});
+
+When('I type the name {string}', async ({ page }, text: string) => {
+  await page.keyboard.type(text);
+});
+
+/** Presses a member's remove control and waits for the confirmation. */
+When('I open the remove confirmation for the member {string}', async ({ page }, value: string) => {
+  const answered = page.waitForResponse((response) => response.request().method() === 'POST', { timeout: 15000 });
+  await page.locator(`#members-remove-${uidOf(value)}`).click();
+  await answered;
+});
+
+Then('a confirmation asks {string}', async ({ page }, title: string) => {
+  await expect(page.locator(`${MEMBERS_ISLAND} dialog[data-members-confirm][open] h2`)).toHaveText(title);
+});
+
+Then('the confirmation Cancel has focus', async ({ page }) => {
+  await expect(page.locator('#members-confirm-cancel')).toBeFocused();
+});
+
+Then('no confirmation is open', async ({ page }) => {
+  await expect(page.locator(`${MEMBERS_ISLAND} dialog[data-members-confirm]`)).toHaveCount(0);
+});
+
+Then('the add picker does not offer {string}', async ({ page }, value: string) => {
+  await expect(page.locator(`${MEMBERS_ISLAND} [role="option"][data-value="${uidOf(value)}"]`)).toHaveCount(0);
+});
+
+Then('the members list offers no controls', async ({ page }) => {
+  await expect(page.locator(MEMBER_ITEM).first()).toBeVisible();
+  await expect(page.locator(`${MEMBERS_ISLAND} [name^="remove_member_"], ${MEMBERS_ISLAND} #members-add`)).toHaveCount(0);
+});

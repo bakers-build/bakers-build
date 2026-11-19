@@ -9,6 +9,7 @@ use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\bb_core\Members\MemberFaceOutcome;
 use Drupal\bb_core\Members\MemberItemBuilder;
 use Drupal\bb_core\Members\MembershipWriter;
 use Drupal\bb_core\Members\OwnershipTransfer;
@@ -32,6 +33,12 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  * (`GroupMemberSurfaceTest` asserts it). The per-item controls are component
  * markup, so the pressed trigger is read from the request, not from
  * `getTriggeringElement()`, and `#required` is not used.
+ *
+ * One form owns every write of the face (add, role, remove with its
+ * confirmation, transfer, revoke), which is what keeps the island to one
+ * POST target; the branching that costs lives in the write helpers.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 final class GroupMembersForm extends IslandFormBase implements TrustedCallbackInterface {
 
@@ -65,29 +72,9 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
   private const string OUTCOME = 'bb_members_outcome';
 
   /**
-   * The request key prefix of the confirmation's Remove (or Leave) submit.
-   */
-  private const string CONFIRM = 'confirm_remove_';
-
-  /**
-   * The request key prefix of the confirmation's Cancel submit.
-   */
-  private const string CANCEL = 'cancel_remove_';
-
-  /**
    * The request attribute naming the member a confirmation is open for.
    */
   private const string CONFIRMING = 'bb_members_confirming';
-
-  /**
-   * The confirmation's Cancel id, where focus lands when it opens.
-   */
-  private const string CANCEL_ID = 'members-confirm-cancel';
-
-  /**
-   * The add field's id, the focus target when the roster empties.
-   */
-  public const string ADD_ID = 'members-add';
 
   /**
    * {@inheritdoc}
@@ -100,6 +87,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     protected readonly MemberItemBuilder $itemBuilder,
     protected readonly WorkspaceInvite $tenancyInvite,
     protected readonly OwnershipTransfer $ownershipTransfer,
+    protected readonly MemberFaceOutcome $face,
   ) {
     parent::__construct($responder, $hostResolver, $islandManager);
   }
@@ -109,18 +97,18 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    */
   public static function create(ContainerInterface $container): static {
     $translation = $container->get('string_translation');
+    $writer = $container->get('bb_core.membership_writer');
+    $items = new MemberItemBuilder($container->get('bb_core.date'), $translation, $container->get('module_handler'));
+    $invite = $container->get('bb_core.workspace_invite');
     return new static(
       $container->get('island.responder'),
       $container->get('island.host_resolver'),
       $container->get('plugin.manager.island'),
-      $container->get('bb_core.membership_writer'),
-      new MemberItemBuilder(
-        $container->get('bb_core.date'),
-        $translation,
-        $container->get('module_handler'),
-      ),
-      $container->get('bb_core.workspace_invite'),
+      $writer,
+      $items,
+      $invite,
       $container->get('bb_core.ownership_transfer'),
+      new MemberFaceOutcome($writer, $items, $invite, $translation),
     );
   }
 
@@ -128,7 +116,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    * {@inheritdoc}
    */
   public static function trustedCallbacks(): array {
-    return ['wrapInZone', 'renderAddPicker'];
+    return ['wrapInZone'];
   }
 
   /**
@@ -149,10 +137,6 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       return $form;
     }
     $form['#attached']['library'][] = 'bb_core/members';
-    $outcome = $this->getRequest()->attributes->get(self::OUTCOME);
-    if (is_array($outcome)) {
-      $form['#attributes'] = $outcome + ($form['#attributes'] ?? []);
-    }
 
     // THE ROSTER RENDERS FOR EVERY READER OF THE FACE; only the controls are
     // gated. An account that may see the group but not change it gets the
@@ -170,8 +154,8 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
         MemberItemBuilder::ROLE_PREFIX,
         MemberItemBuilder::TRANSFER_PREFIX,
         self::REVOKE,
-        self::CONFIRM,
-        self::CANCEL,
+        MemberFaceOutcome::CONFIRM,
+        MemberFaceOutcome::CANCEL,
       ]);
       if ($pressed !== NULL && isset($form['invite']['account'])) {
         $this->suppressElementValidation($form['invite']['account']);
@@ -187,69 +171,46 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $this->t('Members'),
       $this->itemBuilder->items($this->membershipWriter->memberships($group), $group, $may_write, $may_transfer, $teams, (int) $this->currentUser()->id()),
       $this->itemBuilder->columns($tenancy),
-      $this->t('This @group has no members yet.', ['@group' => $this->groupNoun($group)]),
+      $this->t('@group has no members yet.', ['@group' => $group->label()]),
       20,
     );
-    if ($may_write && $tenancy) {
-      $form['roster']['#bb_zone_actions'] = WorkspaceInviteForm::trigger($group);
+    if ($tenancy) {
+      $form['roster']['#bb_zone_actions'] = $form['invite_trigger'];
+      unset($form['invite_trigger']);
     }
-    $confirming = $this->getRequest()->attributes->get(self::CONFIRMING);
-    if ($may_write && is_int($confirming) && $this->membershipWriter->membershipOf($group, $confirming) !== NULL) {
-      $form['confirm'] = $this->confirmation($group, $confirming);
-    }
+    $this->applyOutcome($form, $group, $may_write);
 
     return $form;
   }
 
   /**
-   * The in-place confirmation of a removal, or of leaving on the own row.
+   * Marks the face with the last write's outcome and any open confirmation.
    *
-   * Remove and Cancel are plain submits of this form, so it works without
-   * JavaScript and needs no route of its own.
-   *
+   * @param array<string, mixed> $form
+   *   The members form.
    * @param \Drupal\Core\Entity\ContentEntityInterface $group
    *   The group.
-   * @param int $uid
-   *   The member the confirmation is for.
-   *
-   * @return array<string, mixed>
-   *   The open dialog.
+   * @param bool $may_write
+   *   Whether the acting account may change the crew; nothing is marked if not.
    */
-  private function confirmation(ContentEntityInterface $group, int $uid): array {
-    $own = $uid === (int) $this->currentUser()->id();
-    $name = $this->memberName($group, $uid);
-    $button = fn (string $label, string $variant, array $attributes): array => [
-      '#type' => 'component',
-      '#component' => 'bb_theme:button',
-      '#props' => ['label' => $label, 'variant' => $variant, 'type' => 'submit'],
-      '#attributes' => $attributes + ['value' => (string) $uid, 'formnovalidate' => 'formnovalidate'],
-    ];
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:dialog',
-      '#weight' => 30,
-      '#props' => [
-        'open' => TRUE,
-        'id' => 'members-confirm',
-        'title' => $own
-          ? (string) $this->t('Leave @group?', ['@group' => $group->label()])
-          : (string) $this->t('Remove @name?', ['@name' => $name]),
-      ],
-      '#attributes' => ['data-members-confirm' => ''],
-      '#slots' => [
-        'body' => ['#markup' => $own ? $this->itemBuilder->leaveSentence($group) : $this->itemBuilder->removeSentence($group, $name)],
-        'actions' => [
-          'cancel' => $button((string) $this->t('Cancel'), 'neutral', [
-            'name' => self::CANCEL . $uid,
-            'id' => self::CANCEL_ID,
-            'autofocus' => 'autofocus',
-          ]),
-          'confirm' => $button($own ? (string) $this->t('Leave') : (string) $this->t('Remove'), 'danger', [
-            'name' => self::CONFIRM . $uid,
-          ]),
-        ],
-      ],
-    ];
+  private function applyOutcome(array &$form, ContentEntityInterface $group, bool $may_write): void {
+    if (!$may_write) {
+      return;
+    }
+    $attributes = $this->getRequest()->attributes;
+    $outcome = $attributes->get(self::OUTCOME);
+    // An invite or revoke just finished in its dialog: return to the trigger.
+    $result = $form['invite_result']['#bb_result'] ?? '';
+    if (!is_array($outcome) && $result !== '') {
+      $outcome = MemberFaceOutcome::attributes(MemberFaceOutcome::INVITE_ID, $result);
+    }
+    if (is_array($outcome)) {
+      $form['#attributes'] = $outcome + ($form['#attributes'] ?? []);
+    }
+    $confirming = $attributes->get(self::CONFIRMING);
+    if (is_int($confirming) && $this->membershipWriter->membershipOf($group, $confirming) !== NULL) {
+      $form['confirm'] = $this->face->confirmation($group, $confirming, (int) $this->currentUser()->id());
+    }
   }
 
   /**
@@ -264,8 +225,9 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    *   Elements to merge into the form.
    */
   private function tenancyParts(ContentEntityInterface $group, bool $may_write): array {
-    $parts = ['invite_result' => $this->inviteResult()];
+    $parts = ['invite_result' => $this->inviteResult(), 'invite_trigger' => []];
     if ($may_write) {
+      $parts['invite_trigger'] = WorkspaceInviteForm::trigger($group);
       // The per-item controls are component markup, so with the invite zone
       // gone this face would carry no Form API button, and core treats a POST
       // without one as never submitted: every revoke, role and remove would
@@ -358,12 +320,12 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
   private function inviteZone(ContentEntityInterface $group): array {
     $account = [
       '#type' => 'bb_picker_value',
-      '#id' => self::ADD_ID,
+      '#id' => MemberFaceOutcome::ADD_ID,
       '#title' => $this->t('Member'),
       '#title_display' => 'invisible',
       '#weight' => 0,
-      '#picker_options' => $this->addOptions($group),
-      '#pre_render' => [[self::class, 'renderAddPicker']],
+      '#picker_options' => $this->face->addOptions($group),
+      '#pre_render' => [[MemberFaceOutcome::class, 'renderAddPicker']],
     ];
     return $this->inviteZoneFrom(
       $account,
@@ -371,73 +333,6 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $this->t('Add a member'),
       $this->t('Only people who already belong to this workspace can join the team.'),
     );
-  }
-
-  /**
-   * The people a nested group may add: its parent's members not in it yet.
-   *
-   * shortcut: every candidate renders as an option and the picker filters
-   * them in the browser; move to a `search_url` route when a workspace
-   * outgrows a few hundred people.
-   *
-   * @param \Drupal\Core\Entity\ContentEntityInterface $group
-   *   The nested group.
-   *
-   * @return array<int, string>
-   *   Display names keyed by uid, in name order.
-   */
-  private function addOptions(ContentEntityInterface $group): array {
-    $parent = $group->hasField('workspace_id') ? $group->get('workspace_id')->entity : NULL;
-    if (!$parent instanceof ContentEntityInterface) {
-      return [];
-    }
-    $in_group = array_flip($this->rosterUids($group));
-    $options = [];
-    foreach ($this->membershipWriter->memberships($parent) as $membership) {
-      $account = $membership->getOwner();
-      if ($membership->isActive() && $account !== NULL && !isset($in_group[(int) $account->id()])) {
-        $options[(int) $account->id()] = (string) $account->getDisplayName();
-      }
-    }
-    natcasesort($options);
-    return $options;
-  }
-
-  /**
-   * Renders the add field as a searchable picker from its processed value.
-   *
-   * @param array<string, mixed> $element
-   *   The processed picker element.
-   *
-   * @return array<string, mixed>
-   *   The element with its `control` child.
-   */
-  public static function renderAddPicker(array $element): array {
-    $value = (string) (($element['#value'] ?? [])[0] ?? '');
-    $rows = [];
-    foreach ($element['#picker_options'] as $uid => $label) {
-      $rows[] = ['value' => (string) $uid, 'label' => $label, 'selected' => (string) $uid === $value];
-    }
-    $chosen = $element['#picker_options'][$value] ?? NULL;
-    $element['control'] = [
-      '#type' => 'component',
-      '#component' => 'bb_theme:property_pill',
-      '#props' => [
-        'name' => $element['#name'],
-        'label' => (string) $element['#title'],
-        'icon' => 'user',
-        'picker_id' => $element['#id'],
-        'multiple' => FALSE,
-        'open' => FALSE,
-        'searchable' => TRUE,
-        // Without JavaScript the panel cannot open; a select stands in.
-        'fallback' => !\Drupal::request()->isXmlHttpRequest(),
-        'values' => $chosen === NULL ? [] : [$value],
-        'value_label' => $chosen ?? '',
-        'options' => $rows,
-      ],
-    ];
-    return $element;
   }
 
   /**
@@ -506,7 +401,11 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       ],
       '#bb_zone_heading' => $heading,
       '#bb_member_controls' => $built['controls'],
-      'list' => $built['items'] === [] ? ['#markup' => $empty] : [
+      'list' => $built['items'] === [] ? [
+        '#type' => 'component',
+        '#component' => 'bb_theme:empty-state',
+        '#props' => ['message' => (string) $empty, 'compact' => TRUE],
+      ] : [
         '#type' => 'component',
         '#component' => 'bb_theme:table',
         '#props' => [
@@ -542,7 +441,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     $uid = $this->chosenAccount($form_state);
     if ($uid === 0) {
       $form_state->setErrorByName('account', $this->t('Choose the person to add.'));
-      $form['#attributes'] = $this->outcome(self::ADD_ID, (string) $this->t('Choose the person to add.'), 'assertive') + ($form['#attributes'] ?? []);
+      $form['#attributes'] = MemberFaceOutcome::attributes(MemberFaceOutcome::ADD_ID, (string) $this->t('Choose the person to add.'), 'assertive') + ($form['#attributes'] ?? []);
       return;
     }
     // A second membership for the same account would be accepted by the
@@ -555,12 +454,12 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
         'That account is already a member of this @group.',
         ['@group' => $this->groupNoun($group)],
       ),
-      !isset($this->addOptions($group)[$uid]) => $this->t('Only people who already belong to this workspace can join the team.'),
+      !isset($this->face->addOptions($group)[$uid]) => $this->t('Only people who already belong to this workspace can join the team.'),
       default => NULL,
     };
     if ($refusal !== NULL) {
       $form_state->setErrorByName('account', $refusal);
-      $form['#attributes'] = $this->outcome(self::ADD_ID, (string) $refusal, 'assertive') + ($form['#attributes'] ?? []);
+      $form['#attributes'] = MemberFaceOutcome::attributes(MemberFaceOutcome::ADD_ID, (string) $refusal, 'assertive') + ($form['#attributes'] ?? []);
     }
   }
 
@@ -590,7 +489,11 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    *   TRUE when the pressed change was refused with a form error.
    */
   private function refuseChange(ContentEntityInterface $group, FormStateInterface $form_state, array &$form): bool {
-    $change = $this->pressedPrefixed($form_state, [MemberItemBuilder::REMOVE_PREFIX, self::CONFIRM, MemberItemBuilder::ROLE_PREFIX]);
+    $change = $this->pressedPrefixed($form_state, [
+      MemberItemBuilder::REMOVE_PREFIX,
+      MemberFaceOutcome::CONFIRM,
+      MemberItemBuilder::ROLE_PREFIX,
+    ]);
     if ($change === NULL) {
       return FALSE;
     }
@@ -603,83 +506,18 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     );
     if ($reason !== NULL) {
       $form_state->setErrorByName($prefix . $uid_key, $reason);
-      $control = $prefix === MemberItemBuilder::ROLE_PREFIX
-        ? MemberItemBuilder::roleId((int) $uid_key)
-        : MemberItemBuilder::removeId((int) $uid_key);
-      $form['#attributes'] = $this->outcome($control, (string) $reason, 'assertive') + ($form['#attributes'] ?? []);
+      $control = ($prefix === MemberItemBuilder::ROLE_PREFIX ? MemberItemBuilder::ROLE_ID : MemberItemBuilder::REMOVE_ID) . (int) $uid_key;
+      $form['#attributes'] = MemberFaceOutcome::attributes($control, (string) $reason, 'assertive') + ($form['#attributes'] ?? []);
     }
     return $reason !== NULL;
-  }
-
-  /**
-   * The outcome attributes the `bb_core/members` behavior applies.
-   *
-   * @return array<string, string>
-   *   The data attributes.
-   */
-  private function outcome(string $focus, string $announce = '', string $priority = 'polite'): array {
-    return [
-      'data-members-focus' => $focus,
-      'data-members-announce' => $announce,
-      'data-members-announce-priority' => $priority,
-    ];
   }
 
   /**
    * Hands an accepted write's outcome to the rebuilt face.
    */
   private function rememberOutcome(string $focus, string $announce): IslandResponse {
-    $this->getRequest()->attributes->set(self::OUTCOME, $this->outcome($focus, $announce));
+    $this->getRequest()->attributes->set(self::OUTCOME, MemberFaceOutcome::attributes($focus, $announce));
     return IslandResponse::make()->rebuildSelf();
-  }
-
-  /**
-   * The focus target of a row: its role trigger, or its remove control.
-   */
-  private function rowFocus(ContentEntityInterface $group, int $uid): string {
-    return $this->itemBuilder->assignableRoles($group) === []
-      ? MemberItemBuilder::removeId($uid)
-      : MemberItemBuilder::roleId($uid);
-  }
-
-  /**
-   * Where focus goes once a row is gone: next row, previous row, else add.
-   *
-   * @param \Drupal\Core\Entity\ContentEntityInterface $group
-   *   The group.
-   * @param array<int, int> $uids
-   *   The roster's uids before the removal, in roster order.
-   * @param int $uid
-   *   The removed uid.
-   */
-  private function focusAfterRemoval(ContentEntityInterface $group, array $uids, int $uid): string {
-    $position = array_search($uid, $uids, TRUE);
-    $neighbour = $position === FALSE ? NULL : ($uids[$position + 1] ?? $uids[$position - 1] ?? NULL);
-    if ($neighbour !== NULL) {
-      return $this->rowFocus($group, $neighbour);
-    }
-    return $this->tenancyInvite->isTenancy($group) ? WorkspaceInviteForm::TRIGGER_ID : self::ADD_ID;
-  }
-
-  /**
-   * One member's display name, for an announcement.
-   */
-  private function memberName(ContentEntityInterface $group, int $uid): string {
-    $account = $this->membershipWriter->membershipOf($group, $uid)?->getOwner();
-    return $account === NULL ? '' : (string) $account->getDisplayName();
-  }
-
-  /**
-   * The roster's uids, in roster order.
-   *
-   * @return array<int, int>
-   *   The uids.
-   */
-  private function rosterUids(ContentEntityInterface $group): array {
-    return array_values(array_map(
-      static fn ($membership): int => (int) $membership->getOwnerId(),
-      $this->membershipWriter->memberships($group),
-    ));
   }
 
   /**
@@ -696,6 +534,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     }
     // In a zone like the sections, so the message keeps their narrow measure.
     return $build + [
+      '#bb_result' => implode(' ', array_map('strval', $messages)),
       '#type' => 'container',
       '#pre_render' => [[self::class, 'wrapInZone']],
       'message' => [
@@ -730,65 +569,56 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       MemberItemBuilder::ROLE_PREFIX,
       MemberItemBuilder::TRANSFER_PREFIX,
       self::REVOKE,
-      self::CONFIRM,
-      self::CANCEL,
+      MemberFaceOutcome::CONFIRM,
+      MemberFaceOutcome::CANCEL,
     ]);
     if ($pressed === NULL) {
       return IslandResponse::make()->rebuildSelf();
     }
     [$prefix, $uid_key] = $pressed;
+    $uid = (int) $uid_key;
 
-    if ($prefix === MemberItemBuilder::TRANSFER_PREFIX) {
-      return $this->applyTransfer($group, (int) $uid_key);
-    }
-
-    if ($prefix === self::ADD) {
-      $this->applyAdd($group, $form_state);
-      $uid = $this->chosenAccount($form_state);
-      $membership = $this->membershipWriter->membershipOf($group, $uid);
-      return $this->rememberOutcome(
-        $this->rowFocus($group, $uid),
-        $membership === NULL ? '' : (string) $this->t('Added @name as @role.', [
-          '@name' => $this->memberName($group, $uid),
-          '@role' => $this->itemBuilder->roleLabel($membership, $group),
-        ]),
-      );
-    }
-    if ($prefix === self::REVOKE) {
-      $this->tenancyInvite->revoke($group, (int) $uid_key);
-      return IslandResponse::make()->rebuildSelf();
-    }
-    if ($prefix === MemberItemBuilder::REMOVE_PREFIX) {
+    return match ($prefix) {
+      MemberItemBuilder::TRANSFER_PREFIX => $this->applyTransfer($group, $uid),
+      self::ADD => $this->applyAdd($group, $this->chosenAccount($form_state)),
+      self::REVOKE => $this->applyRevoke($group, $uid),
       // The first press only asks.
-      $this->getRequest()->attributes->set(self::CONFIRMING, (int) $uid_key);
-      return $this->rememberOutcome(self::CANCEL_ID, '');
-    }
-    if ($prefix === self::CANCEL) {
-      return $this->rememberOutcome(MemberItemBuilder::removeId((int) $uid_key), '');
-    }
-    if ($prefix === self::CONFIRM) {
-      return $this->applyRemove($group, (int) $uid_key);
-    }
+      MemberItemBuilder::REMOVE_PREFIX => $this->askToRemove($uid),
+      MemberFaceOutcome::CANCEL => $this->rememberOutcome(MemberItemBuilder::REMOVE_ID . $uid, ''),
+      MemberFaceOutcome::CONFIRM => $this->applyRemove($group, $uid),
+      // The role VALUE is not part of the key: every option row of one
+      // member's picker shares `member_role_<uid>` and differs only in the
+      // submitted value, so it is read from the input directly.
+      default => $this->applyRole($group, $uid, $form_state->getUserInput()[$prefix . $uid_key] ?? ''),
+    };
+  }
 
-    // The role VALUE is not part of the key — every option row of one
-    // member's picker shares the same `member_role_<uid>` name and differs
-    // only in the submitted value, so it is read from the input directly.
-    $value = $form_state->getUserInput()[$prefix . $uid_key] ?? '';
-    $this->membershipWriter->writeRole(
-      $group,
-      (int) $uid_key,
-      is_scalar($value) ? (string) $value : '',
-      $this->rolesFor($group, (int) $uid_key),
-    );
-    $membership = $this->membershipWriter->membershipOf($group, (int) $uid_key);
+  /**
+   * Opens the confirmation for one member in the rebuilt face.
+   */
+  private function askToRemove(int $uid): IslandResponse {
+    $this->getRequest()->attributes->set(self::CONFIRMING, $uid);
+    return $this->rememberOutcome(MemberFaceOutcome::CANCEL_ID, '');
+  }
 
-    return $this->rememberOutcome(
-      $this->rowFocus($group, (int) $uid_key),
-      $membership === NULL ? '' : (string) $this->t('@name is now @role.', [
-        '@name' => $this->memberName($group, (int) $uid_key),
-        '@role' => $this->itemBuilder->roleLabel($membership, $group),
-      ]),
-    );
+  /**
+   * Revokes a pending invitation of the tenancy.
+   */
+  private function applyRevoke(ContentEntityInterface $group, int $id): IslandResponse {
+    $this->tenancyInvite->revoke($group, $id);
+    return IslandResponse::make()->rebuildSelf();
+  }
+
+  /**
+   * Writes one member's picked role.
+   */
+  private function applyRole(ContentEntityInterface $group, int $uid, mixed $value): IslandResponse {
+    $this->membershipWriter->writeRole($group, $uid, is_scalar($value) ? (string) $value : '', $this->rolesFor($group, $uid));
+    $membership = $this->membershipWriter->membershipOf($group, $uid);
+    return $this->rememberOutcome($this->face->rowFocus($group, $uid), $membership === NULL ? '' : (string) $this->t('@name is now @role.', [
+      '@name' => $this->face->memberName($group, $uid),
+      '@role' => $this->itemBuilder->roleLabel($membership, $group),
+    ]));
   }
 
   /**
@@ -806,8 +636,8 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    *   The rebuild, or the page load after leaving.
    */
   private function applyRemove(ContentEntityInterface $group, int $uid): IslandResponse {
-    $name = $this->memberName($group, $uid);
-    $uids = $this->rosterUids($group);
+    $name = $this->face->memberName($group, $uid);
+    $uids = $this->face->rosterUids($group);
     $this->membershipWriter->remove($group, $uid);
     if ($uid === (int) $this->currentUser()->id()) {
       // The face may no longer be the actor's to see: leave it for a page
@@ -818,7 +648,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       );
     }
     return $this->rememberOutcome(
-      $this->focusAfterRemoval($group, $uids, $uid),
+      $this->face->afterRemoval($group, $uids, $uid),
       $name === '' ? '' : (string) $this->t('Removed @name.', ['@name' => $name]),
     );
   }
@@ -847,12 +677,17 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
   /**
    * Adds a nested-group member; the tenancy invites through its dialog.
    */
-  private function applyAdd(ContentEntityInterface $group, FormStateInterface $form_state): void {
+  private function applyAdd(ContentEntityInterface $group, int $uid): IslandResponse {
     // The tenancy has no inline add: it invites through its dialog.
     if ($this->tenancyInvite->isTenancy($group)) {
       throw new AccessDeniedHttpException();
     }
-    $this->membershipWriter->add($group, $this->chosenAccount($form_state));
+    $this->membershipWriter->add($group, $uid);
+    $membership = $this->membershipWriter->membershipOf($group, $uid);
+    return $this->rememberOutcome($this->face->rowFocus($group, $uid), $membership === NULL ? '' : (string) $this->t('Added @name as @role.', [
+      '@name' => $this->face->memberName($group, $uid),
+      '@role' => $this->itemBuilder->roleLabel($membership, $group),
+    ]));
   }
 
   /**
@@ -875,8 +710,11 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     }
     $this->ownershipTransfer->transfer($group, $uid, $this->itemBuilder->assignableRoles($group), self::PREVIOUS_OWNER_ROLE);
     return $this->rememberOutcome(
-      $this->rowFocus($group, $uid),
-      (string) $this->t('@name now owns @group.', ['@name' => $this->memberName($group, $uid), '@group' => $group->label()]),
+      $this->face->rowFocus($group, $uid),
+      (string) $this->t('@name now owns @group.', [
+        '@name' => $this->face->memberName($group, $uid),
+        '@group' => $group->label(),
+      ]),
     );
   }
 

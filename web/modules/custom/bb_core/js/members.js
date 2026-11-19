@@ -7,19 +7,22 @@
  * whatever had focus, so this puts focus where the action left the user and
  * tells assistive technology what happened.
  */
-((Drupal, once) => {
+((Drupal) => {
   const SELECTOR = 'form[data-members-focus]';
 
   Drupal.behaviors.bbMembersOutcome = {
     attach(context) {
       const forms = context.matches?.(SELECTOR) ? [context] : context.querySelectorAll?.(SELECTOR) ?? [];
-      once('members-outcome', forms).forEach((form) => {
-        const target = document.getElementById(form.dataset.membersFocus);
-        if (target) {
-          target.focus();
-        }
-        if (form.dataset.membersAnnounce) {
-          Drupal.announce(form.dataset.membersAnnounce, form.dataset.membersAnnouncePriority || 'polite');
+      forms.forEach((form) => {
+        // Consumed rather than once()-keyed: a swap may keep the form element
+        // and only change these attributes.
+        const { membersFocus, membersAnnounce, membersAnnouncePriority } = form.dataset;
+        form.removeAttribute('data-members-focus');
+        form.removeAttribute('data-members-announce');
+        form.removeAttribute('data-members-announce-priority');
+        document.getElementById(membersFocus)?.focus();
+        if (membersAnnounce) {
+          Drupal.announce(membersAnnounce, membersAnnouncePriority || 'polite');
         }
       });
     },
@@ -33,4 +36,4 @@
       cancel.click();
     }
   });
-})(Drupal, once);
+})(Drupal);
