@@ -80,7 +80,13 @@ final class RunRestartableToolTest extends BakersToolTestBase {
     }
     $this->container->get('current_user')->setAccount($stranger);
 
-    foreach ([['machine_id' => 'box-1'], ['conductor' => $here->uuid()], ['machine_id' => 'no-such-box'], ['conductor' => 'no-such-conductor']] as $values) {
+    $targets = [
+      ['machine_id' => 'box-1'],
+      ['conductor' => $here->uuid()],
+      ['machine_id' => 'no-such-box'],
+      ['conductor' => 'no-such-conductor'],
+    ];
+    foreach ($targets as $values) {
       self::assertSame([], $this->outputs($this->runTool('bakers_run_restartable', $values))['tickets']);
     }
     foreach ([[], ['machine_id' => 'box-1', 'conductor' => $here->uuid()]] as $values) {

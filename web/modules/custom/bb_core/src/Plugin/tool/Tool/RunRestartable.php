@@ -112,18 +112,16 @@ final class RunRestartable extends ToolBase {
    * {@inheritdoc}
    */
   protected function doExecute(array $values): ExecutableResult {
-    $inputs = array_filter([
-      'machine_id' => (string) ($values['machine_id'] ?? ''),
-      'conductor' => (string) ($values['conductor'] ?? ''),
-      'ticket' => (string) ($values['ticket'] ?? ''),
-    ], static fn (string $value): bool => $value !== '');
-    if (count($inputs) !== 1) {
+    $machine = (string) ($values['machine_id'] ?? '');
+    $conductor = (string) ($values['conductor'] ?? '');
+    $ticket_input = (string) ($values['ticket'] ?? '');
+    if (count(array_filter([$machine, $conductor, $ticket_input], static fn (string $value): bool => $value !== '')) !== 1) {
       throw new \InvalidArgumentException('Give exactly one of machine_id, conductor or ticket.');
     }
-    $runs = match (array_key_first($inputs)) {
-      'machine_id' => $this->machineRuns($inputs['machine_id']),
-      'conductor' => $this->conductorRuns($inputs['conductor']),
-      default => $this->ticketRuns($inputs['ticket']),
+    $runs = match (TRUE) {
+      $machine !== '' => $this->machineRuns($machine),
+      $conductor !== '' => $this->conductorRuns($conductor),
+      default => $this->ticketRuns($ticket_input),
     };
     $tickets = [];
     foreach (TicketInterventions::byTicket($runs) as $group) {

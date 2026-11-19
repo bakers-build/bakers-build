@@ -331,7 +331,11 @@ final class TicketInterventions {
     $sets = [];
     foreach (self::conductorRuns(self::conductorIds($target), [...self::ACTIVE_RUN_STATES, 'failed']) as $id => $run) {
       $ticket = $run->getTicket();
-      if ($ticket instanceof BbTicketInterface && isset(($sets[$ticket->id()] ??= self::ticketRestartRuns($ticket))[$id])) {
+      if (!$ticket instanceof BbTicketInterface) {
+        continue;
+      }
+      $sets[$ticket->id()] ??= self::ticketRestartRuns($ticket);
+      if (isset($sets[$ticket->id()][$id])) {
         $runs[$id] = $run;
       }
     }
@@ -383,7 +387,7 @@ final class TicketInterventions {
    * @param array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs
    *   The runs.
    *
-   * @return array<int, array<int|string, \Drupal\bb_core\Entity\BbRunInterface>>
+   * @return array<int, non-empty-array<int|string, \Drupal\bb_core\Entity\BbRunInterface>>
    *   The runs keyed by run id, keyed by ticket id.
    */
   public static function byTicket(array $runs): array {

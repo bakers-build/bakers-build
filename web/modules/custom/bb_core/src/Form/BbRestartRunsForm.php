@@ -185,7 +185,7 @@ final class BbRestartRunsForm extends EntityForm {
     return $this->isOnline() ? $question : $question . ' ' . $this->t('It is offline: tab and runtime cleanup and the fresh runs follow its next start.');
   }
 
-    /**
+  /**
    * {@inheritdoc}
    */
   protected function actions(array $form, FormStateInterface $form_state): array {
@@ -260,7 +260,7 @@ final class BbRestartRunsForm extends EntityForm {
   /**
    * One ticket's line: identifier, title and its runs.
    *
-   * @param array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs
+   * @param non-empty-array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs
    *   The ticket's covered runs.
    */
   private function ticketLine(array $runs): string {

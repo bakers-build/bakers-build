@@ -16,7 +16,7 @@ use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 
 /**
- * The Properties footer: Restart runs, Freeze, Unfreeze, Cancel ticket, Settings.
+ * The Properties footer: Restart runs, freezing, Cancel ticket, Settings.
  *
  * AI agents drive the workflow; this footer offers only interventions.
  */

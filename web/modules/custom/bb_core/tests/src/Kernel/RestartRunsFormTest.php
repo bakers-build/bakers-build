@@ -259,7 +259,8 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
    * Lets the machine's owner edit tickets and end their runs.
    */
   private function grantTicketEditing(): void {
-    $role = $this->container->get('entity_type.manager')->getStorage('user_role')->create(['id' => 'ticket_editor', 'label' => 'Ticket editor']);
+    $role = $this->container->get('entity_type.manager')->getStorage('user_role')
+      ->create(['id' => 'ticket_editor', 'label' => 'Ticket editor']);
     $role->save();
     user_role_grant_permissions('ticket_editor', ['administer bakers']);
     $this->owner->addRole('ticket_editor');
