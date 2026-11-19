@@ -245,6 +245,14 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
     expect(screen.present(live).toast).toBe(
       'copied the link https://github.com/o/r/pull/229',
     );
+    // Opening another run must not carry the old copy result over.
+    screen.leave();
+    screen.enter({
+      ...live,
+      params: { ticketId: 'ticket-340', runId: 'nope' },
+    });
+    await tick();
+    expect(screen.present(live).toast).toBeUndefined();
   });
 
   it('R3 — `present()` still hands over a tree and no `lines` surface', async () => {

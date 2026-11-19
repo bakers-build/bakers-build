@@ -42,8 +42,10 @@ describe('linkLabel', () => {
     expect(label.endsWith('…')).toBe(true);
   });
 
-  it('keeps a non-http value as a capped plain label', () => {
-    expect(linkLabel('legacy-tracker#16')).toBe('legacy-tracker#16');
+  it('labels a value without a web host as link', () => {
+    expect(linkLabel('legacy-tracker#16')).toBe('link');
+    expect(linkLabel('internal:/node/1')).toBe('link');
+    expect(linkLabel('mailto:a@b.test')).toBe('link');
   });
 });
 

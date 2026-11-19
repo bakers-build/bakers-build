@@ -482,7 +482,7 @@ describe('ticketContentModel Overview', () => {
       },
       {
         key: 'origin',
-        value: 'https://git.test/g/p/-/issues/16',
+        value: 'git.test/…/16',
         href: 'https://git.test/g/p/-/issues/16',
       },
     ]);

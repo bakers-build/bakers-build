@@ -27,8 +27,10 @@ export function linkLabel(url: string): string {
   try {
     parsed = new URL(url);
   } catch {
-    return capped(url);
+    return 'link';
   }
+  // `internal:/node/1`, `mailto:` and the like parse without a host.
+  if (parsed.host === '') return 'link';
   const segments = parsed.pathname.split('/').filter((part) => part !== '');
   const last = segments.at(-1);
   if (last === undefined) return capped(parsed.host);
