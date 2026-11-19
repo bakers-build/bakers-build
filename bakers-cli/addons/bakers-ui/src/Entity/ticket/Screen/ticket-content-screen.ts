@@ -592,7 +592,6 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       this.tab,
       this.labels,
       now,
-      context.services?.baseUrl,
     );
     this.modelMemo = { document, labels: this.labels, now, model };
     return model;

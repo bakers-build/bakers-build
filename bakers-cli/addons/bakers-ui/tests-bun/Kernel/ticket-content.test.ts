@@ -609,6 +609,7 @@ describe('links at the top across the breakpoint', () => {
       const document = ticketDocument({
         identifier: 'BAKERS-332',
         title: 'links on top',
+        url: 'https://example.test/bakers/ticket/bakers-332',
         description: {
           value: Array.from({ length: 200 }, (_l, i) => `body ${i}`).join('\n'),
         },

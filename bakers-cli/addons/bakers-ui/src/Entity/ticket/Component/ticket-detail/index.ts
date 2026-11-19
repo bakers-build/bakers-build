@@ -33,7 +33,6 @@ import {
 } from '../../../../Component/section-list/index.js';
 import { copyThrough } from '../../../../lib/clipboard.js';
 import { asString, formatDuration } from '../../../../lib/format.js';
-import { ticketUrl } from '../../../../lib/ticket-url.js';
 import {
   type BORDER,
   columnNode,
@@ -168,13 +167,12 @@ export function handleTicketCopy(
   const attributes = document?.data?.attributes;
   const identifier =
     typeof attributes?.identifier === 'string' ? attributes.identifier : '';
-  const id = document?.data?.id ?? context.params?.ticketId;
   return input === 'Y'
     ? copyThrough(
         context.copyToClipboard,
-        ticketUrl(context.services?.baseUrl, id),
+        asString(attributes?.url),
         `the link to ${identifier}`,
-        `no link to ${identifier} · this session has no base URL`,
+        `no link to ${identifier} · the server sent no URL`,
       )
     : copyThrough(
         context.copyToClipboard,
@@ -290,13 +288,10 @@ function pendingReviewResources(
     .sort(compareCommentsNewestFirst);
 }
 
-function pendingReviewLines(
-  document: TicketDetailDocument,
-  baseUrl?: string,
-): string[] {
+function pendingReviewLines(document: TicketDetailDocument): string[] {
   const pending = pendingReviewResources(document);
   if (!pending.length) return [];
-  const web = ticketUrl(baseUrl, document.data?.id);
+  const web = asString(document.data?.attributes?.url);
   return [
     `${pending.length} review${pending.length === 1 ? '' : 's'} awaiting acceptance`,
     ...pending.map((r) => {
@@ -883,7 +878,6 @@ export function detailSections(
   document: TicketDetailDocument,
   labels?: AssignmentLabels,
   nowSeconds = 0,
-  baseUrl?: string,
 ): Section[] {
   const a: Record<string, unknown> = document.data?.attributes ?? {};
   const sections: Section[] = [];
@@ -957,7 +951,7 @@ export function detailSections(
     lines: assignmentLines(document, labels),
   });
 
-  const pendingLines = pendingReviewLines(document, baseUrl);
+  const pendingLines = pendingReviewLines(document);
   if (pendingLines.length) {
     sections.push({ heading: 'Pending reviews', lines: pendingLines });
   }
@@ -1042,13 +1036,12 @@ export function sectionsForTab(
   tabIndex: number,
   labels?: AssignmentLabels,
   nowSeconds = 0,
-  baseUrl?: string,
 ): Section[] {
   const tab = TICKET_SECTIONS[tabIndex];
   const headings = tab?.headings ?? [];
   if (!headings.length) return [];
   const byHeading = new Map(
-    detailSections(document, labels, nowSeconds, baseUrl).map((s) => [
+    detailSections(document, labels, nowSeconds).map((s) => [
       s.heading,
       s,
     ]),

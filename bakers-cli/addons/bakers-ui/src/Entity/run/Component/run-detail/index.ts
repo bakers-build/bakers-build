@@ -26,7 +26,6 @@ import type { VNode } from '@opentui/core';
 import { markdownRow } from '../../../../Component/markdown/index.js';
 import { asString } from '../../../../lib/format.js';
 import { ticketTopLinks } from '../../../../lib/ticket-links.js';
-import { ticketUrl } from '../../../../lib/ticket-url.js';
 import { columnNode, pressHandler, textNode } from '../../../../lib/vnode.js';
 import type {
   JsonApiResource,
@@ -160,18 +159,18 @@ function keyedSections(
   }
   const a = run.attributes ?? {};
   // AC-4 (BAKERS-332): the owning ticket's URL and its PRs, before everything.
-  const ticketHref = ticketUrl(baseUrl, document.data?.id);
+  const topLinks = ticketTopLinks(document);
   const linkRows: KeyedRow[] = [
-    ...(ticketHref === undefined
-      ? []
-      : [
-          {
-            key: 'link-ticket',
-            text: row('ticket', ticketIdentifier(document)),
-            href: ticketHref,
-          },
-        ]),
-    ...ticketTopLinks(document)
+    // The served ticket entry leads when present; a stored link never matches its href.
+    ...topLinks
+      .slice(0, 1)
+      .filter((link) => link.href === document.data?.attributes?.url)
+      .map((link) => ({
+        key: 'link-ticket',
+        text: row('ticket', link.label),
+        href: link.href,
+      })),
+    ...topLinks
       .filter((link) => link.pullRequest)
       .map((link, index) => ({
         key: `link-pr-${index}`,

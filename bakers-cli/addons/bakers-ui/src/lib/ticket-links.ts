@@ -1,5 +1,4 @@
 import type { TicketDetailDocument } from '../types.js';
-import { ticketUrl } from './ticket-url.js';
 
 /** One link shown at the top of the ticket and run detail. */
 export interface TopLink {
@@ -49,11 +48,8 @@ export function isPullRequest(title: string, url: string): boolean {
   );
 }
 
-/** Ticket URL first (when a base URL is known), then PR/MR links, then the rest in stored order. */
-export function ticketTopLinks(
-  document: TicketDetailDocument,
-  baseUrl?: string,
-): TopLink[] {
+/** The served ticket URL first (when present), then PR/MR links, then the rest in stored order. */
+export function ticketTopLinks(document: TicketDetailDocument): TopLink[] {
   const attributes = document.data?.attributes ?? {};
   const stored: unknown[] = Array.isArray(attributes.links)
     ? attributes.links
@@ -76,8 +72,8 @@ export function ticketTopLinks(
     ...links.filter((link) => link.pullRequest),
     ...links.filter((link) => !link.pullRequest),
   ];
-  const href = ticketUrl(baseUrl, document.data?.id);
-  if (href === undefined) return ordered;
+  const href = attributes.url;
+  if (typeof href !== 'string' || href === '') return ordered;
   const identifier = attributes.identifier;
   return [
     {

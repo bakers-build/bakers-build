@@ -453,6 +453,7 @@ describe('ticketContentModel Overview', () => {
     const model = ticketContentModel(
       document({
         identifier: 'BAKERS-332',
+        url: 'https://b.test/bakers/ticket/bakers-332',
         origin: 'https://git.test/g/p/-/issues/16',
         links: [
           { title: 'Result', uri: 'https://example.test/a/b/result' },
@@ -462,13 +463,12 @@ describe('ticketContentModel Overview', () => {
       'overview',
       labels,
       NOW,
-      'https://b.test',
     );
     expect(model.sidebar?.links).toEqual([
       {
         key: 'ticket',
         value: 'BAKERS-332',
-        href: 'https://b.test/admin/bakers/ticket/ticket-1',
+        href: 'https://b.test/bakers/ticket/bakers-332',
       },
       {
         key: 'PR',
@@ -489,21 +489,24 @@ describe('ticketContentModel Overview', () => {
   });
 
   it('lists only the ticket URL for a linkless ticket, with no none placeholder', () => {
-    const withBase = ticketContentModel(
-      document({ identifier: 'BAKERS-1', links: [] }),
+    const served = ticketContentModel(
+      document({
+        identifier: 'BAKERS-1',
+        url: 'https://b.test/bakers/ticket/bakers-1',
+        links: [],
+      }),
       'overview',
       labels,
       NOW,
-      'https://b.test',
     );
-    expect(withBase.sidebar?.links.map((item) => item.key)).toEqual(['ticket']);
-    const offline = ticketContentModel(
+    expect(served.sidebar?.links.map((item) => item.key)).toEqual(['ticket']);
+    const unserved = ticketContentModel(
       document({ links: [] }),
       'overview',
       labels,
       NOW,
     );
-    expect(offline.sidebar?.links).toEqual([]);
+    expect(unserved.sidebar?.links).toEqual([]);
   });
 
   it('exposes related ticket identities as clickable properties', () => {
@@ -933,9 +936,9 @@ describe('ticket content identity', () => {
 });
 
 describe('ticketContentModel Overview reviewers', () => {
-  const reviewed = () =>
+  const reviewed = (attributes: Record<string, unknown> = {}) =>
     document(
-      {},
+      attributes,
       [
         {
           id: 'user-2',
@@ -972,18 +975,17 @@ describe('ticketContentModel Overview reviewers', () => {
 
   it('lists pending reviews with an absolute Web link', () => {
     const model = ticketContentModel(
-      reviewed(),
+      reviewed({ url: 'https://bakers.example.test/bakers/ticket/bb-1' }),
       'overview',
       labels,
       NOW,
-      'https://bakers.example.test',
     );
     const entry = model.entries.find(
       (item) => item.key === 'section:Pending reviews',
     );
     expect(entry).toBeDefined();
     expect(texts(entry?.expanded).join('\n')).toContain(
-      'https://bakers.example.test/admin/bakers/ticket/ticket-1',
+      'https://bakers.example.test/bakers/ticket/bb-1',
     );
   });
 });

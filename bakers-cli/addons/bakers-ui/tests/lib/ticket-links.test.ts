@@ -63,21 +63,22 @@ describe('isPullRequest', () => {
 describe('ticketTopLinks', () => {
   const doc = ticket({
     identifier: 'BAKERS-332',
+    url: 'https://b.test/bakers/ticket/bakers-332',
     links: [
       { title: 'Result', uri: 'https://example.test/a/b/result' },
       { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
     ],
   });
 
-  it('orders the ticket URL first, then pull requests, then other links', () => {
-    const links = ticketTopLinks(doc, 'https://b.test/');
+  it('orders the served ticket URL first, then pull requests, then other links', () => {
+    const links = ticketTopLinks(doc);
     expect(links.map((link) => link.key)).toEqual(['ticket', 'PR', 'Result']);
     expect(links.map((link) => link.label)).toEqual([
       'BAKERS-332',
       'PR #229',
       'example.test/…/result',
     ]);
-    expect(links[0]?.href).toBe('https://b.test/admin/bakers/ticket/uuid-1');
+    expect(links[0]?.href).toBe('https://b.test/bakers/ticket/bakers-332');
     expect(links[1]?.href).toBe('https://github.com/o/r/pull/229');
   });
 
@@ -98,8 +99,9 @@ describe('ticketTopLinks', () => {
     ]);
   });
 
-  it('leaves the ticket row out without a base URL', () => {
-    expect(ticketTopLinks(doc).map((link) => link.key)).toEqual([
+  it('leaves the ticket row out when the server sent no URL', () => {
+    const { url: _served, ...attributes } = doc.data?.attributes ?? {};
+    expect(ticketTopLinks(ticket(attributes)).map((link) => link.key)).toEqual([
       'PR',
       'Result',
     ]);
@@ -107,14 +109,17 @@ describe('ticketTopLinks', () => {
 
   it('returns only the ticket row for a linkless ticket', () => {
     const links = ticketTopLinks(
-      ticket({ identifier: 'BAKERS-1', links: [] }),
-      'https://b.test',
+      ticket({
+        identifier: 'BAKERS-1',
+        url: 'https://b.test/bakers/ticket/bakers-1',
+        links: [],
+      }),
     );
     expect(links).toEqual([
       {
         key: 'ticket',
         label: 'BAKERS-1',
-        href: 'https://b.test/admin/bakers/ticket/uuid-1',
+        href: 'https://b.test/bakers/ticket/bakers-1',
         pullRequest: false,
       },
     ]);

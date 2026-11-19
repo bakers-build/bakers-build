@@ -26,7 +26,7 @@
 //      is the point: a driver that only counted sequences would pass against a
 //      cockpit that copied the wrong ticket, or the empty string.
 //   2. `Y` on the ticket LIST emits one more, decoding to that same ticket's
-//      control-plane URL — `<base_url>/admin/bakers/ticket/<uuid>`.
+//      control-plane URL as the server serves it — `<base_url>/<workspace>/ticket/<identifier>`.
 //   3. `y` and `Y` on the ticket DETAIL do the same for the open ticket.
 //   4. THE NEGATIVE, and the reason `y` was chosen: with the `/` search field
 //      open, `y` is TEXT. The screen must type it and the wire must stay quiet.
@@ -89,11 +89,10 @@ const OSC52 = new RegExp(
   'g',
 );
 
-/** `<base_url>/admin/bakers/ticket/<uuid>` — the ticket's page on the control
- *  plane, which is what `Y` is for. The uuid is JSON:API's own resource id and
- *  `BbEntityUuidConverter` is what makes that path resolve. */
-const TICKET_URL =
-  /^https?:\/\/[^\s/]+\/admin\/bakers\/ticket\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** `<base_url>/<workspace>/ticket/<identifier>` — the ticket's page on the
+ *  control plane, which is what `Y` is for. The server serves it as the
+ *  ticket's `url` attribute; the cockpit never builds it. */
+const TICKET_URL = /^https?:\/\/[^\s/]+\/[a-z0-9-]+\/ticket\/[a-z][a-z0-9]*-\d+$/;
 
 const IDENTIFIER = /^[A-Z][A-Z0-9]*-\d+$/;
 

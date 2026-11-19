@@ -351,14 +351,8 @@ describe('TicketContent', () => {
     expect(wide.frame).not.toMatch(/… \+\d+ more lines/);
   });
 
-  const paintWithBase = (doc: TicketDetailDocument, width: number) => {
-    const model = ticketContentModel(
-      doc,
-      'overview',
-      labels,
-      NOW,
-      'https://b.test',
-    );
+  const paintLinks = (doc: TicketDetailDocument, width: number) => {
+    const model = ticketContentModel(doc, 'overview', labels, NOW);
     return paint(
       () =>
         content(
@@ -383,9 +377,10 @@ describe('TicketContent', () => {
   // once, each as one short label.
   for (const width of [80, 120]) {
     it(`paints the ticket URL and the PR above the documents at ${width} columns`, async () => {
-      const painted = await paintWithBase(
+      const painted = await paintLinks(
         document({
           identifier: 'BAKERS-332',
+          url: 'https://b.test/bakers/ticket/bakers-332',
           links: [
             { title: 'Result', uri: 'https://example.test/result' },
             { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
@@ -412,8 +407,12 @@ describe('TicketContent', () => {
 
   // AC-3: only the ticket row, no `none` placeholder.
   it('paints only the ticket row for a linkless ticket', async () => {
-    const painted = await paintWithBase(
-      document({ identifier: 'BAKERS-1', links: [] }),
+    const painted = await paintLinks(
+      document({
+        identifier: 'BAKERS-1',
+        url: 'https://b.test/bakers/ticket/bakers-1',
+        links: [],
+      }),
       80,
     );
     const links = rowIndex(painted.rows, '* links');

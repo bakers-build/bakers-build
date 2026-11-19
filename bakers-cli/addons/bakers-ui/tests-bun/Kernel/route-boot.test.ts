@@ -270,6 +270,7 @@ const longTicketDoc = {
       identifier: 'BB-241',
       title: 'a long scrollable detail',
       state: 'coding',
+      url: 'https://bakers.example/bakers/ticket/bb-241',
       derived_status: 'running',
       description: Array.from(
         { length: 45 },

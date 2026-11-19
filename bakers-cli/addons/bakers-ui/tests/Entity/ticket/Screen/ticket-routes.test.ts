@@ -19,6 +19,7 @@ const document: TicketDetailDocument = {
       identifier: 'TEST-1',
       title: 'Ticket',
       state: 'coding',
+      url: 'https://example.test/bakers/ticket/test-1',
       description: { value: 'Description body' },
     },
   },
@@ -253,7 +254,7 @@ describe('ticket route state', () => {
     screen.handleInput('Y', router.context());
     expect(copied).toEqual([
       'TEST-1',
-      'https://example.test/admin/bakers/ticket/T1',
+      'https://example.test/bakers/ticket/test-1',
     ]);
     const action = screen.actionForInput?.('e', router.context());
     if (tab === 'runs') {

@@ -252,6 +252,7 @@ const withPr: TicketDetailDocument = {
     ...doc.data,
     attributes: {
       ...doc.data?.attributes,
+      url: 'https://b.test/bakers/ticket/bb-255',
       links: [
         { title: 'Result', uri: 'https://example.test/result' },
         { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
@@ -269,15 +270,22 @@ it('AC-4: the first section is Links, with the ticket URL and the PR only', () =
   ]);
 });
 
-it('AC-4: without a PR only the ticket row; without a base URL either, No links.', () => {
+it('AC-4: without a PR only the ticket row; without a served URL either, No links.', () => {
+  const served: TicketDetailDocument = {
+    ...doc,
+    data: {
+      ...doc.data,
+      attributes: {
+        ...doc.data?.attributes,
+        url: 'https://b.test/bakers/ticket/bb-255',
+      },
+    },
+  };
   expect(
-    rowsMatching(
-      runDetailTree(doc, RUN_ID, 'https://b.test'),
-      /^run-detail-link-/,
-    ),
+    rowsMatching(runDetailTree(served, RUN_ID), /^run-detail-link-/),
   ).toEqual(['ticket:        BB-255']);
-  const offline = runDetailTree(doc, RUN_ID);
-  expect(rowsMatching(offline, /^run-detail-link/)).toEqual(['No links.']);
+  const unserved = runDetailTree(doc, RUN_ID, 'https://b.test');
+  expect(rowsMatching(unserved, /^run-detail-link/)).toEqual(['No links.']);
 });
 
 it('AC-2: pressing a link row hands its full URL to onLink', () => {
@@ -295,6 +303,6 @@ it('AC-2: pressing a link row hands its full URL to onLink', () => {
   press('run-detail-link-ticket');
   expect(pressed).toEqual([
     'https://github.com/o/r/pull/229',
-    'https://b.test/admin/bakers/ticket/t-255',
+    'https://b.test/bakers/ticket/bb-255',
   ]);
 });

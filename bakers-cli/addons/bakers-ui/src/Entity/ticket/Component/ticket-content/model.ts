@@ -75,10 +75,9 @@ const sectionByHeading = (
   document: TicketDetailDocument,
   labels: AssignmentLabels | undefined,
   nowSeconds: number,
-  baseUrl?: string,
 ): Map<string, Section> =>
   new Map(
-    sectionsForTab(document, OVERVIEW_TAB, labels, nowSeconds, baseUrl).map(
+    sectionsForTab(document, OVERVIEW_TAB, labels, nowSeconds).map(
       (section) => [section.heading, section],
     ),
   );
@@ -334,9 +333,8 @@ const overviewModel = (
   document: TicketDetailDocument,
   labels: AssignmentLabels | undefined,
   nowSeconds: number,
-  baseUrl?: string,
 ): { entries: TicketContentEntry[]; sidebar: TicketSidebar } => {
-  const byHeading = sectionByHeading(document, labels, nowSeconds, baseUrl);
+  const byHeading = sectionByHeading(document, labels, nowSeconds);
   const summaryLines = byHeading.get('Latest summary')?.lines ?? [];
   const documents: TicketContentEntry[] = [];
   if (hasSummary(summaryLines)) {
@@ -374,7 +372,7 @@ const overviewModel = (
   const technical = asLines(details);
   const origin = originProperty(document);
   const links = [
-    ...ticketTopLinks(document, baseUrl).map(
+    ...ticketTopLinks(document).map(
       ({ key, label, href }): TicketProperty => ({ key, value: label, href }),
     ),
     // A short label here too (AC-7); the Related `source` row keeps the full value.
@@ -452,15 +450,9 @@ export function ticketContentModel(
   tab: TicketContentTab,
   labels: AssignmentLabels | undefined,
   nowSeconds: number,
-  baseUrl?: string,
 ): TicketContentModel {
   if (tab === 'overview') {
-    const { entries, sidebar } = overviewModel(
-      document,
-      labels,
-      nowSeconds,
-      baseUrl,
-    );
+    const { entries, sidebar } = overviewModel(document, labels, nowSeconds);
     return {
       entries,
       selectableKeys: entries.map((entry) => entry.key),

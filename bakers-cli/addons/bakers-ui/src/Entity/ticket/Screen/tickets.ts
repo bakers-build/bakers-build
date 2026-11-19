@@ -1,7 +1,6 @@
 import { actionItem } from '../../../Component/footer-actions/index.js';
 import { copyThrough } from '../../../lib/clipboard.js';
 import { serverMessage } from '../../../lib/jsonapi-error.js';
-import { ticketUrl } from '../../../lib/ticket-url.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import type {
   FullScreenChrome,
@@ -416,9 +415,9 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
     return link
       ? copyThrough(
           context.copyToClipboard,
-          ticketUrl(context.services?.baseUrl, row.id),
+          row.url,
           `the link to ${row.identifier}`,
-          `no link to ${row.identifier} · this session has no base URL`,
+          `no link to ${row.identifier} · the server sent no URL`,
         )
       : copyThrough(
           context.copyToClipboard,

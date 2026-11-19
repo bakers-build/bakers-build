@@ -135,6 +135,7 @@ const withPr: TicketDetailDocument = {
     ...doc.data,
     attributes: {
       ...doc.data?.attributes,
+      url: 'https://b.test/bakers/ticket/bb-340',
       links: [{ title: 'PR', uri: 'https://github.com/o/r/pull/229' }],
     },
   },
@@ -223,7 +224,7 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
     const { screen, context } = await opened(withPr, RUN_ID);
     expect(screen.renderNonInteractive(context).slice(0, 4)).toEqual([
       'Links',
-      'ticket:        BB-340 https://b.test/admin/bakers/ticket/ticket-340',
+      'ticket:        BB-340 https://b.test/bakers/ticket/bb-340',
       'PR:            PR #229 https://github.com/o/r/pull/229',
       '',
     ]);

@@ -25,7 +25,12 @@ const TICKETS = {
     {
       type: 'bb_ticket--bb_ticket',
       id: 'uuid-of-300',
-      attributes: { identifier: 'BB-300', title: 'first', state: 'coding' },
+      attributes: {
+        identifier: 'BB-300',
+        title: 'first',
+        state: 'coding',
+        url: `${BASE}/bakers/ticket/bb-300`,
+      },
     },
     {
       type: 'bb_ticket--bb_ticket',
@@ -89,20 +94,20 @@ describe('the ticket list copies to the operator’s clipboard', () => {
   it('Y copies that ticket’s page on the control plane', async () => {
     const { screen, context, copied } = await ready();
     expect(screen.handleInput('Y', context)).toBe(true);
-    expect(copied).toEqual([`${BASE}/admin/bakers/ticket/uuid-of-300`]);
+    expect(copied).toEqual([`${BASE}/bakers/ticket/bb-300`]);
     expect(screen.present(context).status).toContain(
       'copied the link to BB-300',
     );
   });
 
-  it('says so, and copies nothing, when the session has no base URL', async () => {
-    const h = harness({ baseUrl: undefined });
-    h.screen.enter(h.context);
-    await tick();
-    await tick();
-    expect(h.screen.handleInput('Y', h.context)).toBe(true);
-    expect(h.copyToClipboard).not.toHaveBeenCalled();
-    expect(h.screen.present(h.context).status).toContain('no link');
+  it('says so, and copies nothing, when the server sent no URL', async () => {
+    const { screen, context, copyToClipboard } = await ready();
+    screen.handleInput('j', context);
+    expect(screen.handleInput('Y', context)).toBe(true);
+    expect(copyToClipboard).not.toHaveBeenCalled();
+    expect(screen.present(context).status).toContain(
+      'no link to BB-301 · the server sent no URL',
+    );
   });
 
   it('never claims a copy the terminal refused', async () => {
