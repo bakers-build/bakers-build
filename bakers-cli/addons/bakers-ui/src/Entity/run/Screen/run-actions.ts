@@ -1,8 +1,9 @@
+import { siteTools } from '../../../lib/site-tools.js';
 import type { ConfirmRequest } from '../../../Screen/confirm-dialog.js';
 import type { ScreenContext } from '../../../Screen/screen.js';
 import type { TicketDetailDocument } from '../../../types.js';
 import { runResource } from '../Component/run-detail/index.js';
-import { CANCELLED_RUN_STATE, cancelRunPayload } from '../Form/edit.js';
+import { CANCELLED_RUN_STATE } from '../Form/edit.js';
 
 /** What a run cancellation hands back to the screen that asked for it. */
 export interface RunCancelledResult {
@@ -23,17 +24,18 @@ export const runNumber = (
 };
 
 /**
- * PATCH the run to cancelled and return `document` with that run's state
- * patched, so the caller repaints without a refetch.
+ * Cancel the run through `bakers_run_cancel` and return `document` with that
+ * run's state patched, so the caller repaints without a refetch.
  */
 export const cancelRun = async (
   context: ScreenContext,
   document: TicketDetailDocument,
   runId: string,
 ): Promise<RunCancelledResult> => {
-  const client = context.services?.writeClient ?? context.services?.client;
-  if (!client) throw new Error('No connection to cancel the run.');
-  await client.update('bb_run--bb_run', runId, cancelRunPayload());
+  await siteTools(context.services)('bakers_run_cancel', {
+    runs: [runId],
+    reason: 'Cancel run',
+  });
   return {
     type: 'run-cancelled',
     runId,

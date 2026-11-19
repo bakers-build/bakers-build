@@ -62,6 +62,8 @@ use Drupal\user\EntityOwnerTrait;
       'property' => \Drupal\bb_core\Form\BbTicketPropertyForm::class,
       // The confirmation dialog of Cancel ticket and Cancel run.
       'action' => \Drupal\bb_core\Form\BbTicketActionForm::class,
+      // The Restart runs confirmation of the ticket's own runs.
+      'restart' => \Drupal\bb_core\Form\BbRestartRunsForm::class,
       // Ticket Settings: the edit route renders this in the app shell.
       'settings' => BbTicketForm::class,
       'delete' => BbContentEntityDeleteForm::class,

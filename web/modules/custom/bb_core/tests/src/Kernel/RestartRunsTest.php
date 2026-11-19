@@ -16,9 +16,10 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 /**
  * Restart runs on a machine or a conductor: the covered set and its cancel.
  *
- * Covered are a target's claimed or running runs plus, per open ticket, a
- * newest run that failed on it. Each is cancelled with a note; the ticket
- * keeps state, labels and freeze, and the claim logic gives it a fresh run.
+ * Covered are a target's claimed or running runs plus, per open ticket that
+ * is not frozen, a newest run that failed on it. Each is cancelled with a
+ * note; the ticket keeps state and labels, and the claim logic gives it a
+ * fresh run.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -67,6 +68,12 @@ final class RestartRunsTest extends ClaimKernelTestBase {
     $other_machine = $this->createConductor($this->owner, 'node-elsewhere');
     $other_machine->set('machine', $this->createMachine('laptop')->id())->save();
     $this->seedRunOn($other_machine, $this->seedAssignedTicket('working'), 'running');
+    foreach (['running', 'failed'] as $state) {
+      $frozen = $this->seedAssignedTicket('working');
+      $frozen->setFrozen(TRUE);
+      $frozen->save();
+      $this->seedRun($frozen, 'working', $state);
+    }
 
     self::assertSame(
       $this->ids([$running, $claimed, $failed]),
@@ -79,36 +86,79 @@ final class RestartRunsTest extends ClaimKernelTestBase {
   }
 
   /**
-   * Cancelling notes the level and person and keeps the ticket as it is.
+   * A ticket's own set: its active runs and a newest run that failed.
+   *
+   * The failed run need not park the ticket; a frozen or closed ticket and a
+   * ticket whose newest run succeeded have none.
    */
-  public function testRestartCancelsWithNoteAndKeepsTicket(): void {
+  public function testTicketCoversActiveRunsAndNewestFailedRun(): void {
+    $failed = $this->seedAssignedTicket('plan');
+    $failed_run = $this->seedRun($failed, 'plan', 'failed');
+    $running = $this->seedAssignedTicket('working');
+    $running_run = $this->seedRun($running, 'working', 'running');
+    $recovered = $this->seedAssignedTicket('plan');
+    $this->seedRun($recovered, 'plan', 'failed');
+    $this->seedRun($recovered, 'plan', 'done');
     $frozen = $this->seedAssignedTicket('working');
+    $this->seedRun($frozen, 'working', 'failed');
     $frozen->setFrozen(TRUE);
     $frozen->save();
-    $active = $this->seedRun($frozen, 'working', 'running');
+
+    self::assertFalse($this->container->get('bb_core.failed_run_circuit_breaker')->isTripped($failed));
+    self::assertSame($this->ids([$failed_run]), $this->ids(TicketInterventions::ticketRestartRuns($failed)));
+    self::assertSame($this->ids([$running_run]), $this->ids(TicketInterventions::ticketRestartRuns($running)));
+    self::assertSame([], TicketInterventions::ticketRestartRuns($recovered));
+    self::assertSame([], TicketInterventions::ticketRestartRuns($frozen));
+    self::assertSame(
+      [(int) $failed->id() => [(int) $failed_run->id()], (int) $running->id() => [(int) $running_run->id()]],
+      array_map(fn (array $runs): array => $this->ids($runs), TicketInterventions::byTicket([$failed_run, $running_run])),
+    );
+  }
+
+  /**
+   * The owner cancels the selected runs with a note; the ticket stays.
+   */
+  public function testOwnerCancelsSelectedRunsWithNoteAndKeepsTicket(): void {
+    $active_ticket = $this->seedAssignedTicket('working');
+    $active = $this->seedRun($active_ticket, 'working', 'running');
     $parked = $this->seedAssignedTicket('plan');
     $this->seedRun($parked, 'plan', 'failed');
     $this->seedRun($parked, 'plan', 'failed');
     $last_failed = $this->seedRun($parked, 'plan', 'failed');
+    $left_out = $this->seedRun($this->seedAssignedTicket('plan'), 'plan', 'claimed');
     $breaker = $this->container->get('bb_core.failed_run_circuit_breaker');
     self::assertTrue($breaker->isTripped($parked));
 
-    $restarted = TicketInterventions::restartRuns($this->machine, $this->owner);
+    $restarted = TicketInterventions::cancelSelectedRuns([$active, $last_failed], $this->owner, TicketInterventions::restartReason($this->machine));
 
     self::assertSame($this->ids([$active, $last_failed]), $this->ids($restarted));
     foreach ([$active, $last_failed] as $run) {
       $reloaded = $this->reloadRun($run);
       self::assertSame('cancelled', $reloaded->getRunState());
-      self::assertStringContainsString('Restart runs (machine workstation) by claim-base-owner', (string) $reloaded->getErrorLog());
+      self::assertStringContainsString('cancelled by claim-base-owner: Restart runs (machine workstation)', (string) $reloaded->getErrorLog());
     }
-    $frozen = $this->reloadTicket($frozen);
-    self::assertTrue($frozen->isFrozen());
-    self::assertSame('working', $frozen->getState()->getId());
+    self::assertSame('claimed', $this->reloadRun($left_out)->getRunState());
+    self::assertSame('working', $this->reloadTicket($active_ticket)->getState()->getId());
     self::assertFalse($breaker->isTripped($this->reloadTicket($parked)));
-    self::assertSame(
-      'Restart runs (conductor node-base) by claim-base-owner',
-      TicketInterventions::restartNote($this->conductor, $this->owner),
-    );
+    self::assertSame('Restart runs (conductor node-base)', TicketInterventions::restartReason($this->conductor));
+    self::assertSame('Restart runs (ticket ' . $parked->getIdentifier() . ')', TicketInterventions::restartReason($parked));
+  }
+
+  /**
+   * One run outside every rule refuses the whole selection.
+   */
+  public function testOneRefusedRunCancelsNothing(): void {
+    $active = $this->seedRun($this->seedAssignedTicket('working'), 'working', 'running');
+    $done = $this->seedRun($this->seedAssignedTicket('working'), 'working', 'done');
+
+    try {
+      TicketInterventions::cancelSelectedRuns([$active, $done], $this->owner, 'stop');
+      self::fail('A finished run must refuse the selection.');
+    }
+    catch (\InvalidArgumentException $e) {
+      self::assertStringContainsString((string) $done->uuid(), $e->getMessage());
+    }
+    self::assertSame('running', $this->reloadRun($active)->getRunState());
   }
 
   /**
@@ -124,7 +174,7 @@ final class RestartRunsTest extends ClaimKernelTestBase {
     $this->seedRun($second, 'plan', 'running');
     self::assertNull($this->claimService->claimNext($this->conductor));
 
-    TicketInterventions::restartRuns($this->machine, $this->owner);
+    TicketInterventions::cancelSelectedRuns(TicketInterventions::restartCoveredRuns($this->machine), $this->owner, 'restart');
 
     $etm = $this->container->get('entity_type.manager');
     self::assertSame([], TicketInterventions::activeMachineRuns($this->machine, $etm));

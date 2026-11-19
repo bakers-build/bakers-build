@@ -18,6 +18,7 @@ import {
   setDefaultCommandRunner,
   type WorkspaceRecoveryOptions,
 } from '@bakers-build/core';
+import { createToolClient, type ToolClient } from '@dropsh/plugin-tool';
 import type { Command } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
 import {
@@ -122,7 +123,29 @@ async function buildWriteClientDefault(
     },
     o.stateDir ? { stateDir: o.stateDir } : {},
   );
-  return { ...context.client, runLog: runLogReader(context) };
+  const tools = createToolClient({
+    auth: context.auth,
+    baseUrl: context.baseUrl,
+    endpoint: '/mcp',
+  });
+  return {
+    ...context.client,
+    runLog: runLogReader(context),
+    callTool: siteToolCaller(tools),
+  };
+}
+
+/**
+ * Calls a site tool (`tool_api__<name>` on `/mcp`) signed in like the client
+ * and returns its structured result; a refusal throws with the site's text.
+ */
+export function siteToolCaller(tools: Pick<ToolClient, 'call'>) {
+  return async (
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> =>
+    ((await tools.call(`tool_api__${name}`, args)).structuredContent ??
+      {}) as Record<string, unknown>;
 }
 
 /**

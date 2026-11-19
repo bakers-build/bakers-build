@@ -8,6 +8,8 @@ import { deriveConductorStatus } from './liveness.js';
 export interface MachineRow {
   id: string;
   name: string;
+  /** The machine_id the site tools take. */
+  hostKey: string;
   /** Online when any of its conductors is. */
   online: boolean;
   /** The machine's reported `current_load`: its active runs. */
@@ -49,6 +51,7 @@ export const listMachineRows = async (
     machines.set(included.id, {
       id: included.id,
       name: String(attrs.name || attrs.host_key || '(unnamed)'),
+      hostKey: String(attrs.host_key ?? ''),
       online: false,
       active: Number(attrs.current_load ?? 0),
       conductorIds: [],
