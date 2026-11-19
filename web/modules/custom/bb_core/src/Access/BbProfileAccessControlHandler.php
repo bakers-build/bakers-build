@@ -27,7 +27,7 @@ final class BbProfileAccessControlHandler extends EntityAccessControlHandler imp
   /**
    * Resolves the workspaces an account belongs to.
    */
-  private BbWorkspaceReadScopeInterface $readScope;
+  protected BbWorkspaceReadScopeInterface $readScope;
 
   /**
    * {@inheritdoc}

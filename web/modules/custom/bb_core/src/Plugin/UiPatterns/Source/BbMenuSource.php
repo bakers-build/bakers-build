@@ -62,12 +62,12 @@ final class BbMenuSource extends MenuSource {
   /**
    * Finds the account's favorites.
    */
-  private Profiles $profiles;
+  protected Profiles $profiles;
 
   /**
    * The account whose favorites are listed.
    */
-  private AccountInterface $currentUser;
+  protected AccountInterface $currentUser;
 
   /**
    * {@inheritdoc}

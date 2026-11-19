@@ -229,7 +229,7 @@ final class UserRead extends ToolBase {
   /**
    * Finds the user's workspace profiles.
    */
-  private Profiles $profileStore;
+  protected Profiles $profileStore;
 
   /**
    * {@inheritdoc}
