@@ -44,7 +44,8 @@ final class TimeBuckets {
         $category['partial'] = TRUE;
       }
       $buckets[] = ['category' => $category, 'from' => $bucketFrom, 'to' => min($bucketTo, $now)];
-      $cursor = $next->setTime(0, 0);
+      // Hours keep their time; the other buckets start at midnight.
+      $cursor = $type === 'hours' ? $next : $next->setTime(0, 0);
     }
     return $buckets;
   }
@@ -80,6 +81,7 @@ final class TimeBuckets {
    */
   private static function next(string $type, \DateTimeImmutable $cursor, int $to): \DateTimeImmutable {
     return match ($type) {
+      'hours' => $cursor->modify('+1 hour'),
       'days' => $cursor->modify('+1 day'),
       'weeks' => $cursor->modify('next monday'),
       'months' => $cursor->modify('first day of next month'),
@@ -101,6 +103,7 @@ final class TimeBuckets {
    */
   private static function category(string $type, \DateTimeImmutable $cursor): array {
     return match ($type) {
+      'hours' => ['key' => $cursor->format('Y-m-d\\TH'), 'label' => $cursor->format('H:00')],
       'days' => ['key' => $cursor->format('Y-m-d'), 'label' => $cursor->format('D j')],
       'weeks' => ['key' => $cursor->format('o-\\WW'), 'label' => $cursor->format('\\WW')],
       'months' => ['key' => $cursor->format('Y-m'), 'label' => $cursor->format('M Y')],
