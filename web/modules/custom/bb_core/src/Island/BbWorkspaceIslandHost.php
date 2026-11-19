@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Island;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\island\IslandContextProviderInterface;
+use Drupal\island\IslandViewAccessInterface;
 
 /**
  * Host seam for the workspace settings screen's Members island.
@@ -18,9 +19,15 @@ use Drupal\island\IslandContextProviderInterface;
  * Off a workspace route there is no ambient workspace to key the list on, so
  * the island renders nothing rather than every workspace's membership.
  */
-final class BbWorkspaceIslandHost implements IslandContextProviderInterface {
+final class BbWorkspaceIslandHost implements IslandContextProviderInterface, IslandViewAccessInterface {
 
   use MembersIslandPlacementTrait;
+
+  /**
+   * The workspace Members screen's own gate: the roster lists invited
+   * addresses.
+   */
+  private const string MEMBERS_ACCESS = 'update';
 
   public function __construct(
     private readonly RouteMatchInterface $routeMatch,

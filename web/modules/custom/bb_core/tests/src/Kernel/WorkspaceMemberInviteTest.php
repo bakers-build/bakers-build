@@ -21,6 +21,7 @@ use Drupal\bb_core\Form\GroupMembersForm;
 use Drupal\bb_core\Form\WorkspaceInviteForm;
 use Drupal\bb_core\Members\WorkspaceInvite;
 use Drupal\user\EntityOwnerInterface;
+use Drupal\island\IslandViewAccessInterface;
 use Drupal\og\Og;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
@@ -602,12 +603,21 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
 
     $this->setCurrentUser($member);
     $this->enterWorkspaceMembersRoute();
-    $built = $this->container->get('form_builder')->getForm(
-      GroupMembersForm::class,
-      ['island_id' => 'members', 'host_id' => 'workspace'],
-    );
-    self::assertArrayNotHasKey('invite', $built, 'a member is offered no invite control');
-    self::assertArrayNotHasKey('#bb_zone_actions', $built['roster'], 'a member is offered no invite button');
+    $refused = FALSE;
+    try {
+      // The face has the Members screen's gate: a member does not get it.
+      $this->container->get('form_builder')->getForm(
+        GroupMembersForm::class,
+        ['island_id' => 'members', 'host_id' => 'workspace'],
+      );
+    }
+    catch (AccessDeniedHttpException) {
+      $refused = TRUE;
+    }
+    self::assertTrue($refused, 'a member is refused the workspace members face');
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_member_invite_action', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    self::assertArrayNotHasKey('#type', $source->getPropValue(), 'a member is offered no invite button');
 
     $this->expectException(AccessDeniedHttpException::class);
     $this->submitInvite('member-cannot-invite@example.com');
@@ -948,6 +958,21 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     self::assertSame('Invite members', (string) $trigger['#props']['label']);
     self::assertSame(WorkspaceInviteForm::TRIGGER_ID, (string) $trigger['#props']['attributes']['id']);
     self::assertStringContainsString('_wrapper_format=island_dialog', (string) $trigger['#props']['attributes']['data-hx-get']);
+  }
+
+  /**
+   * The members island answers a refresh only to whoever may manage members.
+   *
+   * The same gate as the Members screen: the roster lists invited addresses.
+   */
+  public function testTheMembersIslandRefreshFollowsTheScreenGate(): void {
+    $host = $this->container->get('island.host_resolver')->resolve('workspace');
+    self::assertInstanceOf(IslandViewAccessInterface::class, $host);
+
+    $lead = $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    self::assertTrue($host->accessIsland('members', $lead)->isAllowed(), 'a lead gets the roster');
+    $reader = $this->actAs(['view bb_workspace']);
+    self::assertFalse($host->accessIsland('members', $reader)->isAllowed(), 'a reader does not');
   }
 
   /**

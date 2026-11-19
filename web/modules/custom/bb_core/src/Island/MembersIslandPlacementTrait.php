@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Island;
 
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Form\GroupMembersForm;
 use Drupal\bb_core\Members\MembersDialogResponse;
 
@@ -45,6 +48,21 @@ trait MembersIslandPlacementTrait {
       ];
     }
     return [];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * The roster refreshes on its own after a dialog; that request names the
+   * island by a client-sent id, so it gets the gate of the page it lives on.
+   */
+  public function accessIsland(string $island_id, AccountInterface $account): AccessResultInterface {
+    $group = $this->getIslandData($island_id)['group'] ?? NULL;
+    if ($island_id !== 'members' || !$group instanceof EntityInterface) {
+      return AccessResult::forbidden()->addCacheContexts(['route']);
+    }
+    return AccessResult::allowed()->addCacheContexts(['route'])
+      ->andIf($group->access(self::MEMBERS_ACCESS, $account, TRUE));
   }
 
 }

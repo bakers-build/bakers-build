@@ -16,6 +16,7 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Form\GroupMembersForm;
 use Drupal\bb_core\Form\TeamMemberAddForm;
 use Drupal\bb_core\Form\WorkspaceInviteForm;
+use Drupal\island\IslandViewAccessInterface;
 use Drupal\og\Entity\OgMembership;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\Og;
@@ -392,6 +393,22 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
     self::assertArrayNotHasKey('invite', $face);
     self::assertArrayNotHasKey('account', $face);
     self::assertArrayHasKey('roster', $face);
+  }
+
+  /**
+   * The members island answers a refresh to whoever may view the team.
+   *
+   * The same gate as the team's Members tab; a finished dialog asks for the
+   * island alone, and that request is resolved from a client-sent id.
+   */
+  public function testTheMembersIslandRefreshFollowsTheTabGate(): void {
+    $host = $this->container->get('island.host_resolver')->resolve('team');
+    self::assertInstanceOf(IslandViewAccessInterface::class, $host);
+
+    $viewer = $this->actAs(['view bb_team']);
+    self::assertTrue($host->accessIsland('members', $viewer)->isAllowed(), 'a team viewer gets the roster');
+    $stranger = $this->actAs([]);
+    self::assertFalse($host->accessIsland('members', $stranger)->isAllowed(), 'an account that may not view the team does not');
   }
 
   /**
