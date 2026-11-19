@@ -92,11 +92,21 @@ export interface ForgeBackend {
     issueUrl: string,
     change: { add?: string; remove: readonly string[] },
   ): Promise<string[]>;
+  /**
+   * Adds the forge accounts found by these e-mails as reviewers of `pr`;
+   * removes none. A mail without an account or refused by the forge is skipped.
+   */
+  addReviewers(pr: ForgePr, mails: readonly string[]): Promise<ReviewerResult>;
   /** One write, never retried: a lost answer must not post twice. */
   commentIssue(
     issueUrl: string,
     body: string,
   ): Promise<{ id: number; url: string }>;
+}
+
+export interface ReviewerResult {
+  readonly requested: string[];
+  readonly skipped: { mail: string; reason: string }[];
 }
 
 export interface LogTail {
@@ -126,6 +136,7 @@ const METHODS = [
   'issueLabels',
   'updateIssueLabels',
   'commentIssue',
+  'addReviewers',
 ] as const;
 
 /** Reject a factory result that is not a `ForgeBackend`. */

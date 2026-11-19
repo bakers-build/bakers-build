@@ -305,7 +305,7 @@ export class DrupalBbRemote implements BbRemote {
     // in the SAME request — a `bb_project` belongs to a `bb_group` (the
     // OG group), and a `bb_group` belongs to a `bb_workspace`.
     const doc = (await this.api.get(
-      `bb_ticket/bb_ticket/${uuid}?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id,conductor_id.owner_user_id`,
+      `bb_ticket/bb_ticket/${uuid}?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id,conductor_id.owner_user_id,reviewers`,
     )) as JsonApiTicketDoc;
     const attrs = doc.data?.attributes ?? {};
     const issueUrl =
@@ -344,6 +344,16 @@ export class DrupalBbRemote implements BbRemote {
         : undefined;
       return typeof value === 'string' ? value : undefined;
     };
+    // A mail the server's field access hides stays absent; forge_pr_upsert skips that reviewer.
+    const reviewers = refs('reviewers').map((r) => {
+      const a = byId.get(`${r.type}:${r.id}`)?.attributes ?? {};
+      return {
+        name: typeof a.display_name === 'string' ? a.display_name : r.id,
+        ...(typeof a.mail === 'string' && a.mail !== ''
+          ? { mail: a.mail }
+          : {}),
+      };
+    });
     const type = termName('ticket_type');
     const recipe = termName('recipe');
     const projectRef = ref(doc.data, 'project_id');
@@ -407,6 +417,7 @@ export class DrupalBbRemote implements BbRemote {
       ...(recipe ? { recipe } : {}),
       labels,
       environments,
+      ...(reviewers.length > 0 ? { reviewers } : {}),
     };
   }
 

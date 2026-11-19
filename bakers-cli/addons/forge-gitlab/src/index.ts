@@ -298,6 +298,53 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       })) as { id: number };
       return { id: note.id, url: `${i.url}#note_${note.id}` };
     },
+    addReviewers: async (pr, mails) => {
+      const requested: string[] = [];
+      const skipped: { mail: string; reason: string }[] = [];
+      const ids: number[] = [];
+      for (const mail of mails) {
+        const hits = (await apiAt(
+          `${base}/api/v4`,
+          `/users?search=${encodeURIComponent(mail)}`,
+        )) as { id: number; public_email?: string; email?: string }[];
+        // An admin token sees e-mails: match exactly. Others get basic fields
+        // only; the search already matched the public e-mail, so one hit counts.
+        const found =
+          hits.find((u) =>
+            [u.public_email, u.email].some(
+              (e) => e?.toLowerCase() === mail.toLowerCase(),
+            ),
+          ) ??
+          (hits.length === 1 &&
+          hits[0]!.public_email === undefined &&
+          hits[0]!.email === undefined
+            ? hits[0]
+            : undefined);
+        if (found) {
+          ids.push(found.id);
+          requested.push(mail);
+        } else
+          skipped.push({
+            mail,
+            reason: 'no GitLab user with this public e-mail',
+          });
+      }
+      if (ids.length === 0) return { requested, skipped };
+      const current = (
+        (
+          (await api(`/merge_requests/${pr.number}`)) as {
+            reviewers?: { id: number }[];
+          }
+        ).reviewers ?? []
+      ).map((r) => r.id);
+      const added = ids.filter((id) => !current.includes(id));
+      if (added.length > 0)
+        await api(`/merge_requests/${pr.number}`, {
+          method: 'PUT',
+          body: { reviewer_ids: [...new Set([...current, ...added])] },
+        });
+      return { requested, skipped };
+    },
   };
   return backend;
 };
