@@ -1560,7 +1560,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   private function submitRemove(int $target_uid): array {
     $form_state = new FormState();
     $form_state->setValues([
-      'remove_member_' . $target_uid => (string) $target_uid,
+      'confirm_remove_' . $target_uid => (string) $target_uid,
     ]);
     $this->container->get('form_builder')->submitForm(
       GroupMembersForm::class,

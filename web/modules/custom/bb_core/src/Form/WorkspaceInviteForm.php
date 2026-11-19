@@ -34,6 +34,11 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
   public const string RESULT_MESSAGE_TYPE = 'bb_invite';
 
   /**
+   * The Invite members trigger's id, a focus target of the members face.
+   */
+  public const string TRIGGER_ID = 'members-invite';
+
+  /**
    * The role name the role picker opens on, where the workspace offers it.
    */
   private const string DEFAULT_ROLE_NAME = 'contributor';
@@ -84,7 +89,8 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
           ->target('#bakers-overlay')
           ->select('dialog')
           ->swap('innerHTML')
-          ->getAttributes(),
+          ->getAttributes()
+          ->setAttribute('id', self::TRIGGER_ID),
       ],
     ];
   }

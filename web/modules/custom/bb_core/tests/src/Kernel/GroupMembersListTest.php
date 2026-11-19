@@ -176,7 +176,7 @@ final class GroupMembersListTest extends KernelTestBase {
       $item,
       'the documented machine handle the browser suite addresses',
     );
-    self::assertStringContainsString('Revokes their access.', $item);
+    self::assertStringContainsString('Remove rosa from Platform Crew. Revokes their access.', $item, 'the sentence names the group itself');
   }
 
   /**

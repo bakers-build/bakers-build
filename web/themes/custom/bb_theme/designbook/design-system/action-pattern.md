@@ -55,6 +55,7 @@ is how a single-step action stays honest.
 | Transition `plan` to `working` | yes | dispatches an agent run |
 | Transition to `done` | yes | terminal, no rollback |
 | Cancel ticket | yes | discards the ticket |
+| Remove member / Leave | yes | revokes access |
 
 Three rows need their nuance spelled out. The transition row covers every
 sibling transition, not only `plan` to `working`, because each of them
@@ -68,6 +69,12 @@ wherever it is set: the ticket is claimed at the next poll and an agent
 run starts. So the create dialog names it beneath the pill row, and an
 **inline** conductor pick on a detail screen names it at the field too.
 Every other inline field is reversible and names nothing.
+
+The **member** row is the one exception to the first half of the rule: a
+removal ends no ticket, but it revokes the person's access, and re-adding
+them does not restore what they lost meanwhile. Pressing remove (or *Leave*
+on your own row) opens the confirmation in place, inside the members form,
+with **Cancel** focused; its body is the same sentence the control names.
 
 A confirmation names the concrete effect and never asks "are you sure?".
 "Move BB-332 to `working`? This dispatches an agent run on
