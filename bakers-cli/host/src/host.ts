@@ -218,13 +218,7 @@ export async function buildHostProgram(
               return resolveBbProjectContext(
                 await createBbConnectionClient(connection),
                 selection,
-              );
-            },
-            writeWorkspace: async (configPath: string, name: string) => {
-              await projectContext.writeBbWorkspaceSelection(
-                projectContext.bakersProjectOwner(configPath),
-                name,
-                `Set project.workspace in ${configPath} to switch manually.`,
+                configPath,
               );
             },
           },

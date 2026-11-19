@@ -55,10 +55,10 @@ final class BbWorkspaceJoinForm extends FormBase {
    *   Answers whether an invitation has outlived its validity period.
    */
   public function __construct(
-    private readonly InviteMatcher $inviteMatcher,
-    private readonly InviteAcceptance $acceptance,
-    private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly WorkspaceInvite $tenancyInvite,
+    protected readonly InviteMatcher $inviteMatcher,
+    protected readonly InviteAcceptance $acceptance,
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly WorkspaceInvite $tenancyInvite,
   ) {}
 
   /**

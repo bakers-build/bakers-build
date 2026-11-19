@@ -78,6 +78,13 @@ project rulesets. Other addon QA commands and generic snapshot, multisite and co
 machinery have been removed. The standalone playground uses its own `ddev init` for a minimal
 Drupal installation; it is not a full recipe-test control plane.
 
+## Config export check at commit
+
+`.githooks/pre-commit` runs `scripts/check-config-export-clean.sh` in DDEV, only when the commit touches
+`config/sync/`, `composer.lock`, module config or recipes, and skips when DDEV is down. Enable it once per
+clone with `git config core.hooksPath .githooks`. Run worktrees pin `core.hooksPath=/dev/null` on purpose,
+so there run `ddev exec scripts/check-config-export-clean.sh` before committing config changes.
+
 ## Test selection
 
 Select tests by affected behavior: include created/changed tests **and every affected consumer of

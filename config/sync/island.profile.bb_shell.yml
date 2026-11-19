@@ -24,20 +24,6 @@ app: bakers
 layout: 'bb_theme:shell'
 layout_settings: {  }
 placements:
-  # `nav`'s items come from the `bb_menu` source (the ui_patterns menu
-  # source shaped for nav, see `BbMenuSource`) over the `bakers-rail` menu. The account side
-  # is a separate profile, `bb_shell_account`, which matches account-area
-  # routes through its `bb_user_area_route` condition and is weighted
-  # ahead of this one. `nav`
-  # fills the rail's own `navigation` slot,
-  # `account_switcher` fills its `workspace` slot from the ambient workspace
-  # (`bb_workspace_switcher`) and lists every workspace the account may enter
-  # (`bb_workspace_switcher_panel`). `multiple` is true when that list has
-  # more than one row, so a single-workspace account still renders as a plain
-  # label. The rail's `actions` foot carries the signed-in account (linked to
-  # its profile) beside the colour-mode toggle. `boost` and `target_placement`
-  # are unchanged: they describe the placement's own island behaviour, not
-  # which component fills it.
   shell_rail:
     plugin_id: ui_patterns_component
     slot: sidebar
@@ -59,7 +45,8 @@ placements:
         slots:
           workspace:
             sources:
-              - source_id: component
+              -
+                source_id: component
                 source:
                   component:
                     component_id: 'bb_theme:account_switcher'
@@ -83,11 +70,13 @@ placements:
                     slots:
                       workspace_panel:
                         sources:
-                          - source_id: bb_workspace_switcher_panel
+                          -
+                            source_id: bb_workspace_switcher_panel
                             source: {  }
           navigation:
             sources:
-              - source_id: component
+              -
+                source_id: component
                 source:
                   component:
                     component_id: 'bb_theme:nav'
@@ -108,7 +97,8 @@ placements:
                     slots: {  }
           actions:
             sources:
-              - source_id: component
+              -
+                source_id: component
                 source:
                   component:
                     component_id: 'bb_theme:person'
@@ -139,7 +129,8 @@ placements:
                           value: md
                     slots: {  }
                 _weight: '0'
-              - source_id: component
+              -
+                source_id: component
                 source:
                   component:
                     component_id: 'bb_theme:mode_toggle'
@@ -177,45 +168,60 @@ placements:
         slots:
           subline:
             sources:
-              - source_id: bb_page_header_description
+              -
+                source_id: bb_page_header_description
                 source: {  }
           leading:
             sources:
-              - source_id: bb_entity_page_header_mark
+              -
+                source_id: bb_entity_page_header_mark
                 source: {  }
           breadcrumb:
             sources:
-              - source_id: bb_run_breadcrumb
+              -
+                source_id: bb_run_breadcrumb
                 source: {  }
-              - source_id: bb_comment_breadcrumb
+              -
+                source_id: bb_comment_breadcrumb
                 source: {  }
           tabs:
             sources:
-              - source_id: block
+              -
+                source_id: block
                 source:
                   plugin_id: local_tasks_block
           actions:
             sources:
-              - source_id: bb_ticket_create_action
+              -
+                source_id: bb_ticket_create_action
                 source: {  }
-              - source_id: bb_project_create_action
+              -
+                source_id: bb_project_create_action
                 source: {  }
-              - source_id: island_placement
+              -
+                source_id: island_placement
                 source:
                   placement: shell_project_favorite
-              - source_id: bb_ticket_template_create_action
+              -
+                source_id: bb_ticket_template_create_action
                 source: {  }
-              - source_id: bb_term_create_action
+              -
+                source_id: bb_term_create_action
                 source: {  }
-              - source_id: bb_ticket_trigger_create_action
+              -
+                source_id: bb_ticket_trigger_create_action
                 source: {  }
-              - source_id: bb_group_create_action
+              -
+                source_id: bb_group_create_action
                 source: {  }
-              - source_id: bb_worklog_create_action
+              -
+                source_id: bb_worklog_create_action
                 source: {  }
-              - source_id: bb_track_billing_account_create_action
+              -
+                source_id: bb_track_billing_account_create_action
                 source: {  }
-              - source_id: bb_service_account_create_action
+              -
+                source_id: bb_service_account_create_action
                 source: {  }
       boost: true
       target_placement: shell_content_island
@@ -252,10 +258,6 @@ placements:
         slots: {  }
     data: {  }
 weight: -10
-# `/user/*` is account settings. The account-area routes match
-# `bb_shell_account` first (lower weight); gate wins on `/user/login`,
-# `/user/register`, `/user/check-mail` and `/user/reset/*` because it is
-# selected first at the same weight.
 condition_operator: and
 conditions:
   request_path:

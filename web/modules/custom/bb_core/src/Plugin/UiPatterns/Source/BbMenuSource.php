@@ -52,12 +52,12 @@ final class BbMenuSource extends MenuSource {
   /**
    * Resolves the route workspace or the validated profile origin.
    */
-  private AccountWorkspaceContext $workspaceContext;
+  protected AccountWorkspaceContext $workspaceContext;
 
   /**
    * Builds the team create action.
    */
-  private SourcePluginManager $sourceManager;
+  protected SourcePluginManager $sourceManager;
 
   /**
    * Finds the account's favorites.

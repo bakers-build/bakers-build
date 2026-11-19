@@ -1,0 +1,100 @@
+diff --git a/config/sync/views.view.conductors.yml b/config/sync/views.view.conductors.yml
+index a67d44a2..772f5c8a 100644
+--- a/config/sync/views.view.conductors.yml
++++ b/config/sync/views.view.conductors.yml
+@@ -1077,6 +1077,7 @@ display:
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
++                no_reset: false
+       empty:
+         area_text_custom:
+           id: area_text_custom
+@@ -1329,6 +1330,7 @@ display:
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
++                no_reset: false
+       empty:
+         area_text_custom:
+           id: area_text_custom
+diff --git a/config/sync/views.view.groups.yml b/config/sync/views.view.groups.yml
+index 95e2e5bb..9ce49e59 100644
+--- a/config/sync/views.view.groups.yml
++++ b/config/sync/views.view.groups.yml
+@@ -583,6 +583,7 @@ display:
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
++                no_reset: false
+       empty:
+         bb_empty:
+           id: bb_empty
+diff --git a/config/sync/views.view.machines.yml b/config/sync/views.view.machines.yml
+index e69fa05d..af460a28 100644
+--- a/config/sync/views.view.machines.yml
++++ b/config/sync/views.view.machines.yml
+@@ -507,6 +507,7 @@ display:
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
++                no_reset: false
+       empty:
+         area_text_custom:
+           id: area_text_custom
+diff --git a/config/sync/views.view.project_board.yml b/config/sync/views.view.project_board.yml
+index 4cf86602..1d6c3e9b 100644
+--- a/config/sync/views.view.project_board.yml
++++ b/config/sync/views.view.project_board.yml
+@@ -1595,6 +1595,7 @@ display:
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
++                no_reset: false
+             filter:
+               board_parent:
+                 plugin_id: bb_option_picker
+diff --git a/config/sync/views.view.projects.yml b/config/sync/views.view.projects.yml
+index c37a7f80..516099a8 100644
+--- a/config/sync/views.view.projects.yml
++++ b/config/sync/views.view.projects.yml
+@@ -760,6 +760,7 @@ display:
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
++                no_reset: false
+       empty:
+         bb_empty:
+           id: bb_empty
+diff --git a/config/sync/views.view.runs.yml b/config/sync/views.view.runs.yml
+index b405914a..0ee2b0db 100644
+--- a/config/sync/views.view.runs.yml
++++ b/config/sync/views.view.runs.yml
+@@ -610,6 +610,7 @@ display:
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
++                no_reset: false
+             filter:
+               facets_state:
+                 plugin_id: bb_option_picker
+diff --git a/config/sync/views.view.tickets.yml b/config/sync/views.view.tickets.yml
+index 7ea9d3f1..04b641c7 100644
+--- a/config/sync/views.view.tickets.yml
++++ b/config/sync/views.view.tickets.yml
+@@ -722,6 +722,7 @@ display:
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
++                no_reset: false
+             filter:
+               facets_assignee_user_id:
+                 plugin_id: bb_option_picker
+@@ -792,6 +793,7 @@ display:
+                   is_secondary: false
+                   hide_label: false
+                   field_classes: ''
++                  no_reset: false
+                 treat_as_false: false
+               facets_workflow:
+                 plugin_id: bb_option_picker

@@ -3,17 +3,17 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_measurement.closed_tickets
-  - bb_core.bb_measurement.run_tokens
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.run_tokens
 id: tokens_per_ticket
-label: Tokens per closed ticket
+label: 'Tokens per closed ticket'
 value_type: decimal
 unit: tokens_per_ticket
-source: {}
+source: {  }
 operation:
   type: divide
   numerator: run_tokens
   denominator: closed_tickets
-predicates: {}
-bindings: {}
-dimensions: {}
+predicates: {  }
+bindings: {  }
+dimensions: {  }

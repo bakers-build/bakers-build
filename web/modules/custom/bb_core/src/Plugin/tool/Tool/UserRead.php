@@ -224,7 +224,7 @@ final class UserRead extends ToolBase {
   /**
    * Who and which teams the caller may read.
    */
-  private BbWorkspaceReadScopeInterface $readScope;
+  protected BbWorkspaceReadScopeInterface $readScope;
 
   /**
    * Finds the user's workspace profiles.

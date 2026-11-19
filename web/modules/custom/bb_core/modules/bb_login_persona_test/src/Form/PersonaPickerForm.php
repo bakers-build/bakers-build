@@ -32,7 +32,7 @@ final class PersonaPickerForm extends FormBase {
   private const DOMAIN = '@example.test';
 
   public function __construct(
-    private readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
   ) {}
 
   /**

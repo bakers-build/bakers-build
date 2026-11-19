@@ -55,10 +55,10 @@ final class BbCodeForm extends FormBase {
    *   Finds or creates the account behind a pending sign-up's code.
    */
   public function __construct(
-    private readonly LoginCode $loginCode,
-    private readonly FloodInterface $flood,
-    private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly EmailLogin $emailLogin,
+    protected readonly LoginCode $loginCode,
+    protected readonly FloodInterface $flood,
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly EmailLogin $emailLogin,
   ) {}
 
   /**

@@ -1,0 +1,227 @@
+Gathering patches for root package.
+Removing package drupal/display_builder so that it can be re-installed and re-patched.
+  - Removing drupal/display_builder (1.0.0-beta5)
+Removing package drupal/ui_patterns so that it can be re-installed and re-patched.
+  - Removing drupal/ui_patterns (2.0.23)
+Deleting /var/www/html/web/modules/contrib/display_builder - deleted
+Deleting /var/www/html/web/modules/contrib/ui_patterns - deleted
+Loading composer repositories with package information
+Package "assets-ai/bakers-322" listed for update is not locked.
+Package "bakers-cli/config.md" listed for update is not locked.
+Package "bakers-cli/license" listed for update is not locked.
+Package "bakers-cli/readme.md" listed for update is not locked.
+Package "bakers-cli/readme.npm.md" listed for update is not locked.
+Package "bakers-cli/addons" listed for update is not locked.
+Package "bakers-cli/bin" listed for update is not locked.
+Package "bakers-cli/biome.json" listed for update is not locked.
+Package "bakers-cli/conductor" listed for update is not locked.
+Package "bakers-cli/core" listed for update is not locked.
+Package "bakers-cli/db60-dropsh.config.js" listed for update is not locked.
+Package "bakers-cli/host" listed for update is not locked.
+Package "bakers-cli/message" listed for update is not locked.
+Package "bakers-cli/package.json" listed for update is not locked.
+Package "bakers-cli/patches" listed for update is not locked.
+Package "bakers-cli/pnpm-lock.yaml" listed for update is not locked.
+Package "bakers-cli/pnpm-workspace.yaml" listed for update is not locked.
+Package "bakers-cli/scripts" listed for update is not locked.
+Package "bakers-cli/templates" listed for update is not locked.
+Package "bakers-cli/tsconfig.base.json" listed for update is not locked.
+Package "bakers-cli/tsconfig.integration.json" listed for update is not locked.
+Package "bakers-cli/ui" listed for update is not locked.
+Package "bakers-cli/vitest.config.integration.ts" listed for update is not locked.
+Package "bakers-cli/vitest.config.ts" listed for update is not locked.
+Package "bakers-design/design-system" listed for update is not locked.
+Package "bakers-design/ui-design" listed for update is not locked.
+Package "config/sync" listed for update is not locked.
+Package "config/sync-test" listed for update is not locked.
+Package "docker/compose" listed for update is not locked.
+Package "docker/docs" listed for update is not locked.
+Package "docker/e2e" listed for update is not locked.
+Package "docker/nginx" listed for update is not locked.
+Package "docs/addons" listed for update is not locked.
+Package "docs/agents" listed for update is not locked.
+Package "docs/bakers" listed for update is not locked.
+Package "docs/bakers-metrics.md" listed for update is not locked.
+Package "docs/cli" listed for update is not locked.
+Package "docs/conductor" listed for update is not locked.
+Package "docs/configuration" listed for update is not locked.
+Package "docs/de" listed for update is not locked.
+Package "docs/decisions" listed for update is not locked.
+Package "docs/development" listed for update is not locked.
+Package "docs/drupal-updates" listed for update is not locked.
+Package "docs/get-started" listed for update is not locked.
+Package "docs/index.md" listed for update is not locked.
+Package "docs/landing.md" listed for update is not locked.
+Package "docs/package.json" listed for update is not locked.
+Package "docs/pnpm-lock.yaml" listed for update is not locked.
+Package "docs/pnpm-workspace.yaml" listed for update is not locked.
+Package "docs/postcss.config.mjs" listed for update is not locked.
+Package "docs/provision" listed for update is not locked.
+Package "docs/public" listed for update is not locked.
+Package "docs/routes.json" listed for update is not locked.
+Package "docs/scripts" listed for update is not locked.
+Package "docs/self-hosting" listed for update is not locked.
+Package "docs/skills-and-workflows" listed for update is not locked.
+Package "herdr/spiceedit" listed for update is not locked.
+Package "komodo/bakers.toml" listed for update is not locked.
+Package "komodo/client-no-ssl.cnf" listed for update is not locked.
+Package "patches/display_builder-views-sources-schema.patch" listed for update is not locked.
+Package "patches/social_api-php84-nullable-request.patch" listed for update is not locked.
+Package "recipes/readme.txt" listed for update is not locked.
+Package "recipes/bakers" listed for update is not locked.
+Package "recipes/bb_base" listed for update is not locked.
+Package "recipes/bb_e2e" listed for update is not locked.
+Package "recipes/bb_seed" listed for update is not locked.
+Package "recipes/bb_ticket_templates" listed for update is not locked.
+Package "scripts/check-bb-420-scene-slot-equivalence.py" listed for update is not locked.
+Package "scripts/check-config-sync.php" listed for update is not locked.
+Package "scripts/check-designbook-data-model.py" listed for update is not locked.
+Package "scripts/ci" listed for update is not locked.
+Package "scripts/clean-install-acceptance.sh" listed for update is not locked.
+Package "scripts/deploy" listed for update is not locked.
+Package "scripts/e2e" listed for update is not locked.
+Package "tests/artifacts" listed for update is not locked.
+Package "tests/config-sync" listed for update is not locked.
+Package "tests/contract" listed for update is not locked.
+Package "tests/fixtures" listed for update is not locked.
+Package "tests/playwright" listed for update is not locked.
+Package "tests/skill-eval" listed for update is not locked.
+Package "vendor/asm89" listed for update is not locked.
+Package "vendor/autoload.php" listed for update is not locked.
+Package "vendor/behat" listed for update is not locked.
+Package "vendor/bin" listed for update is not locked.
+Package "vendor/brianium" listed for update is not locked.
+Package "vendor/brick" listed for update is not locked.
+Package "vendor/chi-teck" listed for update is not locked.
+Package "vendor/colinodell" listed for update is not locked.
+Package "vendor/composer" listed for update is not locked.
+Package "vendor/consolidation" listed for update is not locked.
+Package "vendor/cweagans" listed for update is not locked.
+Package "vendor/dealerdirect" listed for update is not locked.
+Package "vendor/defuse" listed for update is not locked.
+Package "vendor/dflydev" listed for update is not locked.
+Package "vendor/doctrine" listed for update is not locked.
+Package "vendor/drupal" listed for update is not locked.
+Package "vendor/drush" listed for update is not locked.
+Package "vendor/egulias" listed for update is not locked.
+Package "vendor/fidry" listed for update is not locked.
+Package "vendor/google" listed for update is not locked.
+Package "vendor/grasmash" listed for update is not locked.
+Package "vendor/guzzlehttp" listed for update is not locked.
+Package "vendor/jean85" listed for update is not locked.
+Package "vendor/justinrainbow" listed for update is not locked.
+Package "vendor/kevinrob" listed for update is not locked.
+Package "vendor/laravel" listed for update is not locked.
+Package "vendor/lcobucci" listed for update is not locked.
+Package "vendor/league" listed for update is not locked.
+Package "vendor/lullabot" listed for update is not locked.
+Package "vendor/marc-mabe" listed for update is not locked.
+Package "vendor/masterminds" listed for update is not locked.
+Package "vendor/mck89" listed for update is not locked.
+Package "vendor/mcp" listed for update is not locked.
+Package "vendor/mglaman" listed for update is not locked.
+Package "vendor/micheh" listed for update is not locked.
+Package "vendor/mikey179" listed for update is not locked.
+Package "vendor/myclabs" listed for update is not locked.
+Package "vendor/nette" listed for update is not locked.
+Package "vendor/nikic" listed for update is not locked.
+Package "vendor/nyholm" listed for update is not locked.
+Package "vendor/open-telemetry" listed for update is not locked.
+Package "vendor/opis" listed for update is not locked.
+Package "vendor/paragonie" listed for update is not locked.
+Package "vendor/pdepend" listed for update is not locked.
+Package "vendor/pear" listed for update is not locked.
+Package "vendor/phar-io" listed for update is not locked.
+Package "vendor/phootwork" listed for update is not locked.
+Package "vendor/php-http" listed for update is not locked.
+Package "vendor/php-tuf" listed for update is not locked.
+Package "vendor/phpdocumentor" listed for update is not locked.
+Package "vendor/phpmd" listed for update is not locked.
+Package "vendor/phpowermove" listed for update is not locked.
+Package "vendor/phpspec" listed for update is not locked.
+Package "vendor/phpstan" listed for update is not locked.
+Package "vendor/phpunit" listed for update is not locked.
+Package "vendor/psr" listed for update is not locked.
+Package "vendor/psy" listed for update is not locked.
+Package "vendor/ralouphie" listed for update is not locked.
+Package "vendor/ramsey" listed for update is not locked.
+Package "vendor/react" listed for update is not locked.
+Package "vendor/revolt" listed for update is not locked.
+Package "vendor/sebastian" listed for update is not locked.
+Package "vendor/seld" listed for update is not locked.
+Package "vendor/sirbrillig" listed for update is not locked.
+Package "vendor/slevomat" listed for update is not locked.
+Package "vendor/squizlabs" listed for update is not locked.
+Package "vendor/staabm" listed for update is not locked.
+Package "vendor/steverhoades" listed for update is not locked.
+Package "vendor/symfony" listed for update is not locked.
+Package "vendor/tbachert" listed for update is not locked.
+Package "vendor/theseer" listed for update is not locked.
+Package "vendor/twig" listed for update is not locked.
+Package "vendor/webflo" listed for update is not locked.
+Package "vendor/webmozart" listed for update is not locked.
+Package "web/install.txt" listed for update is not locked.
+Package "web/readme.md" listed for update is not locked.
+Package "web/autoload.php" listed for update is not locked.
+Package "web/core" listed for update is not locked.
+Package "web/example.gitignore" listed for update is not locked.
+Package "web/index.php" listed for update is not locked.
+Package "web/libraries" listed for update is not locked.
+Package "web/modules" listed for update is not locked.
+Package "web/profiles" listed for update is not locked.
+Package "web/robots.txt" listed for update is not locked.
+Package "web/sites" listed for update is not locked.
+Package "web/themes" listed for update is not locked.
+Package "web/update.php" listed for update is not locked.
+Updating dependencies
+Lock file operations: 4 installs, 18 updates, 0 removals
+  - Upgrading consolidation/annotated-command (4.10.5 => 4.10.6)
+  - Upgrading consolidation/config (3.2.1 => 3.2.2)
+  - Upgrading consolidation/log (3.1.2 => 3.1.3)
+  - Upgrading consolidation/output-formatters (4.7.1 => 4.7.2)
+  - Upgrading consolidation/robo (5.1.1 => 5.2.3)
+  - Locking consolidation/self-update (3.2.1)
+  - Upgrading drupal/better_exposed_filters (7.1.2 => 7.2.0)
+  - Upgrading drupal/jsonapi_resources (1.5.0 => 1.8.0)
+  - Upgrading drupal/mcp_server (2.0.0-beta6 => 2.0.0-beta7)
+  - Upgrading drupal/mcp_server_oauth (1.0.0-alpha1 => 1.0.0-alpha2)
+  - Upgrading drupal/schemata (1.0.0 => 1.1.0)
+  - Upgrading drupal/schemata_json_schema (1.0.0 => 1.1.0)
+  - Upgrading drupal/search_api (1.41.0 => 1.43.0)
+  - Upgrading drupal/state_machine (1.14.0 => 1.15.0)
+  - Upgrading e0ipso/simple_oauth_21 (v1.13.1 => v1.13.11)
+  - Locking kevinrob/guzzle-cache-middleware (6.0.0)
+  - Upgrading laravel/prompts (v0.3.18 => v0.3.27)
+  - Upgrading mcp/sdk (v0.7.1 => v0.9.0)
+  - Upgrading opis/json-schema (2.6.1 => 2.6.2)
+  - Upgrading psy/psysh (v0.12.23 => v0.12.24)
+  - Locking symfony/cache (v8.0.15)
+  - Locking symfony/cache-contracts (v3.8.1)
+Writing lock file
+Installing dependencies from lock file (including require-dev)
+Package operations: 2 installs, 5 updates, 1 removal
+    0 [>---------------------------]    0 [->--------------------------]
+  - Removing drupal/ui_patterns_field (2.0.23)
+Gathering patches for root package.
+Gathering patches for dependencies. This might take a minute.
+  - Downgrading drupal/core-project-message (11.4.13 => 11.3.22): Extracting archive
+  - Downgrading drupal/core-recipe-unpack (11.4.13 => 11.3.22): Extracting archive
+  - Downgrading fidry/cpu-core-counter (1.4.1 => 1.3.0): Extracting archive
+  - Downgrading brianium/paratest (v7.8.6 => v7.8.5): Extracting archive
+  - Downgrading drupal/core-dev (11.4.13 => 11.3.22)
+  - Installing drupal/ui_patterns (2.0.23): Extracting archive
+  - Installing drupal/display_builder (1.0.0-beta4): Extracting archive
+ 0/4 [>---------------------------]   0%
+ 4/4 [============================] 100%
+  - Applying patches for drupal/ui_patterns
+
+  - Applying patches for drupal/display_builder
+    patches/display_builder-views-sources-schema.patch (Fix the config schema of the views display extender (BB-413))
+
+3 package suggestions were added by new dependencies, use `composer suggest` to see details.
+Package doctrine/common is abandoned, you should avoid using it. No replacement was suggested.
+Generating autoload files
+110 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+phpstan/extension-installer: Extensions installed
+No security vulnerability advisories found.

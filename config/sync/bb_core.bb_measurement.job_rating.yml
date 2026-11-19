@@ -1,9 +1,9 @@
 uuid: 75025f55-f6bf-4317-8806-d63dc9535c8c
 langcode: en
 status: true
-dependencies: {}
+dependencies: {  }
 id: job_rating
-label: Job rating
+label: 'Job rating'
 value_type: decimal
 unit: 'of 5'
 source:
@@ -13,12 +13,14 @@ operation:
   type: avg
   field: metrics.value
 predicates:
-- field: closed
-  operator: '='
-  value: true
-- field: metrics.name
-  operator: '='
-  value: job_rating.score
+  -
+    field: closed
+    operator: '='
+    value: true
+  -
+    field: metrics.name
+    operator: '='
+    value: job_rating.score
 bindings:
   epic:
     field: id
