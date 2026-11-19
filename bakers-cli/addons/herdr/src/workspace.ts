@@ -297,7 +297,7 @@ export class HerdrWorkspace implements BbWorkspace {
   /**
    * A host run after an isolated one: close the clone's herdr workspace, move
    * its commits to the ticket branch and remove it, so a worktree takes the
-   * path. Uncommitted work refuses and stays (`leaveRunClone`).
+   * path. Uncommitted work refuses, stays and gets its workspace back.
    */
   private async leaveClone(branch: string): Promise<void> {
     const path = resolve(this.root, this.worktreeDir, branch);
@@ -312,7 +312,15 @@ export class HerdrWorkspace implements BbWorkspace {
       throw new Error(
         `herdr workspace: ${path} is focused and no parent workspace can take focus; switch focus and dispatch again`,
       );
-    leaveRunClone(path);
+    try {
+      leaveRunClone(path);
+    } catch (err) {
+      // A refusal keeps the clone: give its workspace back before reporting.
+      await openCloneWorkspace(this.execHerdr, this.root, branch, path).catch(
+        () => undefined,
+      );
+      throw err;
+    }
   }
 
   /**

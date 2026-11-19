@@ -46,7 +46,10 @@ afterEach(() => {
  * A herdr that knows workspaces by label and the worktrees it opened; it
  * opens a worktree only for a path the parent's `git worktree list` knows.
  */
-function fakeHerdr(open: Array<{ id: string; label: string }> = []) {
+function fakeHerdr(
+  open: Array<{ id: string; label: string }> = [],
+  focused?: string,
+) {
   const calls: string[][] = [];
   const worktrees: Array<{ path: string; branch: string; id: string }> = [];
   const exec = async (args: string[]) => {
@@ -118,7 +121,7 @@ function fakeHerdr(open: Array<{ id: string; label: string }> = []) {
           workspaces: open.map(({ id, label }) => ({
             workspace_id: id,
             label,
-            focused: false,
+            focused: id === focused,
           })),
         },
       });
@@ -403,6 +406,26 @@ it('refuses to leave a run clone with uncommitted work and keeps it', async () =
   expect(readFileSync(join(path, 'draft.txt'), 'utf8')).toBe('wip');
   expect(loadRunClone(path)).toBeDefined();
   expect(verbs(herdr.calls)).not.toContainEqual(['worktree', 'create']);
+  expect(herdr.open.filter((w) => w.label === BRANCH)).toHaveLength(1);
+});
+
+it('refuses to leave a focused run clone no parent workspace can take focus from', async () => {
+  const herdr = fakeHerdr([], 'ws-new');
+  const workspace = new HerdrWorkspace({
+    root,
+    clone: true,
+    execHerdr: herdr.exec,
+  });
+  const { path } = await workspace.ensure('BB-1', BRANCH, 'origin/next');
+
+  await expect(
+    workspace.ensure('BB-1', BRANCH, 'origin/next', { clone: false }),
+  ).rejects.toThrow(
+    `herdr workspace: ${path} is focused and no parent workspace can take focus`,
+  );
+
+  expect(loadRunClone(path)).toBeDefined();
+  expect(herdr.open.filter((w) => w.label === BRANCH)).toHaveLength(1);
 });
 
 it('refuses to turn a worktree with uncommitted work into a run clone and keeps it', async () => {
