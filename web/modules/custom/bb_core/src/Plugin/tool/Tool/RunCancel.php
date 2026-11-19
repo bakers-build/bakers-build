@@ -47,7 +47,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
     'runs' => new ListInputDefinition(
       label: new TranslatableMarkup('Runs'),
-      description: new TranslatableMarkup('Run UUIDs to cancel, e.g. from bakers_run_restartable. Give exactly one of ticket, machine_id or runs.'),
+      description: new TranslatableMarkup('Run UUIDs to cancel, e.g. from bakers_run_list restartable. Give exactly one of ticket, machine_id or runs.'),
       required: FALSE,
       item_definition: new InputDefinition(
         data_type: 'string',

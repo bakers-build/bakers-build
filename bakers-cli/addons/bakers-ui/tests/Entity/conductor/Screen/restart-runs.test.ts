@@ -18,26 +18,34 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 const TICKETS: RestartableTicket[] = [
   {
     ticket: 'BB-1',
-    uuid: 't-1',
     title: 'Ship it',
-    runs: [{ run: 'r-1', number: 1, state: 'running' }],
+    runs: [{ uuid: 'r-1', number: 1, state: 'running' }],
   },
   {
     ticket: 'BB-3',
-    uuid: 't-3',
     title: 'Fix it',
-    runs: [{ run: 'r-3', number: 3, state: 'failed' }],
+    runs: [{ uuid: 'r-3', number: 3, state: 'failed' }],
   },
 ];
 
-/** The site's tools: the restartable read answers `tickets()`, a cancel echoes its runs. */
+/** The site's tools: the restartable run list flattens `tickets()`, a cancel echoes its runs. */
 const siteWith = (
   tickets: () => RestartableTicket[] = () => TICKETS,
   refuse?: string,
 ) => {
   const callTool = vi.fn(
     async (name: string, args: Record<string, unknown>) => {
-      if (name === 'bakers_run_restartable') return { tickets: tickets() };
+      if (name === 'bakers_run_list')
+        return {
+          runs: tickets().flatMap((t) =>
+            t.runs.map((run) => ({
+              ...run,
+              ticket: t.ticket,
+              ticket_title: t.title,
+            })),
+          ),
+          next_offset: null,
+        };
       if (refuse) throw new Error(refuse);
       return { runs: args.runs };
     },
@@ -76,8 +84,9 @@ describe('restart runs dialog', () => {
   it('reads the restartable tickets and lists them checked, with OK and Cancel', async () => {
     const site = siteWith();
     const { shown } = await dialogFor(restartRunsRequest(MACHINE), site.client);
-    expect(site.callTool).toHaveBeenCalledWith('bakers_run_restartable', {
+    expect(site.callTool).toHaveBeenCalledWith('bakers_run_list', {
       machine_id: 'host-1',
+      restartable: true,
     });
     expect(shown()).toContain('Restart runs on machine workstation?');
     expect(shown()).toContain('[x] BB-1 · Ship it · run #1 (running)');
@@ -167,8 +176,9 @@ describe('restart runs dialog', () => {
       }),
       site.client,
     );
-    expect(site.callTool).toHaveBeenCalledWith('bakers_run_restartable', {
+    expect(site.callTool).toHaveBeenCalledWith('bakers_run_list', {
       conductor: 'c-1',
+      restartable: true,
     });
   });
 

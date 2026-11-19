@@ -164,15 +164,18 @@ const withRuns = (...runs: ReturnType<typeof run>[]): TicketDetailDocument => ({
 
 /** A client whose site tools list `runs` as the ticket's restartable runs. */
 const siteWith = (
-  runs: { run: string; number: number; state: string }[],
+  runs: { uuid: string; number: number; state: string }[],
   documents: Record<string, unknown> = {},
 ) => {
   const callTool = vi.fn(async (name: string, args: Record<string, unknown>) =>
-    name === 'bakers_run_restartable'
+    name === 'bakers_run_list'
       ? {
-          tickets: runs.length
-            ? [{ ticket: 'BB-1', uuid: 'ticket-1', title: 'A ticket', runs }]
-            : [],
+          runs: runs.map((run) => ({
+            ...run,
+            ticket: 'BB-1',
+            ticket_title: 'A ticket',
+          })),
+          next_offset: null,
         }
       : { runs: args.runs },
   );
@@ -199,13 +202,14 @@ describe('restart runs of a ticket through the confirmation dialog', () => {
   });
 
   it("asks the site for the ticket's runs and names them, with OK and Cancel", async () => {
-    const client = siteWith([{ run: 'run-1', number: 7, state: 'failed' }]);
+    const client = siteWith([{ uuid: 'run-1', number: 7, state: 'failed' }]);
     const { screen, context } = await dialogFor(
       restartTicketRequest('ticket-1', 'BB-1'),
       client,
     );
-    expect(client.callTool).toHaveBeenCalledWith('bakers_run_restartable', {
+    expect(client.callTool).toHaveBeenCalledWith('bakers_run_list', {
       ticket: 'ticket-1',
+      restartable: true,
     });
     const shown = screen.present(context);
     expect(shown.title).toBe('↻ Restart runs');
@@ -220,7 +224,7 @@ describe('restart runs of a ticket through the confirmation dialog', () => {
 
   it('OK cancels its runs through bakers_run_cancel and returns the ticket as read after', async () => {
     const after = ticket({ state: 'working', derived_status: 'idle' });
-    const client = siteWith([{ run: 'run-1', number: 7, state: 'running' }], {
+    const client = siteWith([{ uuid: 'run-1', number: 7, state: 'running' }], {
       'bb_ticket/bb_ticket/ticket-1': after,
     });
     const { screen, context } = await dialogFor(
@@ -243,7 +247,7 @@ describe('restart runs of a ticket through the confirmation dialog', () => {
   });
 
   it('a failed read after the cancel still reports the cancel', async () => {
-    const client = siteWith([{ run: 'run-1', number: 7, state: 'running' }]);
+    const client = siteWith([{ uuid: 'run-1', number: 7, state: 'running' }]);
     client.get = vi.fn().mockRejectedValue(new Error('offline'));
     const { screen, context } = await dialogFor(
       restartTicketRequest('ticket-1', 'BB-1'),

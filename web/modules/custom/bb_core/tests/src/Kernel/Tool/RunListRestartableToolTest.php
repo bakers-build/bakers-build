@@ -12,11 +12,11 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Covers bakers_run_restartable: the runs Restart runs offers, by ticket.
+ * Covers bakers_run_list restartable: the runs Restart runs offers.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
-final class RunRestartableToolTest extends BakersToolTestBase {
+final class RunListRestartableToolTest extends BakersToolTestBase {
 
   /**
    * {@inheritdoc}
@@ -24,6 +24,7 @@ final class RunRestartableToolTest extends BakersToolTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('bb_machine');
+    user_role_grant_permissions('skill_user', ['view bb_run']);
   }
 
   /**
@@ -43,13 +44,11 @@ final class RunRestartableToolTest extends BakersToolTestBase {
     $this->runOn($frozen, $here, 'running');
     $this->runOn($this->ticket('RST-4'), $here, 'done');
 
-    $machine = $this->outputs($this->runTool('bakers_run_restartable', ['machine_id' => 'box-1']))['tickets'];
-    self::assertSame([
-      $this->entry($first, [$running]),
-      $this->entry($second, [$failed]),
-    ], $machine);
-    $conductor = $this->outputs($this->runTool('bakers_run_restartable', ['conductor' => $here->uuid()]))['tickets'];
-    self::assertSame([$this->entry($first, [$running])], $conductor);
+    $machine = $this->outputs($this->runTool('bakers_run_list', ['machine_id' => 'box-1', 'restartable' => TRUE]));
+    self::assertSame([...$this->entry($first, [$running]), ...$this->entry($second, [$failed])], $this->brief($machine['runs']));
+    self::assertNull($machine['next_offset']);
+    $conductor = $this->outputs($this->runTool('bakers_run_list', ['conductor' => $here->uuid(), 'restartable' => TRUE]))['runs'];
+    self::assertSame($this->entry($first, [$running]), $this->brief($conductor));
   }
 
   /**
@@ -63,8 +62,8 @@ final class RunRestartableToolTest extends BakersToolTestBase {
     $finished = $this->ticket('RST-6');
     $this->runOn($finished, $conductor, 'done');
 
-    self::assertSame([$this->entry($ticket, [$newest])], $this->outputs($this->runTool('bakers_run_restartable', ['ticket' => $ticket->getIdentifier()]))['tickets']);
-    self::assertSame([], $this->outputs($this->runTool('bakers_run_restartable', ['ticket' => $finished->getIdentifier()]))['tickets']);
+    self::assertSame($this->entry($ticket, [$newest]), $this->brief($this->restartable($ticket)));
+    self::assertSame([], $this->restartable($finished));
   }
 
   /**
@@ -87,35 +86,60 @@ final class RunRestartableToolTest extends BakersToolTestBase {
       ['conductor' => 'no-such-conductor'],
     ];
     foreach ($targets as $values) {
-      self::assertSame([], $this->outputs($this->runTool('bakers_run_restartable', $values))['tickets']);
+      self::assertSame([], $this->outputs($this->runTool('bakers_run_list', $values + ['restartable' => TRUE]))['runs']);
     }
     foreach ([[], ['machine_id' => 'box-1', 'conductor' => $here->uuid()]] as $values) {
-      $this->assertFailure($this->runTool('bakers_run_restartable', $values), 'Give exactly one of machine_id, conductor or ticket.');
+      $this->assertFailure($this->runTool('bakers_run_list', $values + ['restartable' => TRUE]), 'Give exactly one of ticket, machine_id or conductor.');
     }
+    $this->assertFailure($this->runTool('bakers_run_list', ['machine_id' => 'box-1']), 'machine_id and conductor list restartable runs only; set restartable.');
   }
 
   /**
-   * The expected entry of a ticket with these runs.
+   * The expected rows of a ticket with these runs, as brief() reduces them.
    *
    * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
    *   The ticket.
    * @param list<\Drupal\bb_core\Entity\BbRunInterface> $runs
    *   Its runs.
    *
-   * @return array<string, mixed>
-   *   The entry.
+   * @return list<array<string, mixed>>
+   *   The rows.
    */
   private function entry(BbTicketInterface $ticket, array $runs): array {
-    return [
+    return array_map(static fn (BbRunInterface $run): array => [
+      'uuid' => (string) $run->uuid(),
+      'state' => $run->getRunState(),
+      'number' => (int) $run->id(),
       'ticket' => $ticket->getIdentifier(),
-      'uuid' => (string) $ticket->uuid(),
-      'title' => $ticket->getTitle(),
-      'runs' => array_map(static fn (BbRunInterface $run): array => [
-        'run' => (string) $run->uuid(),
-        'number' => (int) $run->id(),
-        'state' => $run->getRunState(),
-      ], $runs),
-    ];
+      'ticket_title' => $ticket->getTitle(),
+    ], $runs);
+  }
+
+  /**
+   * The rows reduced to the fields Restart runs shows.
+   *
+   * @param list<array<string, mixed>> $rows
+   *   The tool's runs.
+   *
+   * @return list<array<string, mixed>>
+   *   The reduced rows.
+   */
+  private function brief(array $rows): array {
+    $keys = array_flip(['uuid', 'number', 'state', 'ticket', 'ticket_title']);
+    return array_map(static fn (array $row): array => array_intersect_key($row, $keys), $rows);
+  }
+
+  /**
+   * The ticket's restartable runs as the tool lists them.
+   *
+   * @return list<array<string, mixed>>
+   *   The tool's runs.
+   */
+  private function restartable(BbTicketInterface $ticket): array {
+    return $this->outputs($this->runTool('bakers_run_list', [
+      'ticket' => $ticket->getIdentifier(),
+      'restartable' => TRUE,
+    ]))['runs'];
   }
 
   /**

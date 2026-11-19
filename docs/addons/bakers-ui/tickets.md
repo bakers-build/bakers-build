@@ -75,7 +75,7 @@ A ticket is **parked** when its 3 most recent runs all failed and the newest of 
 **Restart runs** in the Properties footer (`r` in `bakers ui`) restarts an open ticket that is not frozen while its newest run is `claimed`, `running` or `failed`, parked or not. Its dialog names the runs; **OK** cancels them and **Cancel** closes without a change. Through the tools, list the runs and cancel them:
 
 ```sh
-bakers tools tool_api__bakers_run_restartable --data '{"ticket":"<identifier>"}'
+bakers tools tool_api__bakers_run_list --data '{"ticket":"<identifier>","restartable":true}'
 bakers tools tool_api__bakers_run_cancel --data '{"runs":["<run uuid>"],"reason":"environment fixed"}'
 ```
 

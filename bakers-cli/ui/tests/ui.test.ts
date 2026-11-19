@@ -925,6 +925,6 @@ describe('siteToolCaller', () => {
     const callTool = siteToolCaller({
       call: async () => ({ content: [] }),
     } as never);
-    await expect(callTool('bakers_run_restartable', {})).resolves.toEqual({});
+    await expect(callTool('bakers_run_list', {})).resolves.toEqual({});
   });
 });

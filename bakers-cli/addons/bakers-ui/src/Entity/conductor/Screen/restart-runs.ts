@@ -5,23 +5,30 @@ import type {
 } from '../../../Screen/confirm-dialog.js';
 import type { ScreenContext } from '../../../Screen/screen.js';
 
-/** One ticket `bakers_run_restartable` lists, with the runs a restart cancels. */
+/** One ticket with the runs a restart cancels, grouped from `bakers_run_list`. */
 export interface RestartableTicket {
   readonly ticket: string;
-  readonly uuid: string;
   readonly title: string;
   readonly runs: readonly {
-    readonly run: string;
+    readonly uuid: string;
     readonly number: number;
     readonly state: string;
   }[];
+}
+
+interface RestartableRun {
+  uuid: string;
+  number: number;
+  state: string;
+  ticket: string;
+  ticket_title: string;
 }
 
 /** What Restart runs acts on: a machine, one conductor or one ticket. */
 export interface RestartTarget {
   readonly level: 'machine' | 'conductor' | 'ticket';
   readonly label: string;
-  /** The `bakers_run_restartable` input naming the target. */
+  /** The `bakers_run_list` input naming the target. */
   readonly args: Readonly<Record<string, string>>;
   /** Whether the conductor, or any conductor of the machine, is online. */
   readonly online?: boolean;
@@ -31,10 +38,26 @@ const readTickets = async (
   context: ScreenContext,
   target: RestartTarget,
 ): Promise<RestartableTicket[]> => {
-  const result = await siteTools(context.services)('bakers_run_restartable', {
+  const result = await siteTools(context.services)('bakers_run_list', {
     ...target.args,
+    restartable: true,
   });
-  return (result.tickets ?? []) as RestartableTicket[];
+  // The site lists the runs grouped by ticket; keep that order.
+  const tickets = new Map<
+    string,
+    { ticket: string; title: string; runs: RestartableTicket['runs'][number][] }
+  >();
+  for (const run of (result.runs ?? []) as RestartableRun[]) {
+    const { ticket, ticket_title, ...rest } = run;
+    const entry = tickets.get(ticket) ?? {
+      ticket,
+      title: ticket_title,
+      runs: [],
+    };
+    entry.runs.push(rest);
+    tickets.set(ticket, entry);
+  }
+  return [...tickets.values()];
 };
 
 const runList = (ticket: RestartableTicket): string =>
@@ -45,17 +68,17 @@ const sameTickets = (
   b: readonly RestartableTicket[],
 ) =>
   a
-    .map((ticket) => ticket.uuid)
+    .map((ticket) => ticket.ticket)
     .sort()
     .join() ===
   b
-    .map((ticket) => ticket.uuid)
+    .map((ticket) => ticket.ticket)
     .sort()
     .join();
 
 /**
  * Restart runs, for the confirmation dialog. The site lists the covered runs
- * by ticket (`bakers_run_restartable`); a machine or conductor offers its
+ * by ticket (`bakers_run_list` restartable); a machine or conductor offers its
  * tickets checked, a ticket confirms its own runs. OK reads the list again,
  * cancels nothing when it changed, and else cancels the runs of the checked
  * tickets in one `bakers_run_cancel`; the conductor gives each ticket one
@@ -96,7 +119,7 @@ export const restartRunsRequest = (target: RestartTarget): ConfirmRequest => ({
               ...offline,
             ].join('\n'),
             checklist: tickets.map((ticket) => ({
-              id: ticket.uuid,
+              id: ticket.ticket,
               label: `${ticket.ticket} · ${ticket.title} · ${runList(ticket)}`,
             })),
           }),
@@ -109,8 +132,8 @@ export const restartRunsRequest = (target: RestartTarget): ConfirmRequest => ({
         const chosen =
           target.level === 'ticket'
             ? fresh
-            : fresh.filter((ticket) => checked.includes(ticket.uuid));
-        const runs = chosen.flatMap((ticket) => ticket.runs.map((r) => r.run));
+            : fresh.filter((ticket) => checked.includes(ticket.ticket));
+        const runs = chosen.flatMap((ticket) => ticket.runs.map((r) => r.uuid));
         if (runs.length > 0)
           await siteTools(confirmContext.services)('bakers_run_cancel', {
             runs,

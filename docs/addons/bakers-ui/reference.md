@@ -93,7 +93,7 @@ Cancelling and restarting are actions of their own, next to `e` in the footer, a
 | `r` restart runs | Overview, Planning and History of an open ticket that is not frozen | Cancels the ticket's `claimed` or `running` runs and its newest run when that failed; the dialog names them, or says there is no run to restart. |
 | `r` restart runs | Machines and a machine's conductors, on a machine or conductor you own | Lists the tickets with such runs, all checked, frozen ones left out; OK cancels the runs of the checked tickets, noting `cancelled by <you>: Restart runs (<level> <name>)` in the error log, and each ticket gets one fresh run. Offline, cleanup and fresh runs follow its next start. |
 
-Every cancel and restart goes through the site tools `bakers_run_restartable` and `bakers_run_cancel`, under the same rule as the web dialogs. If the tickets changed since the dialog opened, OK cancels nothing and asks you to open it again.
+Every cancel and restart goes through the site tools `bakers_run_list` (`restartable`) and `bakers_run_cancel`, under the same rule as the web dialogs. If the tickets changed since the dialog opened, OK cancels nothing and asks you to open it again.
 
 ## The conductor sections
 
