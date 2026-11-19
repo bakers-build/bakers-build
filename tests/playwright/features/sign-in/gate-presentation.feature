@@ -10,13 +10,13 @@ Feature: Device sign-in consent and result
     When I open the device verification page for that code
     Then the consent names the requesting client
     And the device code field shows that code
-    And the consent lists the membership "Team Design Crew — Member"
+    And the consent lists the membership "Team Design Crew — Member" below its workspace
     And the consent says in plain words what confirming grants
     And the page has exactly one h1
     When I confirm the device sign-in
     Then the address carries "done=confirmed"
     And the device result message is visible
-    And the device result says "The device is now signed in as you. It can act in your workspaces with your roles until it is signed out."
+    And the device result says "The device is now signed in as you. It can act in your workspaces with your roles until it is signed out. Return to your terminal."
     And the page has exactly one h1
     And the device result title is not clipped
     When I follow the result's "Go to bakers.build" action
@@ -31,7 +31,7 @@ Feature: Device sign-in consent and result
     When I deny the device sign-in
     Then the address carries "done=denied"
     And the device result message is visible
-    And the device result says "The device was not signed in and got no access."
+    And the device result says "The device was not signed in and got no access. You can close this page."
     And the page has exactly one h1
     And the device result offers no "Go to bakers.build" action
 

@@ -414,18 +414,42 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     Og::createMembership($north, $user)->save();
     Og::createMembership($orphan, $user)->save();
 
-    $text = $this->consentText();
-    $this->assertStringContainsString("Workspace bakers — Admin\nTeam bakers — Lead", $text);
-    $this->assertStringContainsString("Workspace keytec — Admin\nTeam North — Member", $text);
-    $this->assertStringContainsString("Workspace solo\nTeam Orphan — Member", $text);
-    foreach (['Workspace bakers', 'Team bakers', 'Workspace keytec', 'Team North', 'Workspace solo', 'Team Orphan'] as $line) {
-      $this->assertSame(1, substr_count($text, $line), "$line is listed once.");
-    }
-    $this->assertLessThan(strpos($text, 'Workspace keytec'), strpos($text, 'Workspace bakers'));
-    $this->assertLessThan(strpos($text, 'Workspace solo'), strpos($text, 'Workspace keytec'));
+    $content = $this->consentPage();
+    $lines = array_values(array_filter($this->linesOf($content), static fn (string $line): bool => preg_match('/^(Workspace|Team) /', $line) === 1));
+    $this->assertSame([
+      'Workspace bakers — Admin',
+      'Team bakers — Lead',
+      'Workspace keytec — Admin',
+      'Team North — Member',
+      'Workspace solo',
+      'Team Orphan — Member',
+    ], $lines, 'Each group once, teams below their workspace, workspaces sorted.');
+    $text = $this->textOf($content);
     $this->assertStringNotContainsString('Elsewhere', $text);
     $this->assertStringNotContainsString('Lead, Lead', $text);
     $this->assertStringNotContainsString('Acts within your memberships', $text);
+  }
+
+  /**
+   * Group names show as typed, escaped once; a lost workspace leaves a team.
+   *
+   * A team whose workspace was deleted stays a team, at the top level.
+   */
+  public function testConsentShowsGroupNamesAsTyped(): void {
+    $this->installGroupFixture();
+    $workspace = $this->createGroup('workspace', 'R&D\'s <lab>');
+    $gone = $this->createGroup('workspace', 'Gone');
+    $team = $this->createGroup('team', 'Left "behind"', $gone);
+    $user = $this->createConsentingUser();
+    Og::createMembership($workspace, $user)->save();
+    Og::createMembership($team, $user)->save();
+    $gone->delete();
+
+    $lines = $this->linesOf($this->consentPage());
+    $this->assertContains('Workspace R&D\'s <lab> — Member', $lines);
+    $this->assertContains('Team Left "behind" — Member', $lines);
+    $this->assertNotContains('Workspace Left "behind" — Member', $lines);
+    $this->assertEmpty(preg_grep('/&(amp|quot|lt|#0?39);/', $lines), 'No entity shows as text.');
   }
 
   /**
@@ -703,6 +727,22 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
    */
   protected function textOf(string $html): string {
     return html_entity_decode($html, ENT_QUOTES | ENT_HTML5);
+  }
+
+  /**
+   * A page's paragraphs as the reader sees them, trimmed, in document order.
+   *
+   * @return string[]
+   *   One entry per `p` element's text content.
+   */
+  protected function linesOf(string $html): array {
+    $paragraphs = (new \DOMXPath(Html::load($html)))->query('//p');
+    $this->assertInstanceOf(\DOMNodeList::class, $paragraphs);
+    $lines = [];
+    foreach ($paragraphs as $paragraph) {
+      $lines[] = trim($paragraph->nodeValue ?? '');
+    }
+    return $lines;
   }
 
   /**

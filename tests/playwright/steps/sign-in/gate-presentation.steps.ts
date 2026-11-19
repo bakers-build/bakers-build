@@ -61,14 +61,19 @@ Then('the device code field shows that code', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
 });
 
-Then('the consent lists the membership {string}', async ({ page }, membership: string) => {
-  await expect(page.locator(GATE_CONTENT)).toContainText(membership);
+Then('the consent lists the membership {string} below its workspace', async ({ page }, membership: string) => {
+  // Each membership is its own line; the nearest non-team line above heads it.
+  const line = page.locator(GATE_CONTENT).getByText(membership, { exact: true });
+  await expect(line).toBeVisible();
+  await expect(line.locator("xpath=preceding-sibling::p[not(starts-with(normalize-space(.), 'Team '))][1]")).toHaveText(/^Workspace /);
 });
 
 Then('the consent says in plain words what confirming grants', async ({ page }) => {
   await expect(page.locator(GATE_CONTENT).getByText(/^If you confirm, the device can do everything you can do/)).toBeVisible();
   // The raw scope stays behind the collapsed technical details.
-  await expect(page.locator(GATE_CONTENT).getByText('bb:session')).toBeHidden();
+  const details = page.locator(GATE_CONTENT).locator('details:not([open])');
+  await expect(details).toContainText('bb:session');
+  await expect(details.getByText('bb:session')).toBeHidden();
 });
 
 Then('the page does not overflow horizontally', async ({ page }) => {

@@ -156,7 +156,14 @@ class DeviceVerificationForm extends FormBase {
         ? $this->t('If you confirm, the device can do everything you can do on @site, in the workspaces and teams below, with your roles there.', ['@site' => $site])
         : $this->t("You aren't in any workspace yet, so the device can't reach any workspace content."));
       foreach ($memberships as $delta => $block) {
-        $form['consent_membership_' . $delta] = $this->text($block, ['tone' => 'light']);
+        // One paragraph per line keeps each line escaped once; the gapless
+        // zone keeps a workspace's lines together.
+        $form['consent_membership_' . $delta] = [
+          '#type' => 'component',
+          '#component' => 'bb_theme:zone',
+          '#props' => ['inset' => 'none', 'gap' => 'none', 'align' => 'center'],
+          '#slots' => ['content' => array_map(fn (TranslatableMarkup $line): array => $this->text($line, ['tone' => 'light']), $block)],
+        ];
       }
       if ($memberships) {
         $form['consent_roles'] = $this->text($this->t('What do these roles mean?'), [
@@ -187,9 +194,9 @@ class DeviceVerificationForm extends FormBase {
    * not site-wide permissions, say what a confirmation grants. A workspace
    * the account only reaches through a team still heads it, without a rank.
    *
-   * @return string[]
-   *   Blocks such as "Workspace keytec — Admin\nTeam North — Member", sorted
-   *   by workspace, each group once.
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup[][]
+   *   Blocks of lines such as ["Workspace keytec — Admin", "Team North —
+   *   Member"], sorted by workspace, each group once.
    */
   protected function membershipBlocks(): array {
     $workspaces = [];
@@ -207,28 +214,32 @@ class DeviceVerificationForm extends FormBase {
       ];
       // shortcut: a group with `workspace_id` is a team, any other a
       // workspace; og.settings registers only these two, extend on a third.
-      $workspace = $group->hasField('workspace_id') ? $group->get('workspace_id')->entity : NULL;
+      $is_team = $group->hasField('workspace_id');
+      $workspace = $is_team ? $group->get('workspace_id')->entity : NULL;
       if (!$workspace instanceof EntityInterface) {
-        $workspaces[$this->sortKey($group)]['head'] = (string) $this->t('Workspace @group — @roles', $args);
+        // A team whose workspace is gone stays a team, at the top level.
+        $workspaces[$this->sortKey($group)]['head'] = $is_team
+          ? $this->t('Team @group — @roles', $args)
+          : $this->t('Workspace @group — @roles', $args);
         continue;
       }
       $key = $this->sortKey($workspace);
-      $workspaces[$key]['head'] ??= (string) $this->t('Workspace @group', ['@group' => $workspace->label()]);
-      $workspaces[$key]['teams'][$this->sortKey($group)] = (string) $this->t('Team @group — @roles', $args);
+      $workspaces[$key]['head'] ??= $this->t('Workspace @group', ['@group' => $workspace->label()]);
+      $workspaces[$key]['teams'][$this->sortKey($group)] = $this->t('Team @group — @roles', $args);
     }
     ksort($workspaces, SORT_NATURAL | SORT_FLAG_CASE);
-    return array_values(array_map(static function (array $workspace): string {
+    return array_values(array_map(static function (array $workspace): array {
       $teams = $workspace['teams'] ?? [];
       ksort($teams, SORT_NATURAL | SORT_FLAG_CASE);
-      return implode("\n", [$workspace['head'], ...array_values($teams)]);
+      return [$workspace['head'], ...array_values($teams)];
     }, $workspaces));
   }
 
   /**
-   * Orders groups by label; the id keeps equally named groups apart.
+   * Orders groups by label; type and id keep equally named groups apart.
    */
   protected function sortKey(EntityInterface $group): string {
-    return $group->label() . "\0" . $group->id();
+    return $group->label() . "\0" . $group->getEntityTypeId() . "\0" . $group->id();
   }
 
   /**
@@ -265,7 +276,7 @@ class DeviceVerificationForm extends FormBase {
   /**
    * A run of copy rendered by the theme's text component.
    *
-   * @param \Drupal\Core\StringTranslation\TranslatableMarkup|string $text
+   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $text
    *   The copy, translated.
    * @param array<string, string> $props
    *   Further text component props (element, size, tone).
@@ -273,7 +284,7 @@ class DeviceVerificationForm extends FormBase {
    * @return array<string, mixed>
    *   A text component render array.
    */
-  protected function text(TranslatableMarkup|string $text, array $props = []): array {
+  protected function text(TranslatableMarkup $text, array $props = []): array {
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:text',
