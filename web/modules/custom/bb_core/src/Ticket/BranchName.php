@@ -70,7 +70,8 @@ final class BranchName {
       return self::cap(self::sanitize('release/' . $identifier), $identifier);
     }
     $convention = self::convention($ticket) ?: self::DEFAULT_CONVENTION;
-    $raw = (string) \Drupal::token()->replace(
+    // A git ref is plain text; replace() would HTML-escape the title.
+    $raw = \Drupal::token()->replacePlain(
       $convention,
       ['bb_ticket' => $ticket],
       ['clear' => TRUE],
