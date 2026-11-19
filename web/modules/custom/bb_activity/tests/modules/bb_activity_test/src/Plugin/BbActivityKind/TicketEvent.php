@@ -42,7 +42,7 @@ final class TicketEvent extends ActivityKindBase {
   /**
    * The state that switches the mail text off.
    */
-  private StateInterface $state;
+  protected StateInterface $state;
 
   /**
    * {@inheritdoc}

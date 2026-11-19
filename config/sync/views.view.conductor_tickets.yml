@@ -287,7 +287,7 @@ display:
     cache_metadata:
       max-age: 0
       contexts:
-        - 'user.permissions'
+        - user.permissions
       tags: {  }
   occupancy:
     id: occupancy
@@ -299,5 +299,5 @@ display:
     cache_metadata:
       max-age: 0
       contexts:
-        - 'user.permissions'
+        - user.permissions
       tags: {  }

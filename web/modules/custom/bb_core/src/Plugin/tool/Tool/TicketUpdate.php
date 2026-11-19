@@ -362,7 +362,7 @@ final class TicketUpdate extends ToolBase {
   /**
    * Rolls back a refused update together with labels it created.
    */
-  private Connection $database;
+  protected Connection $database;
 
   /**
    * {@inheritdoc}

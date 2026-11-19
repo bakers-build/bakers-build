@@ -55,9 +55,9 @@ final class IslandSource extends SourcePluginBase {
     ModuleHandlerInterface $moduleHandler,
     Token $token,
     UiPatternsNormalizerInterface $normalizer,
-    private readonly ComponentElementBuilder $componentElementBuilder,
-    private readonly IslandHostResolver $hostResolver,
-    private readonly IslandPluginManagerInterface $islandManager,
+    protected readonly ComponentElementBuilder $componentElementBuilder,
+    protected readonly IslandHostResolver $hostResolver,
+    protected readonly IslandPluginManagerInterface $islandManager,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $propTypeManager, $contextRepository, $routeMatch, $sampleEntityGenerator, $moduleHandler, $token, $normalizer);
   }

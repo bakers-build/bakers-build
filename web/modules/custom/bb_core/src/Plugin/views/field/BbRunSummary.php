@@ -22,14 +22,14 @@ final class BbRunSummary extends FieldPluginBase {
   /**
    * Computes the summaries.
    */
-  private TicketRunSummary $runSummary;
+  protected TicketRunSummary $runSummary;
 
   /**
    * The page's summaries, keyed by ticket id.
    *
    * @var array<int, \Drupal\bb_core\Run\RunSummary>
    */
-  private array $summaries = [];
+  protected array $summaries = [];
 
   /**
    * {@inheritdoc}
