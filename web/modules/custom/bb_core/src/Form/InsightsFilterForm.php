@@ -45,7 +45,7 @@ final class InsightsFilterForm extends FormBase {
     'insights-filters-opener',
   ];
 
-  public function __construct(private readonly InsightsFilterOptions $options) {}
+  public function __construct(protected readonly InsightsFilterOptions $options) {}
 
   /**
    * {@inheritdoc}

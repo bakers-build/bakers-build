@@ -91,12 +91,12 @@ final class WorklogPropose extends ToolBase {
   /**
    * The owner lock and transaction boundary.
    */
-  private WorkTimeMutation $mutation;
+  protected WorkTimeMutation $mutation;
 
   /**
    * The shared activity rules.
    */
-  private WorkActivityInput $activities;
+  protected WorkActivityInput $activities;
 
   /**
    * {@inheritdoc}

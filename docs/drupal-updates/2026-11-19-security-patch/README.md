@@ -55,3 +55,15 @@ Requested after the first step. Logs: [composer-update-all.txt](composer-update-
 - **migrate_tools 6.1.5:** needs drush >= 13.7 (drush is 13.6.2). Drush itself is not updated.
 
 Config: the full `drush cex` also exported unrelated pre-existing drift (bb_core, mcp_server_tool_bridge, ...). It was discarded; only the update-caused `no_reset` changes are kept.
+
+# Third step: static analysis after the tooling update
+
+The second step raised `mglaman/phpstan-drupal` from 2.0.15 to 2.4.0 and `phpstan/phpstan` from 2.2.1 to 2.3.6. Their new rules found 176 errors in custom code (`provision_exec('phpstan')`, exit 1). The code is fixed rather than the rules ignored:
+
+- **`dependencySerializationTraitProperty.unsupportedPrivateProperty`** (161 properties in 81 files): `DependencySerializationTrait` cannot see the private properties of a subclass. A serialized form or plugin then stores its services by value instead of by service ID. These properties are now `protected`.
+- **`drupal.hookEntityOperationAlterMissingCacheabilityParameter`**: the two `hook_entity_operation_alter` implementations take the `CacheableMetadata` parameter that Drupal 11.3 added.
+- **`drupal.entityStoragePropertyAssignment`**: `OnboardingDestination` fetches the user storage when it needs it.
+- **`drupal.symfonyYamlParse`**: `designbook:config-validate` uses `Drupal\Component\Serialization\Yaml::decode()`.
+- **Tests:** the narrower inference of phpstan 2.3 gets `assertInstanceOf` checks. A lock double gets the entity type manager instead of a storage. The storage decorator `FailingSaveStorageDecorator` has a path-scoped ignore with its reason in `phpstan.neon.dist`.
+
+After the fixes, phpcs, phpmd and phpstan all exit 0.

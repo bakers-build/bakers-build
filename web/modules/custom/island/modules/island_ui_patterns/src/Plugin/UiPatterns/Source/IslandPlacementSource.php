@@ -55,7 +55,7 @@ final class IslandPlacementSource extends SourcePluginBase {
     ModuleHandlerInterface $moduleHandler,
     Token $token,
     UiPatternsNormalizerInterface $normalizer,
-    private readonly IslandProfileRenderer $profileRenderer,
+    protected readonly IslandProfileRenderer $profileRenderer,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $propTypeManager, $contextRepository, $routeMatch, $sampleEntityGenerator, $moduleHandler, $token, $normalizer);
   }

@@ -37,7 +37,7 @@ final class BbMachineAccessControlHandler extends EntityAccessControlHandler imp
    */
   public function __construct(
     EntityTypeInterface $entity_type,
-    private readonly BbRankCapabilityInterface $capability,
+    protected readonly BbRankCapabilityInterface $capability,
   ) {
     parent::__construct($entity_type);
   }

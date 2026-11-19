@@ -34,7 +34,7 @@ final class UserLabelProcessor extends ProcessorPluginBase implements BuildProce
   /**
    * Loads the accounts.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}

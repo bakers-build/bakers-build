@@ -21,12 +21,12 @@ final class WorklogStorage extends SqlContentEntityStorage {
   /**
    * Checked application service.
    */
-  private WorkTimeMutation $mutation;
+  protected WorkTimeMutation $mutation;
 
   /**
    * Checked application service.
    */
-  private WorklogIntegrity $integrity;
+  protected WorklogIntegrity $integrity;
 
   /**
    * {@inheritdoc}

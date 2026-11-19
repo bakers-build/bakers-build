@@ -40,17 +40,17 @@ final class AddonConductorsFormatter extends FormatterBase {
   /**
    * The entity type manager.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * The current route match.
    */
-  private RouteMatchInterface $routeMatch;
+  protected RouteMatchInterface $routeMatch;
 
   /**
    * Reads the sibling versions of the addon's name.
    */
-  private AddonRepository $repository;
+  protected AddonRepository $repository;
 
   /**
    * {@inheritdoc}
