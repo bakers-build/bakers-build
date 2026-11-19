@@ -17,7 +17,7 @@ final readonly class PeriodRange {
    * Constructs a resolved period.
    *
    * @param string $kind
-   *   The period kind: week, month, quarter, year, all or custom.
+   *   The period kind: day, week, month, quarter, year, all or custom.
    * @param string $start
    *   The first day, `Y-m-d` UTC.
    * @param string $end
@@ -25,7 +25,7 @@ final readonly class PeriodRange {
    * @param string $label
    *   The human label of the period.
    * @param string $grouping
-   *   The bucket size: day, week, month or quarter.
+   *   The bucket size: hour, day, week, month or quarter.
    * @param bool $current
    *   Whether the period contains today.
    * @param \Drupal\bb_core\Statistics\Period\PeriodRange|null $comparison

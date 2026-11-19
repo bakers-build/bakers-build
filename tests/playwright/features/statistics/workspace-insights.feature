@@ -40,6 +40,24 @@ Feature: Workspace leads read the Insights of their workspace
     Then the address carries "filter[period]=year"
     And the period compares with the previous year
 
+  Scenario: Choosing Today shows the day per hour in UTC
+    Given I am logged in as the account "north-lead"
+    When I open the Insights of workspace "bakers"
+    And I choose the period kind "Today"
+    Then the address carries "filter[period]=day"
+    And the period shows the day "Today"
+    And the period compares with the day before
+    And the page shows "Per hour, UTC"
+
+  Scenario: Choosing Yesterday compares with the day before it
+    Given I am logged in as the account "north-lead"
+    When I open the Insights of workspace "bakers"
+    And I choose the period kind "Yesterday"
+    Then the address carries "filter[period]=day"
+    And the period shows the day "Yesterday"
+    And the period compares with the day before
+    And the page shows "Per hour, UTC"
+
   Scenario: Sorting the projects table by a column
     Given I am logged in as the account "north-lead"
     When I open the Insights of workspace "bakers"
@@ -93,6 +111,21 @@ Feature: Workspace leads read the Insights of their workspace
     Then the filter sheet is closed
     And the active filters read "Project is Statistics demo"
     And the filters button reads "Filters · 1"
+
+  Scenario: A filter chip keeps the day period on a phone
+    Given I am logged in as the account "north-lead"
+    And the viewport is 390 pixels wide
+    When I open the Insights of workspace "bakers"
+    And I choose the period kind "Today"
+    And I open the filter sheet
+    And I open the filter "Project"
+    And I search the filter for "Statistics"
+    And I tick "Statistics demo" in the filter
+    And I close the open filter
+    And I click button "Show results"
+    Then the active filters read "Project is Statistics demo"
+    And the period shows the day "Today"
+    And removing the "Project" filter keeps "filter[period]=day"
 
   Scenario: The desktop period control keeps its one-line width
     Given I am logged in as the account "north-lead"

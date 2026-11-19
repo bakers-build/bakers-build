@@ -30,6 +30,7 @@ final class FigureEvaluatorTest extends KernelTestBase {
       'label' => 'Period',
       'default' => 'week',
       'options' => [
+        ['value' => 'day', 'label' => 'Day'],
         ['value' => 'week', 'label' => 'Week'],
         ['value' => 'month', 'label' => 'Month'],
         ['value' => 'quarter', 'label' => 'Quarter'],
@@ -351,6 +352,32 @@ final class FigureEvaluatorTest extends KernelTestBase {
     self::assertSame('W27', $comparison['labels']['2026-W40']);
     self::assertSame(14, $comparison['values']['2026-W53']);
     self::assertSame('W40', $comparison['labels']['2026-W53']);
+  }
+
+  /**
+   * A day groups by hour and compares hour by hour with the previous day.
+   */
+  public function testDayPeriodComparesWithPreviousDay(): void {
+    $today = self::hourCategories(2026, 10, 24);
+    $yesterday = self::hourCategories(2026, 10, 23);
+    $measurementEvaluator = $this->fakeByRange([
+      self::at(2026, 10, 24) => $this->measurementResult('closed_tickets', 'Closed tickets', 'integer', 'tickets', $today, array_fill_keys(array_column($today, 'key'), 2)),
+      self::at(2026, 10, 23) => $this->measurementResult('closed_tickets', 'Closed tickets', 'integer', 'tickets', $yesterday, array_combine(array_column($yesterday, 'key'), range(1, 24))),
+    ]);
+    $figure = $this->figure('activity', 'Activity', 'line', ['type' => 'days'], ['closed_tickets'], self::PERIOD_FILTER);
+
+    $selected = ['period' => 'day', 'date' => '2026-10-24'];
+    $payload = $this->evaluatorFrom($measurementEvaluator)->evaluate($figure, [], $selected, self::NOW)->toArray();
+
+    self::assertSame('day', $payload['filters']['period']['value']);
+    self::assertSame('day', $payload['period']['kind']);
+    self::assertSame('hour', $payload['period']['grouping']);
+    self::assertSame(['start' => '2026-10-23', 'end' => '2026-10-23', 'label' => '23 Oct 2026'], $payload['period']['comparison']);
+    $comparison = $payload['measurements'][0]['comparison'];
+    self::assertSame(array_column($today, 'key'), array_keys($comparison['values']));
+    self::assertSame(1, $comparison['values']['2026-10-24T00']);
+    self::assertSame(24, $comparison['values']['2026-10-24T23']);
+    self::assertSame('23:00', $comparison['labels']['2026-10-24T23']);
   }
 
   /**
@@ -828,6 +855,22 @@ final class FigureEvaluatorTest extends KernelTestBase {
     return array_map(
       static fn(int $week): array => ['key' => sprintf('2026-W%02d', $week), 'label' => sprintf('W%02d', $week)],
       range($first, $last),
+    );
+  }
+
+  /**
+   * The 24 hour categories of one day.
+   *
+   * @return array<int, array{key: string, label: string}>
+   *   The categories, oldest first.
+   */
+  private static function hourCategories(int $year, int $month, int $day): array {
+    return array_map(
+      static fn(int $hour): array => [
+        'key' => sprintf('%04d-%02d-%02dT%02d', $year, $month, $day, $hour),
+        'label' => sprintf('%02d:00', $hour),
+      ],
+      range(0, 23),
     );
   }
 

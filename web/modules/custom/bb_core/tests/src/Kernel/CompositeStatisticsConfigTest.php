@@ -143,6 +143,7 @@ final class CompositeStatisticsConfigTest extends KernelTestBase {
         self::assertSame($default, $recipeData['filters']['period']['default'], $name . ' defaults to the current ' . $default . '.');
         self::assertSame(
           [
+            ['value' => 'day', 'label' => 'Day'],
             ['value' => 'week', 'label' => 'Week'],
             ['value' => 'month', 'label' => 'Month'],
             ['value' => 'quarter', 'label' => 'Quarter'],
