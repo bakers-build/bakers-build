@@ -76,7 +76,7 @@ final class GroupCreate extends ToolBase {
   /**
    * The web form's rank check in THIS workspace, not the permission union.
    */
-  private BbWorkspaceCreateAccess $createAccess;
+  protected BbWorkspaceCreateAccess $createAccess;
 
   /**
    * {@inheritdoc}

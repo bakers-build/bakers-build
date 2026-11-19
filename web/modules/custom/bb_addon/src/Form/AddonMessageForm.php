@@ -30,32 +30,32 @@ final class AddonMessageForm extends IslandFormBase {
   /**
    * Resolves the addon.
    */
-  private AddonRepository $repository;
+  protected AddonRepository $repository;
 
   /**
    * Builds the elements and reads the values back.
    */
-  private AddonFormBuilder $builder;
+  protected AddonFormBuilder $builder;
 
   /**
    * Validates the payload.
    */
-  private MessageContractValidator $validator;
+  protected MessageContractValidator $validator;
 
   /**
    * Sends the message.
    */
-  private AddonActionSender $sender;
+  protected AddonActionSender $sender;
 
   /**
    * Loads the ticket.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * The addon and message this instance is for; part of the form id.
    */
-  private string $messageKey = '';
+  protected string $messageKey = '';
 
   /**
    * {@inheritdoc}

@@ -35,7 +35,7 @@ final class BbEntityPageHeaderMarkSource extends SourcePluginBase implements Con
   /**
    * Loads the avatar image style.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}

@@ -121,12 +121,12 @@ final class ActivityList extends ToolBase {
   /**
    * Words each row through its activity kind.
    */
-  private ActivityKindManager $kinds;
+  protected ActivityKindManager $kinds;
 
   /**
    * The language the kind words the row in.
    */
-  private LanguageManagerInterface $languages;
+  protected LanguageManagerInterface $languages;
 
   /**
    * {@inheritdoc}

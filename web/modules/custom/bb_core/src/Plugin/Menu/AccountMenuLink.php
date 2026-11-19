@@ -32,22 +32,22 @@ final class AccountMenuLink extends MenuLinkDefault implements AmbientScopedMenu
   /**
    * The current route, read for the viewed account's `{user}` parameter.
    */
-  private RouteMatchInterface $routeMatch;
+  protected RouteMatchInterface $routeMatch;
 
   /**
    * The signed-in account, the fallback when the route carries none.
    */
-  private AccountProxyInterface $currentUser;
+  protected AccountProxyInterface $currentUser;
 
   /**
    * Lets other modules narrow the links for a viewed account.
    */
-  private ModuleHandlerInterface $moduleHandler;
+  protected ModuleHandlerInterface $moduleHandler;
 
   /**
    * The resolved uid, or FALSE when there is none; NULL until resolved.
    */
-  private int|false|null $uid = NULL;
+  protected int|false|null $uid = NULL;
 
   /**
    * {@inheritdoc}

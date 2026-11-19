@@ -45,7 +45,7 @@ final class Template extends TicketTriggerTargetBase {
   /**
    * The shared ticket creation service.
    */
-  private TicketTemplateInstantiator $instantiator;
+  protected TicketTemplateInstantiator $instantiator;
 
   /**
    * {@inheritdoc}

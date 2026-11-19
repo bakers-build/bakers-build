@@ -28,22 +28,22 @@ final class WorkspaceMenuLink extends MenuLinkDefault implements AmbientScopedMe
   /**
    * Resolves the route workspace or the validated profile origin.
    */
-  private AccountWorkspaceContext $workspaceContext;
+  protected AccountWorkspaceContext $workspaceContext;
 
   /**
    * The current route, read for `route_parameters_from_route`.
    */
-  private RouteMatchInterface $routeMatch;
+  protected RouteMatchInterface $routeMatch;
 
   /**
    * Cacheability recorded while resolving the workspace; NULL until resolved.
    */
-  private ?CacheableMetadata $workspaceCache = NULL;
+  protected ?CacheableMetadata $workspaceCache = NULL;
 
   /**
    * The resolved ambient workspace.
    */
-  private ?BbWorkspaceInterface $workspace = NULL;
+  protected ?BbWorkspaceInterface $workspace = NULL;
 
   /**
    * {@inheritdoc}

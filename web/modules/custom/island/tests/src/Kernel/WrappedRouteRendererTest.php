@@ -7,6 +7,7 @@ namespace Drupal\Tests\island\Kernel;
 use Drupal\Core\Form\EnforcedResponseException;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\HtmlResponse;
+use Drupal\Core\Render\MainContent\MainContentRendererInterface;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\island\Render\WrappedRouteRenderer;
@@ -494,8 +495,11 @@ final class WrappedRouteRendererTest extends KernelTestBase {
     // The messenger stores its queue on the session.
     $request->setSession(new Session(new MockArraySessionStorage()));
     $this->container->get('request_stack')->push($request);
-    $response = $this->container->get($service_id)
+    $renderer = $this->container->get($service_id);
+    self::assertInstanceOf(MainContentRendererInterface::class, $renderer);
+    $response = $renderer
       ->renderResponse($main_content, $request, new RouteMatch('island_test.probe', new Route('/probe')));
+    self::assertInstanceOf(HtmlResponse::class, $response);
     $processed = $this->container->get('html_response.attachments_processor')
       ->processAttachments($response);
     // Narrowed: the processor is typed to `AttachmentsInterface`, which has no

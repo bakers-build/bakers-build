@@ -1,9 +1,9 @@
 uuid: 2c98b62c-c410-435a-b9ad-90d8d8ae6a9f
 langcode: en
 status: true
-dependencies: {}
+dependencies: {  }
 id: closed_tickets_many_runs
-label: Closed tickets with more than 3 runs
+label: 'Closed tickets with more than 3 runs'
 value_type: integer
 unit: tickets
 source:
@@ -16,9 +16,10 @@ operation:
     field: ticket_id
   threshold: 3
 predicates:
-- field: closed
-  operator: '='
-  value: true
+  -
+    field: closed
+    operator: '='
+    value: true
 bindings:
   epic:
     field: id

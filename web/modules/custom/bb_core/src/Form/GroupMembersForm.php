@@ -63,10 +63,10 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     IslandResponder $responder,
     IslandHostResolver $hostResolver,
     IslandPluginManagerInterface $islandManager,
-    private readonly MembershipWriter $membershipWriter,
-    private readonly MemberItemBuilder $itemBuilder,
-    private readonly WorkspaceInvite $tenancyInvite,
-    private readonly OwnershipTransfer $ownershipTransfer,
+    protected readonly MembershipWriter $membershipWriter,
+    protected readonly MemberItemBuilder $itemBuilder,
+    protected readonly WorkspaceInvite $tenancyInvite,
+    protected readonly OwnershipTransfer $ownershipTransfer,
   ) {
     parent::__construct($responder, $hostResolver, $islandManager);
   }

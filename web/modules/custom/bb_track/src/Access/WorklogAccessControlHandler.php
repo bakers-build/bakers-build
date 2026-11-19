@@ -38,9 +38,9 @@ final class WorklogAccessControlHandler extends EntityAccessControlHandler imple
    */
   public function __construct(
     EntityTypeInterface $entity_type,
-    private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly BbWorkspaceReadScopeInterface $readScope,
-    private readonly WorklogScope $scope,
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly BbWorkspaceReadScopeInterface $readScope,
+    protected readonly WorklogScope $scope,
   ) {
     parent::__construct($entity_type);
   }
