@@ -99,6 +99,16 @@ final class BranchConventionTest extends KernelTestBase {
   }
 
   /**
+   * A repo convention is filled with the plain title, not HTML-escaped text.
+   */
+  public function testConventionUsesPlainTitleText(): void {
+    $project = $this->project('feature/[bb_ticket:identifier]-[bb_ticket:title]');
+    $branch = (string) $this->ticketOn($project, "Tom & Jerry's <b>")->get('branch_name')->value;
+    self::assertStringEndsWith('-tom-jerry-s-b', $branch);
+    self::assertDoesNotMatchRegularExpression('/039|amp|quot|lt|gt/', $branch);
+  }
+
+  /**
    * With no repo convention the overridable default convention applies.
    *
    * The default is a token template (feat/<id>-<title>), not a separate
