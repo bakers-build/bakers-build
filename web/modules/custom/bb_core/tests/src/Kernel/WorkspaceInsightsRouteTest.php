@@ -126,7 +126,7 @@ final class WorkspaceInsightsRouteTest extends KernelTestBase {
   /**
    * Today opens as a day period on that UTC date, grouped per hour.
    */
-  public function testTodayIsADayPeriodPerHour(): void {
+  public function testTodayIsDayPeriodPerHour(): void {
     $today = gmdate('Y-m-d', \Drupal::time()->getRequestTime());
     $build = $this->page(['filter' => ['period' => 'day', 'date' => $today]]);
     $range = $this->components($build, 'bb_theme:period-range')[0]['#props'];

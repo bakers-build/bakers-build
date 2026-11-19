@@ -366,7 +366,8 @@ final class FigureEvaluatorTest extends KernelTestBase {
     ]);
     $figure = $this->figure('activity', 'Activity', 'line', ['type' => 'days'], ['closed_tickets'], self::PERIOD_FILTER);
 
-    $payload = $this->evaluatorFrom($measurementEvaluator)->evaluate($figure, [], ['period' => 'day', 'date' => '2026-10-24'], self::NOW)->toArray();
+    $selected = ['period' => 'day', 'date' => '2026-10-24'];
+    $payload = $this->evaluatorFrom($measurementEvaluator)->evaluate($figure, [], $selected, self::NOW)->toArray();
 
     self::assertSame('day', $payload['filters']['period']['value']);
     self::assertSame('day', $payload['period']['kind']);
@@ -865,7 +866,10 @@ final class FigureEvaluatorTest extends KernelTestBase {
    */
   private static function hourCategories(int $year, int $month, int $day): array {
     return array_map(
-      static fn(int $hour): array => ['key' => sprintf('%04d-%02d-%02dT%02d', $year, $month, $day, $hour), 'label' => sprintf('%02d:00', $hour)],
+      static fn(int $hour): array => [
+        'key' => sprintf('%04d-%02d-%02dT%02d', $year, $month, $day, $hour),
+        'label' => sprintf('%02d:00', $hour),
+      ],
       range(0, 23),
     );
   }

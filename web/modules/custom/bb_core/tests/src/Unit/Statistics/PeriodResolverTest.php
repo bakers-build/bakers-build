@@ -213,7 +213,11 @@ final class PeriodResolverTest extends UnitTestCase {
         $now,
         ['start' => '2026-10-23', 'current' => FALSE],
       ],
-      'day without date is today' => [['period' => 'day'], $now, ['kind' => 'day', 'start' => '2026-10-24', 'current' => TRUE]],
+      'day without date is today' => [
+        ['period' => 'day'],
+        $now,
+        ['kind' => 'day', 'start' => '2026-10-24', 'current' => TRUE],
+      ],
       'day just before midnight UTC is still that day' => [
         ['period' => 'day'],
         '2026-11-19 23:59:59',
@@ -222,7 +226,11 @@ final class PeriodResolverTest extends UnitTestCase {
       'day at midnight UTC is the next day' => [
         ['period' => 'day'],
         '2026-11-20 00:00:00',
-        ['start' => '2026-11-20', 'label' => '20 Nov 2026', 'comparison' => ['start' => '2026-11-19', 'end' => '2026-11-19', 'label' => '19 Nov 2026']],
+        [
+          'start' => '2026-11-20',
+          'label' => '20 Nov 2026',
+          'comparison' => ['start' => '2026-11-19', 'end' => '2026-11-19', 'label' => '19 Nov 2026'],
+        ],
       ],
       'missing selection uses the default' => [[], $now, ['kind' => 'week', 'start' => '2026-10-19']],
     ];

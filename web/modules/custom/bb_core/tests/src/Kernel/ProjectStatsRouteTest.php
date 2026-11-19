@@ -123,7 +123,7 @@ final class ProjectStatsRouteTest extends KernelTestBase {
   /**
    * Yesterday opens as a day period anchored on that UTC date.
    */
-  public function testYesterdayIsADayPeriod(): void {
+  public function testYesterdayIsDayPeriod(): void {
     $yesterday = gmdate('Y-m-d', \Drupal::time()->getRequestTime() - 86400);
     $build = $this->page(['filter' => ['period' => 'day', 'date' => $yesterday]]);
     $range = $this->components($build, 'bb_theme:period-range')[0]['#props'];
