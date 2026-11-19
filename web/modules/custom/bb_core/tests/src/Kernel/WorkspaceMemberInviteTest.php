@@ -988,6 +988,26 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   }
 
   /**
+   * An invite sent from the dialog closes it and refreshes the Members list.
+   */
+  public function testDialogInviteClosesTheDialogAndRefreshesMembers(): void {
+    $this->captureMail();
+    $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    $this->container->get('request_stack')->getCurrentRequest()->query->set('_wrapper_format', 'island_dialog');
+    $form_state = (new FormState())->setValues(['emails' => 'new@example.com', 'op' => 'Invite']);
+
+    $this->container->get('form_builder')->submitForm(WorkspaceInviteForm::class, $form_state);
+
+    $response = $form_state->getResponse();
+    self::assertNotNull($response);
+    self::assertFalse($response->headers->has('HX-Redirect'), 'no page load');
+    self::assertSame('closest [data-dialog]', $response->headers->get('HX-Retarget'));
+    self::assertSame('delete', $response->headers->get('HX-Reswap'));
+    self::assertStringContainsString('bakers.members.changed', (string) $response->headers->get('HX-Trigger'));
+    self::assertSame(['Invited 1 person.'], $this->resultMessages(), 'the result waits for the refreshed list');
+  }
+
+  /**
    * One malformed entry refuses the whole submit by name; nothing is written.
    */
   public function testMalformedEntryRefusesWholeSubmit(): void {

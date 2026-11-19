@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Island;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\bb_core\Form\GroupMembersForm;
+use Drupal\bb_core\Members\MembersDialogResponse;
 
 /**
  * Places the shared `members` surface on a host's `configured_form` island.
@@ -39,6 +40,8 @@ trait MembersIslandPlacementTrait {
         'form_class' => GroupMembersForm::class,
         'required_data_key' => 'group',
         'required_data_class' => EntityInterface::class,
+        // A finished invite, revoke or add dialog refreshes the list in place.
+        'events' => [MembersDialogResponse::EVENT],
       ];
     }
     return [];

@@ -9,6 +9,7 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\island\IslandContextProviderInterface;
+use Drupal\island\IslandEvent;
 use Drupal\island\IslandInterface;
 use Drupal\island_test\Form\TestMultiTriggerForm;
 use PHPUnit\Framework\Attributes\Group;
@@ -104,6 +105,20 @@ final class IslandConfiguredFormTest extends KernelTestBase {
     $island = $this->createConfiguredForm($configuration);
     $build = $island->build($host->getIslandData('configured_task'));
     $this->assertArrayHasKey('account', $build);
+  }
+
+  /**
+   * Configured events are subscribed, so a response announcing one refreshes it.
+   *
+   * The handler leaves the server render to the client refresh: the event
+   * carries no host data to rebuild the form from.
+   */
+  public function testConfiguredEventsAreSubscribed(): void {
+    $island = $this->createConfiguredForm(['events' => ['example.changed']]);
+    $subscribed = $island->getSubscribedEvents();
+    $this->assertSame(['example.changed'], array_keys($subscribed));
+    $this->assertNull($island->{$subscribed['example.changed']}(new IslandEvent('example.changed', [], '', 'forms')));
+    $this->assertSame([], $this->createConfiguredForm([])->getSubscribedEvents());
   }
 
   /**

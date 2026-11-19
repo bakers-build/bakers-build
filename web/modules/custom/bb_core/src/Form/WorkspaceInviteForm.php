@@ -14,10 +14,10 @@ use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Members\MemberItemBuilder;
+use Drupal\bb_core\Members\MembersDialogResponse;
 use Drupal\bb_core\Members\WorkspaceInvite;
 use Drupal\island\Form\WrappedDialogFormBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -328,10 +328,7 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
       $form_state->setRedirectUrl($this->returnUrl());
       return;
     }
-    // A whole-document load, not the create dialogs' `HX-Location`: the
-    // Members face is an island form, and one swapped in by `HX-Location`
-    // posts its next write to the fragment address instead of its own.
-    $form_state->setResponse(new Response('', 200, ['HX-Redirect' => $this->returnUrl()->toString()]));
+    $form_state->setResponse(MembersDialogResponse::close());
   }
 
   /**

@@ -19,6 +19,7 @@ use Drupal\island\IslandHostResolver;
 use Drupal\island\IslandInterface;
 use Drupal\island\IslandPluginManagerInterface;
 use Drupal\Core\Security\TrustedCallbackInterface;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\island\IslandResponder;
 use Drupal\island\IslandResponse;
@@ -549,10 +550,10 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
   }
 
   /**
-   * The confirmation the invite dialog left for this face, once.
+   * The confirmation the invite or revoke dialog left for this face, once.
    *
    * @return array<string, mixed>
-   *   A message component, or an uncacheable nothing.
+   *   A toast, or an uncacheable nothing.
    */
   private function inviteResult(): array {
     $messages = $this->messenger()->messagesByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
@@ -560,16 +561,20 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     if ($messages === []) {
       return $build;
     }
-    // In a zone like the sections, so the message keeps their narrow measure.
+    $text = implode(' ', array_map('strval', $messages));
+    // A toast like every other confirmation: fixed, so the list does not move.
     return $build + [
-      '#bb_result' => implode(' ', array_map('strval', $messages)),
-      '#type' => 'container',
-      '#pre_render' => [[self::class, 'wrapInZone']],
+      '#bb_result' => $text,
       'message' => [
         '#type' => 'component',
-        '#component' => 'bb_theme:message',
-        '#props' => ['status' => 'status'],
-        '#slots' => ['body' => ['#markup' => implode(' ', array_map('strval', $messages))]],
+        '#component' => 'bb_theme:toast',
+        '#props' => [
+          'message' => $text,
+          'attributes' => new Attribute([
+            'x-data' => '',
+            'x-init' => 'setTimeout(() => { $el.hidden = true }, 5000)',
+          ]),
+        ],
       ],
     ];
   }
