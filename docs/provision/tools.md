@@ -34,7 +34,7 @@ An agent program has its own tools, such as reading files or running shell comma
 | [DDEV addon](/addons/ddev#agent-tools) | `ddev_status()`, `ddev_start()` | Inspect and start a DDEV project |
 | [Ports addon](/addons/ports) | `ports_up(service?)`, `ports_status()` | Share a preview and inspect its status |
 
-Enable the addons you need in their supported [configuration scope](/addons/configure). `provision_up` and `provision_exec` become available when you configure their [hooks](/configuration/project/hooks#provision-on-an-agent-s-request).
+Enable the addons you need in their supported [configuration scope](/addons/configure). `provision_up` and `provision_exec` become available when you configure their [hooks](/configuration/project/hooks#provision-on-an-agent-s-request). Give each profile and key a one-line `description`: the tool definition lists it, so the agent learns what each one does and which arguments it takes before its first call.
 
 ## Call tools from an agent
 
