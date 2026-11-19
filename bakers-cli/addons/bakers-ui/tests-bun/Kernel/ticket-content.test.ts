@@ -610,9 +610,7 @@ describe('links at the top across the breakpoint', () => {
         identifier: 'BAKERS-332',
         title: 'links on top',
         description: {
-          value: Array.from({ length: 200 }, (_l, i) => `body ${i}`).join(
-            '\n',
-          ),
+          value: Array.from({ length: 200 }, (_l, i) => `body ${i}`).join('\n'),
         },
         links: [{ title: 'PR', uri: 'https://github.com/o/r/pull/229' }],
       });

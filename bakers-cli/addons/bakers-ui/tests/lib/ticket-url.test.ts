@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ticketUrl } from '../../../../src/Entity/ticket/Data/url.js';
+import { ticketUrl } from '../../src/lib/ticket-url.js';
 
 // BB-326 — the address the operator taps on their phone.
 //

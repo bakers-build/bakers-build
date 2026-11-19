@@ -496,9 +496,7 @@ describe('ticketContentModel Overview', () => {
       NOW,
       'https://b.test',
     );
-    expect(withBase.sidebar?.links.map((item) => item.key)).toEqual([
-      'ticket',
-    ]);
+    expect(withBase.sidebar?.links.map((item) => item.key)).toEqual(['ticket']);
     const offline = ticketContentModel(
       document({ links: [] }),
       'overview',

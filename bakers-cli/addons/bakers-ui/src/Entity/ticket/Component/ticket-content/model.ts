@@ -5,8 +5,8 @@ import {
   type SectionLine,
   styledOf,
 } from '../../../../Component/section-list/index.js';
+import { ticketTopLinks } from '../../../../lib/ticket-links.js';
 import type { TicketDetailDocument } from '../../../../types.js';
-import { ticketTopLinks } from '../../Data/links.js';
 import { relativeCreated } from '../comment-item/index.js';
 import { TICKET_SECTIONS } from '../sections/index.js';
 import {

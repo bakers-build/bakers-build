@@ -3,8 +3,8 @@ import {
   isPullRequest,
   linkLabel,
   ticketTopLinks,
-} from '../../../../src/Entity/ticket/Data/links.js';
-import type { TicketDetailDocument } from '../../../../src/types.js';
+} from '../../src/lib/ticket-links.js';
+import type { TicketDetailDocument } from '../../src/types.js';
 
 const ticket = (
   attributes: Record<string, unknown>,

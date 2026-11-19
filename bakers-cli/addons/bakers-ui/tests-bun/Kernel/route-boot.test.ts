@@ -1338,8 +1338,8 @@ describe('BB-241 — the wheel scrolls the viewport (AC-3)', () => {
     // BB-375 — bodyRows is content inside the fixed viewport frame.
     expect(
       before.slice(0, 2).join('\n'),
-      'the Overview tab starts on its first section',
-    ).toContain('Description');
+      'the Overview tab starts on its first section, the links',
+    ).toContain('* links');
     expect(
       before.join('\n'),
       'and the expanded body overflows the window',

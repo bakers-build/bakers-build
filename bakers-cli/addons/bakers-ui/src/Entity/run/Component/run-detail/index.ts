@@ -25,13 +25,13 @@
 import type { VNode } from '@opentui/core';
 import { markdownRow } from '../../../../Component/markdown/index.js';
 import { asString } from '../../../../lib/format.js';
+import { ticketTopLinks } from '../../../../lib/ticket-links.js';
+import { ticketUrl } from '../../../../lib/ticket-url.js';
 import { columnNode, pressHandler, textNode } from '../../../../lib/vnode.js';
 import type {
   JsonApiResource,
   TicketDetailDocument,
 } from '../../../../types.js';
-import { ticketTopLinks } from '../../../ticket/Data/links.js';
-import { ticketUrl } from '../../../ticket/Data/url.js';
 
 /** The sideloaded `bb_run` with this id, or undefined. */
 export function runResource(

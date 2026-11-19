@@ -1,5 +1,5 @@
-import type { TicketDetailDocument } from '../../../types.js';
-import { ticketUrl } from './url.js';
+import type { TicketDetailDocument } from '../types.js';
+import { ticketUrl } from './ticket-url.js';
 
 /** One link shown at the top of the ticket and run detail. */
 export interface TopLink {

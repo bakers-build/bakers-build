@@ -1,6 +1,7 @@
 import { actionItem } from '../../../Component/footer-actions/index.js';
 import { copyThrough } from '../../../lib/clipboard.js';
 import { serverMessage } from '../../../lib/jsonapi-error.js';
+import { ticketUrl } from '../../../lib/ticket-url.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import type {
   FullScreenChrome,
@@ -28,7 +29,6 @@ import {
   type TicketPage,
   type TicketRow,
 } from '../Data/tickets.js';
-import { ticketUrl } from '../Data/url.js';
 import { TicketFilterBar } from './ticket-filter-bar.js';
 import { TicketSearch } from './ticket-search.js';
 

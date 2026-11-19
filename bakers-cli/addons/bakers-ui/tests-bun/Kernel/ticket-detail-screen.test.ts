@@ -440,11 +440,14 @@ describe('Overview — open Description, header identity, no carets', () => {
     expect(body.join('\n')).not.toContain('Latest summary');
     expect(body.join('\n')).not.toContain('No summary comment.');
     const header = body.findIndex((line) => line.includes('Description'));
-    expect(
-      header,
-      'Description is the first overview entry',
-    ).toBeGreaterThanOrEqual(0);
-    expect(header).toBeLessThanOrEqual(1);
+    // Only the links section (BAKERS-332) sits above the first document.
+    expect(body[0]).toContain('* links');
+    expect(header, 'Description is the first overview entry').toBeGreaterThan(
+      0,
+    );
+    expect(body.slice(1, header).filter((line) => line.includes('* '))).toEqual(
+      [],
+    );
     expect(body[header]).not.toMatch(NATIVE_CARET);
     await quit(tui);
   });
@@ -515,10 +518,10 @@ describe('Overview — parent on the sidebar, links in the left column', () => {
     expect(chrome).not.toContain('Created by:');
     expect(bodyRows(tui).join('\n')).toMatch(/parent\s+:\s+BB-200/);
     const body = bodyRows(tui);
-    // Links render full-width in the left column, so the URL is painted
-    // directly — no sidebar tab to click, no wrapping into the narrow column.
+    // Links render at the top of the left column as short labels (BAKERS-332);
+    // a press still copies the full URL.
     expect(body.some((row) => row.includes('* links'))).toBe(true);
-    expect(body.join('\n')).toMatch(/git\.example\/mr/);
+    expect(body.join('\n')).toMatch(/MR\s+:\s+git\.example\/…\/255/);
     await quit(tui);
   });
 
@@ -725,7 +728,7 @@ describe('BB-255 D9 — ↑↓ scroll unless the tab has MORE THAN ONE entry', (
       bodyRows(tui).join('\n'),
       'Description stayed expanded while selection moved',
     ).toContain('TAIL-ONLY-LINE');
-    expect(bodyRows(tui).slice(0, 2).join('\n')).toContain('Description');
+    expect(bodyRows(tui).slice(0, 2).join('\n')).toContain('* links');
     await tui.press('\r');
     expect(
       bodyRows(tui).join('\n'),

@@ -33,6 +33,7 @@ import {
 } from '../../../../Component/section-list/index.js';
 import { copyThrough } from '../../../../lib/clipboard.js';
 import { asString, formatDuration } from '../../../../lib/format.js';
+import { ticketUrl } from '../../../../lib/ticket-url.js';
 import {
   type BORDER,
   columnNode,
@@ -53,7 +54,6 @@ import {
   listTableTree,
 } from '../../../collection.js';
 import { TICKET_RUN_TABLE, ticketRunRows } from '../../../run/Data/runs.js';
-import { ticketUrl } from '../../Data/url.js';
 import type { CommentItem } from '../comment-item/index.js';
 import { commentRows } from '../comment-item/index.js';
 import { TICKET_SECTIONS } from '../sections/index.js';

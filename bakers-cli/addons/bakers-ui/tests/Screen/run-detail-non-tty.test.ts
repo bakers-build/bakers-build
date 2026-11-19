@@ -205,7 +205,11 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
         const { screen, context } = await opened(document, runId);
         const pipe = screen.renderNonInteractive(context);
         const tree = renderTree(
-          runDetailTree(document, runId, document === withPr ? BASE_URL : undefined),
+          runDetailTree(
+            document,
+            runId,
+            document === withPr ? BASE_URL : undefined,
+          ),
         );
         expect(pipe).toHaveLength(tree.length);
         pipe.forEach((row, index) => {
@@ -230,7 +234,9 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
     const writer = vi.fn(() => 'copied' as const);
     const live = { ...context, copyToClipboard: writer };
     const row = nodeById(screen.present(live).body, 'run-detail-link-pr-0');
-    (row?.props as { onMouse: (event: unknown) => void }).onMouse({
+    const props = row?.props as { onMouse: (event: unknown) => void };
+    expect(props, 'the PR row is rendered').toBeDefined();
+    props.onMouse({
       type: 'down',
       button: 0,
       stopPropagation: () => {},

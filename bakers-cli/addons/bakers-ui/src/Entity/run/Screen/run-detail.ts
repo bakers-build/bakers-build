@@ -1,9 +1,9 @@
 import type { VNode } from '@opentui/core';
 import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import { actionItem } from '../../../Component/footer-actions/index.js';
+import { copyThrough } from '../../../lib/clipboard.js';
 import { defineContext } from '../../../Routing/context.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
-import { copyThrough } from '../../../lib/clipboard.js';
 import { AsyncScreen } from '../../../Screen/async-screen.js';
 import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';

@@ -271,7 +271,10 @@ it('AC-4: the first section is Links, with the ticket URL and the PR only', () =
 
 it('AC-4: without a PR only the ticket row; without a base URL either, No links.', () => {
   expect(
-    rowsMatching(runDetailTree(doc, RUN_ID, 'https://b.test'), /^run-detail-link-/),
+    rowsMatching(
+      runDetailTree(doc, RUN_ID, 'https://b.test'),
+      /^run-detail-link-/,
+    ),
   ).toEqual(['ticket:        BB-255']);
   const offline = runDetailTree(doc, RUN_ID);
   expect(rowsMatching(offline, /^run-detail-link/)).toEqual(['No links.']);
@@ -284,10 +287,10 @@ it('AC-2: pressing a link row hands its full URL to onLink', () => {
   );
   const press = (id: string) =>
     (
-      nodeById(tree, id)?.props as {
-        onMouse?: (event: unknown) => void;
-      }
-    ).onMouse?.({ type: 'down', button: 0, stopPropagation: () => {} });
+      nodeById(tree, id)?.props as
+        | { onMouse?: (event: unknown) => void }
+        | undefined
+    )?.onMouse?.({ type: 'down', button: 0, stopPropagation: () => {} });
   press('run-detail-link-pr-0');
   press('run-detail-link-ticket');
   expect(pressed).toEqual([
