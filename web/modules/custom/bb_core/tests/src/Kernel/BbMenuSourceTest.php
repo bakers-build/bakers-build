@@ -11,6 +11,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbMenuSource;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\user\UserInterface;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\views\Entity\View;
@@ -74,6 +75,7 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->installEntitySchema('bb_team');
     $this->installEntitySchema('bb_group');
     $this->installEntitySchema('bb_project');
+    $this->installEntitySchema('bb_profile');
     $this->installConfig(['system', 'user']);
     $this->setUpCurrentUser(['uid' => 1]);
 
@@ -484,6 +486,110 @@ final class BbMenuSourceTest extends KernelTestBase {
         self::assertContains($context, $cache->getCacheContexts(), "$menu: $context");
       }
     }
+  }
+
+  /**
+   * Favorites: viewable ones of this workspace, in label order, linked.
+   *
+   * Another workspace's, a deleted and an unreachable project drop out, and
+   * a colleague without favorites keeps the rail as it was.
+   */
+  public function testFavoritesListViewableProjectsOfTheWorkspaceInLabelOrder(): void {
+    $this->installOgScopeFixture();
+    $contributor = $this->createUser([], 'acme-contributor');
+    self::assertInstanceOf(UserInterface::class, $contributor);
+    $this->addMembership($this->workspace, $contributor, ['contributor']);
+    $this->addMembership($this->rival, $contributor, ['lead']);
+    $zeta = $this->favoriteProject('Zeta', 'ZETA');
+    $alpha = $this->favoriteProject('Alpha', 'ALPHA');
+    $hidden = $this->favoriteProject('Hidden', 'HID');
+    $gone = $this->favoriteProject('Gone', 'GONE');
+    $foreign = $this->favoriteProject('Foreign', 'FOR', $this->rival);
+    foreach ([$zeta, $alpha, $gone] as $project) {
+      $this->seatOnProjectTeam($project, $contributor);
+    }
+    $this->setCurrentUser($contributor);
+    $profiles = $this->container->get(Profiles::class);
+    $profile = $profiles->forAccount((int) $contributor->id(), (int) $this->workspace->id());
+    foreach ([$zeta, $alpha, $hidden, $gone, $foreign] as $project) {
+      $profile->toggleFavorite((int) $project->id());
+    }
+    $profile->save();
+    $gone->delete();
+
+    $favorites = $this->favoritesGroup();
+    self::assertSame('star', $favorites['icon']);
+    self::assertSame(['Alpha', 'Zeta'], array_column($favorites['below'], 'title'));
+    self::assertSame($alpha->toUrl()->toString(), $favorites['below'][0]['url']);
+    self::assertSame('A', $favorites['below'][0]['mark']['initials']);
+    self::assertFalse($favorites['in_active_trail']);
+
+    $this->visit('entity.bb_project.canonical', ['bb_workspace' => 'acme', 'bb_project' => $alpha->id()]);
+    $favorites = $this->favoritesGroup();
+    self::assertSame([TRUE, FALSE], array_column($favorites['below'], 'in_active_trail'));
+    self::assertTrue($favorites['in_active_trail']);
+
+    $this->visit('view.groups.workspace_list', ['bb_workspace' => 'rival']);
+    self::assertNotContains('Favorites', array_column($this->emitted(), 'title'), 'the other workspace has its own favorites');
+
+    $colleague = $this->createUser([], 'acme-colleague');
+    self::assertInstanceOf(UserInterface::class, $colleague);
+    $this->addMembership($this->workspace, $colleague, ['lead']);
+    $this->setCurrentUser($colleague);
+    $this->visit('view.groups.workspace_list', ['bb_workspace' => 'acme']);
+    self::assertNotContains('Favorites', array_column($this->emitted(), 'title'), 'no favorites, no heading');
+  }
+
+  /**
+   * Unmarking takes the project off the rail; the rail varies by account.
+   */
+  public function testUnmarkedProjectLeavesTheRail(): void {
+    $this->installOgScopeFixture();
+    $lead = $this->createUser([], 'acme-lead');
+    self::assertInstanceOf(UserInterface::class, $lead);
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+    $project = $this->favoriteProject('Alpha', 'ALPHA');
+    $profile = $this->container->get(Profiles::class)->forAccount((int) $lead->id(), (int) $this->workspace->id());
+    $profile->toggleFavorite((int) $project->id())->save();
+    self::assertSame(['Alpha'], array_column($this->favoritesGroup()['below'], 'title'));
+
+    $profile->toggleFavorite((int) $project->id())->save();
+    self::assertNotContains('Favorites', array_column($this->emitted(), 'title'));
+
+    $cache = CacheableMetadata::createFromRenderArray($this->source()->alterComponent([]));
+    self::assertContains('bb_profile_list', $cache->getCacheTags());
+    self::assertContains('bb_project_list', $cache->getCacheTags());
+    self::assertContains('user', $cache->getCacheContexts());
+  }
+
+  /**
+   * The Favorites heading of the emitted value.
+   *
+   * @return array<string, mixed>
+   *   The heading item.
+   */
+  private function favoritesGroup(): array {
+    $by_title = array_column($this->emitted(), NULL, 'title');
+    self::assertArrayHasKey('Favorites', $by_title);
+    self::assertTrue($by_title['Favorites']['heading']);
+    return $by_title['Favorites'];
+  }
+
+  /**
+   * Creates a project in a workspace, by default the ambient one.
+   */
+  private function favoriteProject(string $name, string $key, ?BbWorkspaceInterface $workspace = NULL): BbProjectInterface {
+    $etm = $this->container->get('entity_type.manager');
+    $group = $etm->getStorage('bb_group')->create([
+      'name' => $name . ' Group',
+      'workspace_id' => ($workspace ?? $this->workspace)->id(),
+    ]);
+    $group->save();
+    $project = $etm->getStorage('bb_project')->create(['name' => $name, 'key' => $key, 'group_id' => $group->id()]);
+    self::assertInstanceOf(BbProjectInterface::class, $project);
+    $project->save();
+    return $project;
   }
 
   /**

@@ -5,7 +5,8 @@ description: >
   **Product place: account.** `/user/{user}` is the read route
   (`user.user.full`); `/user/{user}/edit` is the account form
   (`user.user.default`); `/user/{user}/profile` is the Profile form
-  (`user.user.profile`). Reached from the shell person mark, which swaps the
+  (`bb_profile.bb_profile.default`, the profile for the workspace in
+  context). Reached from the shell person mark, which swaps the
   rail to Account, Conductors and Machines. Onboarding uses its own form and
   chrome.
 status: in-progress
@@ -157,8 +158,10 @@ scenes:
     group: User
     section: user
     docs: >-
-      THE PROFILE FORM on `/user/{user}/profile` (`bb_core.user.profile`, form
-      mode `profile`), the third tab after View and Edit, in the account area.
+      THE PROFILE FORM on `/user/{user}/profile` (`bb_core.user.profile`), the
+      third tab after View and Edit, in the account area. It is the `default`
+      form of the user's `bb_profile` for the workspace in context
+      (`bb_profile.bb_profile.default`), titled "Profile in <workspace>".
       The AI-use notice is the page header's description; the form holds only
       Position and background. A workspace lead reaches the same page for a
       service account from the Service Accounts row menu.
@@ -172,7 +175,7 @@ scenes:
                 header:
                   - component: bb_theme:page_header
                     props:
-                      title: Christian Wiedemann
+                      title: Profile in keytec
                       description: >-
                         bakers.build passes these details as context to the AI
                         assistants it uses, so that explanations and support
@@ -205,24 +208,24 @@ scenes:
                             lines:
                               - component: bb_theme:form_label
                                 props:
-                                  for: edit-field-developer-title
+                                  for: edit-position-0-value
                                 slots:
                                   title: Position
                               - component: bb_theme:form_input
                                 props:
-                                  name: field_developer_title
-                                  id: edit-field-developer-title
+                                  name: position[0][value]
+                                  id: edit-position-0-value
                                   placeholder: e.g. Product Lead
                                   value: Product Lead
                               - component: bb_theme:form_label
                                 props:
-                                  for: edit-field-bakers-background
+                                  for: edit-background-0-value
                                 slots:
                                   title: What should bakers.build know about your background?
                               - component: bb_theme:form_textarea
                                 props:
-                                  name: field_bb_background
-                                  id: edit-field-bakers-background
+                                  name: background[0][value]
+                                  id: edit-background-0-value
                                   rows: 3
                                   value: Drupal, Linear, or something else entirely.
                             actions:

@@ -32,7 +32,7 @@ final class BbDeploymentIdentifiers extends ProcessorPluginBase implements Conta
   /**
    * Reads deployment records at indexing and query time.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}

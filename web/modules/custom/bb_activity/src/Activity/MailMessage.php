@@ -9,8 +9,9 @@ use Drupal\Component\Render\MarkupInterface;
 /**
  * How a mail about one row reads, in the reader's language.
  *
- * It never names the actor or a conductor. Whether anyone is mailed is the
- * business of the module that sends it.
+ * It names an actor only where the kind checks the reader may be told the
+ * name, and never a conductor. Whether anyone is mailed is the business of
+ * the module that sends it.
  */
 final class MailMessage implements ActivityMessageInterface {
 

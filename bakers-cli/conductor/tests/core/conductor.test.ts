@@ -5690,3 +5690,42 @@ describe('Conductor — bakers ui refresh signal', () => {
     ).not.toContain('ui-refresh');
   });
 });
+
+describe('Conductor — a start alone changes no run', () => {
+  it('leaves seeded running runs running and counted across start and ticks', async () => {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
+        't-2': { identifier: 'BB-2', title: 'Two', state: 'plan' },
+      },
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'working',
+          state: 'running',
+          worktreePath: PRESENT_WORKTREE,
+        },
+        {
+          runUuid: 'r-2',
+          ticketUuid: 't-2',
+          stateAtStart: 'plan',
+          state: 'running',
+          worktreePath: PRESENT_WORKTREE,
+        },
+      ],
+    });
+    remote.queue.length = 0;
+    const conductor = await startedConductor(
+      makeConfig(),
+      remote,
+      new RecordingExecutor(),
+    );
+    await conductor.tick();
+    await conductor.tick();
+
+    expect(remote.calls.markFailed).toEqual([]);
+    expect(remote.calls.finalizeRun).toEqual([]);
+    expect(await remote.activeRunCount('x')).toBe(2);
+  });
+});

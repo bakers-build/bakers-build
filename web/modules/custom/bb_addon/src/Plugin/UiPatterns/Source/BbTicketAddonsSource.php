@@ -34,12 +34,12 @@ final class BbTicketAddonsSource extends SourcePluginBase {
   /**
    * Tells whether the ticket's conductor runs addons.
    */
-  private AddonRepository $repository;
+  protected AddonRepository $repository;
 
   /**
    * Builds the card.
    */
-  private TicketAddonsController $controller;
+  protected TicketAddonsController $controller;
 
   /**
    * {@inheritdoc}

@@ -44,7 +44,7 @@ final class WorklogPeriod extends FilterPluginBase {
   /**
    * Memoised selection for this request.
    */
-  private ?WorklogSelection $resolvedSelection = NULL;
+  protected ?WorklogSelection $resolvedSelection = NULL;
 
   /**
    * Constructs the filter.
@@ -53,10 +53,10 @@ final class WorklogPeriod extends FilterPluginBase {
     array $configuration,
     $plugin_id,
     $plugin_definition,
-    private readonly RequestStack $requestStack,
-    private readonly AccountInterface $currentUser,
-    private readonly WorklogCalendar $calendar,
-    private readonly WorklogAggregates $aggregates,
+    protected readonly RequestStack $requestStack,
+    protected readonly AccountInterface $currentUser,
+    protected readonly WorklogCalendar $calendar,
+    protected readonly WorklogAggregates $aggregates,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }

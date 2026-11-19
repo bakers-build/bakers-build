@@ -18,7 +18,7 @@ final class BbConnectorForm extends EntityForm {
   /**
    * The connector plugin manager.
    */
-  private ConnectorPluginManager $pluginManager;
+  protected ConnectorPluginManager $pluginManager;
 
   /**
    * {@inheritdoc}

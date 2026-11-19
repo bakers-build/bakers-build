@@ -721,6 +721,7 @@ display:
                 collapsible: false
                 collapsible_label: 'Sort options'
                 is_secondary: false
+                no_reset: false
             filter:
               facets_assignee_user_id:
                 plugin_id: bb_option_picker
@@ -791,6 +792,7 @@ display:
                   is_secondary: false
                   hide_label: false
                   field_classes: ''
+                  no_reset: false
                 treat_as_false: false
               facets_workflow:
                 plugin_id: bb_option_picker

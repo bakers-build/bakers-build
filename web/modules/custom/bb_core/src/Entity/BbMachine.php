@@ -18,6 +18,7 @@ use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
 use Drupal\views\EntityViewsData;
 use Drupal\bb_core\Form\BbEntityDetailCardForm;
+use Drupal\bb_core\Form\BbRestartRunsForm;
 
 /**
  * Represents a bakers.build machine — host capacity for concurrent runs.
@@ -47,6 +48,7 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
       // Detail page cards, one Save each.
       'identity' => BbEntityDetailCardForm::class,
       'delete' => BbContentEntityDeleteForm::class,
+      'restart' => BbRestartRunsForm::class,
     ],
     // The canonical route pins the `full` entity view whose Display Builder
     // tree composes the Overview and its cards.

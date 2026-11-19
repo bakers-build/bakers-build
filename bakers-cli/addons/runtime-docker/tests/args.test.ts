@@ -219,3 +219,21 @@ describe('dockerArgs in allowlist mode', () => {
     expect(argv.join(' ')).not.toContain('oauth');
   });
 });
+
+describe('dockerArgs on a global install', () => {
+  it("leaves the image's global node_modules uncovered", async () => {
+    const { cliRootOf } = await import('../src/index.js');
+    const cli = '/usr/local/lib/node_modules/@bakers-build/bakers';
+    const cliRoot = cliRootOf(
+      `${cli}/node_modules/@bakers-build/addon-runtime-docker`,
+      `${cli}/node_modules/@bakers-build/conductor`,
+      '/home/op',
+    );
+    const { argv } = dockerArgs(launch, opts, { ...where, cliRoot });
+    const targets = volumes(argv).map((v) => v.split(':')[1] as string);
+    const image = '/usr/local/lib/node_modules';
+    expect(targets).toContain(cli);
+    for (const t of targets)
+      expect(image === t || image.startsWith(`${t}/`)).toBe(false);
+  });
+});

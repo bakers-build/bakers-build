@@ -56,6 +56,65 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * Blockers named by identifier or UUID are stored on the new ticket.
+   */
+  public function testCreatesBlockedTicket(): void {
+    $first = $this->ticket('TC-B1');
+    $second = $this->ticket('TC-B2');
+    $out = $this->outputs($this->runTool('bakers_ticket_create', [
+      'title' => 'Waits',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+      'blocked_by' => [$first->getIdentifier(), $second->uuid()],
+    ]));
+    $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $stored);
+    self::assertSame([$first->id(), $second->id()], array_map('strval', array_column($stored->get('blocked_by')->getValue(), 'target_id')));
+  }
+
+  /**
+   * A blocker of another project, closed or unreadable creates nothing.
+   */
+  public function testRefusedBlockerCreatesNothing(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $other = $etm->getStorage('bb_project')->create([
+      'name' => 'other-project',
+      'group_id' => $this->project->get('group_id')->target_id,
+      'teams' => [$this->project->get('teams')->target_id],
+    ]);
+    $other->save();
+    $elsewhere = $this->ticket('TC-OTHER', ['project_id' => $other->id()])->getIdentifier();
+    $done = $this->ticket('TC-DONE', ['state' => 'done'])->getIdentifier();
+    $foreign = $etm->getStorage('bb_workspace')->create([
+      'name' => 'foreign',
+      'slug' => 'foreign',
+      'owner_user_id' => $this->account('stranger')->id(),
+    ]);
+    $foreign->save();
+    $group = $etm->getStorage('bb_group')->create(['name' => 'foreign-group', 'workspace_id' => $foreign->id()]);
+    $group->save();
+    $hidden = $etm->getStorage('bb_project')->create(['name' => 'foreign-project', 'group_id' => $group->id()]);
+    $hidden->save();
+    $unreadable = $this->ticket('TC-HIDDEN', ['project_id' => $hidden->id()])->getIdentifier();
+    $storage = $etm->getStorage('bb_ticket');
+    $before = $storage->getQuery()->accessCheck(FALSE)->count()->execute();
+    foreach ([
+      $elsewhere => 'Choose open blocking tickets from this ticket',
+      $done => 'Choose open blocking tickets from this ticket',
+      $unreadable => "Ticket $unreadable does not exist or is not readable.",
+      'NOPE-3' => 'Ticket NOPE-3 does not exist or is not readable.',
+    ] as $blocker => $message) {
+      $this->assertFailure($this->runTool('bakers_ticket_create', [
+        'title' => 'Never',
+        'workflow' => 'bb_work',
+        'project' => $this->project->uuid(),
+        'blocked_by' => [$blocker],
+      ]), $message);
+    }
+    self::assertSame($before, $storage->getQuery()->accessCheck(FALSE)->count()->execute());
+  }
+
+  /**
    * A description at the limit is stored; an oversized create saves nothing.
    */
   public function testDescriptionByteBudget(): void {

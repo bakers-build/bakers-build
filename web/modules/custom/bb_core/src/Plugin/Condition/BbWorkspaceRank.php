@@ -47,9 +47,9 @@ final class BbWorkspaceRank extends ConditionPluginBase implements ContainerFact
     array $configuration,
     $plugin_id,
     $plugin_definition,
-    private readonly AccountInterface $account,
-    private readonly ?MembershipManagerInterface $membershipManager,
-    private readonly MembershipResolutionGuard $guard,
+    protected readonly AccountInterface $account,
+    protected readonly ?MembershipManagerInterface $membershipManager,
+    protected readonly MembershipResolutionGuard $guard,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }

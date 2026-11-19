@@ -58,7 +58,7 @@ final class BbTicketAccessControlHandler extends EntityAccessControlHandler impl
    */
   public function __construct(
     EntityTypeInterface $entity_type,
-    private readonly BbWriteScope $writeScope,
+    protected readonly BbWriteScope $writeScope,
   ) {
     parent::__construct($entity_type);
   }

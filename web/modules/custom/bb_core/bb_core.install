@@ -59,3 +59,15 @@ function bb_core_update_11002(): void {
     }
   }
 }
+
+/**
+ * Installs the per-workspace profile entity.
+ *
+ * Before bb_core_post_update_user_profiles(), which fills it.
+ */
+function bb_core_update_11003(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  if ($manager->getEntityType('bb_profile') === NULL) {
+    $manager->installEntityType(\Drupal::entityTypeManager()->getDefinition('bb_profile'));
+  }
+}

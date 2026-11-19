@@ -42,7 +42,7 @@ It asks only for what is not yet set up.
 <span id="set-up-your-environment"></span>
 <span id="choose-the-workflow"></span>
 
-To change the defaults later, see [Use your client](/get-started/use-your-client), [Prepare a worktree environment](/provision/guide) and [Configure your workflow](/skills-and-workflows/guide). These are optional for a first ticket.
+To change the defaults later, see [Use your client](/get-started/use-your-client), [Prepare a worktree environment](/provision/guide) and [Configure your workflow](/skills-and-workflows/). These are optional for a first ticket.
 
 <span id="verify"></span>
 <span id="2-verify-the-connection-and-environment"></span>

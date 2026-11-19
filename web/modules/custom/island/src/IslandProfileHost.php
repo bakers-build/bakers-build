@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Drupal\island;
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\island\Entity\App;
 use Drupal\island\Entity\IslandProfile;
+use Drupal\island\Entity\IslandProfileInterface;
 
 /**
  * Adapts a persisted profile to the standalone island host contract.
@@ -20,8 +22,16 @@ final class IslandProfileHost implements IslandContextProviderInterface, IslandV
     private readonly AppProviderInterface $provider,
     private readonly string $instanceId,
     private readonly IslandConditionEvaluator $evaluator,
+    private readonly IslandProfileEmbedding $embedding,
   ) {
   }
+
+  /**
+   * Referencing placement ids keyed by embedded id, computed once.
+   *
+   * @var array<string, string[]>|null
+   */
+  private ?array $references = NULL;
 
   /**
    * {@inheritdoc}
@@ -78,8 +88,19 @@ final class IslandProfileHost implements IslandContextProviderInterface, IslandV
   public function accessIsland(string $island_id, AccountInterface $account): AccessResultInterface {
     // Visibility never grants: it narrows whatever the provider decides, so a
     // refresh or action cannot reach a placement the page would not render.
-    return $this->placementVisibility($island_id)
+    $access = $this->placementVisibility($island_id)
       ->andIf($this->provider->accessIsland($this->app, $this->profile, $island_id, $this->instanceId));
+    if (($this->profile->getPlacement($island_id)['slot'] ?? '') !== IslandProfileInterface::EMBEDDED_SLOT) {
+      return $access;
+    }
+    // An embedded island is shown only inside its referencing placement.
+    $this->references ??= $this->embedding->references($this->profile);
+    $referencing = $this->references[$island_id] ?? [];
+    $access = $access->andIf(AccessResult::allowedIf($referencing !== []));
+    foreach ($referencing as $placement_id) {
+      $access = $access->andIf($this->placementVisibility($placement_id));
+    }
+    return $access;
   }
 
   /**

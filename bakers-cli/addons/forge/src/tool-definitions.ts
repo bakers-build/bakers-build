@@ -51,6 +51,11 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
         branch,
         title: { type: 'string' },
         body: { type: 'string' },
+        request_reviewers: {
+          type: 'boolean',
+          description:
+            "set when the ticket asks for its reviewers on the PR/MR: adds the ticket's reviewers, found by their public forge e-mail, and removes none; the result lists requested and skipped reviewers with the reason",
+        },
       },
       required: ['title'],
     },

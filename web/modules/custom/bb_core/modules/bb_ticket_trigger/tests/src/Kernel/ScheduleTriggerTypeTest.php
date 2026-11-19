@@ -135,16 +135,32 @@ final class ScheduleTriggerTypeTest extends KernelTestBase {
   }
 
   /**
-   * The time is a native time input in a plain form element, stored as HH:MM.
-   *
-   * A textfield, not core's datetime element, so the label and description
-   * render like every other field.
+   * A field's own error hides only its storage error, not the others'.
    */
-  public function testTimeIsPickedWithTheBrowsersTimeInput(): void {
+  public function testValidationSkipsOnlyFieldsWithTheirOwnError(): void {
+    $plugin = $this->schedule([]);
+    $form = ['#parents' => ['settings']];
+    $form_state = new FormState();
+    $form_state->setValue('settings', ['frequency' => 'daily', 'time' => '24', 'timezone' => 'Mars/Olympus']);
+    $form_state->setErrorByName('settings][time', 'Own time error.');
+    $plugin->validateConfigurationForm($form, $form_state);
+    $this->assertSame(
+      ['settings][time' => 'Own time error.', 'settings' => 'Choose a valid time zone.'],
+      array_map('strval', $form_state->getErrors()),
+    );
+  }
+
+  /**
+   * The time is typed as a clock time, stored as HH:MM.
+   *
+   * Text, not the browser's time picker, so a bare hour (`8`) is accepted.
+   */
+  public function testTimeIsTypedAsClockTime(): void {
     $plugin = $this->schedule([]);
     $form = $plugin->buildConfigurationForm([], new FormState());
-    $this->assertSame('textfield', $form['time']['#type']);
-    $this->assertSame('time', $form['time']['#attributes']['type'] ?? NULL);
+    $this->assertSame('bb_time', $form['time']['#type']);
+    $this->assertSame('clock', $form['time']['#mode']);
+    $this->assertArrayNotHasKey('type', $form['time']['#attributes'] ?? []);
     $this->assertSame('09:00', $form['time']['#default_value']);
 
     $form = ['#parents' => ['settings']];

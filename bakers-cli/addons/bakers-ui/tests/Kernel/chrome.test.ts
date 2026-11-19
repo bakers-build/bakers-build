@@ -108,15 +108,15 @@ describe('chromeTree — the header box, the tab bar and the separator', () => {
     // BB-375 — one blank between header box and tabs.
     '',
     // Without a workspace-lead capability the root bar is My work, Projects
-    // and Conductors (`Component/top-tabs/index.ts`).
-    '  My work    Projects   [Conductors]',
+    // and Machines (`Component/top-tabs/index.ts`).
+    '  My work    Projects   [Machines]',
   ];
 
   const dashboard = (over: Partial<ChromeInput> = {}): ChromeInput =>
     input({
       title: 'bakers.build dashboard',
       meta: 'tickets over closed_date · runs over created  ·  generated 2026-08-02T00:00:00+00:00',
-      tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+      tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
       ...over,
     });
 
@@ -234,7 +234,7 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
       input({
         title: 't',
         meta: 'm',
-        tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+        tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
       }),
     );
     // The pieces the bar is drawn from, in order — the tabs interleaved with
@@ -246,12 +246,12 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
       `${TAB_BAR_ID}-join-1`,
       tabNodeId('projects'),
       `${TAB_BAR_ID}-join-3`,
-      tabNodeId('conductors'),
+      tabNodeId('machines'),
     ]);
     // And the row still reads exactly as the composed bar did: the pieces
     // joined ARE `tabBarFor`, with the leading space the bar was written with.
     expect(renderTree(nodeById(tree, TAB_BAR_ID) as VNode).join('')).toBe(
-      ` ${tabBarFor({ level: 'root', tab: 'conductors', tabs: ROOT_TABS })}`,
+      ` ${tabBarFor({ level: 'root', tab: 'machines', tabs: ROOT_TABS })}`,
     );
   });
 
@@ -259,7 +259,7 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
     const seen: string[] = [];
     const tree = chromeTree(
       input({
-        tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+        tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
         onTabClick: (id) => seen.push(id),
       }),
     );
@@ -280,7 +280,7 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
     const seen: string[] = [];
     const tree = chromeTree(
       input({
-        tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+        tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
         onTabClick: (id) => seen.push(id),
       }),
     );
@@ -328,7 +328,7 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
     // A composition with no callbacks is what every pure test builds; it must
     // not throw when the renderer delivers a click to it.
     const tree = chromeTree(
-      input({ tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS } }),
+      input({ tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS } }),
     );
     expect(() =>
       handlerOn(
@@ -345,7 +345,7 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
       input({
         title: 't',
         meta: 'm',
-        tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+        tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
         workspace: 'keytec',
       }),
     );
@@ -360,7 +360,7 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
       input({
         title: 't',
         meta: 'm',
-        tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+        tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
       }),
     );
     const header = nodeById(tree, CHROME_HEADER_BOX_ID);
@@ -374,7 +374,7 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
       input({
         title: 't',
         meta: 'm',
-        tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+        tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
       }),
     );
     const header = nodeById(tree, CHROME_HEADER_BOX_ID);
@@ -393,7 +393,7 @@ describe('chromeTree — the clicks the chrome routes itself', () => {
       (bar?.props as { backgroundColor?: unknown } | undefined)
         ?.backgroundColor,
     ).toBeUndefined();
-    const active = nodeById(tree, tabNodeId('conductors'));
+    const active = nodeById(tree, tabNodeId('machines'));
     const inactive = nodeById(tree, tabNodeId('projects'));
     expect((active?.props as { fg?: unknown } | undefined)?.fg).toBe(
       FOREGROUND_ACTIVE,
@@ -848,7 +848,7 @@ describe('chromeHeight — one definition of how many rows the chrome takes', ()
     expect(
       chromeHeight({
         ...shown,
-        tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+        tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
       }),
     ).toBe(6);
     // The same without a bar (and without the tab-gap).
@@ -892,7 +892,7 @@ describe('bodyRowsFor — everything the chrome and the status row leave', () =>
   const shown = input({ title: 'bakers.build dashboard', meta: 'meta' });
   const withTab = {
     ...shown,
-    tab: { level: 'root', tab: 'conductors', tabs: ROOT_TABS },
+    tab: { level: 'root', tab: 'machines', tabs: ROOT_TABS },
   } as const;
 
   it('is the terminal minus the chrome minus the one-row footer', () => {

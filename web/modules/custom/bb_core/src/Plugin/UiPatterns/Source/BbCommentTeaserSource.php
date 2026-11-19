@@ -36,7 +36,7 @@ final class BbCommentTeaserSource extends SourcePluginBase implements ContainerF
   /**
    * Formats the created stamp in the product `normal` format.
    */
-  private BbDate $date;
+  protected BbDate $date;
 
   /**
    * {@inheritdoc}
