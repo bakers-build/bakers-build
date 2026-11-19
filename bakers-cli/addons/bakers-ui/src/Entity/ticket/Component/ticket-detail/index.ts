@@ -1041,10 +1041,7 @@ export function sectionsForTab(
   const headings = tab?.headings ?? [];
   if (!headings.length) return [];
   const byHeading = new Map(
-    detailSections(document, labels, nowSeconds).map((s) => [
-      s.heading,
-      s,
-    ]),
+    detailSections(document, labels, nowSeconds).map((s) => [s.heading, s]),
   );
   return headings
     .map((h) => byHeading.get(h))

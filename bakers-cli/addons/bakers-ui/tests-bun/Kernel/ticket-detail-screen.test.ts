@@ -518,10 +518,12 @@ describe('Overview — parent on the sidebar, links in the left column', () => {
     expect(chrome).not.toContain('Created by:');
     expect(bodyRows(tui).join('\n')).toMatch(/parent\s+:\s+BB-200/);
     const body = bodyRows(tui);
-    // Links render at the top of the left column as short labels (BAKERS-332);
-    // a press still copies the full URL.
+    // Links render at the top of the left column: the short label, then the
+    // full URL on the row below (BAKERS-332).
     expect(body.some((row) => row.includes('* links'))).toBe(true);
-    expect(body.join('\n')).toMatch(/MR\s+:\s+git\.example\/…\/255/);
+    expect(body.join('\n')).toMatch(
+      /MR: git\.example\/…\/255[\s│]+https:\/\/git\.example\/mr\/255/,
+    );
     await quit(tui);
   });
 

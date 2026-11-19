@@ -69,8 +69,17 @@ const BOLD = createTextAttributes({ bold: true });
 const attributesOf = (node: VNode | undefined): number | undefined =>
   (node?.props as { attributes?: number } | undefined)?.attributes;
 
-const contentOf = (node: VNode | undefined): string | undefined =>
-  (node?.props as { content?: string } | undefined)?.content;
+const contentOf = (node: VNode | undefined): string | undefined => {
+  const content = (
+    node?.props as
+      | { content?: string | { chunks: readonly { text: string }[] } }
+      | undefined
+  )?.content;
+  // A wrapping paragraph carries styled chunks rather than a plain string.
+  return typeof content === 'object'
+    ? content.chunks.map((chunk) => chunk.text).join('')
+    : content;
+};
 
 /** The text of every row whose id matches, in tree order. */
 const rowsMatching = (tree: VNode, pattern: RegExp): string[] =>
@@ -264,9 +273,17 @@ const withPr: TicketDetailDocument = {
 it('AC-4: the first section is Links, with the ticket URL and the PR only', () => {
   const tree = runDetailTree(withPr, RUN_ID, 'https://b.test');
   expect(rowsMatching(tree, /^run-detail-section-/)[0]).toBe('Links');
+  expect(idsOf(tree).filter((id) => /^run-detail-link-/.test(id))).toEqual([
+    'run-detail-link-ticket',
+    'run-detail-link-ticket-url',
+    'run-detail-link-pr-0',
+    'run-detail-link-pr-0-url',
+  ]);
   expect(rowsMatching(tree, /^run-detail-link-/)).toEqual([
     'ticket:        BB-255',
+    '  https://b.test/bakers/ticket/bb-255',
     'PR:            PR #229',
+    '  https://github.com/o/r/pull/229',
   ]);
 });
 
@@ -283,7 +300,7 @@ it('AC-4: without a PR only the ticket row; without a served URL either, No link
   };
   expect(
     rowsMatching(runDetailTree(served, RUN_ID), /^run-detail-link-/),
-  ).toEqual(['ticket:        BB-255']);
+  ).toEqual(['ticket:        BB-255', '  https://b.test/bakers/ticket/bb-255']);
   const unserved = runDetailTree(doc, RUN_ID, 'https://b.test');
   expect(rowsMatching(unserved, /^run-detail-link/)).toEqual(['No links.']);
 });
@@ -293,15 +310,26 @@ it('AC-2: pressing a link row hands its full URL to onLink', () => {
   const tree = runDetailTree(withPr, RUN_ID, 'https://b.test', (href) =>
     pressed.push(href),
   );
-  const press = (id: string) =>
-    (
-      nodeById(tree, id)?.props as
-        | { onMouse?: (event: unknown) => void }
-        | undefined
-    )?.onMouse?.({ type: 'down', button: 0, stopPropagation: () => {} });
+  const press = (id: string) => {
+    const props = nodeById(tree, id)?.props as
+      | {
+          onMouse?: (event: unknown) => void;
+          onMouseDown?: (event: unknown) => void;
+        }
+      | undefined;
+    (props?.onMouse ?? props?.onMouseDown)?.({
+      type: 'down',
+      button: 0,
+      stopPropagation: () => {},
+    });
+  };
   press('run-detail-link-pr-0');
   press('run-detail-link-ticket');
+  press('run-detail-link-pr-0-url');
+  press('run-detail-link-ticket-url');
   expect(pressed).toEqual([
+    'https://github.com/o/r/pull/229',
+    'https://b.test/bakers/ticket/bb-255',
     'https://github.com/o/r/pull/229',
     'https://b.test/bakers/ticket/bb-255',
   ]);

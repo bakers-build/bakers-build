@@ -587,12 +587,7 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       memo.now === now
     )
       return memo.model;
-    const model = ticketContentModel(
-      document,
-      this.tab,
-      this.labels,
-      now,
-    );
+    const model = ticketContentModel(document, this.tab, this.labels, now);
     this.modelMemo = { document, labels: this.labels, now, model };
     return model;
   }

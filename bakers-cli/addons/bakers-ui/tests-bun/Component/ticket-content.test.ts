@@ -344,9 +344,9 @@ describe('TicketContent', () => {
     expect(wide.frame).toContain('[Details]');
     expect(wide.frame).toContain('Related');
     expect(wide.frame).toContain('feat/a_b_c');
-    // A short label, never the raw URL (activation still uses the href).
+    // AC-7: the short label, and the full URL written out below it.
     expect(wide.frame).toContain('example.test/result');
-    expect(wide.frame).not.toContain('https://example.test/result');
+    expect(wide.frame).toContain('https://example.test/result');
     expect(wide.frame).toContain('runner-1');
     expect(wide.frame).not.toMatch(/… \+\d+ more lines/);
   });
@@ -393,17 +393,72 @@ describe('TicketContent', () => {
           row.includes('Description') && !row.includes('Short description'),
       );
       expect(description).toBeGreaterThan(0);
-      for (const text of ['* links', 'BAKERS-332', 'PR #229']) {
+      for (const text of [
+        '* links',
+        'BAKERS-332',
+        'https://b.test/bakers/ticket/bakers-332',
+        'PR #229',
+        'https://github.com/o/r/pull/229',
+      ]) {
         const at = rowIndex(painted.rows, text);
         expect(at, `${text} is painted`).toBeGreaterThanOrEqual(0);
         expect(at, `${text} comes before Description`).toBeLessThan(
           description,
         );
       }
+      // AC-7: each URL starts the row right below its label (the wide
+      // sidebar may share that row to the right).
+      const below = (label: string) =>
+        (painted.rows[rowIndex(painted.rows, label) + 1] ?? '')
+          .trim()
+          .split(/\s/)[0];
+      expect(below('BAKERS-332')).toBe(
+        'https://b.test/bakers/ticket/bakers-332',
+      );
+      expect(below('PR #229')).toBe('https://github.com/o/r/pull/229');
       expect(painted.frame.split('* links').length - 1).toBe(1);
-      expect(painted.frame).not.toContain('https://github.com/o/r/pull/229');
     });
   }
+
+  it('prints a key once when its label repeats it', async () => {
+    const painted = await paintLinks(
+      document({
+        links: [{ title: 'PR #288', uri: 'https://github.com/o/r/pull/288' }],
+      }),
+      80,
+    );
+    const at = rowIndex(painted.rows, 'PR #288');
+    expect(painted.rows[at]?.trim()).toBe('PR #288');
+    expect(painted.rows[at + 1]?.trim()).toBe(
+      'https://github.com/o/r/pull/288',
+    );
+  });
+
+  it('writes a long URL out in full, wrapped, at 60 columns', async () => {
+    const url = `https://example.test/${'segment/'.repeat(12)}end`;
+    expect(url.length).toBeGreaterThan(100);
+    const painted = await paintLinks(
+      document({ links: [{ title: 'Docs', uri: url }] }),
+      60,
+    );
+    const label = rowIndex(painted.rows, 'Docs');
+    expect(painted.rows[label]?.trim()).toBe('Docs: example.test/…/end');
+    const after = painted.rows
+      .slice(label + 1, label + 4)
+      .map((row) => row.trim())
+      .join('');
+    expect(after).toContain(url);
+  });
+
+  it('gives a non-web origin one line and no URL line', async () => {
+    const painted = await paintLinks(
+      document({ origin: 'legacy-tracker#16', links: [] }),
+      80,
+    );
+    const at = rowIndex(painted.rows, 'origin');
+    expect(painted.rows[at]?.trim()).toBe('origin: legacy-tracker#16');
+    expect(painted.rows[at + 1]?.trim() ?? '').toBe('');
+  });
 
   // AC-3: only the ticket row, no `none` placeholder.
   it('paints only the ticket row for a linkless ticket', async () => {

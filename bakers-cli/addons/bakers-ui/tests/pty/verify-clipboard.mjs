@@ -92,7 +92,8 @@ const OSC52 = new RegExp(
 /** `<base_url>/<workspace>/ticket/<identifier>` — the ticket's page on the
  *  control plane, which is what `Y` is for. The server serves it as the
  *  ticket's `url` attribute; the cockpit never builds it. */
-const TICKET_URL = /^https?:\/\/[^\s/]+\/[a-z0-9-]+\/ticket\/[a-z][a-z0-9]*-\d+$/;
+const TICKET_URL =
+  /^https?:\/\/[^\s/]+\/[a-z0-9-]+\/ticket\/[a-z][a-z0-9]*-\d+$/;
 
 const IDENTIFIER = /^[A-Z][A-Z0-9]*-\d+$/;
 

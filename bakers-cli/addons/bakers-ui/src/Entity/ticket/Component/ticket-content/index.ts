@@ -27,6 +27,7 @@ import {
   plainRun,
   pressHandler,
   type StyledLine,
+  UNDERLINE,
 } from '../../../../lib/vnode.js';
 import type { TicketAddons } from '../../Data/addons.js';
 import {
@@ -594,13 +595,51 @@ const linksSection = (
   links: readonly TicketProperty[],
   activateProperty: ((item: TicketProperty) => void) | undefined,
 ): VNode | null => {
-  // No base URL and no links: no section at all, never "links : none".
+  // No served URL and no links: no section at all, never "links : none".
   if (links.length === 0) return null;
+  // AC-7: `key: label`, then the full URL written out below; both activate.
+  // A fixed list per draw, so the index-based ids survive a resize (AC-8).
+  const rows = links.flatMap((item, index) => {
+    const row = `${id}-items-${index}`;
+    const linked = item.ticketId !== undefined || item.href !== undefined;
+    const press =
+      linked && activateProperty !== undefined
+        ? () => activateProperty(item)
+        : undefined;
+    const attributes = linked ? UNDERLINE : 0;
+    const label = paragraphNode({
+      id: row,
+      runs: [
+        plainRun(
+          item.value === item.key ? item.key : `${item.key}: ${item.value}`,
+          attributes,
+        ),
+      ],
+      fg: FOREGROUND_HIGHLIGHT,
+      onMouseDown: press,
+    });
+    if (item.href === undefined) return [label];
+    return [
+      label,
+      paragraphNode({
+        id: `${row}-url`,
+        runs: [plainRun(`  ${item.href}`, attributes)],
+        fg: FOREGROUND,
+        onMouseDown: press,
+      }),
+    ];
+  });
   return HeadlineMarkdown({
     id,
     headline: 'links',
     paddingBottom: 1,
-    children: [properties(`${id}-items`, links, activateProperty)],
+    children: [
+      h(
+        BoxRenderable,
+        { id: `${id}-items`, flexDirection: 'column', width: '100%' },
+        ...rows,
+      ),
+    ],
   });
 };
 

@@ -25,8 +25,15 @@
 import type { VNode } from '@opentui/core';
 import { markdownRow } from '../../../../Component/markdown/index.js';
 import { asString } from '../../../../lib/format.js';
+import { FOREGROUND } from '../../../../lib/theme.js';
 import { ticketTopLinks } from '../../../../lib/ticket-links.js';
-import { columnNode, pressHandler, textNode } from '../../../../lib/vnode.js';
+import {
+  columnNode,
+  paragraphNode,
+  plainRun,
+  pressHandler,
+  textNode,
+} from '../../../../lib/vnode.js';
 import type {
   JsonApiResource,
   TicketDetailDocument,
@@ -72,8 +79,10 @@ function scalar(value: unknown): string {
 interface KeyedRow {
   readonly key: string;
   readonly text: string;
-  /** A link row's full URL: pressed on screen, appended in a pipe. */
+  /** A link row's full URL, pressed on screen. */
   readonly href?: string;
+  /** Word-wrapped instead of cut at the edge: a URL is never shortened. */
+  readonly wrap?: boolean;
 }
 
 /** A titled block of keyed rows — the run block's own shape (see D4). */
@@ -160,23 +169,24 @@ function keyedSections(
   const a = run.attributes ?? {};
   // AC-4 (BAKERS-332): the owning ticket's URL and its PRs, before everything.
   const topLinks = ticketTopLinks(document);
+  // AC-7: each link's label row, then its full URL on the row below.
+  const linkPair = (key: string, text: string, href: string): KeyedRow[] => [
+    { key, text, href },
+    { key: `${key}-url`, text: `  ${href}`, href, wrap: true },
+  ];
   const linkRows: KeyedRow[] = [
     // The served ticket entry leads when present; a stored link never matches its href.
     ...topLinks
       .slice(0, 1)
       .filter((link) => link.href === document.data?.attributes?.url)
-      .map((link) => ({
-        key: 'link-ticket',
-        text: row('ticket', link.label),
-        href: link.href,
-      })),
+      .flatMap((link) =>
+        linkPair('link-ticket', row('ticket', link.label), link.href),
+      ),
     ...topLinks
       .filter((link) => link.pullRequest)
-      .map((link, index) => ({
-        key: `link-pr-${index}`,
-        text: row(link.key, link.label),
-        href: link.href,
-      })),
+      .flatMap((link, index) =>
+        linkPair(`link-pr-${index}`, row(link.key, link.label), link.href),
+      ),
   ];
   // The transcript/error payload no longer lives on the entity (BB-556) —
   // preSave() writes it to a private file and clears the field, so what the
@@ -339,7 +349,13 @@ function flatRows(
   document: TicketDetailDocument,
   runId: string | null | undefined,
   baseUrl: string | undefined,
-): { key: string; text: string; bold: boolean; href?: string }[] {
+): {
+  key: string;
+  text: string;
+  bold: boolean;
+  href?: string;
+  wrap?: boolean;
+}[] {
   return keyedSections(document, runId, baseUrl).flatMap((section) => [
     { key: `section-${section.key}`, text: section.heading, bold: true },
     ...section.rows.map((entry) => ({
@@ -350,6 +366,7 @@ function flatRows(
       // pipe. Nothing else in an entry is parsed, deliberately — see the header.
       ...markdownRow(entry.text),
       ...(entry.href === undefined ? {} : { href: entry.href }),
+      ...(entry.wrap === true ? { wrap: true } : {}),
     })),
     // The blank row between two sections, which the flattened surface pushed
     // after every block. The kernel's non-interactive branch drops empties, so
@@ -376,15 +393,22 @@ export function runDetailTree(
 ): VNode {
   return columnNode(
     'run-detail',
-    ...flatRows(document, runId, baseUrl).map(({ key, text, bold, href }) =>
-      textRow(
-        key,
-        text,
-        bold,
-        href === undefined || onLink === undefined
-          ? undefined
-          : () => onLink(href),
-      ),
+    ...flatRows(document, runId, baseUrl).map(
+      ({ key, text, bold, href, wrap }) => {
+        const press =
+          href === undefined || onLink === undefined
+            ? undefined
+            : () => onLink(href);
+        return wrap === true
+          ? paragraphNode({
+              id: `run-detail-${key}`,
+              runs: [plainRun(text)],
+              fg: FOREGROUND,
+              width: '100%',
+              onMouseDown: press,
+            })
+          : textRow(key, text, bold, press);
+      },
     ),
   );
 }
@@ -409,8 +433,5 @@ export function runDetailRows(
   runId: string | null | undefined,
   baseUrl?: string | undefined,
 ): string[] {
-  // A pipe has nothing to press: a link row prints its full URL after the label.
-  return flatRows(document, runId, baseUrl).map((entry) =>
-    entry.href === undefined ? entry.text : `${entry.text} ${entry.href}`,
-  );
+  return flatRows(document, runId, baseUrl).map((entry) => entry.text);
 }

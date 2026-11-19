@@ -199,8 +199,7 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
     // The anti-drift guard, and the reason the rows are not a second
     // description of this screen: both are projections of the same keyed
     // sections, so a section added to one appears in the other or this fails.
-    // A link row's pipe text adds the full URL after the label (a pipe has
-    // nothing to press), so each pipe row STARTS with its tree row.
+    // A link's full URL is its own row, so pipe rows equal tree rows.
     for (const document of [doc, withPr]) {
       for (const runId of [RUN_ID, 'nope']) {
         const { screen, context } = await opened(document, runId);
@@ -212,20 +211,19 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
             document === withPr ? BASE_URL : undefined,
           ),
         );
-        expect(pipe).toHaveLength(tree.length);
-        pipe.forEach((row, index) => {
-          expect(row.startsWith(tree[index] ?? '')).toBe(true);
-        });
+        expect(pipe).toEqual(tree.map((row) => row.trimEnd()));
       }
     }
   });
 
-  it('a link row in the pipe carries the full URL after its label', async () => {
+  it('a link in the pipe prints its full URL on the row below its label', async () => {
     const { screen, context } = await opened(withPr, RUN_ID);
-    expect(screen.renderNonInteractive(context).slice(0, 4)).toEqual([
+    expect(screen.renderNonInteractive(context).slice(0, 6)).toEqual([
       'Links',
-      'ticket:        BB-340 https://b.test/bakers/ticket/bb-340',
-      'PR:            PR #229 https://github.com/o/r/pull/229',
+      'ticket:        BB-340',
+      '  https://b.test/bakers/ticket/bb-340',
+      'PR:            PR #229',
+      '  https://github.com/o/r/pull/229',
       '',
     ]);
   });
