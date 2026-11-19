@@ -575,6 +575,19 @@ describe('site tools on the bakers server', () => {
       }),
     ).toMatch(/^bakers_ticket_update: referenced_tickets_add XX-9 belongs/);
     expect(
+      await refused('bakers_ticket_update', {
+        ticket: 'BB-2',
+        blocked_by_add: ['BB-1', 'XX-9'],
+      }),
+    ).toMatch(/^bakers_ticket_update: blocked_by_add XX-9 belongs/);
+    expect(
+      await refused('bakers_ticket_create', {
+        title: 't',
+        project: PROJECT_A,
+        blocked_by: ['XX-9'],
+      }),
+    ).toMatch(/^bakers_ticket_create: blocked_by XX-9 belongs to project/);
+    expect(
       await refused('bakers_label_list', { workspace: 'other-workspace' }),
     ).toBe(
       `bakers_label_list: workspace other-workspace is not the workspace ${WORKSPACE_A} of project ${PROJECT_A}`,

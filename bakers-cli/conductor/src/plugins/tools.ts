@@ -153,8 +153,8 @@ export function provisionRuns(timeoutMs = PROVISION_TIMEOUT_MS): ProvisionRuns {
 export interface ProvisionOptions {
   /** `hooks.provision_exec`: commands by key. */
   exec?: Record<string, ProvisionExecCommand>;
-  /** Whether the runtime isolates runs; exported to every host command. */
-  isolates?: boolean;
+  /** Whether the run's runtime isolates, or how to read it per worktree; exported to every host command. */
+  isolates?: boolean | ((worktreePath: string) => boolean);
 }
 
 /**
@@ -193,7 +193,13 @@ export function provisionTools(
   // What a host script needs instead of asking Git in a workspace without one.
   const envFor = (worktreePath: string) => ({
     BAKERS_WORKTREE_PATH: worktreePath,
-    BAKERS_RUNTIME_ISOLATES: options.isolates ? '1' : '0',
+    BAKERS_RUNTIME_ISOLATES: (
+      typeof options.isolates === 'function'
+        ? options.isolates(worktreePath)
+        : options.isolates
+    )
+      ? '1'
+      : '0',
   });
   const report = ({ exitCode, output }: ShellResult) => {
     const text = `exit ${exitCode}\n${output}`;

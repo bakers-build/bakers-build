@@ -11,7 +11,6 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\bb_track\Entity\Worklog;
 use Drupal\bb_track\WorkTimeRules;
 use Drupal\tool\Attribute\Tool;
 use Drupal\tool\ExecutableResult;
@@ -46,6 +45,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
         description: new TranslatableMarkup('One worklog.'),
         property_definitions: [
           'id' => new OutputDefinition('string', new TranslatableMarkup('UUID'), new TranslatableMarkup('Worklog UUID.')),
+          'version' => new OutputDefinition('string', new TranslatableMarkup('Version'), new TranslatableMarkup('Lock token; pass it as version to update or delete.')),
           'work_date' => new OutputDefinition('string', new TranslatableMarkup('Work date'), new TranslatableMarkup('Civil date, Y-m-d.')),
           'state' => new OutputDefinition('string', new TranslatableMarkup('State'), new TranslatableMarkup('recorded, proposed, …')),
           'duration_seconds' => new OutputDefinition('integer', new TranslatableMarkup('Duration'), new TranslatableMarkup('Seconds.')),
@@ -58,6 +58,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
           'project_id' => new OutputDefinition('string', new TranslatableMarkup('Project'), new TranslatableMarkup('Project UUID, or null.'), nullable: TRUE),
           'ticket_id' => new OutputDefinition('string', new TranslatableMarkup('Ticket'), new TranslatableMarkup('Ticket UUID, or null.'), nullable: TRUE),
           'submission_id' => new OutputDefinition('string', new TranslatableMarkup('Submission'), new TranslatableMarkup('Submission UUID, or null.'), nullable: TRUE),
+          'account' => new OutputDefinition('string', new TranslatableMarkup('Billing account'), new TranslatableMarkup('Billing account UUID, or null.'), nullable: TRUE),
         ],
       ),
     ),
@@ -93,10 +94,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 )]
 final class WorklogList extends ToolBase {
 
+  use WorklogRowTrait;
+
   /**
    * Loads worklogs and their references.
    */
-  private EntityTypeManagerInterface $entities;
+  protected EntityTypeManagerInterface $entities;
 
   /**
    * {@inheritdoc}
@@ -128,21 +131,7 @@ final class WorklogList extends ToolBase {
     $data = [];
     $omitted = FALSE;
     foreach ($entries as $entry) {
-      assert($entry instanceof Worklog);
-      $row = [
-        'id' => $entry->uuid(),
-        'work_date' => $entry->get('work_date')->value,
-        'state' => $entry->get('state')->value,
-        'duration_seconds' => (int) $entry->get('duration_seconds')->value,
-        'description' => $entry->get('description')->value,
-        'source_keys' => array_column($entry->get('source_keys')->getValue(), 'value'),
-      ];
-      foreach ($references as $field => $readable) {
-        $entity = $readable[$entry->get($field)->target_id] ?? NULL;
-        $omitted = $omitted || ($entry->get($field)->target_id !== NULL && $entity === NULL);
-        $row[$field] = $entity?->uuid();
-      }
-      $data[] = $row;
+      $data[] = $this->worklogRow($entry, $references, $omitted);
     }
     $projects = array_map(fn(EntityInterface $project) => ['id' => $project->uuid(), 'name' => $project->label()], array_values($references['project_id']));
     $tickets = array_map(fn(ContentEntityInterface $ticket) => [
@@ -187,32 +176,6 @@ final class WorklogList extends ToolBase {
       throw new \InvalidArgumentException('Invalid page limit or offset.');
     }
     return [$from, $to, $limit, $offset];
-  }
-
-  /**
-   * Batch-loads only readable context; never widens assignment access.
-   *
-   * @param array<int|string, \Drupal\Core\Entity\ContentEntityInterface> $entries
-   *   The page's worklogs.
-   *
-   * @return array<string, array<int|string, \Drupal\Core\Entity\ContentEntityInterface>>
-   *   Readable entities keyed by reference field, then id.
-   */
-  private function references(array $entries): array {
-    $references = [];
-    foreach (['project_id' => 'bb_project', 'ticket_id' => 'bb_ticket', 'submission_id' => 'bb_track_submission'] as $field => $type) {
-      $ids = [];
-      foreach ($entries as $entry) {
-        $id = $entry->get($field)->target_id;
-        if ($id !== NULL) {
-          $ids[] = $id;
-        }
-      }
-      /** @var array<int|string, \Drupal\Core\Entity\ContentEntityInterface> $entities */
-      $entities = $this->entities->getStorage($type)->loadMultiple(array_unique($ids));
-      $references[$field] = array_filter($entities, fn(EntityInterface $entity) => $entity->access('view', $this->currentUser));
-    }
-    return $references;
   }
 
   /**

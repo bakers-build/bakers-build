@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel\Tool;
 
-use Drupal\Core\Config\FileStorage;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AnonymousUserSession;
-use Drupal\field\Entity\FieldConfig;
-use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -33,6 +31,7 @@ final class UserReadToolTest extends BakersToolTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('bb_machine');
+    $this->installEntitySchema('bb_profile');
     $team = $this->project->get('teams')->entity;
     assert($team instanceof ContentEntityInterface);
     $team->set('workspace_id', $this->workspace->id())->save();
@@ -44,10 +43,9 @@ final class UserReadToolTest extends BakersToolTestBase {
    * Without input the caller reads itself in full.
    */
   public function testReadsSelfInFull(): void {
-    $this->installProfileFields();
-    $this->container->get('entity_type.manager')->getStorage('user')->loadUnchanged($this->actor->id())
-      ->set('field_developer_title', 'Customer contact')
-      ->set('field_bb_background', 'Talks with customers, who are not technical.')
+    $this->container->get(Profiles::class)->forAccount((int) $this->actor->id(), (int) $this->workspace->id())
+      ->setPosition('Customer contact')
+      ->setBackground('Talks with customers, who are not technical.')
       ->save();
     $box = $this->machine($this->actor, 'box-a', 'allow');
     $alpha = $this->conductor('alpha', $this->actor, $box);
@@ -58,8 +56,13 @@ final class UserReadToolTest extends BakersToolTestBase {
       'uuid' => $this->actor->uuid(),
       'name' => 'actor',
       'mail' => 'actor@example.com',
-      'position' => 'Customer contact',
-      'background' => 'Talks with customers, who are not technical.',
+      'profiles' => [
+        [
+          'workspace' => $this->workspace->uuid(),
+          'position' => 'Customer contact',
+          'background' => 'Talks with customers, who are not technical.',
+        ],
+      ],
       'teams' => [
         [
           'uuid' => $this->team->uuid(),
@@ -96,8 +99,7 @@ final class UserReadToolTest extends BakersToolTestBase {
       'uuid' => $teammate->uuid(),
       'name' => 'teammate',
       'mail' => NULL,
-      'position' => '',
-      'background' => '',
+      'profiles' => [],
       'teams' => [
         [
           'uuid' => $this->team->uuid(),
@@ -229,22 +231,6 @@ final class UserReadToolTest extends BakersToolTestBase {
       'assignment_setting' => $setting,
       'assignment' => $assignment,
     ];
-  }
-
-  /**
-   * Installs the two profile fields from config/sync, where they live.
-   */
-  private function installProfileFields(): void {
-    $this->container->get('config.typed')->clearCachedDefinitions();
-    $storage = new FileStorage(dirname($this->root) . '/config/sync');
-    foreach (['field_developer_title', 'field_bb_background'] as $name) {
-      $storageData = $storage->read("field.storage.user.$name");
-      self::assertIsArray($storageData);
-      FieldStorageConfig::create($storageData)->save();
-      $fieldData = $storage->read("field.field.user.user.$name");
-      self::assertIsArray($fieldData);
-      FieldConfig::create($fieldData)->save();
-    }
   }
 
 }

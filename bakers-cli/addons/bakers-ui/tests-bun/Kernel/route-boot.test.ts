@@ -2287,9 +2287,9 @@ describe('a bar click acts at the current level (AC-13)', () => {
     expect(styledFrame(tui), 'clicking [My work] itself').toBe(before);
     expect(tui.paints(), 'not one redraw in two clicks').toBe(painted);
 
-    // A root Conductors click remains a ROOT tab, never a project one.
+    // A root Machines click remains a ROOT tab, never a project one.
     await click(tui, TOP_TAB_ROW, COL_ROOT_CONDUCTORS);
-    expect(tabBarRow(tui), 'the root bar, still').toContain('[Conductors]');
+    expect(tabBarRow(tui), 'the root bar, still').toContain('[Machines]');
     expect(tabBarRow(tui)).not.toContain('Tickets');
 
     // The root bar's OTHER tab is live, which is what makes the sweep above a

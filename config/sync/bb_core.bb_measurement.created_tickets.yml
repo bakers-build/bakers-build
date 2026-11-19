@@ -1,9 +1,9 @@
 uuid: 031c73d5-c441-4b07-b4cc-0041326365e6
 langcode: en
 status: true
-dependencies: {}
+dependencies: {  }
 id: created_tickets
-label: Created tickets
+label: 'Created tickets'
 value_type: integer
 unit: tickets
 source:
@@ -11,7 +11,7 @@ source:
   time_field: created
 operation:
   type: count
-predicates: []
+predicates: {  }
 bindings:
   epic:
     field: id

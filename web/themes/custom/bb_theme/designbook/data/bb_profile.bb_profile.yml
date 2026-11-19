@@ -1,0 +1,7 @@
+- id: '1'
+  uid: '1'
+  workspace_id: '1'
+  position: Product Lead
+  background: Drupal, Linear, or something else entirely.
+  __designbook:
+    section: user

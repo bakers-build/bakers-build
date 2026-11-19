@@ -53,12 +53,12 @@ final class BbUserPersonPropsSource extends SourcePluginBase {
    * takes ten arguments, so restating them to add an eleventh here would be
    * the copy that rots when contrib adds one of its own.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * The URL generator, for the fallback path when no `avatar` style exists.
    */
-  private FileUrlGeneratorInterface $fileUrlGenerator;
+  protected FileUrlGeneratorInterface $fileUrlGenerator;
 
   /**
    * {@inheritdoc}

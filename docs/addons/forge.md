@@ -1,6 +1,6 @@
 # Forge
 
-**Seven conductor tools through which a sandboxed run fetches, updates its branch, pushes, opens its PR/MR, reads checks and merges, while the token stays with the conductor.**
+**Conductor tools for a sandboxed run's branch, PR/MR and origin issue; the token stays with the conductor.**
 
 For operators who run agents in `sandbox` permissions without trusting `git`, `gh` or `glab`. Background: decision record `docs/decisions/sandbox-forge-tools.md`.
 
@@ -23,7 +23,7 @@ addons: [
 ],
 ```
 
-Without a `forge` entry no tool is served. An entry without `backend.use` stops the conductor's start.
+Without a `forge` entry no tool is served; without `backend.use` the conductor won't start.
 
 ## Options
 
@@ -35,21 +35,22 @@ Without a `forge` entry no tool is served. An entry without `backend.use` stops 
 
 | Tool | Does | Limit |
 |---|---|---|
-| `forge_fetch` | Fetches `base_branch`, the ticket branch and the parent branches named in `branches`. | Read only; no tags. |
+| `forge_fetch` | Fetches `base_branch`, the ticket branch and parents named in `branches`. | Read only; no tags. |
 | `forge_update_branch` | Merges the current target into a run clone's ticket branch; `sync` says how the run follows. | Pushes nothing. |
 | `forge_push` | Pushes an owned branch. | Fast-forward, or `force_with_lease`; bare force does not exist. |
-| `forge_pr_upsert` | Opens, updates or retargets the PR/MR into the derived base. | Refuses a non-Conventional Commits title before any request. |
+| `forge_pr_upsert` | Opens, updates or retargets the PR/MR into the derived base; `request_reviewers` only adds ticket reviewers, by public e-mail. | Refuses non-Conventional Commits titles first; names skipped reviewers. |
 | `forge_checks` | Lists checks with raw `conclusion`, `run_id`, `job_id` and `overall`. | Read only. |
-| `forge_job_log` | Returns a job's log tail, 16 KiB by default. | Read only. |
+| `forge_job_log` | A job's log tail, 16 KiB by default. | Read only. |
+| `forge_issue_update` | Labels or comments on the origin issue. | [GitLab](/addons/forge-gitlab) only. |
 | `forge_merge` | Merges an owned branch's PR/MR. | Correct target, valid title, no conflict, `overall` is `success`. |
 
-`overall` is `success` only when every required check, including one named `required`, is green; none required gives `no_required_checks`.
+Required checks, also one named `required`, must all be green for `overall` `success`; none gives `no_required_checks`.
 
 Human approval stays the merge gate.
 
 ## Ownership and merge
 
-Tools take the ticket, `branch_name` and `base_branch` from the calling run; a call without a run is refused. A run owns `<branch_name>` and `<branch_name>-<suffix>`. A variant merges into the ticket branch, the ticket branch into the server's current `target_branch` (else `base_branch`). The merge sends method and source deletion explicitly, ends the body with `Merged-by: bakers.build` and `ref:<identifier>`, and keeps a source another open PR/MR targets.
+Tools take the ticket, `branch_name` and `base_branch` from the calling run and refuse a call without one. A run owns `<branch_name>` and `<branch_name>-<suffix>`. A variant merges into the ticket branch, the ticket branch into the server's current `target_branch` (else `base_branch`). The merge sends method and source deletion explicitly, ends the body with `Merged-by: bakers.build` and `ref:<identifier>`, and keeps a source another open PR/MR targets.
 
 ## Isolation
 

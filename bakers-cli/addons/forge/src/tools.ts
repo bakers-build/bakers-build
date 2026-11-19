@@ -17,7 +17,12 @@ import {
   saveRunClone,
   transferIsolatedCommit,
 } from '@bakers-build/core';
-import type { ForgeBackend, ForgeCheck } from './backend.js';
+import type {
+  ForgeBackend,
+  ForgeCheck,
+  ForgePr,
+  ReviewerResult,
+} from './backend.js';
 import { FORGE_NEEDS_BACKEND, loadForgeBackend, mergeRule } from './config.js';
 import { fetchBranches, pushBranch, updateBranch } from './git.js';
 import {
@@ -31,6 +36,9 @@ import {
 
 export const FORGE_NEEDS_RUN =
   'forge tools act only for an agent run: the call carries no ticket branch_name and base_branch (an operator delivers by hand)';
+
+export const FORGE_NEEDS_ORIGIN =
+  "forge_issue_update acts only on the run ticket's origin issue, and this ticket has none";
 
 export interface ForgeToolDeps {
   backend(): Promise<ForgeBackend>;
@@ -79,6 +87,70 @@ async function currentBase(
   if (!target) throw refuse('no target_branch or base_branch returned');
   return target;
 }
+
+/** The ticket's origin as the server returns it now, else the run's copy. */
+async function originOf(req: ToolRequest): Promise<string> {
+  const t = req.currentTicket ? await req.currentTicket() : req.ticket;
+  if (!t?.issueUrl) throw new Error(FORGE_NEEDS_ORIGIN);
+  return t.issueUrl;
+}
+
+/**
+ * Requests the ticket's reviewers on `pr` by e-mail. Never throws: the PR is
+ * already written, so every failure becomes a named skip.
+ */
+async function requestReviewers(
+  req: ToolRequest,
+  b: ForgeBackend,
+  pr: ForgePr,
+): Promise<{
+  requested: string[];
+  skipped: { reviewer: string; reason: string }[];
+}> {
+  const skipped: { reviewer: string; reason: string }[] = [];
+  let reviewers: { name: string; mail?: string }[];
+  try {
+    reviewers =
+      (req.currentTicket ? await req.currentTicket() : req.ticket)?.reviewers ??
+      [];
+  } catch (err) {
+    return {
+      requested: [],
+      skipped: [{ reviewer: '*', reason: errorText(err) }],
+    };
+  }
+  const byMail = new Map<string, string>();
+  for (const r of reviewers)
+    if (r.mail) byMail.set(r.mail, r.name);
+    else skipped.push({ reviewer: r.name, reason: 'e-mail not readable' });
+  if (byMail.size === 0) return { requested: [], skipped };
+  let result: ReviewerResult;
+  try {
+    result = await b.addReviewers(pr, [...byMail.keys()]);
+  } catch (err) {
+    result = {
+      requested: [],
+      skipped: [...byMail.keys()].map((mail) => ({
+        mail,
+        reason: errorText(err),
+      })),
+    };
+  }
+  const name = (mail: string) => byMail.get(mail) ?? mail;
+  return {
+    requested: result.requested.map(name),
+    skipped: [
+      ...skipped,
+      ...result.skipped.map((s) => ({
+        reviewer: name(s.mail),
+        reason: s.reason,
+      })),
+    ],
+  };
+}
+
+const errorText = (err: unknown) =>
+  err instanceof Error ? err.message : String(err);
 
 function ownedBranch(req: ToolRequest, run: Run): string {
   const branch = (req.args.branch as string | undefined) ?? run.branchName;
@@ -263,6 +335,13 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const run = runOf(req);
       const branch = ownedBranch(req, run);
       const body = (req.args.body as string | undefined) ?? '';
+      // One server read serves the base and the reviewers.
+      const read = req.currentTicket;
+      if (read) {
+        // Lazy: a suffixed branch without the flag never reads the ticket.
+        let once: ReturnType<typeof read> | undefined;
+        req = { ...req, currentTicket: () => (once ??= read()) };
+      }
       const base = await currentBase(req, branch, run);
       const b = await backend();
       const open = await b.findOpenPr(branch);
@@ -279,6 +358,9 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         number: pr.number,
         target: pr.base,
         created: !open,
+        ...(req.args.request_reviewers === true
+          ? { reviewers: await requestReviewers(req, b, pr) }
+          : {}),
       });
     },
 
@@ -378,6 +460,45 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         max_bytes: maxBytes,
         log: log.text,
       });
+    },
+
+    forge_issue_update: async (req) => {
+      runOf(req);
+      const op = req.args.operation;
+      if (op === 'comment') {
+        const body = req.args.body;
+        if (typeof body !== 'string' || body.trim() === '')
+          throw new Error('comment needs a non-blank body');
+        const issueUrl = await originOf(req);
+        return json(await (await backend()).commentIssue(issueUrl, body));
+      }
+      if (op === 'list_labels') {
+        const issueUrl = await originOf(req);
+        const labels = await (await backend()).issueLabels(issueUrl);
+        return json({ issue_url: issueUrl, labels });
+      }
+      if (op !== 'update_labels')
+        throw new Error(
+          'operation must be list_labels, update_labels or comment',
+        );
+      const add = typeof req.args.add === 'string' ? req.args.add : '';
+      const remove = (req.args.remove as string[] | undefined) ?? [];
+      if (!add && remove.length === 0)
+        throw new Error('update_labels needs add or remove');
+      const issueUrl = await originOf(req);
+      const b = await backend();
+      // GitLab creates an unknown label it is sent: only listed names pass.
+      const known = new Set((await b.issueLabels(issueUrl)).map((l) => l.name));
+      const unknown = [add, ...remove].filter((n) => n && !known.has(n));
+      if (unknown.length > 0)
+        throw new Error(
+          `update_labels sends only existing labels, spelled exactly; not found: ${unknown.join(', ')}; nothing was sent`,
+        );
+      const labels = await b.updateIssueLabels(issueUrl, {
+        ...(add ? { add } : {}),
+        remove,
+      });
+      return json({ issue_url: issueUrl, labels });
     },
   };
   return Object.fromEntries(

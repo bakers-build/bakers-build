@@ -48,6 +48,32 @@ Feature: A template schedules its own tickets
     Then the trigger form offers the field "Day of month"
     And the trigger form does not offer the field "Weekday"
 
+  Scenario Outline: A bare hour saves as the trigger time
+    Given I am logged in as the account "north-lead"
+    When I visit the template "Monthly Drupal update" by its address
+    And I click the tab "Triggers"
+    And I add an enabled monthly trigger on day "<day>" at "8" in "Europe/Berlin" run by "fixture-automation"
+    Then the trigger "Monthly on day <day> at 08:00 (Europe/Berlin)" is listed as "Enabled"
+
+    Examples:
+      | day |
+      | 26  |
+
+    @nojs
+    Examples:
+      | day |
+      | 25  |
+
+  Scenario: Leaving the trigger time completes a bare hour
+    Given I am logged in as the account "north-lead"
+    When I visit the template "Monthly Drupal update" by its address
+    And I click the tab "Triggers"
+    And I open the Add trigger action and choose the frequency "Monthly"
+    And I type "8" into the trigger time and leave it
+    Then the trigger time shows "08:00"
+    When I type "abc" into the trigger time and leave it
+    Then the trigger time shows "abc"
+
   Scenario: The add dialog closes with Escape and its close button
     Given I am logged in as the account "north-lead"
     When I visit the template "Monthly Drupal update" by its address

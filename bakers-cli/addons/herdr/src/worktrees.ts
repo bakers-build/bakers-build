@@ -245,6 +245,22 @@ async function ensureFocusSafeToRemove(
 }
 
 /**
+ * Close the run clone's open herdr workspace before its directory goes.
+ * `false` when it is focused and no parent workspace can take focus (BB-166).
+ */
+export async function closeCloneWorkspace(
+  deps: HerdrTeardownDeps,
+  branch: string,
+  path: string,
+): Promise<boolean> {
+  const open = await cloneWorkspaceId(deps.execHerdr, deps.root, branch, path);
+  if (!open) return true;
+  if (!(await ensureFocusSafeToRemove(deps, open))) return false;
+  await deps.execHerdr(['workspace', 'close', open]);
+  return true;
+}
+
+/**
  * Tear down a ticket's entire worktree (git worktree + hosted workspace).
  * `herdr worktree remove` is keyed by an open workspace id, so resolve the
  * worktree first — by its stable `worktreePath`, falling back to `branch`
@@ -280,11 +296,8 @@ export async function removeHerdrWorktree(
     return 'unverified';
   }
   if (worktreePath && loadRunClone(worktreePath)) {
-    const open = await cloneWorkspaceId(execHerdr, root, branch, worktreePath);
-    if (open) {
-      if (!(await ensureFocusSafeToRemove(deps, open))) return 'unverified';
-      await execHerdr(['workspace', 'close', open]);
-    }
+    if (!(await closeCloneWorkspace(deps, branch, worktreePath)))
+      return 'unverified';
     return removeRunCloneWorkspace(worktreePath) ?? 'unverified';
   }
   const entry = resolveWorktreeEntry(

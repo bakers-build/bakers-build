@@ -1,6 +1,6 @@
 # Machine
 
-`machine.config.js` is the private file that identifies one execution host and owns its preview-tunnel policy, agent harnesses and agent routes. This page defines the machine fields and links the detailed agent policy. For complete agent and route examples, use [Configure and select agents](/agents/guide#configure-agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`.
+`machine.config.js` is the private file that identifies one execution host and owns its preview-tunnel policy, agent harnesses and agent routes. The web UI lists this account's machines at `/user/{user}/machines`; a row opens View (UUID, max parallel, current load) and, for the owner holding `update own bb_machine`, Settings. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`. The Overview lists its conductors. **Restart runs** (owner only, on the machine or a conductor) cancels their active runs and each open ticket's newest failed run; each ticket gets one fresh run. `bakers ui` offers it on **Machines**.
 
 ## Location
 
@@ -29,9 +29,9 @@ export default {
 | Field | Meaning and default |
 |---|---|
 | `schema_version` | `1`. The `// @bakers-schema-version 1` header and this field must agree. |
-| `machine_id` | Required. This host's key on the server, so each machine has its own. `bakers init` generates a UUID for a new machine; an existing machine keeps the id it already has. A UUID in any case loads lowercased. Conductor ids are derived from it, so two users cannot share a `machine_id`: the second one's `bakers conductor start` is refused; remove `machine_id` and run `bakers init` for a fresh UUID. |
+| `machine_id` | Required; this host's own key on the server. `bakers init` generates a UUID for a new machine and keeps an existing one; a UUID in any case loads lowercased. Conductor ids derive from it, so a second user with the same id is refused at `bakers conductor start`; remove `machine_id` and run `bakers init` for a fresh UUID. |
 | `label` | Required display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. It names the machine on the server when the machine first registers, and a machine still named after its `machine_id` on its next start; rename it there afterwards. |
-| `addons` | This host's addons: a package name or `{ use, alias?, with? }`, the same shape as the project's `addons`. Agent harnesses go here and are the source of agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. `with` is checked against the addon's options schema. See [Configure addons](/addons/configure). |
+| `addons` | This host's addons: a package name or `{ use, alias?, with? }`, the same shape as the project's `addons`. Agent harnesses go here as agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. `with` is checked against the addon's options schema. See [Configure addons](/addons/configure). |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
 | `agents` | Object, described [below](#agents). An array is invalid. |
 | `agents.catalog` | Extra aliases `{ harness, alias?, with? }` built from installed harnesses. |
@@ -40,12 +40,18 @@ export default {
 | `agents.disabled` | Aliases to drop. |
 | `agents.routes` | Named routes from workflow states (or `'*'`) to aliases. |
 | `agents.routes.default` | The automatic route, applied without a route label. `agents.routes.default['*']` is the default agent; without it the first enabled alias is. |
+| `agents.select` | Optional function `(candidates, ticket) => alias`; see [Slot catalogs](/configuration/slot-catalogs). |
+| `runtime` | Optional; the keys below only. Without a catalog, `addons[]` is the preset. |
+| `runtime.catalog`, `runtime.catalog[].alias`, `runtime.catalog[].use`, `runtime.catalog[].with` | Entries `{ alias, use, with? }`. |
+| `runtime.routes` | Named routes, as for agents. |
+| `runtime.select` | Optional function `(candidates, ticket) => alias`. |
+| `runtime.allow_unsandboxed` | Boolean, default `false`. |
 | `tunnel` | Optional literal boolean, default `false`. See [below](#preview-link-tunnels). |
 | `connection_url` | Optional SSH or HTTPS address of this host, or `null` to clear the saved one. See [below](#connection-address). |
-| `permissions` | Optional. Run permissions for every agent on this host: `mode` (`sandbox`, `system` or `yolo`) and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/provision/security/shared-settings). |
+| `permissions` | Optional run permissions for every agent on this host. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/provision/security/shared-settings). |
 | `permissions.mode` | `sandbox`, `system` or `yolo`. |
-| `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
-| `executor` | Optional executor slot `{ use, export?, with? }`. Overrides every project executor on this machine; server and worktree remain project-owned. For example, [herdr-core](/addons/herdr-core). Omitted uses the project selection. |
+| `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists. |
+| `executor` | Optional single executor slot `{ use, export?, with? }`, e.g. [herdr-core](/addons/herdr-core), overriding every project executor on this machine; omitted uses the project's. Server and worktree stay project-owned. |
 | `executor.use`, `executor.export`, `executor.with` | The slot's package, its named factory and the factory's options. |
 
 Unknown keys fail. The run budget (**Max parallel**) is set on the machine in the backend; a new machine starts with 5. Every conductor on this host shares it and picks up a change on its next tick.
@@ -59,7 +65,7 @@ Assigning means setting a conductor on a ticket or template. The machine's **Ass
 | `allow` | The owner and anyone who can view the conductor. |
 | `forbid` | The owner only; nobody else, administrators included. |
 
-A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`, so switch one to `forbid` on its Identity card to restrict it. Only the owner changes it, in the web UI on the machine's Identity card; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
+A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`. Only the owner changes it, on the machine's Identity card in the web UI; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
 
 ## Preview-link tunnels
 
@@ -90,6 +96,8 @@ The plugins a run installs are the project's [`marketplaces`](/configuration/pro
 ```js
 addons: [{ use: '@bakers-build/addon-claude', with: { plugins: false } }],
 ```
+
+Claude in `system` or `yolo` uses your own `~/.claude`; `home: 'individual'` keeps a separate [agent home](/configuration/project#agent-plugins).
 
 ## Secrets file
 

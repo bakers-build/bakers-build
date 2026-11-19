@@ -57,16 +57,16 @@ Feature: The user area is split into a view route and an edit route
   # View and Edit links are core's local tasks. Both clicks are real header
   # links, so the second one proves the first left a working shell behind.
   Scenario: View and Edit keep the shell and show the same account
-    Given the account "north-lead" has full name "Ada Lovelace" and developer title "Backend engineer"
+    Given the account "north-lead" has full name "Ada Lovelace"
     When I visit my user area
-    Then the user overview shows the name "Ada Lovelace" and the developer title "Backend engineer"
+    Then the user overview shows the name "Ada Lovelace"
     And the user overview does not disclose the mail of "north-lead"
     When I click "Edit" in the page header
     Then I am on the edit route of "north-lead"
     And the profile form is inside the app shell
     When I click "View" in the page header
     Then I am on the canonical route of "north-lead"
-    And the user overview shows the name "Ada Lovelace" and the developer title "Backend engineer"
+    And the user overview shows the name "Ada Lovelace"
     And the page has no profile form
 
   # Core's View and Edit tasks render through the same tab-row templates as the
@@ -104,17 +104,17 @@ Feature: The user area is split into a view route and an edit route
     When I click "View" in the page header
     Then I am on the canonical route of "site-admin"
 
-  Scenario: An account without a full name or title falls back to its name
-    Given the account "no-bakery" has no full name and no developer title
+  Scenario: An account without a full name falls back to its name
+    Given the account "no-bakery" has its full name cleared
     And I am logged in as the account "no-bakery"
     When I visit the user area of "no-bakery"
-    Then the user overview shows the name "no-bakery" and no developer title
+    Then the user overview shows the name "no-bakery"
 
   Scenario: An administrator viewing another account sees that account
-    Given the account "north-lead" has full name "Ada Lovelace" and developer title "Backend engineer"
+    Given the account "north-lead" has full name "Ada Lovelace"
     And I am logged in as the account "site-admin"
     When I visit the user area of "north-lead"
-    Then the user overview shows the name "Ada Lovelace" and the developer title "Backend engineer"
+    Then the user overview shows the name "Ada Lovelace"
 
   Scenario: Another account's view and edit routes are denied
     Then the view and edit routes of "north-member" are denied to me

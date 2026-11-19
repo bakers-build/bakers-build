@@ -9,4 +9,3 @@ pending:
   poll_interval_ms: 300
   sampling_timeout: 25
   elicitation_timeout: 600
-

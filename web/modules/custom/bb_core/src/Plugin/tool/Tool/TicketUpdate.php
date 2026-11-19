@@ -30,7 +30,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[Tool(
   id: 'bakers_ticket_update',
   label: new TranslatableMarkup('Update a ticket'),
-  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, assignee (a user UUID, empty to clear), labels (added or removed by name, every other one kept), frozen flag, reviewers (added or removed by user UUID), links (upserted by exact URI or removed), environments and referenced tickets (both add-only, existing ones kept); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner, also after the assignee is cleared; changing the assignee keeps the conductor. Returns the saved values.'),
+  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, assignee (a user UUID, empty to clear), labels (added or removed by name, every other one kept), frozen flag, reviewers (added or removed by user UUID), links (upserted by exact URI or removed), environments and referenced tickets (both add-only, existing ones kept), blockers (added or removed by ticket identifier or UUID; an added blocker must be a readable, open ticket of the same project that creates no cycle, else nothing is saved); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner, also after the assignee is cleared; changing the assignee keeps the conductor. Returns the saved values.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -171,6 +171,28 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
         constraints: ['NotBlank' => []],
       ),
     ),
+    'blocked_by_add' => new ListInputDefinition(
+      label: new TranslatableMarkup('Blockers to add'),
+      description: new TranslatableMarkup('Identifiers or UUIDs of readable, open tickets of the same project this ticket waits for. Existing blockers are kept; a refused blocker refuses the whole call.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Ticket'),
+        description: new TranslatableMarkup('One ticket identifier or UUID.'),
+        constraints: ['NotBlank' => []],
+      ),
+    ),
+    'blocked_by_remove' => new ListInputDefinition(
+      label: new TranslatableMarkup('Blockers to remove'),
+      description: new TranslatableMarkup('Identifiers or UUIDs of blockers to remove; tickets that are not blockers are ignored. Every other blocker is kept.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Ticket'),
+        description: new TranslatableMarkup('One ticket identifier or UUID.'),
+        constraints: ['NotBlank' => []],
+      ),
+    ),
   ],
   output_definitions: [
     'reviewers' => new ListOutputDefinition(
@@ -306,6 +328,31 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
         ],
       ),
     ),
+    'blocked_by' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Blocked by'),
+      description: new TranslatableMarkup('The readable tickets this one waits for; unreadable blockers are omitted.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Blocker'),
+        description: new TranslatableMarkup('One blocking ticket.'),
+        property_definitions: [
+          'identifier' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Identifier'),
+            description: new TranslatableMarkup('The ticket identifier, e.g. BAKERS-15.'),
+          ),
+          'title' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Title'),
+            description: new TranslatableMarkup('The ticket title.'),
+          ),
+          'state' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('State'),
+            description: new TranslatableMarkup('The ticket’s workflow state id.'),
+          ),
+        ],
+      ),
+    ),
   ],
 )]
 final class TicketUpdate extends ToolBase {
@@ -315,7 +362,7 @@ final class TicketUpdate extends ToolBase {
   /**
    * Rolls back a refused update together with labels it created.
    */
-  private Connection $database;
+  protected Connection $database;
 
   /**
    * {@inheritdoc}
@@ -343,6 +390,8 @@ final class TicketUpdate extends ToolBase {
     'reviewers_remove' => 'reviewers',
     'links_add' => 'links',
     'links_remove' => 'links',
+    'blocked_by_add' => 'blocked_by',
+    'blocked_by_remove' => 'blocked_by',
   ];
 
   /**
@@ -355,7 +404,7 @@ final class TicketUpdate extends ToolBase {
       static fn ($value) => $value !== NULL,
     );
     if (!$given) {
-      throw new \InvalidArgumentException('Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, environments to add or referenced tickets to add.');
+      throw new \InvalidArgumentException('Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, environments to add, referenced tickets to add or blockers to add or remove.');
     }
     $this->assertDisjointLists($given);
     // Closed tickets deny every field edit; say why before the access check.
@@ -379,6 +428,8 @@ final class TicketUpdate extends ToolBase {
       'labels_remove' => $this->removeLabels(...),
       'environments_add' => $this->addEnvironments(...),
       'referenced_tickets_add' => $this->addReferencedTickets(...),
+      'blocked_by_add' => $this->addBlockers(...),
+      'blocked_by_remove' => $this->removeBlockers(...),
     ];
     try {
       foreach ($given as $input => $value) {
@@ -421,6 +472,7 @@ final class TicketUpdate extends ToolBase {
       'frozen' => $saved->isFrozen(),
       'environments' => array_map(static fn ($env) => (string) $env->label(), $saved->get('environments')->referencedEntities()),
       'referenced_tickets' => array_map(static fn (BbTicketInterface $ref) => $ref->getIdentifier(), $saved->getReferencedTickets()),
+      'blocked_by' => $this->blockers($saved),
     ]);
   }
 
@@ -440,6 +492,10 @@ final class TicketUpdate extends ToolBase {
     }
     if (array_intersect(array_column($given['links_add'] ?? [], 'uri'), $given['links_remove'] ?? [])) {
       throw new \InvalidArgumentException('A link URI is both added and removed.');
+    }
+    // Compare tickets, not strings: an identifier and a UUID may name one.
+    if (array_intersect($this->ticketIds($given['blocked_by_add'] ?? []), $this->ticketIds($given['blocked_by_remove'] ?? []))) {
+      throw new \InvalidArgumentException('A blocker is both added and removed.');
     }
   }
 
@@ -616,6 +672,45 @@ final class TicketUpdate extends ToolBase {
         $present[] = $id;
       }
     }
+  }
+
+  /**
+   * Drops the named blockers, keeping every other one in its order.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed.
+   * @param array<string> $values
+   *   Ticket identifiers or UUIDs; unknown or unreadable ones are ignored.
+   */
+  private function removeBlockers(BbTicketInterface $ticket, array $values): void {
+    $ids = $this->ticketIds($values);
+    $ticket->get('blocked_by')->filter(static fn ($item) => !in_array((string) $item->target_id, $ids, TRUE));
+  }
+
+  /**
+   * The ids of the readable tickets with these identifiers or UUIDs.
+   *
+   * @param array<string> $values
+   *   Ticket identifiers or UUIDs.
+   *
+   * @return array<string>
+   *   Ticket ids as strings; unknown values match nothing.
+   */
+  private function ticketIds(array $values): array {
+    if (!$values) {
+      return [];
+    }
+    $query = $this->entities()->getStorage('bb_ticket')->getQuery()->accessCheck(TRUE);
+    $uuids = array_values(array_filter($values, Uuid::isValid(...)));
+    $identifiers = array_values(array_diff($values, $uuids));
+    $match = $query->orConditionGroup();
+    if ($uuids) {
+      $match->condition('uuid', $uuids, 'IN');
+    }
+    if ($identifiers) {
+      $match->condition('identifier', $identifiers, 'IN');
+    }
+    return array_map('strval', array_values($query->condition($match)->execute()));
   }
 
   /**

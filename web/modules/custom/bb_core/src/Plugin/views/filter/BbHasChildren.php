@@ -27,7 +27,7 @@ final class BbHasChildren extends BooleanOperator {
   /**
    * The database the parent ids are read from.
    */
-  private Connection $database;
+  protected Connection $database;
 
   /**
    * {@inheritdoc}

@@ -1,9 +1,9 @@
 uuid: d5cf3535-eb7e-492b-b6ba-ae3d77aff565
 langcode: en
 status: true
-dependencies: {}
+dependencies: {  }
 id: rated_tickets
-label: Rated tickets
+label: 'Rated tickets'
 value_type: integer
 unit: tickets
 source:
@@ -12,12 +12,14 @@ source:
 operation:
   type: count
 predicates:
-- field: closed
-  operator: '='
-  value: true
-- field: metrics.name
-  operator: '='
-  value: job_rating.score
+  -
+    field: closed
+    operator: '='
+    value: true
+  -
+    field: metrics.name
+    operator: '='
+    value: job_rating.score
 bindings:
   epic:
     field: id

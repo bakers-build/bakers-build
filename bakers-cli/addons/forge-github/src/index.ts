@@ -122,6 +122,12 @@ const NO_RUN = { run_id: null, job_id: null, run_started_at: null } as const;
 const basic = (token: string) =>
   Buffer.from(`x-access-token:${token}`).toString('base64');
 
+const unsupported = async (): Promise<never> => {
+  throw new Error(
+    'origin issues are unsupported on GitHub; record the step in Manual review',
+  );
+};
+
 const factory: ForgeBackendFactory = async (raw, context) => {
   const s = settingsOf(raw);
   const doFetch = context.fetch ?? fetch;
@@ -175,16 +181,21 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       text?: boolean;
     } = {},
   ) =>
-    (init.text ? requestText : requestJson)(doFetch, `${repo}${path}`, {
-      method: init.method ?? 'GET',
-      headers: {
-        authorization: `Bearer ${await accessToken()}`,
-        accept: 'application/vnd.github+json',
-        'content-type': 'application/json',
+    // An absolute URL reaches the API outside the repository (user search).
+    (init.text ? requestText : requestJson)(
+      doFetch,
+      path.startsWith(API) ? path : `${repo}${path}`,
+      {
+        method: init.method ?? 'GET',
+        headers: {
+          authorization: `Bearer ${await accessToken()}`,
+          accept: 'application/vnd.github+json',
+          'content-type': 'application/json',
+        },
+        ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+        ...(init.allow404 ? { allow404: true } : {}),
       },
-      ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
-      ...(init.allow404 ? { allow404: true } : {}),
-    });
+    );
 
   const pull = async (n: number) => (await api(`/pulls/${n}`)) as Pull;
 
@@ -372,6 +383,41 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       if (log === undefined)
         throw new Error(`job ${jobId} is not a job of ${s.repository}`);
       return tail(log, maxBytes);
+    },
+    issueLabels: unsupported,
+    updateIssueLabels: unsupported,
+    commentIssue: unsupported,
+    addReviewers: async (pr, mails) => {
+      const requested: string[] = [];
+      const skipped: { mail: string; reason: string }[] = [];
+      for (const mail of mails) {
+        // Search sees public e-mails only; an ambiguous hit is no match.
+        const found = (await api(
+          `${API}/search/users?q=${encodeURIComponent(`${mail} in:email`)}`,
+        )) as { total_count: number; items: { login: string }[] };
+        const login =
+          found.total_count === 1 ? found.items[0]?.login : undefined;
+        if (!login) {
+          skipped.push({
+            mail,
+            reason: 'no GitHub user with this public e-mail',
+          });
+          continue;
+        }
+        try {
+          await api(`/pulls/${pr.number}/requested_reviewers`, {
+            method: 'POST',
+            body: { reviewers: [login] },
+          });
+          requested.push(mail);
+        } catch (err) {
+          // 422: GitHub refuses this reviewer (the author, no access); others still go.
+          const msg = err instanceof Error ? err.message : String(err);
+          if (!/ answered 422: /.test(msg)) throw err;
+          skipped.push({ mail, reason: msg });
+        }
+      }
+      return { requested, skipped };
     },
   };
   return backend;

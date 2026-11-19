@@ -112,23 +112,23 @@ scenes:
                 lines:
                   - component: bb_theme:form_label
                     props:
-                      for: edit-field-developer-title
+                      for: edit-position
                     slots:
                       title: Position
                   - component: bb_theme:form_input
                     props:
-                      name: field_developer_title
-                      id: edit-field-developer-title
+                      name: position
+                      id: edit-position
                       placeholder: e.g. Product Lead
                   - component: bb_theme:form_label
                     props:
-                      for: edit-field-bakers-background
+                      for: edit-background
                     slots:
                       title: What should bakers.build know about your background?
                   - component: bb_theme:form_textarea
                     props:
-                      name: field_bb_background
-                      id: edit-field-bakers-background
+                      name: background
+                      id: edit-background
                       rows: 3
                       placeholder: Drupal, Linear, or something else entirely.
                 actions:

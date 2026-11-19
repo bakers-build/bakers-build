@@ -96,34 +96,34 @@ final class BbBoardSummary extends AreaPluginBase {
   /**
    * Turns the aggregations into labelled, ordered rows.
    */
-  private ProjectBoardSummary $rows;
+  protected ProjectBoardSummary $rows;
 
   /**
    * The Details preference the segmented control shows.
    */
-  private BoardPreferences $preferences;
+  protected BoardPreferences $preferences;
 
   /**
    * Records failed summary searches.
    */
-  private LoggerInterface $logger;
+  protected LoggerInterface $logger;
 
   /**
    * The Unhealthy filter's rule, the attention set and the board's project.
    */
-  private BoardHealth $health;
+  protected BoardHealth $health;
 
   /**
    * The board address, once per executed view.
    */
-  private ?BoardAddress $address = NULL;
+  protected ?BoardAddress $address = NULL;
 
   /**
    * The computed summary, once per executed view.
    *
    * @var array<string, mixed>|null
    */
-  private ?array $summary = NULL;
+  protected ?array $summary = NULL;
 
   /**
    * {@inheritdoc}

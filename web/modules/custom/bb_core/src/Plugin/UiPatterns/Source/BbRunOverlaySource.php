@@ -35,12 +35,12 @@ final class BbRunOverlaySource extends SourcePluginBase implements ContainerFact
   /**
    * Formats overlay timestamps in the product `normal` format.
    */
-  private BbDate $date;
+  protected BbDate $date;
 
   /**
    * Shared list-row helpers.
    */
-  private BbRunOverlayRows $rows;
+  protected BbRunOverlayRows $rows;
 
   /**
    * {@inheritdoc}

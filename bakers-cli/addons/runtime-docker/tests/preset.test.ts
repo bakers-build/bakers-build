@@ -59,6 +59,18 @@ describe('cliRootOf', () => {
     ).toBe('/g/lib/node_modules');
   });
 
+  it('stops at the CLI package of a global install, never the whole prefix', async () => {
+    const { cliRootOf } = await import('../src/index.js');
+    const cli = '/usr/local/lib/node_modules/@bakers-build/bakers';
+    expect(
+      cliRootOf(
+        `${cli}/node_modules/@bakers-build/addon-runtime-docker`,
+        `${cli}/node_modules/@bakers-build/conductor`,
+        '/home/op',
+      ),
+    ).toBe(cli);
+  });
+
   it('refuses a root that would expose the operator home', async () => {
     const { cliRootOf } = await import('../src/index.js');
     for (const [a, b] of [

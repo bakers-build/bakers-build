@@ -4,12 +4,11 @@
 // short, dismissable action from wherever the operator already is, not a
 // destination of its own.
 //
-// The switch does three things, in order, on Enter: (1) refuse silently when
-// the choice is already active — a write and a restart over "the same" would
-// be a no-op with side effects; (2) ask the command owner to persist the
-// selection through the conductor config contract; (3) re-execute
-// this process via the seam `ui/src/bun-runtime.ts` exposes, so any conductor
-// reading the SAME config file re-binds on its next read.
+// The switch does two things on Enter: (1) refuse when the choice is already
+// active — a restart over "the same" would be a no-op with side effects;
+// (2) re-execute `bakers ui` scoped to the picked workspace for that session
+// only. It writes no configuration file: a pin that contradicts the
+// committed project would stop the next start.
 
 import type { VNode } from '@opentui/core';
 import { actionItem } from '../../../Component/footer-actions/index.js';
@@ -159,32 +158,20 @@ export class WorkspacePickerScreen extends AsyncModalScreen<WorkspaceOption[]> {
       context.requestDraw();
       return true;
     }
-    void this.commit(picked, context);
+    this.commit(picked, context);
     return true;
   }
 
-  /** Write the selection, then restart — the two steps a manual edit and a
-   *  cockpit switch share, ending in the SAME re-exec `bakers ui` took to boot. */
-  private async commit(
-    picked: WorkspaceOption,
-    context: ScreenContext,
-  ): Promise<void> {
-    const selectWorkspace = context.services?.selectWorkspace;
+  /** Restart scoped to the picked workspace; nothing is persisted. */
+  private commit(picked: WorkspaceOption, context: ScreenContext): void {
     const restart = context.services?.restartProcess;
-    if (!selectWorkspace || !restart) {
+    if (!restart) {
       this.lastMessage =
         'Cannot switch here: no project .bakers directory was resolved.';
       context.requestDraw();
       return;
     }
-    try {
-      await selectWorkspace(picked.name);
-    } catch (error) {
-      this.lastMessage = error instanceof Error ? error.message : String(error);
-      context.requestDraw();
-      return;
-    }
-    restart();
+    restart(picked.name);
   }
 
   select(index: number, context: ScreenContext): boolean {

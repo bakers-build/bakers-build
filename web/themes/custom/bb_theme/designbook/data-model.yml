@@ -1551,9 +1551,6 @@ content:
       form_modes:
         default:
           template: field-map
-        profile:
-          template: field-map
-          label: Profile
       fields:
         user_picture:
           type: image
@@ -1567,18 +1564,6 @@ content:
           type: string
           title: Full name
           description: Additive (BB-507 D4) — does not replace or derive display_name.
-          required: false
-          multiple: false
-        field_developer_title:
-          type: string
-          title: Position
-          description: Free text (BB-507 D2), no vocabulary. Product label Position.
-          required: false
-          multiple: false
-        field_bb_background:
-          type: text
-          title: What should bakers.build know about your background?
-          description: Optional long text handed to AI assistants as context.
           required: false
           multiple: false
         name:
@@ -1653,6 +1638,59 @@ content:
         changed: >-
           Drupal's user entity has no `changed` field; `access` and `login`
           carry recency.
+  bb_profile:
+    bb_profile:
+      title: bakers.build profile
+      purpose: >-
+        What a person tells bakers.build about themselves, one per user and
+        workspace (unique on uid + workspace_id): their position, their
+        background handed to AI assistants as context, and their favorite
+        projects. Replaces the user fields field_developer_title and
+        field_bb_background. Edited on the Profile tab /user/{user}/profile for
+        the workspace in context; the entity has no view display.
+      form_modes:
+        default:
+          template: field-map
+      fields:
+        uid:
+          type: reference
+          title: Owner
+          required: true
+          multiple: false
+          reference: user
+        workspace_id:
+          type: reference
+          title: Workspace
+          required: true
+          multiple: false
+          reference: bb_workspace
+        position:
+          type: string
+          title: Position
+          description: Free text, at most 255 characters; placeholder "e.g. Product Lead".
+          required: false
+          multiple: false
+        background:
+          type: text
+          title: What should bakers.build know about your background?
+          description: >-
+            Optional long text (string_long) handed to AI assistants as context,
+            e.g. "Drupal developer, confident with PHP; little DevOps
+            experience."
+          required: false
+          multiple: false
+        favorite_projects:
+          type: reference
+          title: Favorite projects
+          description: >-
+            Projects this person marked as favorite in this workspace; not on
+            the form.
+          required: false
+          multiple: true
+          reference: bb_project
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
   bb_workspace:
     bb_workspace:
       title: bakers.build workspace

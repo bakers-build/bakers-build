@@ -20,7 +20,7 @@ final class DisplayBuilderInstanceStorage extends InstanceStorage {
   /**
    * Creates lightweight sample placeholders.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}
