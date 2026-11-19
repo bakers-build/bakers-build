@@ -344,9 +344,83 @@ describe('TicketContent', () => {
     expect(wide.frame).toContain('[Details]');
     expect(wide.frame).toContain('Related');
     expect(wide.frame).toContain('feat/a_b_c');
-    expect(wide.frame).toContain('https://example.test/result');
+    // A short label, never the raw URL (activation still uses the href).
+    expect(wide.frame).toContain('example.test/result');
+    expect(wide.frame).not.toContain('https://example.test/result');
     expect(wide.frame).toContain('runner-1');
     expect(wide.frame).not.toMatch(/… \+\d+ more lines/);
+  });
+
+  const paintWithBase = (doc: TicketDetailDocument, width: number) => {
+    const model = ticketContentModel(
+      doc,
+      'overview',
+      labels,
+      NOW,
+      'https://b.test',
+    );
+    return paint(
+      () =>
+        content(
+          {
+            tab: 'overview',
+            model,
+            expandedKeys: initialExpandedKeys('overview', model),
+            select: noop,
+            toggle: noop,
+          },
+          width,
+        ),
+      width,
+      32,
+    );
+  };
+
+  const rowIndex = (rows: readonly string[], text: string): number =>
+    rows.findIndex((row) => row.includes(text));
+
+  // AC-1/AC-5/AC-7: the links sit above the first document at both widths,
+  // once, each as one short label.
+  for (const width of [80, 120]) {
+    it(`paints the ticket URL and the PR above the documents at ${width} columns`, async () => {
+      const painted = await paintWithBase(
+        document({
+          identifier: 'BAKERS-332',
+          links: [
+            { title: 'Result', uri: 'https://example.test/result' },
+            { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
+          ],
+        }),
+        width,
+      );
+      const description = painted.rows.findIndex(
+        (row) =>
+          row.includes('Description') && !row.includes('Short description'),
+      );
+      expect(description).toBeGreaterThan(0);
+      for (const text of ['* links', 'BAKERS-332', 'PR #229']) {
+        const at = rowIndex(painted.rows, text);
+        expect(at, `${text} is painted`).toBeGreaterThanOrEqual(0);
+        expect(at, `${text} comes before Description`).toBeLessThan(
+          description,
+        );
+      }
+      expect(painted.frame.split('* links').length - 1).toBe(1);
+      expect(painted.frame).not.toContain('https://github.com/o/r/pull/229');
+    });
+  }
+
+  // AC-3: only the ticket row, no `none` placeholder.
+  it('paints only the ticket row for a linkless ticket', async () => {
+    const painted = await paintWithBase(
+      document({ identifier: 'BAKERS-1', links: [] }),
+      80,
+    );
+    const links = rowIndex(painted.rows, '* links');
+    expect(links).toBeGreaterThanOrEqual(0);
+    const items = painted.rows.slice(links + 1, links + 3).join('\n');
+    expect(items).toMatch(/ticket\s*:?\s*BAKERS-1/);
+    expect(items).not.toContain('none');
   });
 
   it('keeps feat/a_b_c literal in technical details and comment metadata', async () => {

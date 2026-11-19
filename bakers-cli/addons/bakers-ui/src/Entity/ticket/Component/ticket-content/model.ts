@@ -6,6 +6,7 @@ import {
   styledOf,
 } from '../../../../Component/section-list/index.js';
 import type { TicketDetailDocument } from '../../../../types.js';
+import { ticketTopLinks } from '../../Data/links.js';
 import { relativeCreated } from '../comment-item/index.js';
 import { TICKET_SECTIONS } from '../sections/index.js';
 import {
@@ -297,25 +298,6 @@ const technicalProperties = (
   ];
 };
 
-const linkProperties = (lines: readonly SectionLine[]): TicketProperty[] => {
-  const meaningful = lines.filter((line) => {
-    const text = lineText(line).trim();
-    return text !== '' && text !== 'No links.';
-  });
-  if (meaningful.length === 0) return [property('links', '')];
-  return meaningful.map((line) => {
-    const text = lineText(line).trim();
-    const match = /^(.*?)\s+(https?:\/\/\S+)$/.exec(text);
-    if (match?.[1] !== undefined && match[2] !== undefined) {
-      return property(match[1], match[2], { href: match[2] });
-    }
-    if (text.startsWith('http://') || text.startsWith('https://')) {
-      return property('link', text, { href: text });
-    }
-    return property('link', text);
-  });
-};
-
 const relatedProperties = (
   document: TicketDetailDocument,
 ): TicketProperty[] => [
@@ -390,12 +372,13 @@ const overviewModel = (
   );
   const details = technicalProperties(byHeading, document, labels);
   const technical = asLines(details);
-  const listedLinks = linkProperties(byHeading.get('Links')?.lines ?? []);
   const origin = originProperty(document);
-  const links =
-    origin === undefined
-      ? listedLinks
-      : [origin, ...listedLinks.filter((item) => item.value !== 'none')];
+  const links = [
+    ...ticketTopLinks(document, baseUrl).map(
+      ({ key, label, href }): TicketProperty => ({ key, value: label, href }),
+    ),
+    ...(origin === undefined ? [] : [origin]),
+  ];
   return {
     entries: [
       ...documents,

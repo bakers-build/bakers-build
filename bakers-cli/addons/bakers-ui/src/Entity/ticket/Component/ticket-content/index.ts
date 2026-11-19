@@ -39,8 +39,8 @@ import {
   ticketContentRowId,
 } from './model.js';
 
-// Links are NOT here: a URL cannot fit the narrow sidebar without wrapping, so
-// they render full-width in the left column (see linksSection) instead.
+// Links are NOT here: they render at the top of the left column (see
+// linksSection), above the documents, so they are visible without scrolling.
 export const SIDEBAR_TABS = [
   { id: 'details', label: 'Details' },
   { id: 'related', label: 'Related' },
@@ -594,17 +594,13 @@ const linksSection = (
   links: readonly TicketProperty[],
   activateProperty: ((item: TicketProperty) => void) | undefined,
 ): VNode | null => {
-  // Drop the `none` placeholder linkProperties emits for a linkless ticket, so
-  // the section is omitted entirely rather than painting "links : none".
-  const real = links.filter(
-    (item) => item.value !== 'none' && item.value !== '',
-  );
-  if (real.length === 0) return null;
+  // No base URL and no links: no section at all, never "links : none".
+  if (links.length === 0) return null;
   return HeadlineMarkdown({
     id,
     headline: 'links',
     paddingBottom: 1,
-    children: [properties(`${id}-items`, real, activateProperty)],
+    children: [properties(`${id}-items`, links, activateProperty)],
   });
 };
 
@@ -656,8 +652,9 @@ const overview = (id: string, props: TicketContentProps): VNode => {
         flexShrink: sideBySide ? 1 : 0,
         gap: sideBySide ? 0 : 2,
       },
-      overviewDocuments(`${id}-documents`, main, props),
+      // Links first: directly under the header at both widths.
       ...(links === null ? [] : [links]),
+      overviewDocuments(`${id}-documents`, main, props),
     ),
     ...(side === null
       ? []

@@ -443,10 +443,69 @@ describe('ticketContentModel Overview', () => {
     expect(model.sidebar?.links).toEqual([
       {
         key: '*not-bold*',
-        value: 'https://example.test/result',
+        value: 'example.test/result',
         href: 'https://example.test/result',
       },
     ]);
+  });
+
+  it('lists the ticket URL, then the PR, then other links, then origin', () => {
+    const model = ticketContentModel(
+      document({
+        identifier: 'BAKERS-332',
+        origin: 'https://git.test/g/p/-/issues/16',
+        links: [
+          { title: 'Result', uri: 'https://example.test/a/b/result' },
+          { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
+        ],
+      }),
+      'overview',
+      labels,
+      NOW,
+      'https://b.test',
+    );
+    expect(model.sidebar?.links).toEqual([
+      {
+        key: 'ticket',
+        value: 'BAKERS-332',
+        href: 'https://b.test/admin/bakers/ticket/ticket-1',
+      },
+      {
+        key: 'PR',
+        value: 'PR #229',
+        href: 'https://github.com/o/r/pull/229',
+      },
+      {
+        key: 'Result',
+        value: 'example.test/…/result',
+        href: 'https://example.test/a/b/result',
+      },
+      {
+        key: 'origin',
+        value: 'https://git.test/g/p/-/issues/16',
+        href: 'https://git.test/g/p/-/issues/16',
+      },
+    ]);
+  });
+
+  it('lists only the ticket URL for a linkless ticket, with no none placeholder', () => {
+    const withBase = ticketContentModel(
+      document({ identifier: 'BAKERS-1', links: [] }),
+      'overview',
+      labels,
+      NOW,
+      'https://b.test',
+    );
+    expect(withBase.sidebar?.links.map((item) => item.key)).toEqual([
+      'ticket',
+    ]);
+    const offline = ticketContentModel(
+      document({ links: [] }),
+      'overview',
+      labels,
+      NOW,
+    );
+    expect(offline.sidebar?.links).toEqual([]);
   });
 
   it('exposes related ticket identities as clickable properties', () => {
