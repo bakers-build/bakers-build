@@ -40,7 +40,7 @@ Navigation has five tab scopes. Tabbed screens show the bar for their current sc
 
 | Level | Tabs |
 |-------|------|
-| Root | **My work** · **Projects** · **Members** (workspace lead only) · **Conductors** |
+| Root | **My work** · **Projects** · **Members** (workspace lead only) · **Machines** |
 | Project | **Overview** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
 | Workspace member | **Overview** · **Tickets** · **Runs** |
@@ -91,12 +91,13 @@ Cancelling and restarting are actions of their own, next to `e` in the footer, a
 | `x` cancel ticket | Overview, Planning and History of a ticket that is neither `done`, `cancelled` nor closed | Writes only `state: cancelled`. |
 | `x` cancel run | Run detail and the Runs tab, for a run in `claimed` or `running` | Sets that run to `cancelled`. |
 | `r` restart run | Overview, Planning and History while the ticket has a run in `claimed` or `running` | Cancels exactly that run and nothing else; the conductor claims the ticket again and starts a new run. |
+| `r` restart runs | Machines and a machine's conductors, on a machine or conductor you own | Cancels its `claimed` or `running` runs and each open ticket's newest failed run, noting `Restart runs (<level> <name>) by <you>` in the error log; each ticket gets one fresh run, a frozen one after unfreeze. Offline, cleanup and fresh runs follow its next start. |
 
 Restart run uses the same endpoint and permissions as Cancel run. If the run ended before the dialog opened, the dialog says so and confirms nothing.
 
 ## The conductor sections
 
-`Enter` on any Conductors row opens that conductor, whichever machine it runs on. Four tabs share one read of it:
+**Machines** lists your machines with status, active runs and conductor count; `Enter` opens that machine's conductors. `Enter` on any Conductors row opens that conductor, whichever machine it runs on. Four tabs share one read of it:
 
 - **Overview**: status, last-seen age, machine, project, workspace path, PID, and load as `<current>/<max>`, the host's budget that several conductors share.
 - **Held work**: its runs in state `claimed` or `running`; `Enter` opens the run's ticket.
