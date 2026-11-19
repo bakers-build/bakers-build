@@ -54,7 +54,7 @@ The root **Members** tab is available to workspace leads.
 
 ## The ticket sections
 
-**Overview** opens with **links**: the ticket's own web address (its identifier), then its pull or merge requests, then its other links and its origin, each one short label such as `PR #229`. A click copies the full URL. Below them comes the **latest summary**: the newest comment whose `bb_comment_type` is `summary`, the handoff that says where the work stands. It is a collapsible entry, a five-line extract until expanded, and "newest" is the History tab's own order. The type match is exact, so a ticket with no `summary` comment, a typo included, shows "No summary comment."
+**Overview** opens with **links**: the ticket's own web address (its identifier), then its pull or merge requests, then its other links and its origin, each one short label such as `PR #229` with its full URL written out on the line below. A click on either line copies the full URL. Below them comes the **latest summary**: the newest comment whose `bb_comment_type` is `summary`, the handoff that says where the work stands. It is a collapsible entry, a five-line extract until expanded, and "newest" is the History tab's own order. The type match is exact, so a ticket with no `summary` comment, a typo included, shows "No summary comment."
 
 **Latest spec**, **Latest plan** and **Latest test** live on **Planning** under the same rules. **Description** starts expanded; collapsed it shows five lines, then `… +N more lines`. At 100 columns or wider a sidebar adds **Details** and **Related**: parent, sub-tickets, referenced tickets and **Blocked by**, one `<identifier> · <title>` row per blocker.
 
