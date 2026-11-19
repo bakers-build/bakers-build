@@ -176,6 +176,28 @@ describe('loadTools', () => {
     );
   });
 
+  it('lists described profiles one per line and runs a profile with or without a description', async () => {
+    const registry = await loadTools(
+      provisionTools({
+        site: { command: 'echo site', description: 'Drupal site, minutes.' },
+        plain: 'echo plain',
+      }),
+    );
+    const [tool] = registry.list();
+    expect(tool.description).toMatch(
+      /second one\.\n- site: Drupal site, minutes\.$/,
+    );
+    expect(tool.inputSchema).toMatchObject({
+      properties: { profile: { enum: ['site', 'plain'] } },
+    });
+    expect(
+      (await registry.call('provision_up', { profile: 'site' }, here)).text,
+    ).toBe('exit 0\nsite\n');
+    expect(
+      (await registry.call('provision_up', { profile: 'plain' }, here)).text,
+    ).toBe('exit 0\nplain\n');
+  });
+
   it('reports a failing provision_up as a tool error', async () => {
     const registry = await loadTools(provisionTools('echo broken; exit 3'));
     await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
@@ -372,6 +394,37 @@ describe('provision_exec', () => {
         )
       ).text,
     ).toBe('exit 0\n[0]\n');
+  });
+
+  it('lists described keys one per line and runs a key with or without a description', async () => {
+    const registry = await loadTools(
+      provisionTools(undefined, undefined, {
+        exec: {
+          test: {
+            command: 'echo',
+            args: true,
+            description: 'Unit tests; args are test paths.',
+          },
+          lint: 'echo lint',
+        },
+      }),
+    );
+    const [tool] = registry.list();
+    expect(tool.description).toMatch(
+      /output tail\.\n- test: Unit tests; args are test paths\.$/,
+    );
+    expect(
+      (
+        await registry.call(
+          'provision_exec',
+          { key: 'test', args: ['a'] },
+          here,
+        )
+      ).text,
+    ).toBe('exit 0\n-- a\n');
+    expect(
+      (await registry.call('provision_exec', { key: 'lint' }, here)).text,
+    ).toBe('exit 0\nlint\n');
   });
 
   it('refuses an unknown key and reports a failing command', async () => {
