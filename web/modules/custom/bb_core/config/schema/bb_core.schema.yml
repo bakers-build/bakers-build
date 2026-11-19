@@ -303,7 +303,7 @@ bb_core.bb_figure.*:
                   label: 'Value'
                   constraints:
                     Choice:
-                      choices: [week, month, quarter, year, all, custom]
+                      choices: [week, month, quarter, year, all, custom, day]
                 label:
                   type: label
                   label: 'Label'
