@@ -296,6 +296,27 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
   }
 
   /**
+   * Acting on a row another manager already removed is refused out loud.
+   */
+  public function testActingOnMemberWhoIsGoneIsRefused(): void {
+    $this->actAsTeamManager();
+    $bea = (int) $this->crew[1]->id();
+    $this->container->get('bb_core.membership_writer')->remove($this->team, $bea);
+
+    foreach (['confirm_remove_' . $bea => (string) $bea, 'member_role_' . $bea => 'lead'] as $key => $value) {
+      $form_state = new FormState();
+      $form_state->setProgrammed();
+      $form_state->setUserInput(['form_id' => $this->formId(), $key => $value]);
+      $form_state->addBuildInfo('args', [['island_id' => 'members', 'host_id' => 'team']]);
+      $form = $this->container->get('form_builder')->buildForm(GroupMembersForm::class, $form_state);
+
+      self::assertNotSame([], $form_state->getErrors(), "$key on a removed member is refused");
+      self::assertSame('That person is no longer a member of Platform Crew.', (string) ($form['#attributes']['data-members-announce'] ?? ''));
+      self::assertSame('assertive', $form['#attributes']['data-members-announce-priority'] ?? NULL);
+    }
+  }
+
+  /**
    * An empty roster shows the empty-state component, not a bare sentence.
    */
   public function testAnEmptyRosterShowsTheEmptyState(): void {

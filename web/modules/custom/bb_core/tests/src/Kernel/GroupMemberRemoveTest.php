@@ -320,7 +320,7 @@ final class GroupMemberRemoveTest extends KernelTestBase {
       pressed: $stranger,
     );
 
-    self::assertSame([], $errors);
+    self::assertNotSame([], $errors, 'a uid this group does not hold is refused, not silently ignored');
     self::assertSame($before, $this->crewUids(), 'this team kept every member it had');
     self::assertSame(
       $other_before,

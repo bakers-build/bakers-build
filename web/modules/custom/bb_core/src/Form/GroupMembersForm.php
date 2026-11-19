@@ -498,6 +498,14 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       return FALSE;
     }
     [$prefix, $uid_key] = $change;
+    if ($this->membershipWriter->membershipOf($group, (int) $uid_key) === NULL) {
+      // Another manager got there first: say so, and focus where the row was.
+      $gone = $this->t('That person is no longer a member of @group.', ['@group' => $group->label()]);
+      $form_state->setErrorByName($prefix . $uid_key, $gone);
+      $focus = $this->face->afterRemoval($group, $this->face->rosterUids($group), (int) $uid_key);
+      $form['#attributes'] = MemberFaceOutcome::attributes($focus, (string) $gone, 'assertive') + ($form['#attributes'] ?? []);
+      return TRUE;
+    }
     $value = $form_state->getUserInput()[$prefix . $uid_key] ?? '';
     $reason = $this->membershipWriter->refusal(
       $group,
