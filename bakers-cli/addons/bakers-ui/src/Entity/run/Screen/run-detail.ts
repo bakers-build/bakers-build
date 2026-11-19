@@ -15,7 +15,8 @@ import {
   runDetailTree,
   runResource,
 } from '../Component/run-detail/index.js';
-import { isRunCancellable } from '../Form/edit.js';
+import { ticketRunRows } from '../Data/runs.js';
+import { offersCancelRun } from '../Form/edit.js';
 import { cancelRunRequest } from './run-actions.js';
 
 export interface RunDetailInput {
@@ -118,7 +119,11 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
   ): void {
     const run = runResource(document, context.params?.runId);
     this.cancellable =
-      !!run && isRunCancellable(String(run.attributes?.state ?? ''));
+      !!run &&
+      offersCancelRun(
+        String(run.attributes?.state ?? ''),
+        ticketRunRows(document)[0]?.id === run.id,
+      );
   }
 
   protected actions() {

@@ -185,6 +185,14 @@ Then(
   },
 );
 
+Then(
+  'the machine Overview lists the conductor {string} in the project {string}',
+  async ({ page }, label: string, project: string) => {
+    const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
+    await expect(row, `The conductor "${label}" names no project "${project}"`).toContainText(project);
+  },
+);
+
 When('I open {string} on the machine', async ({ page }, name: string) => {
   await page.locator('[data-component-id="bb_theme:inspector"]').getByRole('link', { name, exact: true }).click();
 });

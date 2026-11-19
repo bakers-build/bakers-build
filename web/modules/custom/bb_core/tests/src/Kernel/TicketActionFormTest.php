@@ -329,30 +329,23 @@ final class TicketActionFormTest extends KernelTestBase {
   }
 
   /**
-   * Restart cancels the newest failed run of a parked ticket; all runs stay.
+   * A failed run gets no Cancel run here; Restart runs restarts the ticket.
    */
-  public function testRestartCancelsTheNewestFailedRun(): void {
+  public function testFailedRunIsNotCancelledHere(): void {
     $ticket = $this->ticket('bb_work', 'working');
     $runs = [
       $this->createRun($ticket, 'failed'),
       $this->createRun($ticket, 'failed'),
       $this->createRun($ticket, 'failed'),
     ];
-    [$oldest, $middle, $newest] = $runs;
-    self::assertFalse(TicketInterventions::mayCancelRun($oldest, $ticket), 'An older failed run is not the restart run.');
-    self::assertFalse(TicketInterventions::mayCancelRun($middle, $ticket));
 
-    $this->askAboutRun($newest);
+    $this->askAboutRun($runs[2]);
     $form = $this->actionForm($ticket);
-    $question = (string) $form['question']['#slots']['body']['#plain_text'];
-    self::assertStringContainsString('can be claimed again', $question);
-    self::assertContains('Restart ticket', $this->buttonLabels($form));
+    self::assertArrayNotHasKey('bb_confirm', $this->buttonLabels($form));
     $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
 
-    self::assertSame(['failed', 'failed', 'cancelled'], array_map(fn(BbRunInterface $run): string => $this->reloadRun($run)->getRunState(), $runs));
-    self::assertFalse($this->container->get('bb_core.failed_run_circuit_breaker')->isTripped($this->reload($ticket)));
-    self::assertStringContainsString('was restarted', implode(' ', array_map('strval', $this->container->get('messenger')->messagesByType('status'))));
-    self::assertSame('working', $this->reload($ticket)->getState()->getId());
+    self::assertSame(['failed', 'failed', 'failed'], array_map(fn(BbRunInterface $run): string => $this->reloadRun($run)->getRunState(), $runs));
+    self::assertTrue(TicketInterventions::mayRestartTicket($ticket), 'The ticket dialog restarts it instead.');
   }
 
   /**

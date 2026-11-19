@@ -54,6 +54,7 @@ html:not(.landing-page) {
   --vp-code-block-divider-color: #3a2d1f;
   --vp-code-copy-code-bg: #3a2d1f;
   --vp-code-copy-code-hover-bg: #4a3a28;
+  --vp-code-copy-code-active-text: #f3eada; /* "Copied" on the dark block */
   --vp-code-tab-bg: var(--lp-ink);
   --vp-code-tab-divider: #3a2d1f;
   --vp-code-tab-text-color: #cdbda6;
