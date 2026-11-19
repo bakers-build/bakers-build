@@ -198,8 +198,43 @@ final class PeriodResolverTest extends UnitTestCase {
         $now,
         ['kind' => 'week', 'start' => '2026-10-19'],
       ],
+      'day' => [['period' => 'day', 'date' => '2026-10-24'], $now, [
+        'kind' => 'day',
+        'start' => '2026-10-24',
+        'end' => '2026-10-24',
+        'label' => '24 Oct 2026',
+        'grouping' => 'hour',
+        'current' => TRUE,
+        'comparison' => ['start' => '2026-10-23', 'end' => '2026-10-23', 'label' => '23 Oct 2026'],
+      ],
+      ],
+      'day in the past is not current' => [
+        ['period' => 'day', 'date' => '2026-10-23'],
+        $now,
+        ['start' => '2026-10-23', 'current' => FALSE],
+      ],
+      'day without date is today' => [['period' => 'day'], $now, ['kind' => 'day', 'start' => '2026-10-24', 'current' => TRUE]],
+      'day just before midnight UTC is still that day' => [
+        ['period' => 'day'],
+        '2026-11-19 23:59:59',
+        ['start' => '2026-11-19', 'label' => '19 Nov 2026'],
+      ],
+      'day at midnight UTC is the next day' => [
+        ['period' => 'day'],
+        '2026-11-20 00:00:00',
+        ['start' => '2026-11-20', 'label' => '20 Nov 2026', 'comparison' => ['start' => '2026-11-19', 'end' => '2026-11-19', 'label' => '19 Nov 2026']],
+      ],
       'missing selection uses the default' => [[], $now, ['kind' => 'week', 'start' => '2026-10-19']],
     ];
+  }
+
+  /**
+   * A day is no default kind; the week takes its place.
+   */
+  public function testDayIsNoDefault(): void {
+    $range = (new PeriodResolver())->resolve([], 'day', self::ts('2026-10-24 10:00:00'), static fn(): ?int => NULL);
+    self::assertSame('week', $range->kind);
+    self::assertSame('2026-10-19', $range->start);
   }
 
   /**
