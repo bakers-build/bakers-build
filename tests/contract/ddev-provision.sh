@@ -289,6 +289,9 @@ export FAIL_COMMAND=ddev; dispatch exec down; unset FAIL_COMMAND
 [ "$rc" != 0 ] || fail 'exit 0'
 grep -q 'ddev broke' <<<"$out" || fail "output lost: $out"
 [ ! -e "$down_marker" ] || fail 'marker left'
+case=down-parent-project; echo recipe-test > "$down_marker"
+export FAIL_COMMAND=ddev-own-project.sh; dispatch exec down; unset FAIL_COMMAND
+[ "$rc" != 0 ] && [ -e "$down_marker" ] && ! grep -q '^ddev ' "$TRACE" || fail "touched the parent's site: $(cat "$TRACE")"
 
 # A reused site whose database is behind the code: `down`, then provision_up installs afresh.
 case=down-then-up; arrange running recipe-test 200
