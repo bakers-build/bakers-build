@@ -530,11 +530,14 @@ bb_core.onboarding:
 bb_core.user.profile:
   path: '/user/{user}/profile'
   defaults:
-    _controller: '\Drupal\bb_core\Controller\UserProfileController::edit'
+    _entity_form: 'bb_profile.default'
     _title_callback: '\Drupal\bb_core\Controller\UserProfileController::title'
   requirements:
     _entity_access: 'user.edit profile'
     user: '\d+'
   options:
     _auth: ['cookie']
+    parameters:
+      user:
+        type: entity:user
     _bb_user_area: TRUE
