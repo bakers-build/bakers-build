@@ -331,9 +331,9 @@ describe('ticket tab behaviour before the screen-per-tab migration', () => {
       {
         "addons": "Tab section · e edit · ↑↓ select · Enter run · l copy link",
         "bakers/artifacts": "Tab section · e edit · y copy id · Y copy link · ↑↓ scroll",
-        "comments": "Tab section · e edit · x cancel ticket · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
-        "overview": "Tab section · e edit · x cancel ticket · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
-        "planning": "Tab section · e edit · x cancel ticket · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
+        "comments": "Tab section · e edit · x cancel ticket · r restart runs · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
+        "overview": "Tab section · e edit · x cancel ticket · r restart runs · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
+        "planning": "Tab section · e edit · x cancel ticket · r restart runs · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
         "runs": "Tab section · y copy id · Y copy link · ↑↓ select · Enter open run",
       }
     `);
@@ -413,12 +413,12 @@ describe('built-in ticket screen parity', () => {
   it.each([
     [
       'overview',
-      'Tab section · e edit · x cancel ticket · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand',
+      'Tab section · e edit · x cancel ticket · r restart runs · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand',
       ['y', 'Y', 'f', 'enter', ' ', 'j', 'k', 'down', 'g', 'G'],
     ],
     [
       'comments',
-      'Tab section · e edit · x cancel ticket · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand',
+      'Tab section · e edit · x cancel ticket · r restart runs · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand',
       ['y', 'Y', 'f', 'enter', ' ', 'j', 'k', 'down', 'g', 'G'],
     ],
     [

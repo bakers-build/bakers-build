@@ -14,7 +14,7 @@ import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
 import type { TicketDetailDocument } from '../../../types.js';
 import { listRowIds, listTableRows, listTableTree } from '../../collection.js';
 import { TICKET_RUN_TABLE, ticketRunRows } from '../../run/Data/runs.js';
-import { isRunCancellable } from '../../run/Form/edit.js';
+import { offersCancelRun } from '../../run/Form/edit.js';
 import { cancelRunRequest } from '../../run/Screen/run-actions.js';
 import {
   handleTicketCopy,
@@ -171,11 +171,13 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
       return this.select(view.selectable - 1, context);
     return false;
   }
-  /** The selected run, when it can still be cancelled (claimed or running). */
+  /** The selected run, when it offers Cancel run (rows are newest first). */
   private cancellableRun(): { id: string } | undefined {
     if (!this.document) return undefined;
     const run = ticketRunRows(this.document)[this.cursor.index];
-    return run?.id && isRunCancellable(run.state) ? { id: run.id } : undefined;
+    return run?.id && offersCancelRun(run.state, this.cursor.index === 0)
+      ? { id: run.id }
+      : undefined;
   }
   commandForInput(input: string): string | undefined {
     return this.state === 'ready' && input === 'x' && this.cancellableRun()

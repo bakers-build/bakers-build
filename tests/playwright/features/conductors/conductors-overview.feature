@@ -20,6 +20,7 @@ Feature: User and project conductors listings and Overview
     And the page heading is "Conductors"
     And the user Conductors listing is visible
     And the user Conductors listing shows "srv01-bakers"
+    And the user Conductors listing shows "bakers.build Platform"
 
   Scenario: Title search narrows the user Conductors listing
     Given I am signed in as a member of the "bakers" workspace
