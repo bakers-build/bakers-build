@@ -13,6 +13,7 @@ import {
   stemForConfigFile,
   transferIsolatedCommit,
 } from '@bakers-build/core';
+import { HttpError } from 'dropsh/plugin';
 import type { PluginLaunch } from '../plugins/agent.js';
 import {
   type BbAgent,
@@ -66,6 +67,7 @@ import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
 import { type HookRunner, shellHookRunner } from './hook-runner.js';
+import { httpErrorDetail, httpErrorText } from './http-error.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 import { runStartHooks } from './start-hooks.js';
@@ -104,6 +106,9 @@ function isReservedEnvKey(key: string): boolean {
     key === 'TICKET_URL'
   );
 }
+
+/** The longest wait between claims the server refuses (426). */
+const MAX_CLAIM_BACKOFF_MS = 300_000;
 
 /** A portable environment variable name. */
 const ENV_KEY = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -279,6 +284,10 @@ export function registrationOf(
 
 export class Conductor {
   private uuid: string | null = null;
+  /** While the server refuses claims (426): the current backoff, else 0. */
+  private claimBackoffMs = 0;
+  /** No claim before this epoch ms while refused. */
+  private claimsRefusedUntil = 0;
   /**
    * Frozen tickets seen on the last poll, by uuid, with the worktree their
    * hook ran in. Mirrored to `frozenStateFile` when one is given, so an
@@ -619,6 +628,34 @@ export class Conductor {
     }
   }
 
+  /**
+   * The server refuses claims from this CLI version (426): say so once with
+   * its remedy, then retry claims at a doubling interval up to five minutes.
+   */
+  private refuseClaims(err: HttpError): void {
+    if (this.claimBackoffMs) {
+      this.claimBackoffMs = Math.min(
+        this.claimBackoffMs * 2,
+        MAX_CLAIM_BACKOFF_MS,
+      );
+      this.logger.debug(
+        {
+          conductorId: this.id,
+          status: err.status,
+          backoffMs: this.claimBackoffMs,
+        },
+        'claims still refused',
+      );
+    } else {
+      this.claimBackoffMs = this.config.poll_interval_ms * 2;
+      this.logger.error(
+        { conductorId: this.id, status: err.status },
+        `claims refused by the server: ${httpErrorDetail(err)}`,
+      );
+    }
+    this.claimsRefusedUntil = Date.now() + this.claimBackoffMs;
+  }
+
   /** One tick that also waits for its actions: `bakers conductor once`, tests. */
   async tick(): Promise<void> {
     await this.produce();
@@ -631,7 +668,7 @@ export class Conductor {
       await fn();
     } catch (err) {
       this.logger.warn(
-        { conductorId: this.id, err: String(err) },
+        { conductorId: this.id, err: httpErrorText(err) },
         `${name} query failed`,
       );
     }
@@ -707,12 +744,27 @@ export class Conductor {
       this.logger.warn({ conductorId: this.id }, `claims withheld: ${line}`);
     }
     let claimed = 0;
-    let withheld = unavailable.length > 0;
+    // A refusal backs off silently: counted as withheld, so no idle line.
+    let withheld =
+      unavailable.length > 0 || Date.now() < this.claimsRefusedUntil;
     while (!withheld && machineLoad < maxParallel) {
-      const run = await this.remote.claimNext({
-        leaseSeconds: this.config.lease_seconds,
-        conductorId: this.id,
-      });
+      let run: Awaited<ReturnType<BbRemote['claimNext']>>;
+      try {
+        run = await this.remote.claimNext({
+          leaseSeconds: this.config.lease_seconds,
+          conductorId: this.id,
+        });
+      } catch (err) {
+        if (!(err instanceof HttpError) || err.status !== 426) throw err;
+        this.refuseClaims(err);
+        withheld = true;
+        break;
+      }
+      if (this.claimBackoffMs) {
+        this.claimBackoffMs = 0;
+        this.claimsRefusedUntil = 0;
+        this.logger.info({ conductorId: this.id }, 'claims accepted again');
+      }
       if (!run) break;
       if ('reason' in run) {
         withheld = true;
@@ -2248,7 +2300,7 @@ export class Conductor {
         await this.produce();
       } catch (err) {
         this.logger.error(
-          { conductorId: this.id, err: String(err) },
+          { conductorId: this.id, err: httpErrorText(err) },
           'tick failed',
         );
       }
