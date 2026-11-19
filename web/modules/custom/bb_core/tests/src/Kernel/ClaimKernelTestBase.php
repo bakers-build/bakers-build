@@ -83,7 +83,7 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_team', 'bb_project',
       'bb_conductor', 'bb_ticket', 'bb_comment', 'bb_run', 'bb_term',
-      'file',
+      'bb_profile', 'file',
     ] as $type) {
       $this->installEntitySchema($type);
     }
