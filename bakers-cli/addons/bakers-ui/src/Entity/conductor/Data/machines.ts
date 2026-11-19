@@ -2,7 +2,6 @@ import { toUnixSeconds } from '@bakers-build/core';
 import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import type { DropshClient, JsonApiResource } from '../../../types.js';
 import type { ListTable, Page } from '../../collection.js';
-import { singleRelId } from '../../ticket/Data/tickets.js';
 import { deriveConductorStatus } from './liveness.js';
 
 /** One machine of the control plane, as the Machines tab lists it. */
@@ -17,8 +16,10 @@ export interface MachineRow {
   ownerUserId: string | null;
 }
 
-const relId = (resource: JsonApiResource, name: string): string | null =>
-  singleRelId(resource.relationships?.[name]);
+const relId = (resource: JsonApiResource, name: string): string | null => {
+  const data = resource.relationships?.[name]?.data;
+  return data && !Array.isArray(data) ? data.id : null;
+};
 
 /**
  * The machines of these conductors, grouped from one conductor read with the
