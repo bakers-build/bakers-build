@@ -16,7 +16,7 @@ use Drupal\og\MembershipManagerInterface;
 use Drupal\user\UserInterface;
 
 /**
- * The Profile tab: a user's profile in the workspace in context.
+ * The Profile tab's title and the profile it edits.
  *
  * A service account's own workspace; else, on the own account, the validated
  * `?workspace=` origin; else the user's first workspace by label.
@@ -32,30 +32,6 @@ final class UserProfileController extends ControllerBase {
   ) {}
 
   /**
-   * The profile form, or an empty state without any workspace.
-   *
-   * @return array<string, mixed>
-   *   A render array.
-   */
-  public function edit(UserInterface $user): array {
-    $profile = $this->profileFor($user);
-    $build = $profile === NULL
-      ? [
-        '#type' => 'component',
-        '#component' => 'bb_theme:empty-state',
-        '#props' => [
-          'message' => (string) $this->t('You are in no workspace yet. Join a workspace to fill in your profile.'),
-          'icon' => 'user',
-        ],
-      ]
-      : $this->entityFormBuilder()->getForm($profile, 'default');
-    (new CacheableMetadata())->addCacheContexts(['url.query_args:workspace', 'user'])
-      ->addCacheTags(['og_membership_list', 'bb_profile_list'])
-      ->applyTo($build);
-    return $build;
-  }
-
-  /**
    * The page title, naming the workspace.
    */
   public function title(UserInterface $user): TranslatableMarkup {
@@ -66,11 +42,18 @@ final class UserProfileController extends ControllerBase {
   }
 
   /**
-   * The profile the page edits, unsaved when new; NULL without a workspace.
+   * The profile the page edits, unsaved when new.
+   *
+   * Without any workspace it has none, and the form shows an empty state.
    */
-  public function profileFor(UserInterface $user): ?BbProfileInterface {
+  public function profileFor(UserInterface $user): BbProfileInterface {
     $workspace = $this->workspaceFor($user);
-    return $workspace === NULL ? NULL : $this->profiles->forEditing((int) $user->id(), (int) $workspace->id());
+    if ($workspace !== NULL) {
+      return $this->profiles->forEditing((int) $user->id(), (int) $workspace->id());
+    }
+    $profile = $this->entityTypeManager()->getStorage('bb_profile')->create(['uid' => (int) $user->id()]);
+    assert($profile instanceof BbProfileInterface);
+    return $profile;
   }
 
   /**
