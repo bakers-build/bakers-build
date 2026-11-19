@@ -11,7 +11,7 @@ Configure [agent permissions](/provision/security/execution) with a top-level `p
 
 ```js
 permissions: {
-  mode: 'sandbox',                 // sandbox | system
+  mode: 'sandbox',                 // sandbox | system | other modes
   sandbox: {
     deny_read: ['$inherit', '~/.aws'],
     allow_write: ['$inherit', '~/.designbook'],

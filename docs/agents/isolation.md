@@ -97,7 +97,7 @@ Both runtimes work in a fresh clone of the ticket branch: uncommitted work does 
 
 ## Configuration at a glance
 
-Use **`permissions: 'sandbox'`** for native harness policy; `sandbox` is a separate options object. Default mode is `system`; `custom` is harness-specific; [other modes](/provision/security/execution#modes) are explained there. Neither selects an outer runtime.
+Use **`permissions: 'sandbox'`** for native harness policy; `sandbox` is a separate options object. Default mode is `system`; `custom` is harness-specific; [other modes](/provision/security/execution#modes) are listed under Agent permissions › Modes. No mode selects an outer runtime.
 
 [Agent permissions](/provision/security/execution) documents modes, native prerequisites, read/write rules, trusted-command exceptions, network defaults and MCP limits. [Shared settings](/provision/security/shared-settings#harness-support) shows applied/skipped/rejected keys. Inspect effective rules with `bakers agents`. A host preflight does not verify a runtime environment.
 
