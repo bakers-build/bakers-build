@@ -62,8 +62,13 @@ Then('the device code field shows that code', async ({ page }) => {
 });
 
 Then('the consent lists the membership {string}', async ({ page }, membership: string) => {
-  const memberships = page.locator(GATE_CONTENT).getByText(/^Acts within your memberships:/);
-  await expect(memberships).toContainText(membership);
+  await expect(page.locator(GATE_CONTENT)).toContainText(membership);
+});
+
+Then('the consent says in plain words what confirming grants', async ({ page }) => {
+  await expect(page.locator(GATE_CONTENT).getByText(/^If you confirm, the device can do everything you can do/)).toBeVisible();
+  // The raw scope stays behind the collapsed technical details.
+  await expect(page.locator(GATE_CONTENT).getByText('bb:session')).toBeHidden();
 });
 
 Then('the page does not overflow horizontally', async ({ page }) => {
@@ -72,6 +77,10 @@ Then('the page does not overflow horizontally', async ({ page }) => {
     clientWidth: document.documentElement.clientWidth,
   }));
   expect(scrollWidth - clientWidth).toBeLessThanOrEqual(1);
+});
+
+Then('the device result says {string}', async ({ page }, text: string) => {
+  await expect(page.locator(RESULT_BODY)).toContainText(text);
 });
 
 Then('the device result message is visible', async ({ page }) => {

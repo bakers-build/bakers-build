@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\bb_oauth_device\Form;
 
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Flood\FloodInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -99,13 +101,15 @@ class DeviceVerificationForm extends FormBase {
       '#description' => $this->t('Type the code shown in your own terminal.'),
       '#required' => TRUE,
       '#maxlength' => 32,
+      // After the consent, right above the decision it is compared for.
+      '#weight' => 10,
     ];
 
     if ($linkCode !== '' && $this->floodAllows()) {
       $this->buildConsent($form, $linkCode);
     }
 
-    $form['actions'] = ['#type' => 'actions'];
+    $form['actions'] = ['#type' => 'actions', '#weight' => 20];
     $form['actions']['confirm'] = [
       '#type' => 'submit',
       '#value' => $this->t('Confirm sign-in'),
@@ -140,41 +144,91 @@ class DeviceVerificationForm extends FormBase {
     }
     if ($device_code !== NULL && $device_code->getUserIdentifier() === NULL) {
       $client = $this->drupalConsumer($device_code);
-      $form['consent'] = $this->text($this->t('@client wants to sign in', ['@client' => $client->label()]));
-      $form['consent_account'] = $this->text($this->t('Signs in as @account', ['@account' => $this->currentUser->getDisplayName()]));
-      $scopes = array_map(static fn ($scope) => $scope->getIdentifier(), $device_code->getScopes());
-      $form['consent_scopes'] = $this->text($scopes
-        ? $this->t('Requested access: @scopes', ['@scopes' => implode(', ', $scopes)])
-        : $this->t('No specific access scopes were requested.'), ['tone' => 'faint']);
-      $memberships = $this->membershipLines();
-      if ($memberships) {
-        $form['consent_memberships'] = $this->text($this->t("Acts within your memberships:\n@memberships", ['@memberships' => implode("\n", $memberships)]), ['tone' => 'faint']);
+      $site = (string) $this->config('system.site')->get('name');
+      $form['consent'] = $this->text($this->t('@client wants to sign in to @site (@host) as @account.', [
+        '@client' => $client->label(),
+        '@site' => $site,
+        '@host' => $this->getRequest()->getHost(),
+        '@account' => $this->currentUser->getDisplayName(),
+      ]));
+      $memberships = $this->membershipBlocks();
+      $form['consent_access'] = $this->text($memberships
+        ? $this->t('If you confirm, the device can do everything you can do on @site, in the workspaces and teams below, with your roles there.', ['@site' => $site])
+        : $this->t("You aren't in any workspace yet, so the device can't reach any workspace content."));
+      foreach ($memberships as $delta => $block) {
+        $form['consent_membership_' . $delta] = $this->text($block, ['tone' => 'light']);
       }
+      if ($memberships) {
+        $form['consent_roles'] = $this->text($this->t('What do these roles mean?'), [
+          'href' => 'https://bakers.build/docs/provision/security/access-and-data#roles-and-permissions',
+        ]);
+      }
+      $scopes = array_map(static fn ($scope) => $scope->getIdentifier(), $device_code->getScopes());
+      $form['consent_scopes'] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:collapsible',
+        '#slots' => [
+          'label' => $this->text($this->t('Technical details'), ['as' => 'span']),
+          'content' => $this->text($scopes
+            ? $this->t('Requested scopes: @scopes', ['@scopes' => implode(', ', $scopes)])
+            : $this->t('No specific access scopes were requested.'), ['tone' => 'faint']),
+        ],
+      ];
+      $form['consent_revoke'] = $this->text($this->t("You can't sign this device out yourself yet. Ask a site administrator to revoke it."), ['tone' => 'faint']);
       $form['user_code']['#default_value'] = $linkCode;
       $form['user_code']['#description'] = $this->t('Compare with the code in your terminal.');
     }
   }
 
   /**
-   * One line per active membership: the group and the account's ranks.
+   * The account's memberships, one block per workspace with its teams below.
    *
    * A token reaches what the account's ranks reach in these groups, so they,
-   * not site-wide permissions, say what a confirmation grants.
+   * not site-wide permissions, say what a confirmation grants. A workspace
+   * the account only reaches through a team still heads it, without a rank.
    *
    * @return string[]
-   *   Lines such as "Team North — Lead", sorted.
+   *   Blocks such as "Workspace keytec — Admin\nTeam North — Member", sorted
+   *   by workspace, each group once.
    */
-  protected function membershipLines(): array {
-    $lines = [];
+  protected function membershipBlocks(): array {
+    $workspaces = [];
     foreach ($this->membershipManager?->getMemberships((int) $this->currentUser->id()) ?? [] as $membership) {
+      $group = $membership->getGroup();
+      if (!$group instanceof FieldableEntityInterface) {
+        continue;
+      }
       $roles = $membership->getRoles();
       // Every membership holds the required member role; name it only alone.
       $ranks = array_filter($roles, static fn (OgRoleInterface $role): bool => $role->getRoleType() !== OgRoleInterface::ROLE_TYPE_REQUIRED) ?: $roles;
-      $labels = array_map(static fn (OgRoleInterface $role): string => (string) $role->label(), $ranks);
-      $lines[] = $membership->getGroup()?->label() . ' — ' . implode(', ', $labels);
+      $args = [
+        '@group' => $group->label(),
+        '@roles' => implode(', ', array_map(static fn (OgRoleInterface $role): string => (string) $role->label(), $ranks)),
+      ];
+      // shortcut: a group with `workspace_id` is a team, any other a
+      // workspace; og.settings registers only these two, extend on a third.
+      $workspace = $group->hasField('workspace_id') ? $group->get('workspace_id')->entity : NULL;
+      if (!$workspace instanceof EntityInterface) {
+        $workspaces[$this->sortKey($group)]['head'] = (string) $this->t('Workspace @group — @roles', $args);
+        continue;
+      }
+      $key = $this->sortKey($workspace);
+      $workspaces[$key]['head'] ??= (string) $this->t('Workspace @group', ['@group' => $workspace->label()]);
+      $workspaces[$key]['teams'][$this->sortKey($group)] = (string) $this->t('Team @group — @roles', $args);
     }
-    sort($lines);
-    return $lines;
+    ksort($workspaces, SORT_NATURAL | SORT_FLAG_CASE);
+    return array_values(array_map(static function (array $workspace): string {
+      $teams = $workspace['teams'] ?? [];
+      ksort($teams, SORT_NATURAL | SORT_FLAG_CASE);
+      return implode("\n", [$workspace['head'], ...array_values($teams)]);
+    }, $workspaces));
+  }
+
+  /**
+   * Orders groups by label; the id keeps equally named groups apart.
+   */
+  protected function sortKey(EntityInterface $group): string {
+    return $group->label() . "\0" . $group->id();
   }
 
   /**
@@ -186,8 +240,9 @@ class DeviceVerificationForm extends FormBase {
         ? $this->t('Welcome, @name', ['@name' => $this->currentUser->getDisplayName()])
         : $this->t('Sign-in denied'), ['as' => 'h1', 'size' => 'page-title']),
       'body' => $this->text($confirmed
-        ? $this->t('You are signed in. You can return to your terminal.')
-        : $this->t('You can return to your terminal.'), ['size' => 'prose', 'tone' => 'default']),
+        ? $this->t('The device is now signed in as you. It can act in your workspaces with your roles until it is signed out. Return to your terminal.')
+        : $this->t('The device was not signed in and got no access. You can close this page.'),
+        ['size' => 'prose', 'tone' => 'default']),
     ];
     if ($confirmed) {
       $content['home'] = [
@@ -210,15 +265,15 @@ class DeviceVerificationForm extends FormBase {
   /**
    * A run of copy rendered by the theme's text component.
    *
-   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $text
-   *   The copy.
+   * @param \Drupal\Core\StringTranslation\TranslatableMarkup|string $text
+   *   The copy, translated.
    * @param array<string, string> $props
    *   Further text component props (element, size, tone).
    *
    * @return array<string, mixed>
    *   A text component render array.
    */
-  protected function text(TranslatableMarkup $text, array $props = []): array {
+  protected function text(TranslatableMarkup|string $text, array $props = []): array {
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:text',
