@@ -68,12 +68,12 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
    * restating contrib's ten only to pass them on is the copy that rots when
    * contrib adds an eleventh of its own.
    */
-  private BbDate $date;
+  protected BbDate $date;
 
   /**
    * Words for a claimed or expired run; injected in `create()` like `$date`.
    */
-  private RunExplanation $explanation;
+  protected RunExplanation $explanation;
 
   /**
    * {@inheritdoc}

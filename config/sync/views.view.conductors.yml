@@ -1440,6 +1440,7 @@ display:
                 collapsible: false
                 collapsible_label: 'Sort options'
                 is_secondary: false
+                no_reset: false
       empty:
         area_text_custom:
           id: area_text_custom
@@ -1692,6 +1693,7 @@ display:
                 collapsible: false
                 collapsible_label: 'Sort options'
                 is_secondary: false
+                no_reset: false
       empty:
         area_text_custom:
           id: area_text_custom

@@ -42,7 +42,7 @@ final class TestTicket extends TicketTriggerTargetBase {
   /**
    * The state the actions and switches live in.
    */
-  private StateInterface $state;
+  protected StateInterface $state;
 
   /**
    * {@inheritdoc}

@@ -3,19 +3,19 @@ langcode: en
 status: true
 dependencies:
   config:
-  - bb_core.bb_measurement.closed_tickets
-  - bb_core.bb_measurement.runs
+    - bb_core.bb_measurement.closed_tickets
+    - bb_core.bb_measurement.runs
 _core:
   default_config_hash: bakers548_runs_per_ticket
 id: runs_per_ticket
-label: Runs per closed ticket
+label: 'Runs per closed ticket'
 value_type: decimal
 unit: runs_per_ticket
-source: {}
+source: {  }
 operation:
   type: divide
   numerator: runs
   denominator: closed_tickets
-predicates: {}
-bindings: {}
-dimensions: {}
+predicates: {  }
+bindings: {  }
+dimensions: {  }

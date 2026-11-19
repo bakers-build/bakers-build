@@ -26,12 +26,12 @@ final class NotificationSettingsForm extends ContentEntityForm {
   /**
    * The row service.
    */
-  private NotificationSettings $settings;
+  protected NotificationSettings $settings;
 
   /**
    * The activity kinds and the mails they offer.
    */
-  private ActivityKindManager $kinds;
+  protected ActivityKindManager $kinds;
 
   /**
    * {@inheritdoc}

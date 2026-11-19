@@ -83,7 +83,7 @@ final class BbTicketTrigger extends BbContentEntityBase implements BbTicketTrigg
   /**
    * Set while recordOutcome() saves, so preSave() keeps the runner's values.
    */
-  private bool $recordingOutcome = FALSE;
+  protected bool $recordingOutcome = FALSE;
 
   /**
    * Rejects a changed workspace, target or type plugin on a saved trigger.

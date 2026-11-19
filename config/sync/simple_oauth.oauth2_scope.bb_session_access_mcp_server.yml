@@ -14,4 +14,3 @@ parent: bb_session
 granularity_id: permission
 granularity_configuration:
   permission: 'access mcp server'
-

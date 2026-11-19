@@ -36,7 +36,7 @@ final class Broken extends ActivityKindBase {
   /**
    * The state that switches recording on.
    */
-  private StateInterface $state;
+  protected StateInterface $state;
 
   /**
    * {@inheritdoc}

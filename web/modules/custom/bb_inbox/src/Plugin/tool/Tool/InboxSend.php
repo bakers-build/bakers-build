@@ -76,12 +76,12 @@ final class InboxSend extends ToolBase {
   /**
    * The web UI's send path.
    */
-  private InboxSender $sender;
+  protected InboxSender $sender;
 
   /**
    * How long to wait for the conductor's answer.
    */
-  private int $waitSeconds = 30;
+  protected int $waitSeconds = 30;
 
   /**
    * {@inheritdoc}

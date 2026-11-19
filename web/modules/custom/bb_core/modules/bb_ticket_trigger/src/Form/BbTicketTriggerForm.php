@@ -35,7 +35,7 @@ final class BbTicketTriggerForm extends ContentEntityForm {
   /**
    * Resolves the template's workspace.
    */
-  private WorkspaceResolverInterface $workspaceResolver;
+  protected WorkspaceResolverInterface $workspaceResolver;
 
   /**
    * {@inheritdoc}

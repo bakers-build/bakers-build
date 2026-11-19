@@ -18,7 +18,7 @@ final class BbConnectorListBuilder extends ConfigEntityListBuilder {
   /**
    * Formats the cron interval.
    */
-  private BbDate $date;
+  protected BbDate $date;
 
   /**
    * {@inheritdoc}
