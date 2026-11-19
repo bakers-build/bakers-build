@@ -33,22 +33,22 @@ final class IslandProfilePageVariant extends VariantBase implements ContainerFac
    *
    * @var array<string, mixed>
    */
-  private array $mainContent = [];
+  protected array $mainContent = [];
 
   /**
    * The page title.
    */
-  private string|array $title = '';
+  protected string|array $title = '';
 
   public function __construct(
     array $configuration,
     $plugin_id,
     $plugin_definition,
-    private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly IslandProfileSelector $selector,
-    private readonly IslandProfileRenderer $renderer,
-    private readonly Registry $themeRegistry,
-    private readonly ModuleExtensionList $modules,
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly IslandProfileSelector $selector,
+    protected readonly IslandProfileRenderer $renderer,
+    protected readonly Registry $themeRegistry,
+    protected readonly ModuleExtensionList $modules,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }

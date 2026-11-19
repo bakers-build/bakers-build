@@ -70,12 +70,12 @@ final class WorklogUpdate extends ToolBase {
   /**
    * Loads the saved worklog and its references.
    */
-  private EntityTypeManagerInterface $entities;
+  protected EntityTypeManagerInterface $entities;
 
   /**
    * Checks the recording target.
    */
-  private WorkAssignments $assignments;
+  protected WorkAssignments $assignments;
 
   /**
    * {@inheritdoc}

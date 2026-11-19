@@ -1,7 +1,7 @@
 uuid: b3cbb9da-9ef1-475f-9472-bb6965bf4521
 langcode: en
 status: true
-dependencies: {}
+dependencies: {  }
 _core:
   default_config_hash: o95SL83QVpbiS0P4yO1R-n8A0WIQWL8yrKi_7RC2KIo
 id: runs
@@ -13,7 +13,7 @@ source:
   time_field: created
 operation:
   type: count
-predicates: {}
+predicates: {  }
 bindings:
   epic:
     field: ticket_id

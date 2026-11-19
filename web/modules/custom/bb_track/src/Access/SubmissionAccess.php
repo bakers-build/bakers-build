@@ -23,7 +23,7 @@ final class SubmissionAccess extends EntityAccessControlHandler implements Entit
   /**
    * Constructs the owner access handler.
    */
-  public function __construct(EntityTypeInterface $entity_type, private EntityTypeManagerInterface $entities) {
+  public function __construct(EntityTypeInterface $entity_type, protected EntityTypeManagerInterface $entities) {
     parent::__construct($entity_type);
   }
 
