@@ -16,6 +16,7 @@ import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import { MEMBERS_ISLAND, markDocument, uidOf } from '../../support/shell';
+import { ADD_DIALOG, addMemberTrigger, openAddMemberDialog } from '../../support/add-member-dialog';
 
 /**
  * One row of the roster table. Direct children only, so the rows of a role
@@ -292,8 +293,17 @@ Then('the remove control of the member {string} has focus', async ({ page }, val
   await expect(page.locator(`#members-remove-${uidOf(value)}`)).toBeFocused();
 });
 
-Then('focus is on a member control or the add field', async ({ page }) => {
-  await expect(page.locator(`${MEMBERS_ISLAND} :is([id^="members-role-"], #members-add):focus`)).toHaveCount(1);
+Then('focus is on a member control or Add member', async ({ page }) => {
+  await expect(page.locator(`:is(${MEMBERS_ISLAND} [id^="members-role-"], #members-add):focus`)).toHaveCount(1);
+});
+
+/** The page header's Add member trigger, where focus returns after its dialog. */
+Then('Add member has focus', async ({ page }) => {
+  await expect(addMemberTrigger(page)).toBeFocused();
+});
+
+Then('the add dialog is open', async ({ page }) => {
+  await expect(page.locator(ADD_DIALOG)).toBeVisible({ timeout: 20000 });
 });
 
 // `Drupal.announce()` writes into core's one live region after a short delay.
@@ -309,8 +319,15 @@ When('I move focus to the role control of the member {string}', async ({ page },
   await page.locator(`#members-role-${uidOf(value)}`).focus();
 });
 
-When('I move focus to the add field', async ({ page }) => {
-  await page.locator(`${MEMBERS_ISLAND} #members-add`).focus();
+When('I move focus to Add member', async ({ page }) => {
+  const trigger = addMemberTrigger(page);
+  // Enter on it must open the dialog, not follow the page link.
+  await expect
+    .poll(() => trigger.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
+      timeout: 20000,
+    })
+    .toBe(true);
+  await trigger.focus();
 });
 
 When('I type the name {string}', async ({ page }, text: string) => {
@@ -336,11 +353,15 @@ Then('no confirmation is open', async ({ page }) => {
   await expect(page.locator(`${MEMBERS_ISLAND} dialog[data-members-confirm]`)).toHaveCount(0);
 });
 
-Then('the add picker does not offer {string}', async ({ page }, value: string) => {
-  await expect(page.locator(`${MEMBERS_ISLAND} [role="option"][data-value="${uidOf(value)}"]`)).toHaveCount(0);
+Then('the add dialog does not offer {string}', async ({ page }, value: string) => {
+  const dialog = await openAddMemberDialog(page);
+  await expect(dialog.locator('[role="option"]').first(), 'the add dialog offers nobody at all').toBeAttached();
+  await expect(dialog.locator(`[role="option"][data-value="${uidOf(value)}"]`)).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator(ADD_DIALOG)).toHaveCount(0);
 });
 
 Then('the members list offers no controls', async ({ page }) => {
   await expect(page.locator(MEMBER_ITEM).first()).toBeVisible();
-  await expect(page.locator(`${MEMBERS_ISLAND} [name^="remove_member_"], ${MEMBERS_ISLAND} #members-add`)).toHaveCount(0);
+  await expect(page.locator(`${MEMBERS_ISLAND} [name^="remove_member_"], #members-add`)).toHaveCount(0);
 });

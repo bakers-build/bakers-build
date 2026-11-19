@@ -16,6 +16,8 @@ import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { MEMBERS_ISLAND, RAIL_ISLAND, uidOf } from '../../support/shell';
+import { pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
+import { ADD_DIALOG, openAddMemberDialog } from '../../support/add-member-dialog';
 
 // BB-484 — the Overview body, which is the `full` view mode's own markup and
 // NOT a controller hull. There is deliberately no `[data-bakers-tab-body]` here:
@@ -106,25 +108,23 @@ Then('the members list has {int} rows', async ({ page }, count: number) => {
 
 // One step for the whole affordance, because a scenario that filled the field
 // and clicked separately would be asserting the widget rather than the island.
-// The add field is the searchable picker: open it, pick the person's row (its
-// value is the uid), then press Add member.
+// The page header's Add member opens the dialog; pick the person's row (its
+// value is the uid), keep the role, press Add member. The dialog closes and the
+// members island re-renders in place, so the step waits for the new row.
 When('I add the member {string}', async ({ page }, value: string) => {
-  const island = page.locator(MEMBERS_ISLAND);
-  await island.locator('#members-add').click();
-  await island.locator(`[role="option"][data-value="${uidOf(value)}"]`).click();
+  const dialog = await openAddMemberDialog(page);
+  const trigger = pickerTrigger(page, ADD_DIALOG, 'Member');
+  await waitForPickerBehaviour(trigger);
+  await trigger.click();
+  await dialog.locator(`[role="option"][data-value="${uidOf(value)}"]`).click();
   const answered = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'POST' && response.url().includes('/members'),
+    (response) => response.request().method() === 'POST' && response.url().includes('/members/add'),
     { timeout: 15000 },
   );
-  // THE LABEL IS `Add member` SINCE BB-435, and it was `Add`. The add surface
-  // is now a `bb_theme:form` whose one primary submit is labelled the way the
-  // Designbook scenes label it, and the scenes are the source for that wording.
-  // `exact` is kept: the roster's per-item remove controls are buttons too, and
-  // a loose match would be ambiguous the moment one of them is named `Add`
-  // anything.
-  await island.getByRole('button', { name: 'Add member', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Add member', exact: true }).click();
   await answered;
+  await expect(page.locator(ADD_DIALOG), 'the add dialog did not close').toHaveCount(0, { timeout: 15000 });
+  await expect(page.locator(`${MEMBERS_ISLAND} #members-role-${uidOf(value)}`)).toBeAttached({ timeout: 15000 });
 });
 
 /**

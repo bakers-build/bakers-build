@@ -13,6 +13,8 @@ Feature: The workspace Members screen keeps focus and says what happened
     Then the invite dialog is closed
     And Invite members has focus
     And the screen reader hears "Invited 2 people."
+    And the Members screen confirms "Invited 2 people."
+    And the document was not reloaded
 
   Scenario: Typed addresses become chips the keyboard can remove
     Given I am signed in as a workspace lead

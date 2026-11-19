@@ -259,14 +259,14 @@ Feature: The team screen's five tabs are routes inside one island
     And the rail was not part of the swap
 
   # NO DUPLICATE ROW: someone already on the team is not offered by the add
-  # picker at all, so a second add cannot be made; the server also refuses a
-  # forged one (`GroupMembersForm::validateIslandForm`).
+  # dialog at all, so a second add cannot be made; the server also refuses a
+  # forged one (`TeamMemberAddForm::validateForm`).
   Scenario: A member already on the team is not offered again
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
     Then the members list has 5 rows
-    And the add picker does not offer "both-bakeries"
+    And the add dialog does not offer "both-bakeries"
     And the document was not reloaded
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"

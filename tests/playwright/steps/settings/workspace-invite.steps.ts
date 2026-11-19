@@ -1,5 +1,5 @@
 // The Members settings screen's invite dialog, exercised end to end: open it
-// through the Members zone's "Invite members" action, fill the e-mail textarea,
+// through the page header's "Invite members" action, fill the e-mail textarea,
 // pick in the role and team pills, submit, and read the mails Mailpit actually
 // received. `invitation.feature` seeds its invitation through the service; this
 // feature is the other half, proving the dialog is what creates one.
@@ -8,6 +8,7 @@ import { Drush } from '../../support/drush';
 import { test, expect } from '../../bdd.fixtures';
 import { messagesFor, clearMailboxFor } from '../../support/login-flow';
 import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
+import { markDocument } from '../../support/shell';
 import type { Page } from '@playwright/test';
 
 const { Given, When, Then } = createBdd(test);
@@ -51,11 +52,13 @@ function workspaceSettingsMembersPath(apiClient: { fixtureId(name: string): stri
 When('I open the workspace Members settings screen', async ({ page, apiClient }) => {
   const response = await page.goto(workspaceSettingsMembersPath(apiClient));
   expect(response?.status() ?? 0, 'the Members settings screen did not render').toBeLessThan(400);
+  await markDocument(page);
 });
 
 When('I open the workspace Members settings screen again', async ({ page, apiClient }) => {
   const response = await page.goto(workspaceSettingsMembersPath(apiClient));
   expect(response?.status() ?? 0, 'the Members settings screen did not render on the second visit').toBeLessThan(400);
+  await markDocument(page);
 });
 
 /**
@@ -110,7 +113,7 @@ function freshAddress(n: number): string {
 }
 
 /**
- * Opens the dialog through the Members zone's action, waiting for htmx to own
+ * Opens the dialog through the page header's action, waiting for htmx to own
  * the trigger first: the anchor carries a real `href`, so an early click would
  * navigate to the standalone form instead (see project-create.steps.ts).
  */
@@ -258,8 +261,16 @@ Then('the invite dialog is closed', async ({ page }) => {
   await expect(page.locator(DIALOG)).toHaveCount(0, { timeout: 20000 });
 });
 
+/** The result toast: fixed, so the list underneath does not move. */
 Then('the Members screen confirms {string}', async ({ page }, text: string) => {
-  await expect(page.getByRole('main').getByText(text)).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('[data-component-id="bb_theme:toast"]').getByText(text)).toBeVisible({ timeout: 20000 });
+});
+
+Then('members and invitations share one list', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'Pending invitations' })).toHaveCount(0);
+  const invited = page.getByRole('row').filter({ hasText: invitedAddress });
+  await expect(page.getByRole('main').locator('table')).toHaveCount(1);
+  await expect(invited).toBeVisible();
 });
 
 Then('the Members screen still lists its members', async ({ page }) => {
@@ -286,7 +297,8 @@ Then('exactly one invitation mail reaches each invited address', async ({ page, 
 });
 
 When('I revoke the pending invitation of the first invited address', async ({ page }) => {
-  // Revoking asks for confirmation in the delete dialog, then returns to Members.
+  // Revoking asks for confirmation in the delete dialog, which then closes in
+  // place and the list re-renders without a page load.
   const revoke = page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` });
   // A click before htmx owns the anchor would follow its page href instead.
   await expect
@@ -298,10 +310,10 @@ When('I revoke the pending invitation of the first invited address', async ({ pa
   await revoke.click();
   const dialog = page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])');
   await expect(dialog).toBeVisible();
-  await Promise.all([
-    page.waitForURL(/\/settings\/members$/),
-    dialog.getByRole('button', { name: 'Delete', exact: true }).click(),
-  ]);
+  const answered = page.waitForResponse((response) => response.request().method() === 'POST', { timeout: 20000 });
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+  await answered;
+  await expect(dialog, 'the revoke dialog did not close').toHaveCount(0, { timeout: 20000 });
 });
 
 Then('the first invited address is no longer listed as a pending invitation', async ({ page }) => {

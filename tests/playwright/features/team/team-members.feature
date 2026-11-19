@@ -2,19 +2,19 @@
 Feature: Managing a team's members keeps focus and says what happened
   Every action on the team Members tab re-renders the members island only,
   puts focus where the action left the user and announces its result in the
-  live region. Removing asks first, in place. Each action has a keyboard-only
-  variant. `both-bakeries` is a workspace member who is not on Design Crew;
+  live region. Adding opens a dialog from the page header's Add member;
+  removing asks first, in place. Each action has a keyboard-only variant. `both-bakeries` is a workspace member who is not on Design Crew;
   every scenario removes them again, so the feature is re-runnable.
 
-  Scenario: Adding a member focuses their role control and announces it
+  Scenario: Adding a member returns focus to Add member and announces it
     Given I am signed in as "north-lead"
     And the team "Design Crew" has no member "both-bakeries"
     And I visit the team "Design Crew" tab "Members"
     When I add the member "both-bakeries"
-    Then the role control of the member "both-bakeries" has focus
+    Then Add member has focus
     And the screen reader hears "Added both-bakeries as Member."
-    And the add picker does not offer "both-bakeries"
     And the document was not reloaded
+    And the add dialog does not offer "both-bakeries"
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
 
@@ -22,14 +22,18 @@ Feature: Managing a team's members keeps focus and says what happened
     Given I am signed in as "north-lead"
     And the team "Design Crew" has no member "both-bakeries"
     And I visit the team "Design Crew" tab "Members"
-    When I move focus to the add field
+    When I move focus to Add member
     And I press the key "Enter"
+    Then the add dialog is open
+    When I press the key "Enter"
     And I type the name "both-bakeries"
     And I press the key "ArrowDown"
     And I press the key "Enter"
     And I press the key "Tab"
+    And I press the key "Tab"
+    And I press the key "Tab"
     And I press the key "Enter"
-    Then the role control of the member "both-bakeries" has focus
+    Then Add member has focus
     And the screen reader hears "Added both-bakeries as Member."
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
@@ -87,7 +91,7 @@ Feature: Managing a team's members keeps focus and says what happened
     When I press the key "Tab"
     And I press the key "Enter"
     Then the members list has no member "both-bakeries"
-    And focus is on a member control or the add field
+    And focus is on a member control or Add member
     And the screen reader hears "Removed both-bakeries."
     And the document was not reloaded
 
