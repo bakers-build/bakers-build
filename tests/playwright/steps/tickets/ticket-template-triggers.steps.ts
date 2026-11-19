@@ -27,7 +27,7 @@ After({ tags: '@feature:ticket-template-triggers' }, async () => {
 /** The add form: inside the dialog with JavaScript, the page without. */
 async function addForm(page: Page): Promise<Locator> {
   const dialog = page.locator('dialog[open]');
-  await expect(dialog.or(page.locator('form[id^="bb-ticket-trigger-add-form"]')).first()).toBeVisible();
+  await expect(page.getByLabel('Frequency', { exact: true })).toBeVisible();
   return (await dialog.count()) > 0 ? dialog : page.locator('main');
 }
 
@@ -125,6 +125,16 @@ When(
     await form.getByRole('button', { name: 'Save', exact: true }).click();
   },
 );
+
+When('I type {string} into the trigger time and leave it', async ({ page }, value: string) => {
+  const field = (await addForm(page)).getByLabel('Time', { exact: true });
+  await field.fill(value);
+  await field.blur();
+});
+
+Then('the trigger time shows {string}', async ({ page }, value: string) => {
+  await expect((await addForm(page)).getByLabel('Time', { exact: true })).toHaveValue(value);
+});
 
 /** Opens a row's action menu and returns its item for the action. */
 async function rowAction(page: Page, summary: string, action: string): Promise<Locator> {

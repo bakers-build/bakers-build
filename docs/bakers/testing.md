@@ -168,7 +168,8 @@ section is absent on every other site.
 | `fixture-api-session` | site role `api_session`, Northside contributor, North Crew | Session writeback and comments over JSON:API |
 | `fixture-api-stats-outsider` | site role `api_statistics_outsider` | Statistics access matrix |
 | `fixture-crew-mate` | North Crew and South Crew, no workspace | Personal and team time across workspaces; scenarios grant it the team lead rank |
-| `fixture-profile` | no workspace | Saves its own position and background on the Profile tab |
+| `fixture-profile` | Northside member, Southside member | Saves its own position and background per workspace on the Profile tab |
+| `fixture-favorites` | Northside lead, Southside member | Marks and unmarks its own favorite projects |
 | `fixture-team-lead` | Northside contributor, North Crew lead | Team-lead edit rights and team time |
 | `fixture-project-owner` | Northside contributor, North Crew | Edits the Settings of the project it owns |
 | `fixture-workspace-only` | Northside member, no team | Workspace membership without project authority |

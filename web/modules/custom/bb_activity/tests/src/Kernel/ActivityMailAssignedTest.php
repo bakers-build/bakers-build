@@ -29,7 +29,102 @@ final class ActivityMailAssignedTest extends ActivityMailKernelTestBase {
 
     $mails = $this->mailsTo($assignee);
     self::assertCount(1, $mails);
-    self::assertStringContainsString('[' . $this->ticket('a')->getIdentifier() . '] You were assigned to this ticket', (string) $mails[0]->getSubject());
+    self::assertStringContainsString('[' . $this->ticket('a')->getIdentifier() . '] bakers.build assigned you to this ticket', (string) $mails[0]->getSubject());
+  }
+
+  /**
+   * The mail names who assigned the ticket and who created it.
+   *
+   * The apostrophe proves names arrive unescaped in subject and body.
+   */
+  public function testTheMailNamesAssignerAndCreator(): void {
+    $assigner = $this->recipient('a', 'assigner-a');
+    $creator = $this->recipient('a', "o'creator-a");
+    $assignee = $this->recipient('a', 'assignee-a');
+    $this->tick($assignee, ['assigned']);
+    $this->ticket('a')->set('owner_user_id', $creator->id())->save();
+
+    $this->actingAs($assigner, fn () => $this->ticket('a')->set('assignee_user_id', $assignee->id())->save());
+
+    $line = "assigner-a assigned you to this ticket, created by o'creator-a";
+    $email = $this->mailsTo($assignee)[0];
+    self::assertSame('[' . $this->ticket('a')->getIdentifier() . '] ' . $line, (string) $email->getSubject());
+    self::assertStringContainsString($line, (string) $email->getTextBody());
+  }
+
+  /**
+   * An assigner who created the ticket is named once.
+   */
+  public function testAnAssignerWhoCreatedTheTicketIsNamedOnce(): void {
+    $assigner = $this->recipient('a', 'assigner-a');
+    $assignee = $this->recipient('a', 'assignee-a');
+    $this->tick($assignee, ['assigned']);
+    $this->ticket('a')->set('owner_user_id', $assigner->id())->save();
+
+    $this->actingAs($assigner, fn () => $this->ticket('a')->set('assignee_user_id', $assignee->id())->save());
+
+    self::assertStringEndsWith('] assigner-a assigned you to their ticket', (string) $this->mailsTo($assignee)[0]->getSubject());
+  }
+
+  /**
+   * The creator made assignee of their own ticket reads "your ticket".
+   */
+  public function testTheCreatorReadsYourTicket(): void {
+    $assigner = $this->recipient('a', 'assigner-a');
+    $assignee = $this->recipient('a', 'assignee-a');
+    $this->tick($assignee, ['assigned']);
+    $this->ticket('a')->set('owner_user_id', $assignee->id())->save();
+
+    $this->actingAs($assigner, fn () => $this->ticket('a')->set('assignee_user_id', $assignee->id())->save());
+
+    self::assertStringEndsWith('] assigner-a assigned you to your ticket', (string) $this->mailsTo($assignee)[0]->getSubject());
+  }
+
+  /**
+   * A row without an actor names bakers.build as the assigner.
+   */
+  public function testWithoutAnActorBakersBuildAssigned(): void {
+    $creator = $this->recipient('a', 'creator-a');
+    $assignee = $this->recipient('a', 'assignee-a');
+    $this->tick($assignee, ['assigned']);
+    $this->ticket('a')->set('owner_user_id', $creator->id())->save();
+
+    $this->ticket('a')->set('assignee_user_id', $assignee->id())->save();
+
+    self::assertStringEndsWith('] bakers.build assigned you to this ticket, created by creator-a', (string) $this->mailsTo($assignee)[0]->getSubject());
+  }
+
+  /**
+   * People the recipient may not be told about are "Someone", and leak nothing.
+   */
+  public function testPeopleTheRecipientMayNotBeToldAreSomeone(): void {
+    $assigner = $this->recipient('b', 'hidden-assigner-b');
+    $creator = $this->recipient('b', 'hidden-creator-b');
+    $assignee = $this->recipient('a', 'assignee-a');
+    $this->tick($assignee, ['assigned']);
+    $this->ticket('a')->set('owner_user_id', $creator->id())->save();
+
+    $this->actingAs($assigner, fn () => $this->ticket('a')->set('assignee_user_id', $assignee->id())->save());
+
+    $email = $this->mailsTo($assignee)[0];
+    self::assertStringEndsWith('] Someone assigned you to this ticket, created by Someone', (string) $email->getSubject());
+    foreach (['hidden-assigner-b', 'hidden-creator-b'] as $hidden) {
+      self::assertStringNotContainsString($hidden, $email->toString());
+    }
+  }
+
+  /**
+   * A creator whose account is gone is bakers.build.
+   */
+  public function testDanglingCreatorIsBakersBuild(): void {
+    $assigner = $this->recipient('a', 'assigner-a');
+    $assignee = $this->recipient('a', 'assignee-a');
+    $this->tick($assignee, ['assigned']);
+    $this->ticket('a')->set('owner_user_id', 999999)->save();
+
+    $this->actingAs($assigner, fn () => $this->ticket('a')->set('assignee_user_id', $assignee->id())->save());
+
+    self::assertStringEndsWith('] assigner-a assigned you to this ticket, created by bakers.build', (string) $this->mailsTo($assignee)[0]->getSubject());
   }
 
   /**
@@ -128,7 +223,7 @@ final class ActivityMailAssignedTest extends ActivityMailKernelTestBase {
 
     $subjects = array_map(static fn ($email): string => (string) $email->getSubject(), $this->mailsTo($assignee));
     self::assertCount(1, $subjects);
-    self::assertStringContainsString('You were assigned to this ticket', $subjects[0]);
+    self::assertStringEndsWith('] creator-a assigned you to their ticket', $subjects[0]);
   }
 
   /**

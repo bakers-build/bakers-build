@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
@@ -59,15 +60,30 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
       description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
       nullable: TRUE,
     ),
-    'position' => new OutputDefinition(
-      data_type: 'string',
-      label: new TranslatableMarkup('Position'),
-      description: new TranslatableMarkup('The position, or an empty string.'),
-    ),
-    'background' => new OutputDefinition(
-      data_type: 'string',
-      label: new TranslatableMarkup('Background'),
-      description: new TranslatableMarkup('What bakers.build should know about the background, or an empty string.'),
+    'profiles' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Profiles'),
+      description: new TranslatableMarkup("The user's profile per workspace you can read it in; use the one of the ticket's workspace."),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Profile'),
+        description: new TranslatableMarkup('One workspace profile.'),
+        property_definitions: [
+          'workspace' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Workspace'),
+            description: new TranslatableMarkup('The workspace UUID.'),
+          ),
+          'position' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Position'),
+            description: new TranslatableMarkup('The position, or an empty string.'),
+          ),
+          'background' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Background'),
+            description: new TranslatableMarkup('What bakers.build should know about the background, or an empty string.'),
+          ),
+        ],
+      ),
     ),
     'teams' => new ListOutputDefinition(
       label: new TranslatableMarkup('Teams'),
@@ -211,11 +227,17 @@ final class UserRead extends ToolBase {
   protected BbWorkspaceReadScopeInterface $readScope;
 
   /**
+   * Finds the user's workspace profiles.
+   */
+  protected Profiles $profileStore;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->readScope = $container->get('bb_core.workspace_read_scope');
+    $instance->profileStore = $container->get(Profiles::class);
     return $instance;
   }
 
@@ -229,14 +251,33 @@ final class UserRead extends ToolBase {
       'name' => (string) $user->getDisplayName(),
       'mail' => $user->get('mail')->access('view', $this->currentUser) ? $user->getEmail() : NULL,
     ];
-    // The fields live in config/sync; a site without them reads empty.
-    foreach (['position' => 'field_developer_title', 'background' => 'field_bb_background'] as $key => $field) {
-      $profile[$key] = $user->hasField($field) ? trim((string) $user->get($field)->value) : '';
-    }
+    $profile['profiles'] = $this->profiles($user);
     $self = (int) $user->id() === (int) $this->currentUser->id();
     $profile['teams'] = $this->teams($user);
     $profile['machines'] = $this->machines($user, $self);
     return ExecutableResult::success(new TranslatableMarkup('Read user @name.', ['@name' => $profile['name']]), $profile);
+  }
+
+  /**
+   * The user's profiles the caller may view, by workspace id.
+   *
+   * @return list<array{workspace: string, position: string, background: string}>
+   *   One row per readable profile.
+   */
+  private function profiles(UserInterface $user): array {
+    $rows = [];
+    foreach ($this->profileStore->ofAccount((int) $user->id()) as $profile) {
+      $workspace = $profile->get('workspace_id')->entity;
+      if ($workspace === NULL || !$profile->access('view', $this->currentUser)) {
+        continue;
+      }
+      $rows[] = [
+        'workspace' => (string) $workspace->uuid(),
+        'position' => trim($profile->position()),
+        'background' => trim($profile->background()),
+      ];
+    }
+    return $rows;
   }
 
   /**

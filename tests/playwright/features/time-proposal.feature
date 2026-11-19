@@ -151,7 +151,7 @@ Feature: AI proposals are reviewed before anything is booked
     And I change the first submission entry to "25:61" described as "Keep this correction"
     And I save the submission
     Then the proposal is "proposed"
-    And the page shows "Enter duration as hours:minutes, for example 0:30 or 1:15."
+    And the page shows "Enter duration as whole hours or hours:minutes, for example 8, 0:30 or 1:15."
     And the first submission duration is "25:61"
     When I change the first submission entry to "1:15" described as "Keep this correction"
     And I save the submission

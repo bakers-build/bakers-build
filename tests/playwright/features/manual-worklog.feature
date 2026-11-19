@@ -17,7 +17,7 @@ Feature: Employees record and correct their own time
     And I open Record time from My time
     And I fill a time entry dated "2026-10-13" lasting "abc" on project "Time capture" described as "Dialog refusal"
     And I save the time entry
-    Then the time dialog shows "Enter duration as hours:minutes, for example 0:30 or 1:15."
+    Then the time dialog shows "Enter duration as whole hours or hours:minutes, for example 8, 0:30 or 1:15."
     And the address includes "/bakers/time"
     And I see the Record time action
     When I fill duration "0:45" and description "Dialog refusal"
