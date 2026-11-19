@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\ListBuilder;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityTypeInterface;
@@ -23,7 +24,7 @@ final class BbConductorListBuilder extends EntityListBuilder {
   /**
    * The current-session account, for the Restart runs operation.
    */
-  private AccountInterface $currentUser;
+  protected AccountInterface $currentUser;
 
   /**
    * {@inheritdoc}
@@ -60,8 +61,8 @@ final class BbConductorListBuilder extends EntityListBuilder {
    *
    * Adds Restart runs for the owner of the conductor's machine.
    */
-  protected function getDefaultOperations(EntityInterface $entity): array {
-    $operations = parent::getDefaultOperations($entity);
+  protected function getDefaultOperations(EntityInterface $entity, ?CacheableMetadata $cacheability = NULL): array {
+    $operations = parent::getDefaultOperations($entity, $cacheability);
     if ($entity instanceof BbConductorInterface && TicketInterventions::mayRestartRuns($entity, $this->currentUser)) {
       $operations['restart'] = [
         'title' => $this->t('Restart runs'),

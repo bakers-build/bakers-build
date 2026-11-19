@@ -32,7 +32,7 @@ final class BbMachineActionsSource extends SourcePluginBase {
   /**
    * The current-session account proxy, injected in `create()`.
    */
-  private AccountProxyInterface $currentUser;
+  protected AccountProxyInterface $currentUser;
 
   /**
    * {@inheritdoc}
