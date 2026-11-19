@@ -69,16 +69,22 @@ export interface ProjectConfig {
     after_done?: string;
     on_freeze?: string;
     on_resume?: string;
-    /** Command, or commands by profile, offered to runs as provision_up(profile?). */
+    /** Command, or commands by profile, offered to runs as provision_up(profile?). A profile is a command, or { command, description } to tell the agent what it does. */
     provision_up?: string | {
-      [key: string]: string;
+      [key: string]: string | {
+        command: string;
+        /** One line for the agent, listed in the provision_up tool description: what the profile brings up and when to use it. */
+        description?: string;
+      };
     };
-    /** Commands by key, offered to runs as provision_exec(key, args). A string is a fixed command that takes no arguments; { command, args: true } also passes the run's arguments as argv after --, never through a shell. */
+    /** Commands by key, offered to runs as provision_exec(key, args). A string is a fixed command that takes no arguments; { command, args: true } also passes the run's arguments as argv after --, never through a shell; an optional description tells the agent what the key does. */
     provision_exec?: {
       [key: string]: string | {
         command: string;
         /** Pass the run's arguments to the command. */
         args?: boolean;
+        /** One line for the agent, listed in the provision_exec tool description: what the key runs and which args it takes. */
+        description?: string;
       };
     };
   };
