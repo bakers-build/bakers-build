@@ -25,6 +25,7 @@ case "$1" in
   provision) shift; cd "$APPROOT" && DDEV_APPROOT="$APPROOT" bash .ddev/commands/host/provision "$@" ;;
   config) echo 'rewritten' > .ddev/config.yaml ;;
   start) echo running > "$STATE/status" ;;
+  stop) echo stopped > "$STATE/status" ;;
   init)
     if [ -f "$STATE/init-fails" ]; then echo 'init broke'; exit 2; fi
     echo running > "$STATE/status" ;;
@@ -218,8 +219,9 @@ case=provision-exec
 cat > "$provision_tree/bin/ddev" <<'EOF'
 #!/bin/bash
 echo "ddev $# $*" >> "$TRACE"
+[ "${FAIL_COMMAND:-}" != ddev ] || { echo 'ddev broke'; exit 29; }
 EOF
-entries="$(cd "$root" && node --input-type=module -e 'const e = (await import("./.bakers/project.config.js")).default.hooks.provision_exec; for (const [k, v] of Object.entries(e)) console.log(`${k}|${typeof v === "string" ? v : `${v.command}|args=${v.args}`}`)')"
+entries="$(cd "$root" && node --input-type=module -e 'const e = (await import("./.bakers/project.config.js")).default.hooks.provision_exec; for (const [k, v] of Object.entries(e)) console.log(`${k}|${typeof v === "string" ? v : `${v.command}${v.args ? "|args=true" : ""}`}`)')"
 [ "$entries" = "$(printf '%s\n' \
   'phpcs|bash .bakers/provision.sh exec phpcs' \
   'phpmd|bash .bakers/provision.sh exec phpmd' \
@@ -231,7 +233,8 @@ entries="$(cd "$root" && node --input-type=module -e 'const e = (await import(".
   'playwright|bash .bakers/provision.sh exec playwright|args=true' \
   'playwright-cli|bash .bakers/provision.sh exec playwright-cli|args=true' \
   'designbook|bash .bakers/provision.sh exec designbook|args=true' \
-  'playground-ticket|bash .bakers/provision.sh exec playground-ticket|args=true')" ] || fail "unstable entry points: $entries"
+  'playground-ticket|bash .bakers/provision.sh exec playground-ticket|args=true' \
+  'down|bash .bakers/provision.sh exec down')" ] || fail "unstable entry points: $entries"
 dispatch exec phpcs
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 4 exec --raw -- .ddev/commands/web/phpcs' ] || fail "calls: $(cat "$TRACE")"
@@ -265,11 +268,38 @@ for args in 'save ../../x/fedcba9876543210 s d none' 'save 0123456789abcdef/fedc
   dispatch exec designbook -- $args
   [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid designbook exec ran actions: $args: $out"
 done
-for args in 'exec' 'exec web -- drush uli' 'exec other' 'exec phpcs -- x' 'exec phpcs x' 'exec uli' 'exec uli -- --name=admin' 'exec uli -- a;id' 'exec playwright -- --config=/x' 'exec playground-ticket -- c1 --eval' 'exec phpunit' 'exec phpunit -- --filter=X' 'exec phpunit-mariadb -- a;id' 'exec paratest' 'exec paratest -- a b' 'exec paratest -- --processes=99'; do
+for args in 'exec' 'exec web -- drush uli' 'exec other' 'exec phpcs -- x' 'exec phpcs x' 'exec uli' 'exec uli -- --name=admin' 'exec uli -- a;id' 'exec playwright -- --config=/x' 'exec playground-ticket -- c1 --eval' 'exec phpunit' 'exec phpunit -- --filter=X' 'exec phpunit-mariadb -- a;id' 'exec paratest' 'exec paratest -- a b' 'exec paratest -- --processes=99' 'exec down -- x'; do
   # shellcheck disable=SC2086
   dispatch $args
   [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid exec ran actions: $args: $out"
 done
+
+# `down` stops this worktree's site on the host and drops the reuse marker, also when stop fails.
+case='provision-exec down'
+down_marker="$provision_tree/.ddev/.bakers-test/profile"
+mkdir -p "$(dirname "$down_marker")"; echo recipe-test > "$down_marker"
+dispatch exec down
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 1 stop' ] || fail "calls: $(cat "$TRACE")"
+[ ! -e "$down_marker" ] || fail 'marker left'
+dispatch exec down
+[ "$rc" = 0 ] || fail "repeat: exit $rc: $out"
+case=down-ddev-fails; echo recipe-test > "$down_marker"
+export FAIL_COMMAND=ddev; dispatch exec down; unset FAIL_COMMAND
+[ "$rc" != 0 ] || fail 'exit 0'
+grep -q 'ddev broke' <<<"$out" || fail "output lost: $out"
+[ ! -e "$down_marker" ] || fail 'marker left'
+
+# A reused site whose database is behind the code: `down`, then provision_up installs afresh.
+case=down-then-up; arrange running recipe-test 200
+mkdir -p "$work/app/.bakers/scripts"; cp "$root/.bakers/provision.sh" "$work/app/.bakers/"
+printf '#!/bin/bash\n' > "$work/app/.bakers/scripts/ddev-own-project.sh"
+rc=0; out="$(cd "$work/app" && PATH="$work/bin:$PATH" bash .bakers/provision.sh exec down 2>&1)" || rc=$?
+[ "$rc" = 0 ] || fail "down: exit $rc: $out"
+run recipe-test
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+grep -qx 'init --provider recipe-test' "$STATE/calls" || fail "reused, no init: $(cat "$STATE/calls")"
+grep -qF "installed $URL" <<<"$out" || fail "no installed URL: $out"
 
 # Under an isolating runtime the host installs nothing: the run could have rewritten package.json.
 case=isolated-deps
@@ -343,4 +373,4 @@ for token in KEYTEC_REGISTRY_TOKEN KEYTEC_REGISTRY_WRITE_TOKEN; do
 done
 
 [ "$failures" = 0 ] || exit 1
-echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, provision dispatch, provision exec, isolated deps, own project without Git, Compose protection, Playwright image, writable artifacts, container credentials'
+echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, provision dispatch, provision exec, down, down then up, isolated deps, own project without Git, Compose protection, Playwright image, writable artifacts, container credentials'
