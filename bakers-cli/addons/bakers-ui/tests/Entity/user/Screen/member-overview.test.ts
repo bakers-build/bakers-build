@@ -32,7 +32,10 @@ it('validates workspace membership before showing the overview', async () => {
   );
 });
 
-const overviewWith = (profile: Record<string, unknown>) => {
+const overviewWith = (
+  name: string,
+  workspaceProfile?: Record<string, unknown>,
+) => {
   const collection = {
     where: vi.fn(),
     first: vi.fn(async () => ({ attr: () => 7 })),
@@ -40,11 +43,15 @@ const overviewWith = (profile: Record<string, unknown>) => {
   collection.where.mockReturnValue(collection);
   const client = {
     collection: vi.fn(() => collection),
-    get: vi.fn(async (path: string) =>
-      path === 'og_membership/default'
-        ? { data: [{ relationships: { uid: { data: { id: 'u1' } } } }] }
-        : { data: { id: 'u1', type: 'user--user', attributes: profile } },
-    ),
+    get: vi.fn(async (path: string) => {
+      if (path === 'og_membership/default')
+        return { data: [{ relationships: { uid: { data: { id: 'u1' } } } }] };
+      if (path === 'bb_profile/bb_profile')
+        return {
+          data: workspaceProfile ? [{ attributes: workspaceProfile }] : [],
+        };
+      return { data: { id: 'u1', type: 'user--user', attributes: { name } } };
+    }),
   } as unknown as DropshClient;
   const context = {
     sessionGeneration: 1,
@@ -60,10 +67,9 @@ const overviewWith = (profile: Record<string, unknown>) => {
 };
 
 it('shows an active member’s username, position and About me', async () => {
-  const { screen, context, client } = overviewWith({
-    name: 'ada',
-    field_developer_title: 'Backend developer',
-    field_bb_background: 'Drupal and PHP.\nLittle DevOps.',
+  const { screen, context, client } = overviewWith('ada', {
+    position: 'Backend developer',
+    background: 'Drupal and PHP.\nLittle DevOps.',
   });
   await vi.waitFor(() => expect(screen.state).toBe('ready'));
   const body = renderTree(screen.present(context).body).join('\n');
@@ -73,10 +79,17 @@ it('shows an active member’s username, position and About me', async () => {
   expect(body).toContain('Drupal and PHP.');
   expect(body).toContain('Little DevOps.');
   expect(client.get).toHaveBeenCalledWith('user/user/u1');
+  const [, params] =
+    vi
+      .mocked(client.get)
+      .mock.calls.find(([path]) => path === 'bb_profile/bb_profile') ?? [];
+  const query = decodeURIComponent(String(params?.getQueryString()));
+  expect(query).toContain('filter[uid.id]=u1');
+  expect(query).toContain('filter[workspace_id.id]=workspace-1');
 });
 
 it('shows none for an empty position and About me', async () => {
-  const { screen, context } = overviewWith({ name: 'ada' });
+  const { screen, context } = overviewWith('ada');
   await vi.waitFor(() => expect(screen.state).toBe('ready'));
   const body = renderTree(screen.present(context).body).join('\n');
   expect(body).toMatch(/Position\W+none/);
@@ -84,9 +97,8 @@ it('shows none for an empty position and About me', async () => {
 });
 
 it('renders an About me written with CRLF line ends without carriage returns', async () => {
-  const { screen, context } = overviewWith({
-    name: 'ada',
-    field_bb_background: 'Drupal and PHP.\r\nLittle DevOps.',
+  const { screen, context } = overviewWith('ada', {
+    background: 'Drupal and PHP.\r\nLittle DevOps.',
   });
   await vi.waitFor(() => expect(screen.state).toBe('ready'));
   const body = renderTree(screen.present(context).body).join('\n');

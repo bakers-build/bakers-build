@@ -152,11 +152,19 @@ final class ServiceAccountProfileTest extends KernelTestBase {
     self::assertTrue($this->service->access('edit profile', $this->lead));
     self::assertFalse($this->service->access('update', $this->lead), 'no access to mail, password or the edit form');
 
-    $formState = $this->submitUserProfile($this->service, 'Release bot', 'Ships tagged builds');
+    $formState = $this->submitUserProfile($this->service, (int) $this->workspace->id(), 'Release bot', 'Ships tagged builds');
     self::assertSame([], $formState->getErrors());
-    self::assertSame(['Release bot', 'Ships tagged builds'], $this->storedUserProfile($this->service));
+    self::assertSame(['Release bot', 'Ships tagged builds'], $this->storedUserProfile($this->service, (int) $this->workspace->id()));
 
-    $project = $this->container->get('entity_type.manager')->getStorage('bb_project')->create(['name' => 'profile-project']);
+    $group = $this->container->get('entity_type.manager')->getStorage('bb_group')->create([
+      'name' => 'profile-group',
+      'workspace_id' => $this->workspace->id(),
+    ]);
+    $group->save();
+    $project = $this->container->get('entity_type.manager')->getStorage('bb_project')->create([
+      'name' => 'profile-project',
+      'group_id' => $group->id(),
+    ]);
     $project->save();
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->create([
       'title' => 'Assigned to the bot',
@@ -170,9 +178,9 @@ final class ServiceAccountProfileTest extends KernelTestBase {
     self::assertStringContainsString("Position: Release bot\n", $profile);
     self::assertStringContainsString('Ships tagged builds', $profile);
 
-    $formState = $this->submitUserProfile($this->service, '', '');
+    $formState = $this->submitUserProfile($this->service, (int) $this->workspace->id(), '', '');
     self::assertSame([], $formState->getErrors());
-    self::assertSame([NULL, NULL], $this->storedUserProfile($this->service));
+    self::assertSame(['', ''], $this->storedUserProfile($this->service, (int) $this->workspace->id()));
     $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->loadUnchanged($ticket->id());
     self::assertInstanceOf(BbTicketInterface::class, $reloaded);
     self::assertSame('', (string) $reloaded->get('recipient_profile')->value);

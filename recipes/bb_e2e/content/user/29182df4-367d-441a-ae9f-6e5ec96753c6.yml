@@ -1,0 +1,20 @@
+# Public test credentials; this account exists only in recipe-test worlds.
+# Marks and unmarks its own favorite projects, so no persona is modified.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: 29182df4-367d-441a-ae9f-6e5ec96753c6
+  default_langcode: en
+default:
+  name:
+  - value: fixture-favorites
+  mail:
+  - value: fixture-favorites@example.test
+  status:
+  - value: true
+  pass:
+  - value: Bb-test-login-426!
+    pre_hashed: false
+  field_onboarding_completed:
+    -
+      value: true

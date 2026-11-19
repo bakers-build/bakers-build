@@ -57,7 +57,7 @@ final class OnboardingDestinationTest extends KernelTestBase {
   }
 
   /**
-   * Installs the profile fields and the completion flag from config/sync.
+   * Installs the completion flag from config/sync.
    *
    * They live only at the repository's top level, never under
    * `bb_core/config/**`, so `installConfig('bb_core')` cannot reach them.
@@ -66,8 +66,6 @@ final class OnboardingDestinationTest extends KernelTestBase {
     $this->container->get('config.typed')->clearCachedDefinitions();
     $storage = new FileStorage(dirname($this->root) . '/config/sync');
     foreach ([
-      'field_developer_title',
-      'field_bb_background',
       'field_onboarding_completed',
     ] as $name) {
       $storageData = $storage->read("field.storage.user.$name");
@@ -80,21 +78,14 @@ final class OnboardingDestinationTest extends KernelTestBase {
   }
 
   /**
-   * Completion is the stored Boolean, never optional profile fullness.
+   * Completion is the stored Boolean.
    */
   public function testIsCompleteReadsStoredFlagNotProfileFields(): void {
     $account = $this->createUser();
     self::assertInstanceOf(UserInterface::class, $account);
     self::assertFalse($this->destination->isComplete($account));
 
-    $account->set('field_developer_title', 'Backend engineer')->save();
-    $account->set('field_bb_background', 'I ship a lot of Drupal.')->save();
-    self::assertFalse($this->destination->isComplete($account));
-
     $account->set('field_onboarding_completed', TRUE)->save();
-    self::assertTrue($this->destination->isComplete($account));
-
-    $account->set('field_bb_background', NULL)->save();
     self::assertTrue($this->destination->isComplete($account));
   }
 
