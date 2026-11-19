@@ -189,4 +189,6 @@ export type ConductorEngineConfig = Omit<
 };
 
 /** A fixed command, or one that also receives the run's arguments as argv. */
-export type ProvisionExecCommand = string | { command: string; args?: boolean };
+export type ProvisionExecCommand =
+  | string
+  | { command: string; args?: boolean; description?: string };
