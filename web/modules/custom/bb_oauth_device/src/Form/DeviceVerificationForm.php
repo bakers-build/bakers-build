@@ -93,7 +93,6 @@ class DeviceVerificationForm extends FormBase {
     $form['heading'] = $this->text($this->t('Sign in a device'), [
       'as' => 'h1',
       'size' => 'section-title',
-      'align' => 'center',
     ]) + ['#weight' => -20];
     $form['user_code'] = [
       '#type' => 'textfield',
@@ -150,19 +149,26 @@ class DeviceVerificationForm extends FormBase {
         '@site' => $site,
         '@host' => $this->getRequest()->getHost(),
         '@account' => $this->currentUser->getDisplayName(),
-      ]));
+      ]), ['size' => 'section-title']);
       $memberships = $this->membershipBlocks();
       $form['consent_access'] = $this->text($memberships
         ? $this->t('If you confirm, the device can do everything you can do on @site, in the workspaces and teams below, with your roles there.', ['@site' => $site])
         : $this->t("You aren't in any workspace yet, so the device can't reach any workspace content."));
       foreach ($memberships as $delta => $block) {
         // One paragraph per line keeps each line escaped once; the gapless
-        // zone keeps a workspace's lines together.
+        // zone keeps a workspace's lines together, its teams smaller below.
+        $head = array_shift($block);
+        $team = ['size' => 'meta', 'tone' => 'light'];
         $form['consent_membership_' . $delta] = [
           '#type' => 'component',
           '#component' => 'bb_theme:zone',
-          '#props' => ['inset' => 'none', 'gap' => 'none', 'align' => 'center'],
-          '#slots' => ['content' => array_map(fn (TranslatableMarkup $line): array => $this->text($line, ['tone' => 'light']), $block)],
+          '#props' => ['inset' => 'none', 'gap' => 'none'],
+          '#slots' => [
+            'content' => [
+              $this->text($head),
+              ...array_map(fn (TranslatableMarkup $line): array => $this->text($line, $team), $block),
+            ],
+          ],
         ];
       }
       if ($memberships) {
@@ -175,13 +181,16 @@ class DeviceVerificationForm extends FormBase {
         '#type' => 'component',
         '#component' => 'bb_theme:collapsible',
         '#slots' => [
-          'label' => $this->text($this->t('Technical details'), ['as' => 'span']),
+          'label' => $this->text($this->t('Technical details'), ['as' => 'span', 'size' => 'meta', 'tone' => 'faint']),
           'content' => $this->text($scopes
             ? $this->t('Requested scopes: @scopes', ['@scopes' => implode(', ', $scopes)])
-            : $this->t('No specific access scopes were requested.'), ['tone' => 'faint']),
+            : $this->t('No specific access scopes were requested.'), ['size' => 'meta', 'tone' => 'faint']),
         ],
       ];
-      $form['consent_revoke'] = $this->text($this->t("You can't sign this device out yourself yet. Ask a site administrator to revoke it."), ['tone' => 'faint']);
+      $form['consent_revoke'] = $this->text(
+        $this->t("You can't sign this device out yourself yet. Ask a site administrator to revoke it."),
+        ['size' => 'meta', 'tone' => 'faint'],
+      );
       $form['user_code']['#default_value'] = $linkCode;
       $form['user_code']['#description'] = $this->t('Compare with the code in your terminal.');
     }

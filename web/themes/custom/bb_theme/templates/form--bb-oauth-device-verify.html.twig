@@ -1,7 +1,8 @@
 {#
 /**
  * @file
- * Device sign-in verification form presenter (BB-496), centred.
+ * Device sign-in verification form presenter (BB-496), start-aligned: the
+ * consent is a list a reader scans, which centring makes hard to read.
  *
  * `data-hx-boost="false"` for the same reason BbLoginForm sets it:
  * confirming or denying a device code is a decision, not a navigation, and
@@ -12,6 +13,5 @@
 #}
 {{ include('bb_theme:gate_form', {
   attributes: attributes.setAttribute('data-hx-boost', 'false'),
-  align: 'center',
   content: children,
 }, with_context = false) }}
