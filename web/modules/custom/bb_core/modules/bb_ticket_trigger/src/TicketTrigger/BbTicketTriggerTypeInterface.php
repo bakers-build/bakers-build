@@ -37,7 +37,8 @@ interface BbTicketTriggerTypeInterface extends PluginInspectionInterface, Config
    * also guards saves that bypass the form.
    *
    * @return array<string>
-   *   The error messages.
+   *   The error messages, keyed by their form field's key where they have one;
+   *   the form skips a message whose field already shows its own error.
    */
   public function configurationErrors(): array;
 

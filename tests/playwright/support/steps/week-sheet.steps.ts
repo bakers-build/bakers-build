@@ -20,6 +20,12 @@ When('I type {string} into the week grid row {string} on {string}', async ({ pag
   await (await gridCell(page, row, column)).locator('input[type="text"]').fill(value);
 });
 
+When('I type {string} into the week grid row {string} on {string} and leave it', async ({ page }, value: string, row: string, column: string) => {
+  const input = (await gridCell(page, row, column)).locator('input[type="text"]');
+  await input.fill(value);
+  await input.blur();
+});
+
 When('I save the week', async ({ page }) => {
   await page.getByRole('button', { name: 'Save week', exact: true }).click();
   await page.waitForLoadState('domcontentloaded');

@@ -74,19 +74,19 @@ final class Schedule extends TicketTriggerTypeBase {
     $errors = [];
     $frequency = $config['frequency'] ?? NULL;
     if (!is_string($frequency) || !isset(self::KEYS[$frequency])) {
-      $errors[] = (string) $this->t('Choose daily, weekly or monthly.');
+      $errors['frequency'] = (string) $this->t('Choose daily, weekly or monthly.');
     }
     if (preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', (string) ($config['time'] ?? '')) !== 1) {
-      $errors[] = (string) $this->t('Enter the time as HH:MM (24 hours).');
+      $errors['time'] = (string) $this->t('Enter the time as HH:MM (24 hours).');
     }
     if (!in_array($config['timezone'] ?? NULL, \DateTimeZone::listIdentifiers(), TRUE)) {
-      $errors[] = (string) $this->t('Choose a valid time zone.');
+      $errors['timezone'] = (string) $this->t('Choose a valid time zone.');
     }
     if ($frequency === 'weekly' && !isset($this->weekdays()[(int) ($config['weekday'] ?? 0)])) {
-      $errors[] = (string) $this->t('Choose a weekday.');
+      $errors['weekday'] = (string) $this->t('Choose a weekday.');
     }
     if ($frequency === 'monthly' && !isset($this->days()[(string) ($config['day'] ?? '')])) {
-      $errors[] = (string) $this->t('Choose a day of the month between 1 and 31, or the last day.');
+      $errors['day'] = (string) $this->t('Choose a day of the month between 1 and 31, or the last day.');
     }
     return $errors;
   }
@@ -169,16 +169,15 @@ final class Schedule extends TicketTriggerTypeBase {
       '#default_value' => $config['day'] ?? '1',
       '#description' => $this->t('Days 29–31 fall on the last day of shorter months.'),
     ];
-    // The browser's own time picker (`HH:MM`) in a plain form element, so
-    // label and description render like the other fields; core's datetime
-    // element would bring its own wrapper. The zone that matters is the one
-    // chosen below, not the viewer's.
+    // Typed text, not the browser's time picker: it takes a bare hour (`8`)
+    // and saves it as `08:00`. The zone that matters is the one chosen below,
+    // not the viewer's.
     $form['time'] = [
-      '#type' => 'textfield',
+      '#type' => 'bb_time',
+      '#mode' => 'clock',
       '#title' => $this->t('Time'),
-      '#description' => $this->t('In the time zone below.'),
+      '#description' => $this->t('Whole hours or HH:MM, for example 8 or 14:30. In the time zone below.'),
       '#default_value' => (string) $config['time'],
-      '#attributes' => ['type' => 'time', 'step' => 60],
       '#size' => 5,
       '#required' => TRUE,
     ];

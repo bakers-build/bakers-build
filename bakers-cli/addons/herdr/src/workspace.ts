@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   ensureRunClone,
+  leaveRunClone,
   loadInstructions,
   runBranchGit,
   targetOf,
@@ -16,11 +17,15 @@ import type {
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { exec } from '@bakers-build/core';
+import { exec, loadRunClone } from '@bakers-build/core';
 import { isRecord, parseJson } from './pane-layout.js';
 import { deriveHerdrRoot, type RootGitExec } from './root-anchor.js';
 import { resolveBaseRef } from './shared.js';
-import { openCloneWorkspace, removeHerdrWorktree } from './worktrees.js';
+import {
+  closeCloneWorkspace,
+  openCloneWorkspace,
+  removeHerdrWorktree,
+} from './worktrees.js';
 
 export type HerdrExec = (args: string[]) => Promise<string>;
 export type GitExec = (args: string[]) => Promise<string>;
@@ -49,7 +54,10 @@ export interface HerdrWorkspaceOptions {
    * in `root`, and give runs `push.default=current`. `true` leaves Git alone.
    */
   autoSetupMerge?: boolean;
-  /** The runtime isolates: a fresh run clone per ensure instead of a herdr worktree. */
+  /**
+   * The runtime isolates: a fresh run clone per ensure instead of a herdr
+   * worktree. The default mode; a run's `clone` overrides it.
+   */
   clone?: boolean;
   /** Run clones borrow the root's objects (`git clone --shared`). */
   shared?: boolean;
@@ -144,21 +152,19 @@ export class HerdrWorkspace implements BbWorkspace {
     if (branch === undefined) {
       throw new Error('herdr workspace requires a branch name');
     }
-    // shortcut: clone mode is fixed per herdr workspace; switch per run like the git workspace when a herdr machine needs a mixed runtime catalog.
-    if (options?.clone !== undefined && options.clone !== !!this.options.clone)
-      throw new Error(
-        'herdr workspace: the run runtime clone mode differs from the workspace; a herdr machine cannot mix isolating and host runtimes',
-      );
+    const clone = options?.clone ?? !!this.options.clone;
     const extra = this.options.autoSetupMerge
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };
 
-    if (this.options.clone) {
+    if (clone) {
+      // A host worktree at the path becomes the clone (`ensureRunClone`).
       return {
         ...(await this.ensureClone(branch, baseRefOverride)),
         ...extra,
       };
     }
+    await this.leaveClone(branch);
 
     const worktrees = parseWorktreeList(
       await this.execHerdr(['worktree', 'list', '--cwd', this.root, '--json']),
@@ -286,6 +292,35 @@ export class HerdrWorkspace implements BbWorkspace {
     });
     await openCloneWorkspace(this.execHerdr, this.root, branch, path);
     return { path, instructions: loadInstructions(path), created, clone };
+  }
+
+  /**
+   * A host run after an isolated one: close the clone's herdr workspace, move
+   * its commits to the ticket branch and remove it, so a worktree takes the
+   * path. Uncommitted work refuses, stays and gets its workspace back.
+   */
+  private async leaveClone(branch: string): Promise<void> {
+    const path = resolve(this.root, this.worktreeDir, branch);
+    if (!loadRunClone(path)) return;
+    const deps = {
+      root: this.root,
+      execHerdr: this.execHerdr,
+      runGit: this.runGit,
+      logger: this.logger,
+    };
+    if (!(await closeCloneWorkspace(deps, branch, path)))
+      throw new Error(
+        `herdr workspace: ${path} is focused and no parent workspace can take focus; switch focus and dispatch again`,
+      );
+    try {
+      leaveRunClone(path);
+    } catch (err) {
+      // A refusal keeps the clone: give its workspace back before reporting.
+      await openCloneWorkspace(this.execHerdr, this.root, branch, path).catch(
+        () => undefined,
+      );
+      throw err;
+    }
   }
 
   /**
