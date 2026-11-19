@@ -115,9 +115,16 @@ final class TicketInterventions {
    * Whether the current account may cancel this run of this ticket now.
    */
   public static function mayCancelRun(BbRunInterface $run, BbTicketInterface $ticket): bool {
+    return (in_array($run->getRunState(), self::ACTIVE_RUN_STATES, TRUE) || self::parkedRun($ticket)?->id() === $run->id())
+      && self::mayEndRun($run, $ticket);
+  }
+
+  /**
+   * Whether the current account may end this run of this ticket by its state.
+   */
+  private static function mayEndRun(BbRunInterface $run, BbTicketInterface $ticket): bool {
     return $run->getTicketId() === (int) $ticket->id()
       && $ticket->access('update')
-      && (in_array($run->getRunState(), self::ACTIVE_RUN_STATES, TRUE) || self::parkedRun($ticket)?->id() === $run->id())
       && $run->access('view')
       && $run->access('update')
       && $run->get('state')->access('edit')
@@ -143,16 +150,7 @@ final class TicketInterventions {
     if (!\Drupal::service('bb_core.failed_run_circuit_breaker')->isTripped($ticket)) {
       return NULL;
     }
-    $storage = \Drupal::entityTypeManager()->getStorage('bb_run');
-    // The breaker's order, so this is the run it counts as newest.
-    $ids = $storage->getQuery()->accessCheck(FALSE)
-      ->condition('ticket_id', $ticket->id())
-      ->sort('changed', 'DESC')
-      ->sort('id', 'DESC')
-      ->range(0, 1)
-      ->execute();
-    $run = $ids ? $storage->load(reset($ids)) : NULL;
-    return $run instanceof BbRunInterface ? $run : NULL;
+    return self::newestByChange((int) $ticket->id());
   }
 
   /**
@@ -319,26 +317,142 @@ final class TicketInterventions {
   }
 
   /**
-   * The runs Restart runs cancels on a machine or one conductor.
+   * The runs Restart runs covers on a machine or one conductor.
    *
-   * Every claimed or running run of the target's conductors, plus each open
-   * ticket's newest run when it failed on one of them. Loaded without access
-   * checks; callers decide who may restart.
+   * Each ticket's own set (see ticketRestartRuns()), limited to the runs on
+   * the target's conductors. Loaded without access checks; callers decide who
+   * may restart.
    *
    * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
    *   The covered runs keyed by id.
    */
   public static function restartCoveredRuns(BbMachineInterface|BbConductorInterface $target): array {
-    $conductor_ids = self::conductorIds($target);
-    $runs = self::conductorRuns($conductor_ids, self::ACTIVE_RUN_STATES);
-    foreach (self::conductorRuns($conductor_ids, ['failed']) as $id => $run) {
+    $runs = [];
+    $sets = [];
+    foreach (self::conductorRuns(self::conductorIds($target), [...self::ACTIVE_RUN_STATES, 'failed']) as $id => $run) {
       $ticket = $run->getTicket();
-      if ($ticket instanceof BbTicketInterface && !$ticket->isClosed() && self::isNewestByChange($run)) {
+      if ($ticket instanceof BbTicketInterface && isset(($sets[$ticket->id()] ??= self::ticketRestartRuns($ticket))[$id])) {
         $runs[$id] = $run;
       }
     }
     ksort($runs);
     return $runs;
+  }
+
+  /**
+   * The runs restarting this ticket cancels.
+   *
+   * For an open ticket that is not frozen: its claimed or running runs, and
+   * its newest run in the failed-run breaker's order when that one failed.
+   * Loaded without access checks.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The runs keyed by id.
+   */
+  public static function ticketRestartRuns(BbTicketInterface $ticket): array {
+    if ($ticket->isClosed() || $ticket->isFrozen()) {
+      return [];
+    }
+    $runs = self::activeRuns($ticket, \Drupal::entityTypeManager());
+    $newest = self::newestByChange((int) $ticket->id());
+    if ($newest?->getRunState() === 'failed') {
+      $runs[$newest->id()] = $newest;
+    }
+    ksort($runs);
+    return $runs;
+  }
+
+  /**
+   * Whether the current account may restart this ticket now.
+   *
+   * The ticket has runs to restart, and the account may end each of them.
+   */
+  public static function mayRestartTicket(BbTicketInterface $ticket): bool {
+    $runs = self::ticketRestartRuns($ticket);
+    foreach ($runs as $run) {
+      if (!self::mayEndRun($run, $ticket)) {
+        return FALSE;
+      }
+    }
+    return $runs !== [];
+  }
+
+  /**
+   * The runs grouped by ticket id, in the given order.
+   *
+   * @param array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs
+   *   The runs.
+   *
+   * @return array<int, array<int|string, \Drupal\bb_core\Entity\BbRunInterface>>
+   *   The runs keyed by run id, keyed by ticket id.
+   */
+  public static function byTicket(array $runs): array {
+    $groups = [];
+    foreach ($runs as $id => $run) {
+      $groups[(int) $run->getTicketId()][$id] = $run;
+    }
+    return $groups;
+  }
+
+  /**
+   * Whether the account may cancel this run as part of a selection.
+   *
+   * A run of its ticket's restart set, when the account owns the run's
+   * machine or may end the run; else a claimed or running run the account may
+   * end, as Cancel run.
+   */
+  public static function maySelectRun(BbRunInterface $run, AccountInterface $account): bool {
+    $ticket = $run->getTicket();
+    if (!$ticket instanceof BbTicketInterface) {
+      return FALSE;
+    }
+    $restartable = isset(self::ticketRestartRuns($ticket)[$run->id()]);
+    $conductor = $run->get('conductor_id')->entity;
+    if ($restartable && $conductor instanceof BbConductorInterface && self::mayRestartRuns($conductor, $account)) {
+      return self::runState($run)->isTransitionAllowed(self::cancelTransition($run));
+    }
+    return ($restartable || in_array($run->getRunState(), self::ACTIVE_RUN_STATES, TRUE)) && self::mayEndRun($run, $ticket);
+  }
+
+  /**
+   * Cancels exactly these runs, or none when the account may not cancel one.
+   *
+   * Each run's error log gets `cancelled by <account>: <reason>`. The ticket
+   * keeps its state, labels and freeze; a cancelled run counts neither as
+   * active nor towards the failed-run breaker, so the claim logic gives each
+   * ticket one fresh run.
+   *
+   * @param array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs
+   *   The runs.
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The account cancelling them.
+   * @param string $reason
+   *   Why they end.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The cancelled runs.
+   *
+   * @throws \InvalidArgumentException
+   *   When one of them may not be cancelled; no run changed.
+   */
+  public static function cancelSelectedRuns(array $runs, AccountInterface $account, string $reason): array {
+    foreach ($runs as $run) {
+      if (!self::maySelectRun($run, $account)) {
+        throw new \InvalidArgumentException(sprintf('You may not cancel run %s.', $run->uuid()));
+      }
+    }
+    $note = self::cancelNote($account, $reason);
+    foreach ($runs as $run) {
+      self::cancelRun($run, $note);
+    }
+    return $runs;
+  }
+
+  /**
+   * The error-log line of a cancel: who and why.
+   */
+  public static function cancelNote(AccountInterface $account, string $reason): string {
+    return sprintf('cancelled by %s: %s', $account->getAccountName(), $reason);
   }
 
   /**
@@ -357,31 +471,14 @@ final class TicketInterventions {
   }
 
   /**
-   * Cancels every covered run with the restart note.
-   *
-   * The ticket keeps its state, labels and freeze; a cancelled run counts
-   * neither as active nor towards the failed-run breaker, so the claim logic
-   * gives each ticket one fresh run.
-   *
-   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
-   *   The cancelled runs keyed by id.
+   * The reason Restart runs records, naming its level and target.
    */
-  public static function restartRuns(BbMachineInterface|BbConductorInterface $target, AccountInterface $account): array {
-    $runs = self::restartCoveredRuns($target);
-    $note = self::restartNote($target, $account);
-    foreach ($runs as $run) {
-      self::cancelRun($run, $note);
-    }
-    return $runs;
-  }
-
-  /**
-   * The error-log line naming Restart runs, its level and the person.
-   */
-  public static function restartNote(BbMachineInterface|BbConductorInterface $target, AccountInterface $account): string {
-    return $target instanceof BbMachineInterface
-      ? sprintf('Restart runs (machine %s) by %s', BbMachineRouteProvider::title($target), $account->getAccountName())
-      : sprintf('Restart runs (conductor %s) by %s', BbConductorRouteProvider::title($target), $account->getAccountName());
+  public static function restartReason(BbMachineInterface|BbConductorInterface|BbTicketInterface $target): string {
+    return match (TRUE) {
+      $target instanceof BbMachineInterface => sprintf('Restart runs (machine %s)', BbMachineRouteProvider::title($target)),
+      $target instanceof BbConductorInterface => sprintf('Restart runs (conductor %s)', BbConductorRouteProvider::title($target)),
+      default => sprintf('Restart runs (ticket %s)', $target->getIdentifier() !== '' ? $target->getIdentifier() : (string) $target->label()),
+    };
   }
 
   /**
@@ -425,16 +522,18 @@ final class TicketInterventions {
   }
 
   /**
-   * Whether the run is its ticket's newest in the failed-run breaker's order.
+   * The ticket's newest run in the failed-run breaker's order, if any.
    */
-  private static function isNewestByChange(BbRunInterface $run): bool {
-    $newest = \Drupal::entityTypeManager()->getStorage('bb_run')->getQuery()->accessCheck(FALSE)
-      ->condition('ticket_id', $run->getTicketId())
+  private static function newestByChange(int $ticket_id): ?BbRunInterface {
+    $storage = \Drupal::entityTypeManager()->getStorage('bb_run');
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('ticket_id', $ticket_id)
       ->sort('changed', 'DESC')
       ->sort('id', 'DESC')
       ->range(0, 1)
       ->execute();
-    return (int) reset($newest) === (int) $run->id();
+    $run = $ids ? $storage->load(reset($ids)) : NULL;
+    return $run instanceof BbRunInterface ? $run : NULL;
   }
 
   /**

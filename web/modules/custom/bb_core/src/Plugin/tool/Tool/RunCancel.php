@@ -17,17 +17,18 @@ use Drupal\tool\ExecutableResult;
 use Drupal\tool\Tool\ToolBase;
 use Drupal\tool\Tool\ToolOperation;
 use Drupal\tool\TypedData\InputDefinition;
+use Drupal\tool\TypedData\ListInputDefinition;
 use Drupal\tool\TypedData\ListOutputDefinition;
 use Drupal\tool\TypedData\MapOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
 
 /**
- * Cancels a ticket's or a machine's active runs under the Cancel run rule.
+ * Cancels a ticket's or a machine's active runs, or exactly the named runs.
  */
 #[Tool(
   id: 'bakers_run_cancel',
-  label: new TranslatableMarkup('Cancel active runs of a ticket or machine'),
-  description: new TranslatableMarkup('Sets claimed or running runs to cancelled and records the reason in each run’s error log; the conductor then stops the agent. With ticket: every active run of that ticket; a ticket parked after repeated failed runs has none, so its newest failed run is cancelled instead, which restarts it. Refused with no run changed when there is nothing to cancel or the caller may not cancel one of them. With machine_id: every active run of your machine’s conductors across projects that you may cancel, with one comment per affected ticket; none cancelled is no error.'),
+  label: new TranslatableMarkup('Cancel active runs of a ticket or machine, or named runs'),
+  description: new TranslatableMarkup('Sets claimed or running runs to cancelled and records the reason in each run’s error log; the conductor then stops the agent. With ticket: every active run of that ticket; a ticket parked after repeated failed runs has none, so its newest failed run is cancelled instead, which restarts it. Refused with no run changed when there is nothing to cancel or the caller may not cancel one of them. With machine_id: every active run of your machine’s conductors across projects that you may cancel, with one comment per affected ticket; none cancelled is no error. With runs: exactly those runs, all or nothing; each must be claimed or running and yours to cancel, or a run Restart runs covers (an open, unfrozen ticket’s active run or its newest failed run) on your machine or of a ticket you may edit.'),
   operation: ToolOperation::Write,
   destructive: TRUE,
   permission: 'view bb_ticket',
@@ -35,14 +36,25 @@ use Drupal\tool\TypedData\OutputDefinition;
     'ticket' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Ticket'),
-      description: new TranslatableMarkup('Ticket identifier (e.g. BAKERS-15) or UUID. Give this or machine_id.'),
+      description: new TranslatableMarkup('Ticket identifier (e.g. BAKERS-15) or UUID. Give exactly one of ticket, machine_id or runs.'),
       required: FALSE,
     ),
     'machine_id' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Machine ID'),
-      description: new TranslatableMarkup('The machine_id of one of your machines (from ~/.bakers/machine.config.js). Give this or ticket.'),
+      description: new TranslatableMarkup('The machine_id of one of your machines (from ~/.bakers/machine.config.js). Give exactly one of ticket, machine_id or runs.'),
       required: FALSE,
+    ),
+    'runs' => new ListInputDefinition(
+      label: new TranslatableMarkup('Runs'),
+      description: new TranslatableMarkup('Run UUIDs to cancel, e.g. from bakers_run_restartable. Give exactly one of ticket, machine_id or runs.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Run'),
+        description: new TranslatableMarkup('One run UUID.'),
+        constraints: ['NotBlank' => []],
+      ),
     ),
     'reason' => new InputDefinition(
       data_type: 'string',
@@ -93,10 +105,14 @@ final class RunCancel extends ToolBase {
   protected function doExecute(array $values): ExecutableResult {
     $ticket_input = (string) ($values['ticket'] ?? '');
     $machine_input = (string) ($values['machine_id'] ?? '');
-    if (($ticket_input === '') === ($machine_input === '')) {
-      throw new \InvalidArgumentException('Give exactly one of ticket or machine_id.');
+    $run_inputs = array_values(array_unique(array_map('strval', $values['runs'] ?? [])));
+    if (count(array_filter([$ticket_input !== '', $machine_input !== '', $run_inputs !== []])) !== 1) {
+      throw new \InvalidArgumentException('Give exactly one of ticket, machine_id or runs.');
     }
-    $note = sprintf('cancelled by %s: %s', $this->currentUser->getAccountName(), $values['reason']);
+    if ($run_inputs !== []) {
+      return $this->cancelRuns($run_inputs, (string) $values['reason']);
+    }
+    $note = TicketInterventions::cancelNote($this->currentUser, (string) $values['reason']);
     if ($machine_input !== '') {
       return $this->cancelByMachine($machine_input, $note);
     }
@@ -117,6 +133,29 @@ final class RunCancel extends ToolBase {
     foreach ($runs as $run) {
       TicketInterventions::cancelRun($run, $note);
       $cancelled[] = ['run' => (string) $run->uuid(), 'ticket' => $ticket->getIdentifier()];
+    }
+    return $this->result($cancelled);
+  }
+
+  /**
+   * Cancels exactly the named runs, or none.
+   *
+   * An unknown run is refused like one the caller may not cancel.
+   *
+   * @param list<string> $uuids
+   *   The run UUIDs.
+   * @param string $reason
+   *   Why the runs end.
+   */
+  private function cancelRuns(array $uuids, string $reason): ExecutableResult {
+    $runs = [];
+    foreach ($uuids as $uuid) {
+      $runs[] = TicketInterventions::runByUuid($uuid, $this->entities())
+        ?? throw new \InvalidArgumentException(sprintf('You may not cancel run %s.', $uuid));
+    }
+    $cancelled = [];
+    foreach (TicketInterventions::cancelSelectedRuns($runs, $this->currentUser, $reason) as $run) {
+      $cancelled[] = ['run' => (string) $run->uuid(), 'ticket' => (string) $run->getTicket()?->getIdentifier()];
     }
     return $this->result($cancelled);
   }

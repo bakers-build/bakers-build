@@ -10,19 +10,20 @@ use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Form\BbRestartRunsForm;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 
 /**
- * The Properties footer: Restart, Freeze, Unfreeze, Cancel ticket, Settings.
+ * The Properties footer: Restart runs, Freeze, Unfreeze, Cancel ticket, Settings.
  *
  * AI agents drive the workflow; this footer offers only interventions.
  */
 #[Source(
   id: 'bb_ticket_interventions',
   label: new TranslatableMarkup('[bakers.build] Ticket interventions'),
-  description: new TranslatableMarkup('Restart, freeze, unfreeze, cancel ticket and the Settings entry of a ticket.'),
+  description: new TranslatableMarkup('Restart runs, freeze, unfreeze, cancel ticket and the Settings entry of a ticket.'),
   prop_types: ['slot'],
   context_definitions: [
     'entity' => new EntityContextDefinition('entity:bb_ticket', label: new TranslatableMarkup('Ticket'), required: TRUE),
@@ -39,14 +40,8 @@ final class BbTicketInterventionsSource extends SourcePluginBase {
     if ($ticket === NULL) {
       return $build;
     }
-    $parked_run = TicketInterventions::parkedRun($ticket);
-    if ($parked_run !== NULL && TicketInterventions::mayCancelRun($parked_run, $ticket)) {
-      $build['restart'] = $this->dialogButton(
-        (string) $this->t('Restart ticket'),
-        TicketInterventions::confirmationUrl($ticket, $parked_run, FALSE),
-        TicketInterventions::confirmationUrl($ticket, $parked_run, TRUE),
-        'neutral',
-      );
+    if (TicketInterventions::mayRestartTicket($ticket)) {
+      $build['restart'] = BbRestartRunsForm::button($ticket);
     }
     if (TicketInterventions::mayUnfreeze($ticket)) {
       $build['unfreeze'] = $this->dialogButton(
@@ -86,7 +81,7 @@ final class BbTicketInterventionsSource extends SourcePluginBase {
     }
     CacheableMetadata::createFromObject($ticket)
       ->addCacheContexts(['user', 'url.path'])
-      // Restart depends on the ticket's runs.
+      // Restart runs depends on the ticket's runs.
       ->addCacheTags(['og_membership_list', 'bb_run_list'])
       ->applyTo($build);
     return $build;

@@ -253,6 +253,7 @@ final class MachineOverviewTest extends KernelTestBase {
     $html = $this->renderMachineConductors();
     self::assertStringContainsString('North conductor', $html);
     self::assertStringNotContainsString('South conductor', $html);
+    self::assertStringContainsString('>Platform<', $html, 'Each conductor row names its project.');
     self::assertStringContainsString('Restart runs', $html);
     // The row action opens its confirmation in the overlay, like the buttons.
     self::assertStringContainsString('hx-target="#bakers-overlay"', $html);
@@ -263,6 +264,28 @@ final class MachineOverviewTest extends KernelTestBase {
     $html = $this->renderMachineConductors();
     self::assertStringContainsString('North conductor', $html);
     self::assertStringNotContainsString('Restart runs', $html);
+  }
+
+  /**
+   * The conductor overview names each conductor's project.
+   */
+  public function testConductorOverviewNamesTheProject(): void {
+    $this->installShippedView('views.view.conductors');
+    $group = $this->create('bb_group', ['name' => 'Core', 'workspace_id' => $this->home->id()]);
+    $project = $this->create('bb_project', ['name' => 'Platform', 'group_id' => $group->id()]);
+    $this->create('bb_conductor', [
+      'conductor_id' => 'c-north',
+      'label' => 'North conductor',
+      'project_id' => $project->id(),
+      'owner_user_id' => $this->accounts['lead']->id(),
+      'status' => 'online',
+    ]);
+
+    $this->container->get('account_switcher')->switchTo($this->accounts['lead']);
+    $build = Views::getView('conductors')->executeDisplay('user_list', [(string) $this->accounts['lead']->id()]);
+    $html = (string) $this->container->get('renderer')->renderInIsolation($build);
+    self::assertStringContainsString('North conductor', $html);
+    self::assertStringContainsString('>Platform<', $html);
   }
 
   /**

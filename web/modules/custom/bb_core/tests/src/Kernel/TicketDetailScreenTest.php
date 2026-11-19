@@ -1330,19 +1330,17 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * Restart sits in the footer only while failed runs park the ticket.
+   * Restart runs sits in the footer while the newest run failed, unparked too.
    */
-  public function testParkedTicketOffersRestart(): void {
-    $this->createRun('failed', 'working', 1770000000);
-    $this->createRun('failed', 'working', 1770000100);
-    self::assertStringNotContainsString('>Restart ticket<', $this->renderScreen(), 'Two failed runs do not park.');
-
-    $newest = $this->createRun('failed', 'working', 1770000200);
+  public function testFailedTicketOffersRestartRuns(): void {
+    self::assertStringNotContainsString('>Restart runs<', $this->renderScreen(), 'No run, nothing to restart.');
+    $newest = $this->createRun('failed', 'working', 1770000000);
     self::assertInstanceOf(BbRunInterface::class, $newest);
     $html = $this->renderScreen();
-    self::assertStringContainsString('>Restart ticket<', $html);
-    self::assertStringContainsString('run=' . $newest->uuid(), $html, 'Restart confirms cancelling the newest failed run.');
-    self::assertArrayNotHasKey('cancel', $this->rowItem($newest)['cells'], 'Its run row offers no Cancel run; Restart is in the footer.');
+    self::assertStringContainsString('>Restart runs<', $html);
+    self::assertStringContainsString('/restart', $html, 'Restart runs opens the ticket\'s Restart runs dialog.');
+    self::assertStringNotContainsString('>Restart ticket<', $html);
+    self::assertArrayNotHasKey('cancel', $this->rowItem($newest)['cells'], 'Its run row offers no Cancel run; Restart runs is in the footer.');
     $zone = $this->container->get('bb_core.run_inspector_rows')->status($newest);
     $status = (string) $this->container->get('renderer')->renderInIsolation($zone);
     self::assertStringContainsString('failed', $status);
@@ -1352,7 +1350,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     self::assertInstanceOf(StateItemInterface::class, $state);
     $state->applyTransitionById('cancel_failed');
     $newest->save();
-    self::assertStringNotContainsString('>Restart ticket<', $this->renderScreen(), 'A restarted ticket is no longer parked.');
+    self::assertStringNotContainsString('>Restart runs<', $this->renderScreen(), 'A restarted ticket has nothing left to restart.');
   }
 
   /**
