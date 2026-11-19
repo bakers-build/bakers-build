@@ -499,14 +499,14 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       ...(this.cancellable()
         ? [actionItem('ticket-cancel', 'x', 'cancel ticket')]
         : []),
-      ...(this.restartable()
-        ? [actionItem('detail-restart', 'r', 'restart runs')]
-        : []),
-      // Freeze and paging before copy: at 80 columns the footer clips the
-      // tail, and `Y:Copy link` is the hint that yields.
+      // Freeze and paging before restart and copy: at 80 columns the footer
+      // clips the tail, and those hints yield.
       actionItem('detail-freeze', 'f', this.isFrozen() ? 'unfreeze' : 'freeze'),
       actionItem('detail-arrows', '↑↓', selectable > 1 ? 'select' : 'scroll'),
       actionItem('detail-page', 'PgUp/PgDn', 'page'),
+      ...(this.restartable()
+        ? [actionItem('detail-restart', 'r', 'restart runs')]
+        : []),
       ...ticketCopyActions(),
       ...(selectable > 0
         ? [actionItem('detail-enter', 'Enter/Space', 'expand')]
