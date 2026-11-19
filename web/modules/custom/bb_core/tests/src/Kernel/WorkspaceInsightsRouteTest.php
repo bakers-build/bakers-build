@@ -124,6 +124,19 @@ final class WorkspaceInsightsRouteTest extends KernelTestBase {
   }
 
   /**
+   * Today opens as a day period on that UTC date, grouped per hour.
+   */
+  public function testTodayIsADayPeriodPerHour(): void {
+    $today = gmdate('Y-m-d', \Drupal::time()->getRequestTime());
+    $build = $this->page(['filter' => ['period' => 'day', 'date' => $today]]);
+    $range = $this->components($build, 'bb_theme:period-range')[0]['#props'];
+    self::assertSame('day', $range['kind']);
+    self::assertSame($today, $range['date']);
+    $chart = $this->components($build, 'bb_theme:flow-chart')[0]['#props']['chart'];
+    self::assertStringStartsWith('Per hour, UTC', $chart['caption']);
+  }
+
+  /**
    * A month is grouped per day.
    */
   public function testFlowChartCaptionNamesGrouping(): void {

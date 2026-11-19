@@ -121,6 +121,17 @@ final class ProjectStatsRouteTest extends KernelTestBase {
   }
 
   /**
+   * Yesterday opens as a day period anchored on that UTC date.
+   */
+  public function testYesterdayIsADayPeriod(): void {
+    $yesterday = gmdate('Y-m-d', \Drupal::time()->getRequestTime() - 86400);
+    $build = $this->page(['filter' => ['period' => 'day', 'date' => $yesterday]]);
+    $range = $this->components($build, 'bb_theme:period-range')[0]['#props'];
+    self::assertSame('day', $range['kind']);
+    self::assertSame($yesterday, $range['date']);
+  }
+
+  /**
    * The replaced figures, hours and the export never appear.
    */
   public function testReplacedFiguresAreGone(): void {
