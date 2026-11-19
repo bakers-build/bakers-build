@@ -33,7 +33,7 @@ import {
 import { ContextBag } from '../../src/Routing/context.js';
 import type { ScreenContext } from '../../src/Screen/screen.js';
 import type { TicketDetailDocument } from '../../src/types.js';
-import { renderTree } from '../render-tree.js';
+import { nodeById, renderTree } from '../render-tree.js';
 
 const RUN_ID = '69407ed7-07c2-4dc3-92fa-c1e1a1e77c0f';
 
@@ -88,6 +88,10 @@ const doc: TicketDetailDocument = {
 
 /** CAPTURED FROM THE PRE-CONVERSION BASELINE — subject 5's structured rows. */
 const ROWS = [
+  // BAKERS-332: the Links section leads; offline (no base URL, no PR) it states so.
+  'Links',
+  'No links.',
+  '',
   'Run',
   '#4928 · 69407ed7-07c2-4dc3-92fa-c1e1a1e77c0f',
   'ticket:        BB-340',
@@ -123,6 +127,19 @@ const ROWS = [
   '',
 ];
 
+const BASE_URL = 'https://b.test';
+
+const withPr: TicketDetailDocument = {
+  ...doc,
+  data: {
+    ...doc.data,
+    attributes: {
+      ...doc.data?.attributes,
+      links: [{ title: 'PR', uri: 'https://github.com/o/r/pull/229' }],
+    },
+  },
+};
+
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const opened = async (
@@ -135,6 +152,9 @@ const opened = async (
     requestDraw: vi.fn(),
     isActive: () => true,
     params: { ticketId: 'ticket-340', runId },
+    ...(document === withPr
+      ? { services: { baseUrl: BASE_URL } as ScreenContext['services'] }
+      : {}),
     contexts: document
       ? ContextBag.empty().set(runDetailInputContext, { document })
       : ContextBag.empty(),
@@ -178,12 +198,47 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
     // The anti-drift guard, and the reason the rows are not a second
     // description of this screen: both are projections of the same keyed
     // sections, so a section added to one appears in the other or this fails.
-    for (const runId of [RUN_ID, 'nope']) {
-      const { screen, context } = await opened(doc, runId);
-      expect(screen.renderNonInteractive(context)).toEqual(
-        renderTree(runDetailTree(doc, runId)),
-      );
+    // A link row's pipe text adds the full URL after the label (a pipe has
+    // nothing to press), so each pipe row STARTS with its tree row.
+    for (const document of [doc, withPr]) {
+      for (const runId of [RUN_ID, 'nope']) {
+        const { screen, context } = await opened(document, runId);
+        const pipe = screen.renderNonInteractive(context);
+        const tree = renderTree(
+          runDetailTree(document, runId, document === withPr ? BASE_URL : undefined),
+        );
+        expect(pipe).toHaveLength(tree.length);
+        pipe.forEach((row, index) => {
+          expect(row.startsWith(tree[index] ?? '')).toBe(true);
+        });
+      }
     }
+  });
+
+  it('a link row in the pipe carries the full URL after its label', async () => {
+    const { screen, context } = await opened(withPr, RUN_ID);
+    expect(screen.renderNonInteractive(context).slice(0, 4)).toEqual([
+      'Links',
+      'ticket:        BB-340 https://b.test/admin/bakers/ticket/ticket-340',
+      'PR:            PR #229 https://github.com/o/r/pull/229',
+      '',
+    ]);
+  });
+
+  it('AC-2: pressing a link copies its full URL and says so', async () => {
+    const { screen, context } = await opened(withPr, RUN_ID);
+    const writer = vi.fn(() => 'copied' as const);
+    const live = { ...context, copyToClipboard: writer };
+    const row = nodeById(screen.present(live).body, 'run-detail-link-pr-0');
+    (row?.props as { onMouse: (event: unknown) => void }).onMouse({
+      type: 'down',
+      button: 0,
+      stopPropagation: () => {},
+    });
+    expect(writer).toHaveBeenCalledWith('https://github.com/o/r/pull/229');
+    expect(screen.present(live).toast).toBe(
+      'copied the link https://github.com/o/r/pull/229',
+    );
   });
 
   it('R3 — `present()` still hands over a tree and no `lines` surface', async () => {

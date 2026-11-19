@@ -90,6 +90,7 @@ it('D6: runResource selects the sideloaded run by id, and only a run', () => {
 it('D6: every section is rendered, each with the run’s own fields', () => {
   const tree = runDetailTree(doc, RUN_ID);
   expect(rowsMatching(tree, /^run-detail-section-/)).toEqual([
+    'Links',
     'Run',
     'State',
     'Timing',
@@ -209,7 +210,8 @@ it('D6: the title carries the run id, the ticket identifier and the state', () =
 
 it('D6: runDetailTree carries the rows in the order the screen draws them', () => {
   const rows = renderTree(runDetailTree(doc, RUN_ID));
-  expect(rows[0]).toBe('Run');
+  expect(rows[0]).toBe('Links');
+  expect(rows[3]).toBe('Run');
   expect(rows.join('\n')).toContain('#4599');
   expect(rows.join('\n')).toContain('cw-framework');
   expect(rows.join('\n')).toContain('Captured (42 bytes)');
@@ -240,4 +242,56 @@ it('R4: every id names what the row IS, and no id is used twice', () => {
   );
   const ids = idsOf(tree);
   expect(new Set(ids).size, ids.join(' ')).toBe(ids.length);
+});
+
+// AC-4/AC-2: the owning ticket's URL and its PR sit first, as short labels; a
+// press hands the FULL URL to the screen.
+const withPr: TicketDetailDocument = {
+  ...doc,
+  data: {
+    ...doc.data,
+    attributes: {
+      ...doc.data?.attributes,
+      links: [
+        { title: 'Result', uri: 'https://example.test/result' },
+        { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
+      ],
+    },
+  },
+};
+
+it('AC-4: the first section is Links, with the ticket URL and the PR only', () => {
+  const tree = runDetailTree(withPr, RUN_ID, 'https://b.test');
+  expect(rowsMatching(tree, /^run-detail-section-/)[0]).toBe('Links');
+  expect(rowsMatching(tree, /^run-detail-link-/)).toEqual([
+    'ticket:        BB-255',
+    'PR:            PR #229',
+  ]);
+});
+
+it('AC-4: without a PR only the ticket row; without a base URL either, No links.', () => {
+  expect(
+    rowsMatching(runDetailTree(doc, RUN_ID, 'https://b.test'), /^run-detail-link-/),
+  ).toEqual(['ticket:        BB-255']);
+  const offline = runDetailTree(doc, RUN_ID);
+  expect(rowsMatching(offline, /^run-detail-link/)).toEqual(['No links.']);
+});
+
+it('AC-2: pressing a link row hands its full URL to onLink', () => {
+  const pressed: string[] = [];
+  const tree = runDetailTree(withPr, RUN_ID, 'https://b.test', (href) =>
+    pressed.push(href),
+  );
+  const press = (id: string) =>
+    (
+      nodeById(tree, id)?.props as {
+        onMouse?: (event: unknown) => void;
+      }
+    ).onMouse?.({ type: 'down', button: 0, stopPropagation: () => {} });
+  press('run-detail-link-pr-0');
+  press('run-detail-link-ticket');
+  expect(pressed).toEqual([
+    'https://github.com/o/r/pull/229',
+    'https://b.test/admin/bakers/ticket/t-255',
+  ]);
 });
