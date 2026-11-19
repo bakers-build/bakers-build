@@ -174,10 +174,10 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $this->t('@group has no members yet.', ['@group' => $group->label()]),
       20,
     );
-    if ($tenancy) {
+    if (!empty($form['invite_trigger'])) {
       $form['roster']['#bb_zone_actions'] = $form['invite_trigger'];
-      unset($form['invite_trigger']);
     }
+    unset($form['invite_trigger']);
     $this->applyOutcome($form, $group, $may_write);
 
     return $form;
