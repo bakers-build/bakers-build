@@ -68,9 +68,13 @@ final class TicketTemplateOperationsHooks {
    *   The entity's operations, altered in place.
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity the operations belong to.
+   * @param \Drupal\Core\Cache\CacheableMetadata $cacheability
+   *   The cacheability of the operations, unchanged here.
+   *
+   * @SuppressWarnings("PHPMD.UnusedFormalParameter")
    */
   #[Hook('entity_operation_alter')]
-  public function entityOperationAlter(array &$operations, EntityInterface $entity): void {
+  public function entityOperationAlter(array &$operations, EntityInterface $entity, CacheableMetadata $cacheability): void {
     if (!$entity instanceof BbTicketTemplateInterface || !isset($operations['edit'])) {
       return;
     }

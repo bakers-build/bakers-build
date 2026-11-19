@@ -41,7 +41,7 @@ final class BbTicketActionForm extends EntityForm {
   /**
    * Records retry requests.
    */
-  private TicketRetry $ticketRetry;
+  protected TicketRetry $ticketRetry;
 
   /**
    * {@inheritdoc}

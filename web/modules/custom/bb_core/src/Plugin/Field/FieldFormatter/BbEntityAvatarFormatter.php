@@ -35,7 +35,7 @@ final class BbEntityAvatarFormatter extends FormatterBase {
   /**
    * Loads the avatar image style.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}

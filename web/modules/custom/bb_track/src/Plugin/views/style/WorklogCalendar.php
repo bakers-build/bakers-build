@@ -70,22 +70,22 @@ final class WorklogCalendar extends StylePluginBase {
   /**
    * Totals source.
    */
-  private WorklogAggregates $aggregates;
+  protected WorklogAggregates $aggregates;
 
   /**
    * Label source.
    */
-  private Calendar $calendar;
+  protected Calendar $calendar;
 
   /**
    * Builds the week and proposal forms.
    */
-  private FormBuilderInterface $formBuilder;
+  protected FormBuilderInterface $formBuilder;
 
   /**
    * The entity type manager.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}

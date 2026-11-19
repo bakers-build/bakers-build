@@ -22,17 +22,17 @@ trait WorkspaceSwitcherCandidatesTrait {
   /**
    * The entity type manager.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * The workspace read-scope oracle.
    */
-  private BbWorkspaceReadScopeInterface $readScope;
+  protected BbWorkspaceReadScopeInterface $readScope;
 
   /**
    * The current-session account.
    */
-  private AccountProxyInterface $currentUser;
+  protected AccountProxyInterface $currentUser;
 
   /**
    * The workspaces this account may land in, ordered by slug.
@@ -66,7 +66,7 @@ trait WorkspaceSwitcherCandidatesTrait {
   /**
    * The validated account navigation context.
    */
-  private AccountWorkspaceContext $workspaceContext;
+  protected AccountWorkspaceContext $workspaceContext;
 
   /**
    * The route workspace or validated profile origin, without a fallback.

@@ -583,6 +583,7 @@ display:
                 collapsible: false
                 collapsible_label: 'Sort options'
                 is_secondary: false
+                no_reset: false
       empty:
         bb_empty:
           id: bb_empty

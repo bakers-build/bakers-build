@@ -24,7 +24,7 @@ final class BbTicketTemplateAccessControlHandler extends EntityAccessControlHand
    */
   public function __construct(
     EntityTypeInterface $entity_type,
-    private readonly EntityTypeManagerInterface $entityTypeManager,
+    protected readonly EntityTypeManagerInterface $entityTypeManager,
   ) {
     parent::__construct($entity_type);
   }

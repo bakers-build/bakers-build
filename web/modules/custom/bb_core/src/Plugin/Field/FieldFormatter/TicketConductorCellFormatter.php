@@ -29,7 +29,7 @@ final class TicketConductorCellFormatter extends TicketReferenceCellFormatterBas
   /**
    * The reader, whose own leases are outlined.
    */
-  private AccountInterface $currentUser;
+  protected AccountInterface $currentUser;
 
   /**
    * {@inheritdoc}
