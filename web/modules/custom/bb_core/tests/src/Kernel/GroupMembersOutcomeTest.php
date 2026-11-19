@@ -146,9 +146,9 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
   }
 
   /**
-   * Removing the only member falls back to the add field.
+   * Removing the only member falls back to the Add member trigger.
    */
-  public function testRemovingTheOnlyMemberFocusesTheAddField(): void {
+  public function testRemovingTheOnlyMemberFocusesTheAddTrigger(): void {
     $this->actAsTeamManager();
     foreach ($this->rosterUids() as $uid) {
       if ($uid !== (int) $this->crew[0]->id()) {
@@ -158,26 +158,8 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
 
     $page = $this->submitTeam(['confirm_remove_' . $this->crew[0]->id() => (string) $this->crew[0]->id()]);
 
+    // The page header's Add member trigger carries the id.
     $this->assertOutcome($page, 'members-add', 'Removed ada.', 'polite');
-    self::assertCount(1, $page->filter('#members-add'), 'the add field carries the id');
-  }
-
-  /**
-   * Adding someone focuses the new row's role trigger.
-   */
-  public function testAddFocusesTheNewRowsRoleTriggerAndAnnouncesIt(): void {
-    $dee = $this->createUser(['view bb_team', 'update any bb_team'], 'dee');
-    self::assertInstanceOf(UserInterface::class, $dee);
-    $this->addMembership($this->workspace, $dee, ['member']);
-    $this->setCurrentUser($dee);
-    $this->enterRoute($this->team);
-
-    $page = $this->submitTeam([
-      'account' => (string) $dee->id(),
-      'add_member' => 'Add member',
-    ]);
-
-    $this->assertOutcome($page, 'members-role-' . $dee->id(), 'Added dee as Member.', 'polite');
   }
 
   /**

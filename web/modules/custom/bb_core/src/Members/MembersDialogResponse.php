@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Members;
 
+use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Template\Attribute;
+use Drupal\bb_core\Form\WorkspaceInviteForm;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -30,6 +33,38 @@ final class MembersDialogResponse {
       'HX-Reswap' => 'delete',
       'HX-Trigger' => self::EVENT,
     ]);
+  }
+
+  /**
+   * The result a finished dialog left for the Members face, once, as a toast.
+   *
+   * A toast like every other confirmation: fixed, so the list does not move,
+   * and hidden again after a few seconds, as the status messages are.
+   *
+   * @return array<string, mixed>
+   *   The toast with its text in `#bb_result`, or an uncacheable nothing.
+   */
+  public static function result(MessengerInterface $messenger): array {
+    $messages = $messenger->messagesByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
+    $build = ['#weight' => -5, '#cache' => ['max-age' => 0]];
+    if ($messages === []) {
+      return $build;
+    }
+    $text = implode(' ', array_map('strval', $messages));
+    return $build + [
+      '#bb_result' => $text,
+      'message' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:toast',
+        '#props' => [
+          'message' => $text,
+          'attributes' => new Attribute([
+            'x-data' => '',
+            'x-init' => 'setTimeout(() => { $el.hidden = true }, 5000)',
+          ]),
+        ],
+      ],
+    ];
   }
 
 }

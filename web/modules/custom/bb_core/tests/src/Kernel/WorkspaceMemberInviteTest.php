@@ -22,6 +22,7 @@ use Drupal\bb_core\Form\WorkspaceInviteForm;
 use Drupal\bb_core\Members\WorkspaceInvite;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\og\Og;
+use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
@@ -923,19 +924,29 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   }
 
   /**
-   * The workspace face offers the dialog trigger, never the inline zone.
+   * The page header offers Invite members; the face itself has no add zone.
    */
-  public function testTenancyFaceOffersDialogTriggerNotZone(): void {
-    $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+  public function testHeaderOffersInviteTriggerAndFaceHasNoZone(): void {
+    $lead = $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    // The dialog route also asks that the actor belongs to the workspace.
+    OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+      ->setOwner($lead)
+      ->setGroup($this->workspace)
+      ->setState(OgMembershipInterface::STATE_ACTIVE)
+      ->save();
 
     $built = $this->container->get('form_builder')->getForm(
       GroupMembersForm::class,
       ['island_id' => 'members', 'host_id' => 'workspace'],
     );
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_member_invite_action', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $trigger = $source->getPropValue();
 
     self::assertArrayNotHasKey('invite', $built);
-    $trigger = $built['roster']['#bb_zone_actions'];
+    self::assertArrayNotHasKey('#bb_zone_actions', $built['roster']);
     self::assertSame('Invite members', (string) $trigger['#props']['label']);
+    self::assertSame(WorkspaceInviteForm::TRIGGER_ID, (string) $trigger['#props']['attributes']['id']);
     self::assertStringContainsString('_wrapper_format=island_dialog', (string) $trigger['#props']['attributes']['data-hx-get']);
   }
 

@@ -108,7 +108,7 @@ final class IslandConfiguredFormTest extends KernelTestBase {
   }
 
   /**
-   * Configured events are subscribed, so a response announcing one refreshes it.
+   * Configured events are subscribed: a response announcing one refreshes it.
    *
    * The handler leaves the server render to the client refresh: the event
    * carries no host data to rebuild the form from.

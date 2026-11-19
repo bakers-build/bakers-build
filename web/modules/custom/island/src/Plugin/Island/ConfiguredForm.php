@@ -83,7 +83,7 @@ final class ConfiguredForm extends IslandPluginBase {
    *
    * @SuppressWarnings("PHPMD.UnusedFormalParameter")
    */
-  public function refreshOnClient(IslandEvent $event): ?array {
+  public function refreshOnClient(IslandEvent $event): null {
     return NULL;
   }
 

@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Security\TrustedCallbackInterface;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Template\Attribute;
-use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Members\MemberItemBuilder;
 use Drupal\bb_core\Members\MembersDialogResponse;
@@ -34,7 +30,7 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
   public const string RESULT_MESSAGE_TYPE = 'bb_invite';
 
   /**
-   * The Invite members trigger's id, a focus target of the members face.
+   * The header's Invite members trigger id, a focus target of the members face.
    */
   public const string TRIGGER_ID = 'members-invite';
 
@@ -61,38 +57,6 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
     $form->tenancyInvite = $container->get('bb_core.workspace_invite');
     $form->entityTypeManager = $container->get('entity_type.manager');
     return $form;
-  }
-
-  /**
-   * The Members face's "Invite members" button, which opens this dialog.
-   *
-   * The create-dialog trigger's attributes: `hx-get` through the dialog
-   * format into the shell overlay, `href` for a browser without JavaScript.
-   *
-   * @return array<string, mixed>
-   *   The button.
-   */
-  public static function trigger(ContentEntityInterface $workspace): array {
-    $slug = $workspace instanceof BbWorkspaceInterface ? $workspace->getSlug() : (string) $workspace->id();
-    $destination = Url::fromRoute('bb_core.bb_workspace.members', ['bb_workspace' => $slug])->toString();
-    $url = static fn (array $query): Url => Url::fromRoute('bb_core.workspace_invite', ['bb_workspace' => $slug], ['query' => $query]);
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:button',
-      '#attached' => ['library' => ['core/drupal.htmx', 'core/components.bb_theme--option_picker']],
-      '#props' => [
-        'label' => new TranslatableMarkup('Invite members'),
-        'href' => $url(['destination' => $destination])->toString(),
-        'variant' => 'primary',
-        'attributes' => (new Htmx())
-          ->get($url(['destination' => $destination, static::WRAPPER_FORMAT_PARAMETER => static::DIALOG_FORMAT]))
-          ->target('#bakers-overlay')
-          ->select('dialog')
-          ->swap('innerHTML')
-          ->getAttributes()
-          ->setAttribute('id', self::TRIGGER_ID),
-      ],
-    ];
   }
 
   /**
