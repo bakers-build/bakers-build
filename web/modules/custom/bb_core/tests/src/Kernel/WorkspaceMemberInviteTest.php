@@ -355,7 +355,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
 
     $built = $tenancyInvite->inviteItems([$invite], TRUE);
 
-    $state = $built['items'][0]['cells']['state'];
+    $state = $built['items'][0]['cells']['joined'];
     self::assertSame('Expired', $state['label']);
     self::assertArrayHasKey('remove', $built['controls'][0], 'the revoke control is still offered');
   }
@@ -377,17 +377,18 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     ]);
     $items = $this->container->get('bb_core.workspace_invite')->inviteItems([$fresh, $stale], FALSE)['items'];
 
-    $state = static fn (array $item): array => [$item['cells']['state']['label'], $item['cells']['state']['tone']];
+    $state = static fn (array $item): array => [$item['cells']['joined']['label'], $item['cells']['joined']['tone']];
     self::assertSame(['Invited', 'neutral'], $state($items[0]));
     self::assertSame(['Expired', 'critical'], $state($items[1]));
   }
 
   /**
-   * The workspace face renders invitations and members as headed tables.
+   * The workspace face renders members and invitations in one headed table.
    *
    * The Team column names every team of the member in this workspace, joined
    * with commas, and "-" for none; the dates carry no word, since the column
-   * header names them.
+   * header names them. An invitation is a row of the same table whose Joined
+   * cell is its status.
    */
   public function testWorkspaceMembersRenderAsTable(): void {
     $this->actAs(['view bb_workspace', 'update any bb_workspace']);
@@ -423,9 +424,9 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     ));
 
     self::assertSame([
-      ['Email', 'Team', 'Role', 'Status', 'Invited', ''],
       ['Name', 'Team', 'Role', 'Joined', ''],
     ], $headers);
+    self::assertStringNotContainsString('Pending invitations', $page->text());
     self::assertCount(0, $page->filter('[data-list-item]'), 'no card list remains');
     $team_of = static function (Crawler $table, string $name): string {
       foreach ($table->filter('tbody tr') as $row) {
@@ -436,11 +437,14 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       }
       self::fail(sprintf('No row names %s.', $name));
     };
-    $roster = $tables->eq(1);
+    $roster = $tables->eq(0);
     self::assertSame('Alpha, Beta', $team_of($roster, 'in-both-teams'));
     self::assertSame('-', $team_of($roster, 'in-no-team'));
     self::assertStringNotContainsString('joined', $roster->filter('tbody')->text());
-    self::assertStringNotContainsString('invited', $tables->eq(0)->filter('tbody')->text());
+    $invited = $roster->filter('tbody tr')->reduce(static fn (Crawler $row): bool => str_contains($row->text(), 'waiting@example.com'));
+    self::assertCount(1, $invited, 'the invitation is a row of the roster');
+    self::assertSame('Invited', trim($invited->filter('td, th')->eq(3)->text()));
+    self::assertCount(1, $invited->filter('[aria-label="Revoke invitation for waiting@example.com"], [title="Revoke invitation for waiting@example.com"]'), 'the row carries its revoke');
   }
 
   /**

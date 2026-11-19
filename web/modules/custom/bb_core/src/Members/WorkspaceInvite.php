@@ -16,7 +16,6 @@ use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbInvite;
 use Drupal\bb_core\Form\OverlayTrigger;
-use Drupal\bb_core\Time\BbDate;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\og\OgMembershipInterface;
 use Drupal\og\OgRoleInterface;
@@ -50,7 +49,6 @@ final class WorkspaceInvite {
     private readonly LoggerInterface $logger,
     private readonly LanguageManagerInterface $languageManager,
     private readonly AccountProxyInterface $currentUser,
-    private readonly BbDate $date,
   ) {
     $this->setStringTranslation($stringTranslation);
   }
@@ -324,14 +322,10 @@ final class WorkspaceInvite {
         'person' => ['kind' => 'text', 'value' => $mail, 'emphasis' => 'strong'],
         'role' => ['kind' => 'badge', 'label' => $this->roleLabel($invite), 'tone' => 'neutral'],
         'team' => ['kind' => 'text', 'value' => $this->teamLabel($invite)],
-        'state' => $expired
+        // A row of the roster: the Joined column carries its status instead.
+        'joined' => $expired
           ? ['kind' => 'badge', 'label' => (string) $this->t('Expired'), 'tone' => 'critical']
           : ['kind' => 'badge', 'label' => (string) $this->t('Invited'), 'tone' => 'neutral'],
-        'joined' => [
-          'kind' => 'text',
-          'value' => $this->date->date((int) $invite->get('created')->value),
-          'emphasis' => 'faint',
-        ],
       ];
       if ($may_write) {
         $cells['controls'] = ['kind' => 'rendered'];

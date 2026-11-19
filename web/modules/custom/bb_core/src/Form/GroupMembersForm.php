@@ -167,13 +167,26 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     }
 
     $teams = $tenancy ? $this->membershipWriter->teamNamesByMember($group) : NULL;
+    $rows = $this->itemBuilder->items($this->membershipWriter->memberships($group), $group, $may_write, $may_transfer, $teams, (int) $this->currentUser()->id());
+    if ($tenancy) {
+      // Invitations are rows of the same list, after the members.
+      $invites = $this->tenancyInvite->inviteItems($this->tenancyInvite->pendingInvites($group), $may_write);
+      $rows = [
+        'items' => [...$rows['items'], ...$invites['items']],
+        'controls' => $rows['controls'] + self::offsetKeys($invites['controls'], count($rows['items'])),
+      ];
+    }
     $form['roster'] = $this->listZone(
       $this->t('Members'),
-      $this->itemBuilder->items($this->membershipWriter->memberships($group), $group, $may_write, $may_transfer, $teams, (int) $this->currentUser()->id()),
+      $rows,
       $this->itemBuilder->columns($tenancy),
       $this->t('@group has no members yet.', ['@group' => $group->label()]),
       20,
     );
+    if ($tenancy) {
+      // Invitation role and team labels are resolved at render time.
+      $form['roster']['#cache']['tags'] = $this->tenancyInvite->labelCacheTags();
+    }
     if (!empty($form['invite_trigger'])) {
       $form['roster']['#bb_zone_actions'] = $form['invite_trigger'];
     }
@@ -214,7 +227,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
   }
 
   /**
-   * The tenancy's own parts: pending invitations, the confirmation, the button.
+   * The tenancy's own parts: the invite result, the button, the hidden submit.
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $group
    *   The workspace.
@@ -242,19 +255,26 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
         ],
       ];
     }
-    $invites = $this->tenancyInvite->pendingInvites($group);
-    if ($invites !== []) {
-      $parts['pending'] = $this->listZone(
-        $this->t('Pending invitations'),
-        $this->tenancyInvite->inviteItems($invites, $may_write),
-        $this->itemBuilder->inviteColumns(),
-        $this->t('No pending invitations.'),
-        15,
-      );
-      // Role and team labels are resolved at render time.
-      $parts['pending']['#cache']['tags'] = $this->tenancyInvite->labelCacheTags();
-    }
     return $parts;
+  }
+
+  /**
+   * Shifts row-indexed controls by the rows that precede them.
+   *
+   * @param array<int, mixed> $controls
+   *   Controls keyed by row index.
+   * @param int $offset
+   *   The number of rows before them.
+   *
+   * @return array<int, mixed>
+   *   The same controls keyed by their row in the merged list.
+   */
+  private static function offsetKeys(array $controls, int $offset): array {
+    $shifted = [];
+    foreach ($controls as $index => $control) {
+      $shifted[$index + $offset] = $control;
+    }
+    return $shifted;
   }
 
   /**
