@@ -34,6 +34,7 @@ hidden:
   active: true
   conductor_id: true
   conductor_name: true
+  created: true
   last_pid: true
   last_seen: true
   lease_expires_at: true
