@@ -1,0 +1,21 @@
+{#
+/**
+ * @file
+ * Device sign-in presenter: says which parts of the form go where.
+ *
+ * The decision (heading, who signs in, the code and the buttons) stands
+ * centred in its own `bb_theme:gate_form` frame; the consent details below it
+ * (access, memberships, technical details, revoke note) stay start-aligned,
+ * because a centred list is hard to scan. The post-decision result is printed
+ * as it comes: it carries its own centred zone.
+ *
+ * @see web/modules/custom/bb_oauth_device/src/Form/DeviceVerificationForm.php
+ */
+#}
+{% if form.result is not empty %}
+  {{ form }}
+{% else %}
+  {% set decision %}{{ form.heading }}{{ form.consent }}{{ form.user_code }}{{ form.actions }}{% endset %}
+  {{ include('bb_theme:gate_form', {tag: 'div', align: 'center', content: decision}, with_context = false) }}
+  {{ form|without('heading', 'consent', 'user_code', 'actions') }}
+{% endif %}
