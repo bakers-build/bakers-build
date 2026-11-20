@@ -785,6 +785,15 @@ scenes:
       failed on it. The body is now ONE FORM that renders its own items, and it
       needs none of that.
 
+      ADDING IS THE HEADER ACTION, NOT AN INLINE FORM (BAKERS-329). The page
+      header carries the icon-only `+` **Add member** at the top right, where
+      every screen keeps its create action; it opens a dialog with the person
+      picker and a role, the dialog closes in place, focus returns to the `+`
+      and the result is announced and shown as a toast, so the list does not
+      move. `action-pattern.md` records the ruling; the workspace Members face
+      does the same with **Invite members**. The members zone therefore holds
+      the roster alone.
+
       THE ROSTER IS A PATTERNED ROW (BB-638): `layout: cards` with `spacing:
       comfortable` and the pattern `headline: [person]`, `meta: [joined, team]`,
       `right: [state, role, transfer, remove]` — the person and the joined date
@@ -943,6 +952,20 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: true
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Add member
+                          icon_only: true
+                          href: >-
+                            /?path=/story/designbook-sections-settings-scenes--team
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
                 main:
                   - component: bb_theme:zone
                     props:
@@ -952,46 +975,6 @@ scenes:
                         a lead or member revokes their access.
                     slots:
                       content:
-                        - component: bb_theme:form
-                          slots:
-                            pills:
-                              - component: bb_theme:property_pill
-                                props:
-                                  name: account
-                                  label: Person
-                                  icon: user
-                                  picker_id: team-add-member
-                                  prominent: false
-                                  multiple: false
-                                  open: false
-                                  searchable: true
-                                  search_placeholder: Search by name
-                                  search_label: Search by name
-                                  aria_label: Choose the person to add to Platform Crew.
-                                  value_label: ''
-                                  value_labels: []
-                                  values: []
-                                  clearable: false
-                                  clear_label: ''
-                                  creatable: false
-                                  create_label: ''
-                                  options:
-                                    - value: '5'
-                                      label: Lena Fischer
-                                      description: lena.fischer@keytec.example
-                                      selected: false
-                                    - value: '3'
-                                      label: Marieke van Dijk
-                                      description: m.vandijk@northwind.example
-                                      selected: false
-                            actions:
-                              - component: bb_theme:button
-                                props:
-                                  variant: primary
-                                  type: submit
-                                  label: Add member
-                                  disabled: false
-                                  icon_only: false
                         - component: bb_theme:list
                           props:
                             layout: cards
