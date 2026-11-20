@@ -12,7 +12,7 @@ use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\bb_core\Access\BbMachineOwnerAccessCheck;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
-use Drupal\bb_core\Entity\BbRunInterface;
+use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -20,11 +20,12 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * The Restart runs confirmation on a machine or conductor, and who gets it.
+ * The Restart runs confirmation on a machine, conductor or ticket.
  *
- * Opening writes nothing; the confirm cancels exactly the listed runs, and a
- * confirm whose list went stale re-renders instead. Only the machine's owner
- * reaches the dialog; anyone else gets the owner-mismatch 404.
+ * Opening writes nothing; OK cancels the runs of the checked tickets, and a
+ * confirm whose ticket list went stale re-renders instead. Only the machine's
+ * owner reaches the machine and conductor dialogs; anyone else gets the
+ * owner-mismatch 404.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -82,14 +83,18 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
     foreach ([$this->conductor, $this->machine] as $target) {
       $form = $this->form($target);
       self::assertStringContainsString($target instanceof BbMachineInterface ? 'workstation' : 'node-base', $this->question($form));
-      self::assertStringContainsString($ticket->getIdentifier(), implode("\n", array_map('strval', $form['runs']['#items'])));
-      self::assertSame(['bb_confirm' => 'Restart runs'], $this->buttonLabels($form));
+      self::assertSame('checkboxes', $form['tickets']['#type']);
+      self::assertSame([(int) $ticket->id()], array_map('intval', array_keys($form['tickets']['#options'])));
+      self::assertStringContainsString($ticket->getIdentifier(), (string) $form['tickets']['#options'][$ticket->id()]);
+      self::assertSame(array_keys($form['tickets']['#options']), $form['tickets']['#default_value'], 'Every ticket starts checked.');
+      self::assertSame(['bb_confirm' => 'OK'], $this->buttonLabels($form));
+      self::assertSame('Cancel', $form['actions']['keep']['#props']['label']);
     }
     self::assertSame('running', $this->reloadRun($run)->getRunState());
   }
 
   /**
-   * Keep runs is the dialog's close target: the page it was opened over.
+   * Cancel is the dialog's close target: the page it was opened over.
    */
   public function testKeepRunsReturnsToTheScreenTheDialogOpenedOver(): void {
     $request = Request::create('/restart', 'GET', ['destination' => '/bakers/machine/7']);
@@ -115,23 +120,51 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
   }
 
   /**
-   * Confirming cancels the listed runs; a stale list writes nothing.
+   * OK cancels the runs of the checked tickets; a stale list writes nothing.
    */
-  public function testConfirmCancelsAndStaleConfirmRerenders(): void {
-    $first = $this->seedRun($this->seedAssignedTicket('working'), 'working', 'running');
+  public function testConfirmCancelsCheckedTicketsAndStaleConfirmRerenders(): void {
+    $first_ticket = $this->seedAssignedTicket('working');
+    $first = $this->seedRun($first_ticket, 'working', 'running');
     $covered = $this->coveredValue();
-    $second = $this->seedRun($this->seedAssignedTicket('plan'), 'plan', 'claimed');
+    $second_ticket = $this->seedAssignedTicket('plan');
+    $second = $this->seedRun($second_ticket, 'plan', 'claimed');
 
-    $this->confirm($this->machine, $covered);
+    $this->confirm($this->machine, $covered, [$first_ticket]);
     self::assertSame('running', $this->reloadRun($first)->getRunState());
     self::assertSame('claimed', $this->reloadRun($second)->getRunState());
     self::assertNotEmpty($this->container->get('messenger')->messagesByType('error'));
 
-    $this->confirm($this->machine, $this->coveredValue());
-    foreach ([$first, $second] as $run) {
-      self::assertSame('cancelled', $this->reloadRun($run)->getRunState());
-      self::assertStringContainsString('Restart runs (machine workstation) by claim-base-owner', (string) $this->reloadRun($run)->getErrorLog());
-    }
+    $this->confirm($this->machine, $this->coveredValue(), [$second_ticket]);
+    self::assertSame('running', $this->reloadRun($first)->getRunState(), 'An unchecked ticket keeps its run.');
+    self::assertSame('cancelled', $this->reloadRun($second)->getRunState());
+    self::assertStringContainsString('cancelled by claim-base-owner: Restart runs (machine workstation)', (string) $this->reloadRun($second)->getErrorLog());
+
+    $this->confirm($this->machine, $this->coveredValue(), []);
+    self::assertSame('running', $this->reloadRun($first)->getRunState(), 'With none checked, OK cancels nothing.');
+  }
+
+  /**
+   * A ticket's dialog restarts its newest failed run, unparked and plain.
+   */
+  public function testTicketDialogRestartsItsNewestFailedRun(): void {
+    $this->grantTicketEditing();
+    $ticket = $this->seedAssignedTicket('plan');
+    $failed = $this->seedRun($ticket, 'plan', 'failed');
+
+    $form = $this->form($ticket);
+    self::assertArrayNotHasKey('tickets', $form, 'The ticket dialog lists no tickets.');
+    self::assertStringContainsString('#' . $failed->id(), $this->question($form));
+    self::assertSame(['bb_confirm' => 'OK'], $this->buttonLabels($form));
+
+    $this->confirm($ticket, (string) $ticket->id(), [$ticket]);
+    self::assertSame('cancelled', $this->reloadRun($failed)->getRunState());
+    self::assertStringContainsString('Restart runs (ticket ' . $ticket->getIdentifier() . ')', (string) $this->reloadRun($failed)->getErrorLog());
+
+    $ticket = $this->seedAssignedTicket('plan');
+    $ticket->setFrozen(TRUE);
+    $ticket->save();
+    $this->seedRun($ticket, 'plan', 'failed');
+    self::assertSame([], $this->buttonLabels($this->form($ticket)), 'A frozen ticket is not restarted.');
   }
 
   /**
@@ -158,7 +191,7 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
     // A forged post by another account changes no run.
     $this->container->get('current_user')->setAccount($other);
     self::assertSame([], $this->buttonLabels($this->form($this->conductor)));
-    $this->confirm($this->conductor, (string) $run->id());
+    $this->confirm($this->conductor, (string) $run->getTicketId(), [$run->getTicket()]);
     self::assertSame('running', $this->reloadRun($run)->getRunState());
   }
 
@@ -194,24 +227,44 @@ final class RestartRunsFormTest extends ClaimKernelTestBase {
   }
 
   /**
-   * The covered run ids as the form posts them back.
+   * The covered ticket ids as the form posts them back.
    */
   private function coveredValue(): string {
-    $runs = TicketInterventions::restartCoveredRuns($this->machine);
-    return implode(',', array_map(static fn (BbRunInterface $run): string => (string) $run->id(), $runs));
+    return implode(',', array_keys(TicketInterventions::byTicket(TicketInterventions::restartCoveredRuns($this->machine))));
   }
 
   /**
-   * Posts the confirm button of a target's restart form.
+   * Posts OK on a target's restart form with these tickets checked.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $target
+   *   The machine, conductor or ticket.
+   * @param string $covered
+   *   The ticket ids the dialog showed.
+   * @param list<\Drupal\bb_core\Entity\BbTicketInterface|null> $checked
+   *   The checked tickets.
    */
-  private function confirm(ContentEntityInterface $target, string $covered): void {
+  private function confirm(ContentEntityInterface $target, string $covered, array $checked): void {
     $form = $this->container->get('entity_type.manager')->getFormObject($target->getEntityTypeId(), 'restart');
     $form->setEntity($this->fresh($target));
+    $ids = array_map(static fn (?BbTicketInterface $ticket): string => (string) $ticket?->id(), $checked);
     $state = (new FormState())->setRequestMethod('POST')->setValues([
-      'bb_confirm' => 'Restart runs',
+      'bb_confirm' => 'OK',
       'bb_covered' => $covered,
+      'tickets' => array_combine($ids, $ids),
     ]);
     $this->container->get('form_builder')->submitForm($form, $state);
+  }
+
+  /**
+   * Lets the machine's owner edit tickets and end their runs.
+   */
+  private function grantTicketEditing(): void {
+    $role = $this->container->get('entity_type.manager')->getStorage('user_role')
+      ->create(['id' => 'ticket_editor', 'label' => 'Ticket editor']);
+    $role->save();
+    user_role_grant_permissions('ticket_editor', ['administer bakers']);
+    $this->owner->addRole('ticket_editor');
+    $this->owner->save();
   }
 
   /**

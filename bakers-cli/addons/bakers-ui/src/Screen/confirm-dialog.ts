@@ -9,12 +9,25 @@ import { AsyncModalScreen } from './async-modal-screen.js';
 import type { ModalChrome } from './modal-screen.js';
 import type { ScreenAction, ScreenContext } from './screen.js';
 
+/** One row of a confirmation's checklist. */
+export interface ChecklistItem {
+  readonly id: string;
+  readonly label: string;
+}
+
 /** What the dialog shows once its request is prepared. */
 export interface ConfirmPrompt {
   readonly message: string;
   readonly detail?: string;
+  /** Rows the person may uncheck, all checked at first; confirm gets the checked ids. */
+  readonly checklist?: readonly ChecklistItem[];
+  /** Button labels; default Confirm and Close. */
+  readonly labels?: { readonly confirm: string; readonly close: string };
   /** Absent: there is nothing to confirm, and Enter writes nothing. */
-  readonly confirm?: (context: ScreenContext) => Promise<unknown>;
+  readonly confirm?: (
+    context: ScreenContext,
+    checked: readonly string[],
+  ) => Promise<unknown>;
 }
 
 /**
@@ -55,7 +68,10 @@ const BUTTON_LABELS: Record<Button, string> = {
   close: 'Close',
 };
 
-/** The confirmation dialog: Enter confirms, Esc closes and writes nothing. */
+/**
+ * The confirmation dialog: Enter confirms, Esc closes and writes nothing. A
+ * checklist moves with ↑/↓ and toggles with Space.
+ */
 export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
   static readonly route = {
     id: 'confirm',
@@ -71,6 +87,20 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
   private submitting = false;
   /** Index of the focused button; Confirm, the first, when there is one. */
   private focus = 0;
+  /** The checklist's checked ids and cursor, for the prompt they were set up for. */
+  private checked = new Set<string>();
+  private cursor = 0;
+  private checklistOf: ConfirmPrompt | undefined;
+
+  private checklist(prompt: ConfirmPrompt): readonly ChecklistItem[] {
+    const items = prompt.checklist ?? [];
+    if (this.checklistOf !== prompt) {
+      this.checklistOf = prompt;
+      this.checked = new Set(items.map((item) => item.id));
+      this.cursor = 0;
+    }
+    return items;
+  }
 
   private buttons(): Button[] {
     return this.readyValue?.confirm ? ['confirm', 'close'] : ['close'];
@@ -92,6 +122,13 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
       'confirm-dialog',
       ...rowsOf('confirm-dialog-message', prompt.message),
       ...rowsOf('confirm-dialog-detail', this.message || prompt.detail || ''),
+      ...this.checklist(prompt).map((item, index) =>
+        textNode({
+          id: `confirm-dialog-item-${index}`,
+          content: `${index === this.cursor ? '▸' : ' '}[${this.checked.has(item.id) ? 'x' : ' '}] ${item.label}`,
+          selected: index === this.cursor,
+        }),
+      ),
       textNode({ id: 'confirm-dialog-gap', content: '' }),
       rowNode(
         'confirm-dialog-buttons',
@@ -101,7 +138,7 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
             : []),
           textNode({
             id: `confirm-dialog-button-${button}`,
-            content: `${index === this.focus ? '▸' : ' '}[ ${BUTTON_LABELS[button]} ]`,
+            content: `${index === this.focus ? '▸' : ' '}[ ${prompt.labels?.[button] ?? BUTTON_LABELS[button]} ]`,
             selected: index === this.focus,
           }),
         ]),
@@ -115,6 +152,12 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
 
   protected override actions() {
     return [
+      ...(this.readyValue?.checklist?.length
+        ? [
+            actionItem('confirm-rows', '↑↓', 'row'),
+            actionItem('confirm-toggle', 'Space', 'check'),
+          ]
+        : []),
       actionItem('confirm-move', '←→', 'button'),
       actionItem('confirm-press', 'Enter', 'press'),
       actionItem('confirm-esc', 'Esc', 'close'),
@@ -130,6 +173,21 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
   override handleInput(input: string, context: ScreenContext): boolean {
     if (super.handleInput(input, context)) return true;
     if (!this.readyValue) return false;
+    const items = this.checklist(this.readyValue);
+    if (items.length > 0 && !this.submitting) {
+      const move = input === 'down' ? 1 : input === 'up' ? -1 : 0;
+      if (move !== 0) {
+        this.cursor = (this.cursor + move + items.length) % items.length;
+        context.requestDraw();
+        return true;
+      }
+      const item = input === ' ' ? items[this.cursor] : undefined;
+      if (item) {
+        if (!this.checked.delete(item.id)) this.checked.add(item.id);
+        context.requestDraw();
+        return true;
+      }
+    }
     const buttons = this.buttons();
     const step =
       input === 'right' || input === 'tab'
@@ -161,7 +219,10 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
     }
     this.submitting = true;
     this.message = '';
-    void confirm(context)
+    const checked = items
+      .filter((item) => this.checked.has(item.id))
+      .map((item) => item.id);
+    void confirm(context, checked)
       .then((result) => {
         if (!context.isActive()) return;
         if (context.back) context.back(result);
@@ -189,6 +250,9 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
     this.message = '';
     this.submitting = false;
     this.focus = 0;
+    this.checked = new Set();
+    this.cursor = 0;
+    this.checklistOf = undefined;
     super.reset();
   }
 }

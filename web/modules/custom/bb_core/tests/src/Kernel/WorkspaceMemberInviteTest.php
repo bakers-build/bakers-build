@@ -19,9 +19,12 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Form\BbWorkspaceJoinForm;
 use Drupal\bb_core\Form\GroupMembersForm;
 use Drupal\bb_core\Form\WorkspaceInviteForm;
+use Drupal\bb_core\Members\MembersDialogResponse;
 use Drupal\bb_core\Members\WorkspaceInvite;
 use Drupal\user\EntityOwnerInterface;
+use Drupal\island\IslandViewAccessInterface;
 use Drupal\og\Og;
+use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
@@ -355,7 +358,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
 
     $built = $tenancyInvite->inviteItems([$invite], TRUE);
 
-    $state = $built['items'][0]['cells']['state'];
+    $state = $built['items'][0]['cells']['joined'];
     self::assertSame('Expired', $state['label']);
     self::assertArrayHasKey('remove', $built['controls'][0], 'the revoke control is still offered');
   }
@@ -377,19 +380,18 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     ]);
     $items = $this->container->get('bb_core.workspace_invite')->inviteItems([$fresh, $stale], FALSE)['items'];
 
-    $state = static fn (array $item): array => [$item['cells']['state']['label'], $item['cells']['state']['tone']];
+    $state = static fn (array $item): array => [$item['cells']['joined']['label'], $item['cells']['joined']['tone']];
     self::assertSame(['Invited', 'neutral'], $state($items[0]));
     self::assertSame(['Expired', 'critical'], $state($items[1]));
   }
 
   /**
-   * The workspace face renders invitations and members as headed tables.
+   * The workspace face renders members and invitations as one item list.
    *
-   * The Team column names every team of the member in this workspace, joined
-   * with commas, and "-" for none; the dates carry no word, since the column
-   * header names them.
+   * No table and no header: each row names its team ("-" for none), and its
+   * status says Joined or Invited with the date, since no column header does.
    */
-  public function testWorkspaceMembersRenderAsTable(): void {
+  public function testWorkspaceMembersRenderAsList(): void {
     $this->actAs(['view bb_workspace', 'update any bb_workspace']);
     $alpha = $this->createTeam($this->workspace, 'Alpha');
     $beta = $this->createTeam($this->workspace, 'Beta');
@@ -412,35 +414,63 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     }
     BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => 'waiting@example.com'])->save();
 
+    $page = new Crawler($this->renderWorkspaceFace());
+
+    self::assertCount(0, $page->filter('table'), 'no table remains');
+    self::assertStringNotContainsString('Pending invitations', $page->text());
+    $row = static function (Crawler $page, string $name): Crawler {
+      $rows = $page->filter('ul[role="list"] > li[data-list-item]')->reduce(static fn (Crawler $li): bool => str_contains($li->text(), $name));
+      self::assertCount(1, $rows, sprintf('One item names %s.', $name));
+      return $rows;
+    };
+    self::assertSame('Alpha, Beta', trim($row($page, 'in-both-teams')->filter('[data-cell="team"]')->text()));
+    self::assertSame('-', trim($row($page, 'in-no-team')->filter('[data-cell="team"]')->text()));
+    self::assertStringStartsWith('Joined', trim($row($page, 'in-no-team')->filter('[data-cell="joined"]')->text()));
+    $invited = $row($page, 'waiting@example.com');
+    self::assertStringStartsWith('Invited', trim($invited->filter('[data-cell="joined"]')->text()));
+    self::assertNotSame('Invited', trim($invited->filter('[data-cell="joined"]')->text()), 'the invitation carries its date');
+    self::assertCount(1, $invited->filter('[aria-label="Revoke invitation for waiting@example.com"], [title="Revoke invitation for waiting@example.com"]'), 'the row carries its revoke');
+  }
+
+  /**
+   * Members and invitations interleave newest first, ties by the higher id.
+   */
+  public function testRosterIsNewestFirst(): void {
+    $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    $time = \Drupal::time()->getRequestTime() - 86400;
+    foreach (['oldest' => $time - 300, 'tie-low' => $time - 100, 'tie-high' => $time - 100] as $name => $created) {
+      $account = $this->createUser([], $name);
+      self::assertInstanceOf(UserInterface::class, $account);
+      OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+        ->setOwner($account)
+        ->setGroup($this->workspace)
+        ->setState(OgMembershipInterface::STATE_ACTIVE)
+        ->setCreatedTime($created)
+        ->save();
+    }
+    foreach (['between@example.com' => $time - 200, 'newest@example.com' => $time] as $mail => $created) {
+      BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => $mail, 'created' => $created])->save();
+    }
+
+    $order = array_values(array_filter(
+      (new Crawler($this->renderWorkspaceFace()))->filter('li[data-list-item]')->each(static function (Crawler $li): string {
+        preg_match('/oldest|tie-low|tie-high|between@example\.com|newest@example\.com/', $li->text(), $match);
+        return $match[0] ?? '';
+      }),
+    ));
+
+    self::assertSame(['newest@example.com', 'tie-high', 'tie-low', 'between@example.com', 'oldest'], $order);
+  }
+
+  /**
+   * The workspace Members face, rendered.
+   */
+  private function renderWorkspaceFace(): string {
     $form = $this->container->get('form_builder')->getForm(
       GroupMembersForm::class,
       ['island_id' => 'members', 'host_id' => 'workspace'],
     );
-    $page = new Crawler((string) $this->container->get('renderer')->renderInIsolation($form));
-    $tables = $page->filter('table');
-    $headers = $tables->each(static fn (Crawler $table): array => $table->filter('thead th')->each(
-      static fn (Crawler $th): string => trim($th->text()),
-    ));
-
-    self::assertSame([
-      ['Email', 'Team', 'Role', 'Status', 'Invited', ''],
-      ['Name', 'Team', 'Role', 'Joined', ''],
-    ], $headers);
-    self::assertCount(0, $page->filter('[data-list-item]'), 'no card list remains');
-    $team_of = static function (Crawler $table, string $name): string {
-      foreach ($table->filter('tbody tr') as $row) {
-        $cells = (new Crawler($row))->filter('td, th');
-        if (str_contains($cells->eq(0)->text(), $name)) {
-          return trim($cells->eq(1)->text());
-        }
-      }
-      self::fail(sprintf('No row names %s.', $name));
-    };
-    $roster = $tables->eq(1);
-    self::assertSame('Alpha, Beta', $team_of($roster, 'in-both-teams'));
-    self::assertSame('-', $team_of($roster, 'in-no-team'));
-    self::assertStringNotContainsString('joined', $roster->filter('tbody')->text());
-    self::assertStringNotContainsString('invited', $tables->eq(0)->filter('tbody')->text());
+    return (string) $this->container->get('renderer')->renderInIsolation($form);
   }
 
   /**
@@ -597,12 +627,21 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
 
     $this->setCurrentUser($member);
     $this->enterWorkspaceMembersRoute();
-    $built = $this->container->get('form_builder')->getForm(
-      GroupMembersForm::class,
-      ['island_id' => 'members', 'host_id' => 'workspace'],
-    );
-    self::assertArrayNotHasKey('invite', $built, 'a member is offered no invite control');
-    self::assertArrayNotHasKey('#bb_zone_actions', $built['roster'], 'a member is offered no invite button');
+    $refused = FALSE;
+    try {
+      // The face has the Members screen's gate: a member does not get it.
+      $this->container->get('form_builder')->getForm(
+        GroupMembersForm::class,
+        ['island_id' => 'members', 'host_id' => 'workspace'],
+      );
+    }
+    catch (AccessDeniedHttpException) {
+      $refused = TRUE;
+    }
+    self::assertTrue($refused, 'a member is refused the workspace members face');
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_member_invite_action', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    self::assertArrayNotHasKey('#type', $source->getPropValue(), 'a member is offered no invite button');
 
     $this->expectException(AccessDeniedHttpException::class);
     $this->submitInvite('member-cannot-invite@example.com');
@@ -919,20 +958,45 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   }
 
   /**
-   * The workspace face offers the dialog trigger, never the inline zone.
+   * The page header offers Invite members; the face itself has no add zone.
    */
-  public function testTenancyFaceOffersDialogTriggerNotZone(): void {
-    $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+  public function testHeaderOffersInviteTriggerAndFaceHasNoZone(): void {
+    $lead = $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    // The dialog route also asks that the actor belongs to the workspace.
+    OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+      ->setOwner($lead)
+      ->setGroup($this->workspace)
+      ->setState(OgMembershipInterface::STATE_ACTIVE)
+      ->save();
 
     $built = $this->container->get('form_builder')->getForm(
       GroupMembersForm::class,
       ['island_id' => 'members', 'host_id' => 'workspace'],
     );
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_member_invite_action', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $trigger = $source->getPropValue();
 
     self::assertArrayNotHasKey('invite', $built);
-    $trigger = $built['roster']['#bb_zone_actions'];
+    self::assertArrayNotHasKey('#bb_zone_actions', $built['roster']);
     self::assertSame('Invite members', (string) $trigger['#props']['label']);
+    self::assertSame(WorkspaceInviteForm::TRIGGER_ID, (string) $trigger['#props']['attributes']['id']);
     self::assertStringContainsString('_wrapper_format=island_dialog', (string) $trigger['#props']['attributes']['data-hx-get']);
+  }
+
+  /**
+   * The members island answers a refresh only to whoever may manage members.
+   *
+   * The same gate as the Members screen: the roster lists invited addresses.
+   */
+  public function testTheMembersIslandRefreshFollowsTheScreenGate(): void {
+    $host = $this->container->get('island.host_resolver')->resolve('workspace');
+    self::assertInstanceOf(IslandViewAccessInterface::class, $host);
+
+    $lead = $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    self::assertTrue($host->accessIsland('members', $lead)->isAllowed(), 'a lead gets the roster');
+    $reader = $this->actAs(['view bb_workspace']);
+    self::assertFalse($host->accessIsland('members', $reader)->isAllowed(), 'a reader does not');
   }
 
   /**
@@ -981,6 +1045,48 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     }
     self::assertCount(2, $this->sentInviteMails(), 'one mail per address, the duplicate collapsed');
     self::assertSame(['Invited 2 people.'], $this->resultMessages());
+  }
+
+  /**
+   * An invite sent from the dialog closes it and refreshes the Members list.
+   */
+  public function testDialogInviteClosesTheDialogAndRefreshesMembers(): void {
+    $this->captureMail();
+    $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    $this->container->get('request_stack')->getCurrentRequest()->query->set('_wrapper_format', 'island_dialog');
+    $form_state = (new FormState())->setValues(['emails' => 'new@example.com', 'op' => 'Invite']);
+
+    $this->container->get('form_builder')->submitForm(WorkspaceInviteForm::class, $form_state);
+
+    $response = $form_state->getResponse();
+    self::assertNotNull($response);
+    self::assertFalse($response->headers->has('HX-Redirect'), 'no page load');
+    self::assertSame('closest [data-dialog]', $response->headers->get('HX-Retarget'));
+    self::assertSame('delete', $response->headers->get('HX-Reswap'));
+    self::assertStringContainsString('bakers.members.changed', (string) $response->headers->get('HX-Trigger'));
+    self::assertSame(['Invited 1 person.'], $this->resultMessages(), 'the result waits for the refreshed list');
+  }
+
+  /**
+   * A dialog's result shows in its request only: the next one has no toast.
+   *
+   * One boosted GET builds the face twice, page then fragment; both show it.
+   */
+  public function testDialogResultIsShownOnce(): void {
+    $messenger = $this->container->get('messenger');
+    $messenger->addMessage('Invited 1 person.', WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
+    $request = Request::create('/refresh');
+
+    $page = MembersDialogResponse::result($messenger, $request);
+    $fragment = MembersDialogResponse::result($messenger, $request);
+    $next = MembersDialogResponse::result($messenger, Request::create('/next'));
+
+    self::assertSame('Invited 1 person.', $page['#bb_result'] ?? NULL);
+    self::assertSame('bb_theme:toast', $page['message']['#component'] ?? NULL);
+    // Drupal.announce speaks the result; the toast must not say it twice.
+    self::assertSame('off', (string) ($page['message']['#props']['attributes']['aria-live'] ?? ''));
+    self::assertSame('Invited 1 person.', $fragment['#bb_result'] ?? NULL, 'the same request shows it again');
+    self::assertArrayNotHasKey('#bb_result', $next, 'the result is consumed');
   }
 
   /**
@@ -1560,7 +1666,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   private function submitRemove(int $target_uid): array {
     $form_state = new FormState();
     $form_state->setValues([
-      'remove_member_' . $target_uid => (string) $target_uid,
+      'confirm_remove_' . $target_uid => (string) $target_uid,
     ]);
     $this->container->get('form_builder')->submitForm(
       GroupMembersForm::class,

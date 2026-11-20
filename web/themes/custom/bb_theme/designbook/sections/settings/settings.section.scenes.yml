@@ -324,17 +324,21 @@ scenes:
     group: Screens
     section: settings
     docs: >-
-      THE WORKSPACE MEMBERS FACE: pending invitations and the roster, each a
-      headed `table` with 44px rows (`row_height: lg`) in a zone capped at the
-      narrow measure (960px). Inviting is a DIALOG opened by the primary
-      **Invite members** action on the Members zone, not a zone of this face;
-      `action-pattern.md` names the exception and its reason. After a successful
-      invite the dialog closes, the face re-renders and a status `message`, in a
-      narrow zone of its own, reports who was invited and who was skipped. The
-      invitations table reads Email, Team, Role, Status (a neutral Invited, a
-      critical Expired) and the Invited date, with Revoke as the row action; the
-      roster reads Name, Team, Role and Joined, with transfer and remove as the
-      row actions, as GroupMembersForm::listZone() renders it.
+      THE WORKSPACE MEMBERS FACE: members and pending invitations in ONE item
+      `list` (`layout: lines`, like the ticket and project lists) in a zone
+      that fills the content width with no heading of its own (the tab names
+      it), always newest created first. Inviting is a DIALOG opened by the page header's create
+      action, the icon-only `+` **Invite members** at the top right, where every
+      screen keeps its create action; `action-pattern.md` names the ruling. The
+      dialog closes in place, only the members island re-renders, focus returns
+      to the `+`, and the result is announced and shown as a `toast`, fixed at
+      the bottom right, so the list does not move. A row names the person, the
+      team and its status on the meta line, with the role and the row action at
+      the right. A member reads Joined and its date, with the remove action; an
+      invitation sits in the same order by when it was sent, reads its address,
+      its role as a badge and its status as a badge with the date (a neutral
+      Invited, a critical Expired), with Revoke as the row action, as
+      GroupMembersForm::buildIslandForm() renders it.
     items:
       - scene: design-system:shell
         with:
@@ -347,46 +351,53 @@ scenes:
                     props:
                       title: Members
                       description: keytec · who belongs to this workspace and in which role
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Invite members
+                          icon_only: true
+                          href: >-
+                            /?path=/story/designbook-sections-settings-scenes--workspace-invite
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
                 main:
                   - component: bb_theme:zone
                     props:
                       inset: none
-                      measure: narrow
                     slots:
                       content:
-                        - component: bb_theme:message
+                        - component: bb_theme:list
                           props:
-                            status: status
-                          slots:
-                            body: >-
-                              Invited 2 people. Skipped:
-                              sven.gruber@keytec.example (already a member).
-                  - component: bb_theme:zone
-                    props:
-                      inset: none
-                      measure: narrow
-                    slots:
-                      heading: Pending invitations
-                      content:
-                        - component: bb_theme:table
-                          props:
-                            row_height: lg
-                            columns:
-                              - key: person
-                                label: Email
-                              - key: team
-                                label: Team
-                              - key: role
-                                label: Role
-                              - key: state
-                                label: Status
-                              - key: joined
-                                label: Invited
-                              - key: controls
-                                label: ''
-                            rows:
+                            layout: lines
+                            pattern:
+                              avatar:
+                                - mark
+                              headline:
+                                - name
+                              description:
+                                - mail
+                              meta:
+                                - team
+                                - joined
+                              right:
+                                - role
+                                - controls
+                            items:
                               - cells:
-                                  person:
+                                  mark:
+                                    kind: person
+                                    display_name: lena.fischer@keytec.example
+                                    initials: '@'
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
                                     kind: text
                                     value: lena.fischer@keytec.example
                                     emphasis: strong
@@ -397,14 +408,11 @@ scenes:
                                     kind: badge
                                     label: Contributor
                                     tone: neutral
-                                  state:
+                                  joined:
                                     kind: badge
                                     label: Invited
                                     tone: neutral
-                                  joined:
-                                    kind: text
-                                    value: 31 Oct
-                                    emphasis: faint
+                                    suffix: 19 Nov
                                   controls:
                                     kind: action
                                     label: >-
@@ -413,7 +421,47 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
+                                    kind: person
+                                    display_name: Sven Gruber
+                                    initials: SG
+                                    color: running
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Sven Gruber
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: sven.gruber@keytec.example
+                                    emphasis: faint
+                                  team:
+                                    kind: text
+                                    value: Design crew
+                                  role:
+                                    kind: text
+                                    value: Member
+                                  joined:
+                                    kind: text
+                                    value: Joined 3 Nov
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Sven Gruber from the workspace.
+                                      Revokes their access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: m.vandijk@northwind.example
+                                    initials: '@'
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
                                     kind: text
                                     value: m.vandijk@northwind.example
                                     emphasis: strong
@@ -425,14 +473,11 @@ scenes:
                                     kind: badge
                                     label: Member
                                     tone: neutral
-                                  state:
+                                  joined:
                                     kind: badge
                                     label: Expired
                                     tone: critical
-                                  joined:
-                                    kind: text
-                                    value: 17 Oct
-                                    emphasis: faint
+                                    suffix: 12 Oct
                                   controls:
                                     kind: action
                                     label: >-
@@ -440,42 +485,22 @@ scenes:
                                       m.vandijk@northwind.example
                                     icon: x-circle
                                     icon_only: true
-                  - component: bb_theme:zone
-                    props:
-                      inset: none
-                      measure: narrow
-                    slots:
-                      heading: Members
-                      actions:
-                        component: bb_theme:button
-                        props:
-                          variant: primary
-                          label: Invite members
-                          href: >-
-                            /?path=/story/designbook-sections-settings-scenes--workspace-invite
-                      content:
-                        - component: bb_theme:table
-                          props:
-                            row_height: lg
-                            columns:
-                              - key: person
-                                label: Name
-                              - key: team
-                                label: Team
-                              - key: role
-                                label: Role
-                              - key: joined
-                                label: Joined
-                              - key: controls
-                                label: ''
-                            rows:
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Christian Wiedemann
                                     initials: CW
                                     color: unassigned
-                                    mail: christian.wiedemann@keytec.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Christian Wiedemann
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: christian.wiedemann@keytec.example
+                                    emphasis: faint
                                   team:
                                     kind: text
                                     value: Platform crew
@@ -484,7 +509,7 @@ scenes:
                                     value: Admin
                                   joined:
                                     kind: text
-                                    value: 6 Jan
+                                    value: Joined 6 Jan
                                     emphasis: faint
                                   controls:
                                     kind: action
@@ -493,43 +518,28 @@ scenes:
                                       workspace. Revokes their access.
                                     icon: x-circle
                                     icon_only: true
-                              - cells:
-                                  person:
-                                    kind: person
-                                    display_name: Sven Gruber
-                                    initials: SG
-                                    color: running
-                                    mail: sven.gruber@keytec.example
-                                  team:
-                                    kind: text
-                                    value: Design crew
-                                  role:
-                                    kind: text
-                                    value: Member
-                                  joined:
-                                    kind: text
-                                    value: 6 Jan
-                                    emphasis: faint
-                                  controls:
-                                    kind: action
-                                    label: >-
-                                      Remove Sven Gruber from the workspace.
-                                      Revokes their access.
-                                    icon: x-circle
-                                    icon_only: true
+                  - component: bb_theme:toast
+                    props:
+                      message: >-
+                        Invited 2 people. Skipped: sven.gruber@keytec.example
+                        (already a member).
   - name: workspace-invite
     group: Screens
     section: settings
     docs: >-
       THE INVITE DIALOG over the Members face (`settings › workspace-members`),
-      in the shell's overlay like the create dialogs. The `form` grammar places
-      the e-mail TEXTAREA as the one line, taking several addresses (one per
-      line, or separated by commas), and below it the two property pills:
-      Workspace role (opens on Contributor; every role explains what it grants)
-      and Team (opens on the workspace's first team; `No team` clears it).
-      Cancel, Escape and the close control leave the face as it was. A malformed
-      entry keeps the dialog open with the text intact and names the entry.
-      Storybook runs no Drupal behaviour, so nothing posts or closes here.
+      opened by the page header's `+` **Invite members**, in the shell's overlay
+      like the create dialogs. The `form` grammar places the e-mail field as the
+      one line: `chip_field` (free mode) over the submitted TEXTAREA, so every address
+      becomes a chip with its own remove button, and an address that is not an
+      e-mail is marked in text as well as colour. Without JavaScript the plain
+      textarea remains. Below it sit the two property pills: Workspace role
+      (opens on Contributor; every role explains what it grants) and Team (opens
+      on the workspace's first team; `No team` clears it). Cancel, Escape and
+      the close control leave the face as it was and return focus to the `+`. A
+      malformed entry keeps the dialog open with the text intact and names the
+      entry. Storybook runs no Drupal behaviour, so nothing posts or closes
+      here.
     items:
       - scene: design-system:shell
         with:
@@ -545,17 +555,25 @@ scenes:
                   - component: bb_theme:form
                     slots:
                       lines:
-                        - component: bb_theme:form_textarea
+                        - component: bb_theme:chip_field
                           props:
-                            name: emails
-                            id: edit-emails
-                            rows: 4
-                            placeholder: >-
-                              Email addresses, one per line or separated by
-                              commas
-                            value: |-
-                              lena.fischer@keytec.example
-                              m.vandijk@northwind.example
+                            label: Email addresses
+                            invalid_label: Not an e-mail address
+                            remove_label: Remove @label
+                          slots:
+                            field:
+                              - component: bb_theme:form_textarea
+                                props:
+                                  name: emails
+                                  id: edit-emails
+                                  rows: 4
+                                  placeholder: >-
+                                    Email addresses, one per line or separated
+                                    by commas
+                                  value: |-
+                                    lena.fischer@keytec.example
+                                    m.vandijk@northwind.example
+                                    not-an-address
                       pills:
                         - component: bb_theme:property_pill
                           props:
@@ -627,136 +645,173 @@ scenes:
                     props:
                       title: Members
                       description: keytec · who belongs to this workspace and in which role
-                main:
-                  - component: bb_theme:zone
                     slots:
-                      heading: Pending invitations
-                      content:
-                        - component: bb_theme:list
-                          props:
-                            layout: cards
-                            spacing: comfortable
-                            pattern:
-                              headline:
-                                - person
-                              meta:
-                                - joined
-                                - team
-                              right:
-                                - state
-                                - role
-                                - transfer
-                                - remove
-                            items:
-                              - cells:
-                                  person:
-                                    kind: text
-                                    value: lena.fischer@keytec.example
-                                    emphasis: strong
-                                  role:
-                                    kind: badge
-                                    label: Contributor
-                                    tone: neutral
-                                  team:
-                                    kind: text
-                                    value: Platform crew
-                                  state:
-                                    kind: badge
-                                    label: Invited
-                                    tone: wait
-                                  joined:
-                                    kind: mono
-                                    value: invited 2026-10-02
-                                  remove:
-                                    kind: rendered
-                                    markup: Revoke
-                                    label: >-
-                                      Revoke invitation for
-                                      lena.fischer@keytec.example
-                              - cells:
-                                  person:
-                                    kind: text
-                                    value: m.vandijk@northwind.example
-                                    emphasis: strong
-                                  role:
-                                    kind: badge
-                                    label: Member
-                                    tone: neutral
-                                  team:
-                                    kind: text
-                                    value: No team
-                                  state:
-                                    kind: badge
-                                    label: Expired
-                                    tone: critical
-                                  joined:
-                                    kind: mono
-                                    value: invited 2026-09-18
-                                  remove:
-                                    kind: rendered
-                                    markup: Revoke
-                                    label: >-
-                                      Revoke invitation for
-                                      m.vandijk@northwind.example
-                  - component: bb_theme:zone
-                    slots:
-                      heading: Members
                       actions:
                         component: bb_theme:button
                         props:
                           variant: primary
                           label: Invite members
+                          icon_only: true
                           href: >-
                             /?path=/story/designbook-sections-settings-scenes--workspace-invite
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                    slots:
                       content:
                         - component: bb_theme:list
                           props:
-                            layout: cards
-                            spacing: comfortable
+                            layout: lines
                             pattern:
+                              avatar:
+                                - mark
                               headline:
-                                - person
+                                - name
+                              description:
+                                - mail
                               meta:
-                                - joined
                                 - team
+                                - joined
                               right:
-                                - state
                                 - role
-                                - transfer
-                                - remove
+                                - controls
                             items:
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
-                                    display_name: Christian Wiedemann
-                                    initials: CW
-                                    color: unassigned
-                                    mail: christian.wiedemann@keytec.example
+                                    display_name: lena.fischer@keytec.example
+                                    initials: '@'
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: lena.fischer@keytec.example
+                                    emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: Platform crew
                                   role:
-                                    kind: rendered
-                                    markup: Admin
+                                    kind: badge
+                                    label: Contributor
+                                    tone: neutral
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
+                                    kind: badge
+                                    label: Invited
+                                    tone: neutral
+                                    suffix: 19 Nov
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Revoke invitation for
+                                      lena.fischer@keytec.example
+                                    icon: x-circle
+                                    icon_only: true
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Sven Gruber
                                     initials: SG
                                     color: running
-                                    mail: sven.gruber@keytec.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Sven Gruber
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: sven.gruber@keytec.example
+                                    emphasis: faint
+                                  team:
+                                    kind: text
+                                    value: Design crew
                                   role:
-                                    kind: rendered
-                                    markup: Member
+                                    kind: text
+                                    value: Member
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
+                                    kind: text
+                                    value: Joined 3 Nov
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
                                       Remove Sven Gruber from the workspace.
                                       Revokes their access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: m.vandijk@northwind.example
+                                    initials: '@'
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: m.vandijk@northwind.example
+                                    emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: '-'
+                                    emphasis: faint
+                                  role:
+                                    kind: badge
+                                    label: Member
+                                    tone: neutral
+                                  joined:
+                                    kind: badge
+                                    label: Expired
+                                    tone: critical
+                                    suffix: 12 Oct
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Revoke invitation for
+                                      m.vandijk@northwind.example
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Christian Wiedemann
+                                    initials: CW
+                                    color: unassigned
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Christian Wiedemann
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: christian.wiedemann@keytec.example
+                                    emphasis: faint
+                                  team:
+                                    kind: text
+                                    value: Platform crew
+                                  role:
+                                    kind: text
+                                    value: Admin
+                                  joined:
+                                    kind: text
+                                    value: Joined 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Christian Wiedemann from the
+                                      workspace. Revokes their access.
+                                    icon: x-circle
+                                    icon_only: true
   - name: team
     group: Screens
     section: settings
@@ -800,10 +855,23 @@ scenes:
       failed on it. The body is now ONE FORM that renders its own items, and it
       needs none of that.
 
-      THE ROSTER IS A PATTERNED ROW (BB-638): `layout: cards` with `spacing:
-      comfortable` and the pattern `headline: [person]`, `meta: [joined, team]`,
-      `right: [state, role, transfer, remove]` — the person and the joined date
-      on the left, the role, transfer and remove right-aligned.
+      ADDING IS THE HEADER ACTION, NOT AN INLINE FORM (BAKERS-329). The page
+      header carries the icon-only `+` **Add member** at the top right, where
+      every screen keeps its create action; it opens the `team-member-add`
+      dialog, people as chips and one role, the dialog closes in place, focus returns to the `+`
+      and the result is announced and shown as a toast, so the list does not
+      move. `action-pattern.md` records the ruling; the workspace Members face
+      does the same with **Invite members**. The members zone therefore holds
+      the roster alone.
+
+      THE ROSTER IS AN ITEM LIST, the same as the workspace Members face and
+      the ticket and project lists: `layout: lines` with the pattern
+      `avatar: [mark]`, `headline: [name]`, `meta: [team, joined]`,
+      `description: [mail]`, `right: [role, controls]` — the row of a project:
+      the person's mark leads, the name heads the text with team and "Joined"
+      beside the mark, the role and the row actions right-aligned, always
+      newest created first. The mark shows the account's picture when it has
+      one.
 
       A view mode is still not the answer either, and for the original reason:
       membership is an `og_membership` entity, so this body is a query over a
@@ -958,6 +1026,20 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: true
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Add member
+                          icon_only: true
+                          href: >-
+                            /?path=/story/designbook-sections-settings-scenes--team-member-add
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
                 main:
                   - component: bb_theme:zone
                     props:
@@ -967,119 +1049,367 @@ scenes:
                         a lead or member revokes their access.
                     slots:
                       content:
-                        - component: bb_theme:form
-                          slots:
-                            pills:
-                              - component: bb_theme:property_pill
-                                props:
-                                  name: account
-                                  label: Person
-                                  icon: user
-                                  picker_id: team-add-member
-                                  prominent: false
-                                  multiple: false
-                                  open: false
-                                  searchable: true
-                                  search_placeholder: Search by name
-                                  search_label: Search by name
-                                  aria_label: Choose the person to add to Platform Crew.
-                                  value_label: ''
-                                  value_labels: []
-                                  values: []
-                                  clearable: false
-                                  clear_label: ''
-                                  creatable: false
-                                  create_label: ''
-                                  options:
-                                    - value: '5'
-                                      label: Lena Fischer
-                                      description: lena.fischer@keytec.example
-                                      selected: false
-                                    - value: '3'
-                                      label: Marieke van Dijk
-                                      description: m.vandijk@northwind.example
-                                      selected: false
-                            actions:
-                              - component: bb_theme:button
-                                props:
-                                  variant: primary
-                                  type: submit
-                                  label: Add member
-                                  disabled: false
-                                  icon_only: false
                         - component: bb_theme:list
                           props:
-                            layout: cards
-                            spacing: comfortable
+                            layout: lines
                             pattern:
+                              avatar:
+                                - mark
                               headline:
-                                - person
+                                - name
+                              description:
+                                - mail
                               meta:
-                                - joined
                                 - team
+                                - joined
                               right:
-                                - state
                                 - role
-                                - transfer
-                                - remove
+                                - controls
                             items:
                               - cells:
-                                  person:
-                                    kind: person
-                                    display_name: Christian Wiedemann
-                                    initials: CW
-                                    color: unassigned
-                                    mail: christian.wiedemann@keytec.example
-                                  role:
-                                    kind: rendered
-                                    markup: Lead
-                                  joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
-                                    label: >-
-                                      Remove Christian Wiedemann from the team.
-                                      Revokes their access.
-                              - cells:
-                                  person:
-                                    kind: person
-                                    display_name: Sven Gruber
-                                    initials: SG
-                                    color: running
-                                    mail: sven.gruber@keytec.example
-                                  role:
-                                    kind: rendered
-                                    markup: Member
-                                  joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
-                                    label: >-
-                                      Remove Sven Gruber from the team. Revokes
-                                      their access.
-                              - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Tom Beckett
                                     initials: TB
                                     color: offline
-                                    mail: tom.beckett@partner.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Tom Beckett
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: tom.beckett@partner.example
+                                    emphasis: faint
                                   role:
-                                    kind: rendered
-                                    markup: Member
+                                    kind: text
+                                    value: Member
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-04-14
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
+                                    kind: text
+                                    value: Joined 14 Apr
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
-                                      Remove Tom Beckett from the team. Revokes
-                                      their access.
+                                      Remove Tom Beckett from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Sven Gruber
+                                    initials: SG
+                                    color: running
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Sven Gruber
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: sven.gruber@keytec.example
+                                    emphasis: faint
+                                  role:
+                                    kind: text
+                                    value: Member
+                                  joined:
+                                    kind: text
+                                    value: Joined 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Sven Gruber from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Christian Wiedemann
+                                    initials: CW
+                                    color: unassigned
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Christian Wiedemann
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: christian.wiedemann@keytec.example
+                                    emphasis: faint
+                                  role:
+                                    kind: text
+                                    value: Lead
+                                  joined:
+                                    kind: text
+                                    value: Joined 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Christian Wiedemann from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
+  - name: team-member-add
+    group: Screens
+    section: settings
+    docs: >-
+      THE ADD MEMBER DIALOG over the team Members face (`settings › team`),
+      opened by the page header's `+` **Add member**. It works like **Invite
+      members**: the one line is `chip_field` in list mode over a multiple
+      SELECT of the workspace's people who are not in the team yet. Typing
+      opens a list of the matches; ArrowUp/ArrowDown move through it, Enter or
+      Tab turns the highlighted person into a chip, and text that matches
+      nobody never becomes one. Backspace in the empty input removes the last
+      chip; each chip's remove button is named "Remove {name}". Below it the
+      Role pill picks the one role every chosen person gets. One submit adds
+      them all, the dialog closes in place, focus returns to the `+` and the
+      result is announced ("Added 2 members as Member."). Without JavaScript
+      the plain multiple select remains. Storybook runs no Drupal behaviour, so
+      nothing posts or closes here.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay:
+            - component: bb_theme:dialog
+              props:
+                open: true
+                title: Add member
+                label: Add member
+                dismissible: true
+              slots:
+                body:
+                  - component: bb_theme:form
+                    slots:
+                      lines:
+                        - component: bb_theme:chip_field
+                          props:
+                            label: People
+                            mode: list
+                            placeholder: Type a name
+                            remove_label: Remove @label
+                          slots:
+                            field:
+                              - component: bb_theme:form_select
+                                props:
+                                  name: account[]
+                                  id: edit-account
+                                  multiple: true
+                                  options:
+                                    - value: '12'
+                                      label: Lena Fischer
+                                      selected: true
+                                    - value: '14'
+                                      label: Marit van Dijk
+                                      selected: true
+                                    - value: '17'
+                                      label: Jonas Weber
+                                      selected: false
+                                    - value: '21'
+                                      label: Priya Raman
+                                      selected: false
+                      pills:
+                        - component: bb_theme:property_pill
+                          props:
+                            name: role
+                            label: Role
+                            icon: user
+                            picker_id: edit-role
+                            value_label: Member
+                            values:
+                              - member
+                            open: false
+                            multiple: false
+                            options:
+                              - value: member
+                                label: Member
+                                selected: true
+                              - value: lead
+                                label: Lead
+                                selected: false
+                            aria_label: Change role. Currently Member.
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Cancel
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Add member
+                      type: submit
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Platform crew
+                      description: >-
+                        keytec · owned by Christian Wiedemann · lead role grants
+                        access
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Team sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team-detail-overview
+                              active: false
+                            - label: Stats
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                            - label: Tickets
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Runs
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--run-detail
+                              active: false
+                            - label: Members
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: true
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Add member
+                          icon_only: true
+                          href: >-
+                            /?path=/story/designbook-sections-settings-scenes--team-member-add
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      description: >-
+                        Who is on this team, since when, and in which role. A
+                        team now carries a role, the same as a project: removing
+                        a lead or member revokes their access.
+                    slots:
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: lines
+                            pattern:
+                              avatar:
+                                - mark
+                              headline:
+                                - name
+                              description:
+                                - mail
+                              meta:
+                                - team
+                                - joined
+                              right:
+                                - role
+                                - controls
+                            items:
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Tom Beckett
+                                    initials: TB
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Tom Beckett
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: tom.beckett@partner.example
+                                    emphasis: faint
+                                  role:
+                                    kind: text
+                                    value: Member
+                                  joined:
+                                    kind: text
+                                    value: Joined 14 Apr
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Tom Beckett from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Sven Gruber
+                                    initials: SG
+                                    color: running
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Sven Gruber
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: sven.gruber@keytec.example
+                                    emphasis: faint
+                                  role:
+                                    kind: text
+                                    value: Member
+                                  joined:
+                                    kind: text
+                                    value: Joined 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Sven Gruber from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Christian Wiedemann
+                                    initials: CW
+                                    color: unassigned
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Christian Wiedemann
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: christian.wiedemann@keytec.example
+                                    emphasis: faint
+                                  role:
+                                    kind: text
+                                    value: Lead
+                                  joined:
+                                    kind: text
+                                    value: Joined 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Christian Wiedemann from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
   - name: team-detail-overview
     group: Screens
     section: settings

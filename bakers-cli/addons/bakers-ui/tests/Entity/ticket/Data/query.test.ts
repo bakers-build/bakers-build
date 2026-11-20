@@ -26,7 +26,7 @@ const NONE = {
 it('requests only the rendered fields, relationships included (AC-1, AC-5)', () => {
   const s = qs('P1', NONE);
   expect(s).toMatch(
-    /fields\[bb_ticket--bb_ticket\]=identifier,title,state,priority,assignee_initials,owner_initials,derived_status,stall_reason,workflow,closed,frozen,labels,parent_id,conductor_id,assignee_user_id/,
+    /fields\[bb_ticket--bb_ticket\]=identifier,title,state,priority,assignee_initials,owner_initials,derived_status,stall_reason,workflow,closed,frozen,url,labels,parent_id,conductor_id,assignee_user_id/,
   );
   expect(s).toMatch(/fields\[bb_conductor--bb_conductor\]=label/);
   // The whole point: description and the other 18 attributes are not asked for.

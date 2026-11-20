@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 const { After } = createBdd(test);
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { cardField, cardRow } from '../../support/detail-cards';
+import { cardRow } from '../../support/detail-cards';
 import { php } from '../../support/drush';
 import { SEARCH_TOOLBAR, safe } from '../../support/listing';
 import { CONTENT_ISLAND, markDocument } from '../../support/shell';
@@ -121,7 +121,7 @@ When('I visit the former edit address of the machine {string}', async ({ page },
 
 Then('the machine Overview shows its host key, max parallel and current load', async ({ page }) => {
   await expect(cardRow(page, 'Identity', 'Host key')).toContainText('e2e-host', { timeout: 10000 });
-  await expect(cardField(page, 'Identity', 'Max parallel')).toBeVisible();
+  await expect(cardRow(page, 'Identity', 'Max parallel')).toBeVisible();
   await expect(cardRow(page, 'Identity', 'Current load')).toBeVisible();
 });
 
@@ -182,6 +182,14 @@ Then(
     await expect(row.first(), `The machine Overview lists no conductor "${label}"`).toBeVisible();
     // The operations menu is collapsed, so its links are in the DOM but hidden.
     await expect(row.first().locator('a[href*="/restart"]').filter({ hasText: action })).toBeAttached();
+  },
+);
+
+Then(
+  'the machine Overview lists the conductor {string} in the project {string}',
+  async ({ page }, label: string, project: string) => {
+    const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
+    await expect(row, `The conductor "${label}" names no project "${project}"`).toContainText(project);
   },
 );
 

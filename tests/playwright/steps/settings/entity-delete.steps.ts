@@ -149,7 +149,10 @@ Then('the delete page of the workspace {string} answers {int}', async ({ page },
 });
 
 Then('the page confirms the disposable entity was deleted', async ({ page }) => {
-  await expect(page.locator('body')).toContainText(`Deleted ${subject(page).label}.`);
+  const { created, label } = subject(page);
+  // Deleting an invitation revokes it, and the Members face says so.
+  const message = created[0].startsWith('bb_invite:') ? `Revoked the invitation for ${label}.` : `Deleted ${label}.`;
+  await expect(page.locator('body')).toContainText(message);
 });
 
 Then('the disposable entity no longer exists', async ({ page }) => {

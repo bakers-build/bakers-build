@@ -54,7 +54,7 @@ The root **Members** tab is available to workspace leads.
 
 ## The ticket sections
 
-**Overview** leads with the **latest summary**: the newest comment whose `bb_comment_type` is `summary`, the handoff that says where the work stands. It is a collapsible entry, a five-line extract until expanded, and "newest" is the History tab's own order. The type match is exact, so a ticket with no `summary` comment, a typo included, shows "No summary comment."
+**Overview** opens with **links**: the ticket's own web address, then its pull or merge requests, then its other links and its origin, each as one line `* <URL>` with the full URL written out. The URL is a terminal hyperlink (OSC 8), so the terminal opens and copies it; a terminal without hyperlinks shows plain text. `Y` still copies the ticket's address. **links** and **Summary** carry a [Nerd Font](https://www.nerdfonts.com/) icon; other fonts show a box. Below them comes the **latest summary**: the newest comment whose `bb_comment_type` is `summary`, the handoff that says where the work stands. It is a collapsible entry, a five-line extract until expanded, and "newest" is the History tab's own order. The type match is exact, so a ticket with no `summary` comment, a typo included, shows "No summary comment."
 
 **Latest spec**, **Latest plan** and **Latest test** live on **Planning** under the same rules. **Description** starts expanded; collapsed it shows five lines, then `… +N more lines`. At 100 columns or wider a sidebar adds **Details** and **Related**: parent, sub-tickets, referenced tickets and **Blocked by**, one `<identifier> · <title>` row per blocker.
 
@@ -74,7 +74,7 @@ Rendered: headings, `**strong**`, `*em*`, `~~struck~~` (dim), code, lists, quote
 
 ### Runs
 
-The ticket's **Runs** tab lists its runs as selectable rows, newest started first. `Enter` (or a click) opens the **run detail**: state, timing, footprint (tokens, tool calls, agent turns), worktree and the full, scrollable **Log** and **Error log**. A run in state `claimed` or `running` also offers `x` to cancel it, on the run detail and on the selected row of the Runs tab.
+The ticket's **Runs** tab lists its runs as selectable rows, newest started first. `Enter` (or a click) opens the **run detail**: the ticket's address and its pull requests, one `* <URL>` terminal hyperlink each (a pipe prints them), state, timing, footprint (tokens, tool calls, agent turns), worktree and the full, scrollable **Log** and **Error log**. A run in state `claimed` or `running` also offers `x` to cancel it, on the run detail and on the selected row of the Runs tab.
 
 The project **Runs** tab lists the project's runs, newest first, 20 per page. A `running` or `claimed` run with a heartbeat older than 600 seconds, or a lapsed claim lease, shows as `stale`. Lists state `N of M ticket(s)`: rows on screen of all rows matching the filters, `M` from the server's `meta.count`, or `?` when it reports none.
 
@@ -84,16 +84,16 @@ The project **Runs** tab lists the project's runs, newest first, 20 per page. A 
 
 ### Cancelling and restarting
 
-Cancelling and restarting are actions of their own, next to `e` in the footer, and each asks first in the same confirmation dialog. Its buttons **Confirm** and **Close** sit under the question, with Confirm focused. `←`/`→` or `Tab` moves between them and `Enter` presses the focused one. `Esc` closes like Close and writes nothing. A refused write shows the server's message and keeps the dialog open.
+Cancelling and restarting are actions of their own, next to `e` in the footer, and each asks first in the same confirmation dialog. Its buttons **Confirm** and **Close** (**OK** and **Cancel** for Restart runs) sit under the question, with the first focused. A Restart runs list starts with every ticket checked: `↑`/`↓` moves and `Space` checks or unchecks. `←`/`→` or `Tab` moves between them and `Enter` presses the focused one. `Esc` closes like Close and writes nothing. A refused write shows the server's message and keeps the dialog open.
 
 | Key | Where | What confirming does |
 |---|---|---|
 | `x` cancel ticket | Overview, Planning and History of a ticket that is neither `done`, `cancelled` nor closed | Writes only `state: cancelled`. |
-| `x` cancel run | Run detail and the Runs tab, for a run in `claimed` or `running` | Sets that run to `cancelled`. |
-| `r` restart run | Overview, Planning and History while the ticket has a run in `claimed` or `running` | Cancels exactly that run and nothing else; the conductor claims the ticket again and starts a new run. |
-| `r` restart runs | Machines and a machine's conductors, on a machine or conductor you own | Cancels its `claimed` or `running` runs and each open ticket's newest failed run, noting `Restart runs (<level> <name>) by <you>` in the error log; each ticket gets one fresh run, a frozen one after unfreeze. Offline, cleanup and fresh runs follow its next start. |
+| `x` cancel run | Run detail and the Runs tab, for a run in `claimed` or `running`, or the ticket's newest run when it failed | Sets that run to `cancelled`. |
+| `r` restart runs | Overview, Planning and History of an open ticket that is not frozen | Cancels the ticket's `claimed` or `running` runs and its newest run when that failed; the dialog names them, or says there is no run to restart. |
+| `r` restart runs | Machines and a machine's conductors, on a machine or conductor you own | Lists the tickets with such runs, all checked, frozen ones left out; OK cancels the runs of the checked tickets, noting `cancelled by <you>: Restart runs (<level> <name>)` in the error log, and each ticket gets one fresh run. Offline, cleanup and fresh runs follow its next start. |
 
-Restart run uses the same endpoint and permissions as Cancel run. If the run ended before the dialog opened, the dialog says so and confirms nothing.
+Every cancel and restart goes through the site tools `bakers_run_list` (`restartable`) and `bakers_run_cancel`, under the same rule as the web dialogs. If the tickets changed since the dialog opened, OK cancels nothing and asks you to open it again.
 
 ## The conductor sections
 

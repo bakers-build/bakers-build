@@ -258,28 +258,18 @@ Feature: The team screen's five tabs are routes inside one island
     And the tab "Runs" is current
     And the rail was not part of the swap
 
-  # NO DUPLICATE ROW, and that much is proved. What is NOT asserted here is that
-  # the visitor is TOLD — measured on 2026-08-30, the second add produces no
-  # aria-invalid, no error class and no status message, so the refusal is
-  # silent. That is a real defect and it is recorded as one rather than dressed
-  # up: this scenario locks in the property that matters for the data (the list
-  # cannot grow a duplicate) and deliberately claims nothing about feedback,
-  # because a scenario that asserted feedback would be asserting something that
-  # does not happen.
-  #
-  # WHAT MAKES THE SECOND ADD MEAN ANYTHING is the step's own wait: it awaits the
-  # submit's POST RESPONSE, so by the time the row count is read the server has
-  # decided. Under the fixed sleep this step used to carry, `4 rows` was
-  # satisfied instantly whether or not the second submit had been processed at
-  # all — the assertion was true of a request that had not happened yet.
-  Scenario: Adding the same member twice grows no second row
+  # NO DUPLICATE ROW: someone already on the team is not offered by the add
+  # dialog at all, so a second add cannot be made; the server also refuses a
+  # forged one (`TeamMemberAddForm::validateForm`).
+  Scenario: A member already on the team is not offered again
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
     Then the members list has 5 rows
-    When I add the member "both-bakeries"
-    Then the members list has 5 rows
+    And the add dialog does not offer "both-bakeries"
     And the document was not reloaded
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
 
   # BB-489 — THE ENTRY PATH IS THE SUBJECT, and that is the whole difference
   # between these two scenarios and every members scenario around them. Those
@@ -377,11 +367,11 @@ Feature: The team screen's five tabs are routes inside one island
     Then the remove control names "Revokes their access."
     And no remove control names "no access is revoked"
 
-  # The roster is a table: Name, Role and Joined line up from row to row. A
-  # team's own roster has no Team column, because every row is that team.
-  Scenario: The team member list is a table with Name, Role and Joined columns
+  # The roster is an item list like the ticket and project lists, without
+  # columns; a team's own roster names no team, because every row is that team.
+  Scenario: The team member list is an item list without columns
     When I visit the team "Platform Crew" tab "Members"
-    Then the members table has the columns "Name, Role, Joined"
+    Then the members are an item list without columns
 
   # BB-435 — CRITERION 9 on this call site, REWRITTEN BY BB-456. This used to
   # assert an absence: a team granted no permissions, so an item carried its

@@ -15,6 +15,7 @@ import {
 } from '../../src/Entity/ticket/Component/ticket-content/model.js';
 import type { AssignmentLabels } from '../../src/Entity/ticket/Component/ticket-detail/index.js';
 import type { TicketAddons } from '../../src/Entity/ticket/Data/addons.js';
+import { UNDERLINE } from '../../src/lib/vnode.js';
 import type { JsonApiResource, TicketDetailDocument } from '../../src/types.js';
 import { type PaintedSpan, paintTree } from '../paint-tree.js';
 
@@ -172,9 +173,9 @@ describe('TicketContent', () => {
       new Set(['section:Latest summary']),
     );
     expect(collapsed.frame).toContain('* Description');
-    expect(collapsed.frame).toContain('* Summary');
+    expect(collapsed.frame).toContain(' Summary');
     expect(collapsed.frame).not.toContain('[Description]');
-    expect(collapsed.frame.indexOf('* Summary')).toBeLessThan(
+    expect(collapsed.frame.indexOf(' Summary')).toBeLessThan(
       collapsed.frame.indexOf('* Description'),
     );
     expect(collapsed.frame).toContain('status line 7');
@@ -333,8 +334,8 @@ describe('TicketContent', () => {
     // the headline sits at the left edge, the URL itself is painted, and the
     // sidebar carries no Links tab.
     const linksCol = wide.rows
-      .find((row) => row.includes('* links'))
-      ?.indexOf('* links');
+      .find((row) => row.includes(' links'))
+      ?.indexOf(' links');
     expect(
       linksCol,
       'links headline is painted in the left column',
@@ -344,9 +345,126 @@ describe('TicketContent', () => {
     expect(wide.frame).toContain('[Details]');
     expect(wide.frame).toContain('Related');
     expect(wide.frame).toContain('feat/a_b_c');
-    expect(wide.frame).toContain('https://example.test/result');
+    // AC-7: the full URL, one `* <url>` row.
+    expect(wide.frame).toContain('* https://example.test/result');
     expect(wide.frame).toContain('runner-1');
     expect(wide.frame).not.toMatch(/… \+\d+ more lines/);
+  });
+
+  const paintLinks = (doc: TicketDetailDocument, width: number) => {
+    const model = ticketContentModel(doc, 'overview', labels, NOW);
+    return paint(
+      () =>
+        content(
+          {
+            tab: 'overview',
+            model,
+            expandedKeys: initialExpandedKeys('overview', model),
+            select: noop,
+            toggle: noop,
+          },
+          width,
+        ),
+      width,
+      32,
+    );
+  };
+
+  const rowIndex = (rows: readonly string[], text: string): number =>
+    rows.findIndex((row) => row.includes(text));
+
+  /** The `* <url>` that starts a row, ignoring a wide sidebar beside it. */
+  const linkAt = (rows: readonly string[], at: number): string =>
+    /^\* \S+/.exec(rows[at]?.trim() ?? '')?.[0] ?? '';
+
+  // AC-1/AC-5/AC-7: the links sit above the first document at both widths,
+  // once, each as one `* <full URL>` row: ticket, PR, other links, origin.
+  for (const width of [80, 120]) {
+    it(`paints the ticket URL and the PR above the documents at ${width} columns`, async () => {
+      const painted = await paintLinks(
+        document({
+          identifier: 'BAKERS-332',
+          url: 'https://b.test/bakers/ticket/bakers-332',
+          origin: 'https://tracker.test/16',
+          links: [
+            { title: 'Result', uri: 'https://example.test/result' },
+            { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
+          ],
+        }),
+        width,
+      );
+      const description = painted.rows.findIndex(
+        (row) =>
+          row.includes('Description') && !row.includes('Short description'),
+      );
+      expect(description).toBeGreaterThan(0);
+      const head = rowIndex(painted.rows, ' links');
+      expect(head).toBeGreaterThanOrEqual(0);
+      expect(
+        [1, 2, 3, 4].map((offset) => linkAt(painted.rows, head + offset)),
+      ).toEqual([
+        '* https://b.test/bakers/ticket/bakers-332',
+        '* https://github.com/o/r/pull/229',
+        '* https://example.test/result',
+        '* https://tracker.test/16',
+      ]);
+      // One blank row to the first document, as between two documents.
+      expect(linkAt(painted.rows, head + 5)).toBe('');
+      expect(description).toBe(head + 6);
+      // No key, no label, no underline.
+      expect(painted.frame).not.toContain('PR #229');
+      expect(painted.frame).not.toContain('Result:');
+      for (const row of painted.spans.slice(head + 1, head + 5))
+        for (const span of row)
+          expect(span.attributes & UNDERLINE, span.text).toBe(0);
+      expect(painted.frame.split(' links').length - 1).toBe(1);
+    });
+  }
+
+  it('writes a long URL out in full, wrapped, at 60 columns', async () => {
+    const url = `https://example.test/${'segment/'.repeat(12)}end`;
+    expect(url.length).toBeGreaterThan(100);
+    const painted = await paintLinks(
+      document({ links: [{ title: 'Docs', uri: url }] }),
+      60,
+    );
+    const at = rowIndex(painted.rows, '* https://example.test/');
+    expect(at).toBeGreaterThanOrEqual(0);
+    const wrapped = painted.rows
+      .slice(at, at + 4)
+      .map((row) => row.trim())
+      .join('');
+    expect(wrapped).toContain(`* ${url}`);
+    expect(painted.frame).not.toContain('Docs');
+  });
+
+  it('gives a non-web origin one line', async () => {
+    const painted = await paintLinks(
+      document({ origin: 'legacy-tracker#16', links: [] }),
+      80,
+    );
+    const at = rowIndex(painted.rows, 'origin');
+    expect(painted.rows[at]?.trim()).toBe('origin: legacy-tracker#16');
+    expect(painted.rows[at + 1]?.trim() ?? '').toBe('');
+  });
+
+  // AC-3: only the ticket row, no `none` placeholder.
+  it('paints only the ticket row for a linkless ticket', async () => {
+    const painted = await paintLinks(
+      document({
+        identifier: 'BAKERS-1',
+        url: 'https://b.test/bakers/ticket/bakers-1',
+        links: [],
+      }),
+      80,
+    );
+    const links = rowIndex(painted.rows, ' links');
+    expect(links).toBeGreaterThanOrEqual(0);
+    expect(linkAt(painted.rows, links + 1)).toBe(
+      '* https://b.test/bakers/ticket/bakers-1',
+    );
+    expect(linkAt(painted.rows, links + 2)).toBe('');
+    expect(painted.rows[links + 1]).not.toContain('none');
   });
 
   it('keeps feat/a_b_c literal in technical details and comment metadata', async () => {

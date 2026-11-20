@@ -18,6 +18,9 @@
    * @param {Element} dialog
    *   The hull element.
    */
+  // The control that opened each dialog, so an in-place close can return to it.
+  const openers = new WeakMap();
+
   function closeDialog(dialog) {
     const cancel = dialog.querySelector('[data-dialog-cancel]');
     if (!cancel || !cancel.href) {
@@ -35,6 +38,10 @@
     const here = window.location;
     if (target.pathname === here.pathname && target.search === here.search) {
       dialog.remove();
+      const opener = openers.get(dialog);
+      if (opener?.isConnected) {
+        opener.focus();
+      }
       return;
     }
     window.location.assign(cancel.href);
@@ -66,6 +73,9 @@
 
   /**
    * Moves focus into an opened dialog's first field, never its close control.
+   *
+   * A picker's trigger counts as a field: a dialog of pickers alone has no
+   * input to land on. A dialog without fields focuses its Cancel.
    */
   Drupal.behaviors.islandDialogFocus = {
     attach(context) {
@@ -73,10 +83,17 @@
       // A swapped-in fragment can be the dialog itself, which a context query misses.
       const dialogs = [context, ...context.querySelectorAll(selector)].filter((el) => el.matches?.(selector));
       dialogs.forEach((dialog) => {
+        // Focus is still on whatever opened it when the dialog arrives.
+        const active = document.activeElement;
+        if (!openers.has(dialog) && active && active !== document.body && !dialog.contains(active)) {
+          openers.set(dialog, active);
+        }
         // Rendered only: a closed picker's search field comes first but cannot take focus.
         const field = dialog.querySelector('[autofocus]')
-          ?? [...dialog.querySelectorAll('input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)')]
-            .find((el) => el.checkVisibility());
+          ?? [...dialog.querySelectorAll('input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled), [data-option-picker-trigger]')]
+            .find((el) => el.checkVisibility())
+          // A confirmation has no field: land on its safe choice, not behind it.
+          ?? dialog.querySelector('[data-dialog-cancel]');
         // Keyed on the field: the off-canvas container outlives its content, a field does not.
         if (field && once('island-dialog-focus', field).length) {
           field.focus();

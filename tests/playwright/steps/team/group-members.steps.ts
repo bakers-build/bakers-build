@@ -16,12 +16,13 @@ import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import { MEMBERS_ISLAND, markDocument, uidOf } from '../../support/shell';
+import { ADD_DIALOG, addMemberTrigger, openAddMemberDialog, peopleField } from '../../support/add-member-dialog';
 
 /**
- * One row of the roster table. Direct children only, so the rows of a role
+ * One item of the roster list. Direct children only, so the rows of a role
  * picker's own option list are never counted as members.
  */
-const MEMBER_ITEM = `${MEMBERS_ISLAND} table > tbody > tr`;
+const MEMBER_ITEM = `${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`;
 
 /**
  * The public URL of a project, resolved by label rather than hardcoded.
@@ -90,6 +91,13 @@ When('I remove the member {string}', async ({ page }, value: string) => {
   );
   await page.locator(`${MEMBERS_ISLAND} [data-bakers-member-uid="${uid}"]`).first().click();
   await answered;
+  // The first press only opens the confirmation; Remove in it is the write.
+  const removed = page.waitForResponse(
+    (response) => response.request().method() === 'POST',
+    { timeout: 15000 },
+  );
+  await page.locator(`${MEMBERS_ISLAND} button[name="confirm_remove_${uid}"]`).click();
+  await removed;
 });
 
 /**
@@ -252,12 +260,35 @@ Then(
   },
 );
 
-/** The roster is a table whose header row names its columns, in order. */
-Then('the members table has the columns {string}', async ({ page }, columns: string) => {
-  const table = page.locator(`${MEMBERS_ISLAND} table`).first();
-  const names = columns.split(',').map((name) => name.trim());
-  await expect(table.getByRole('columnheader').filter({ hasText: /\S/ })).toHaveText(names);
+/** The roster is an item list: no table, no column headers. */
+Then('the members are an item list without columns', async ({ page }) => {
   await expect(page.locator(MEMBER_ITEM).first()).toBeVisible();
+  await expect(page.locator(`${MEMBERS_ISLAND} table`)).toHaveCount(0);
+  await expect(page.locator(MEMBERS_ISLAND).getByRole('columnheader')).toHaveCount(0);
+});
+
+/** The roster's uids in list order, '' for an item without controls. */
+async function rosterOrder(page: import('@playwright/test').Page): Promise<string[]> {
+  return page.locator(MEMBER_ITEM).evaluateAll((items) =>
+    items.map((li) => li.querySelector('[data-bakers-member-uid]')?.getAttribute('data-bakers-member-uid') ?? ''),
+  );
+}
+
+let notedOrder: string[] | null = null;
+
+Then('the first member is {string}', async ({ page }, value: string) => {
+  await expect.poll(async () => (await rosterOrder(page))[0]).toBe(String(uidOf(value)));
+});
+
+Given('I note the order of the members', async ({ page }) => {
+  notedOrder = await rosterOrder(page);
+});
+
+Then('the members keep the noted order', async ({ page }) => {
+  if (notedOrder === null) {
+    throw new Error('Note the order of the members before asserting it.');
+  }
+  await expect.poll(() => rosterOrder(page)).toEqual(notedOrder);
 });
 
 Then(
@@ -267,7 +298,116 @@ Then(
     await expect(item).toBeVisible();
     await expect(item.locator('[data-person-mark]')).toHaveText(account.charAt(0).toUpperCase());
     await expect(item.locator('[data-option-picker-trigger]').first()).toBeVisible();
-    await expect(item.getByText(/^\d{1,2} [A-Z][a-z]{2}( \d{4})?$/)).toBeVisible();
+    await expect(item.getByText(/^Joined \d{1,2} [A-Z][a-z]{2}( \d{4})?$/)).toBeVisible();
     await expect(item.locator(`[data-bakers-member-uid="${uidOf(account)}"]`).first()).toBeVisible();
   },
 );
+
+/**
+ * FOCUS AND ANNOUNCEMENTS after a members action (spec focus table). The
+ * server names the target with `data-members-focus`; these steps assert the
+ * observable result, the focused element and the live region text.
+ */
+Then('the role control of the member {string} has focus', async ({ page }, value: string) => {
+  await expect(page.locator(`#members-role-${uidOf(value)}`)).toBeFocused();
+});
+
+Then('the remove control of the member {string} has focus', async ({ page }, value: string) => {
+  await expect(page.locator(`#members-remove-${uidOf(value)}`)).toBeFocused();
+});
+
+Then('focus is on a member control or Add member', async ({ page }) => {
+  await expect(page.locator(`:is(${MEMBERS_ISLAND} [id^="members-role-"], #members-add):focus`)).toHaveCount(1);
+});
+
+/** The page header's Add member trigger, where focus returns after its dialog. */
+Then('Add member has focus', async ({ page }) => {
+  await expect(addMemberTrigger(page)).toBeFocused();
+});
+
+Then('the add dialog is open', async ({ page }) => {
+  await expect(page.locator(ADD_DIALOG)).toBeVisible({ timeout: 20000 });
+});
+
+// `Drupal.announce()` writes into core's one live region after a short delay.
+Then('the screen reader hears {string}', async ({ page }, text: string) => {
+  await expect(page.locator('#drupal-live-announce')).toContainText(text);
+});
+
+When('I move focus to the remove control of the member {string}', async ({ page }, value: string) => {
+  await page.locator(`#members-remove-${uidOf(value)}`).focus();
+});
+
+When('I move focus to the role control of the member {string}', async ({ page }, value: string) => {
+  await page.locator(`#members-role-${uidOf(value)}`).focus();
+});
+
+When('I move focus to Add member', async ({ page }) => {
+  const trigger = addMemberTrigger(page);
+  // Enter on it must open the dialog, not follow the page link.
+  await expect
+    .poll(() => trigger.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
+      timeout: 20000,
+    })
+    .toBe(true);
+  await trigger.focus();
+});
+
+When('I type the name {string}', async ({ page }, text: string) => {
+  await page.keyboard.type(text);
+});
+
+/** Presses a member's remove control and waits for the confirmation. */
+When('I open the remove confirmation for the member {string}', async ({ page }, value: string) => {
+  const answered = page.waitForResponse((response) => response.request().method() === 'POST', { timeout: 15000 });
+  await page.locator(`#members-remove-${uidOf(value)}`).click();
+  await answered;
+});
+
+Then('a confirmation asks {string}', async ({ page }, title: string) => {
+  await expect(page.locator(`${MEMBERS_ISLAND} dialog[data-members-confirm][open] h2`)).toHaveText(title);
+});
+
+Then('the confirmation Cancel has focus', async ({ page }) => {
+  await expect(page.locator('#members-confirm-cancel')).toBeFocused();
+});
+
+Then('no confirmation is open', async ({ page }) => {
+  await expect(page.locator(`${MEMBERS_ISLAND} dialog[data-members-confirm]`)).toHaveCount(0);
+});
+
+Then('the add dialog does not offer {string}', async ({ page }, value: string) => {
+  const dialog = await openAddMemberDialog(page);
+  // The chip field lists the select's options; the select is what is offered.
+  const options = dialog.locator('select[name="account[]"] option');
+  await expect(options.first(), 'the add dialog offers nobody at all').toBeAttached();
+  await expect(options.and(page.locator(`[value="${uidOf(value)}"]`))).toHaveCount(0);
+  await peopleField(dialog).fill(value);
+  await expect(dialog.getByRole('option', { name: value, exact: true })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(page.locator(ADD_DIALOG)).toHaveCount(0);
+});
+
+Then('the members list has the member {string}', async ({ page }, value: string) => {
+  await expect(page.locator(`${MEMBERS_ISLAND} #members-role-${uidOf(value)}`)).toBeAttached({ timeout: 15000 });
+});
+
+Then('the members list offers no controls', async ({ page }) => {
+  await expect(page.locator(MEMBER_ITEM).first()).toBeVisible();
+  await expect(page.locator(`${MEMBERS_ISLAND} [name^="remove_member_"], #members-add`)).toHaveCount(0);
+});
+
+/**
+ * Each roster row reads like a project row at any width: the mark leads in
+ * `avatar` and the name is the headline, visible rather than collapsed away.
+ */
+Then("every member row shows the person's name beside the mark", async ({ page }) => {
+  const items = page.locator(MEMBER_ITEM);
+  await expect(items.first()).toBeVisible();
+  for (const item of await items.all()) {
+    await expect(item.locator('[data-list-region="avatar"] [data-cell="mark"]')).toBeVisible();
+    const name = item.locator('[data-list-region="headline"] [data-cell="name"]');
+    await expect(name).toBeVisible();
+    await expect(name).not.toHaveText('');
+  }
+});

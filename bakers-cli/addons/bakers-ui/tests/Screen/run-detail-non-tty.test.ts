@@ -88,6 +88,10 @@ const doc: TicketDetailDocument = {
 
 /** CAPTURED FROM THE PRE-CONVERSION BASELINE — subject 5's structured rows. */
 const ROWS = [
+  // BAKERS-332: the Links section leads; with no served `url` and no PR it states so.
+  'Links',
+  'No links.',
+  '',
   'Run',
   '#4928 · 69407ed7-07c2-4dc3-92fa-c1e1a1e77c0f',
   'ticket:        BB-340',
@@ -123,6 +127,20 @@ const ROWS = [
   '',
 ];
 
+const BASE_URL = 'https://b.test';
+
+const withPr: TicketDetailDocument = {
+  ...doc,
+  data: {
+    ...doc.data,
+    attributes: {
+      ...doc.data?.attributes,
+      url: 'https://b.test/bakers/ticket/bb-340',
+      links: [{ title: 'PR', uri: 'https://github.com/o/r/pull/229' }],
+    },
+  },
+};
+
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const opened = async (
@@ -135,6 +153,9 @@ const opened = async (
     requestDraw: vi.fn(),
     isActive: () => true,
     params: { ticketId: 'ticket-340', runId },
+    ...(document === withPr
+      ? { services: { baseUrl: BASE_URL } as ScreenContext['services'] }
+      : {}),
     contexts: document
       ? ContextBag.empty().set(runDetailInputContext, { document })
       : ContextBag.empty(),
@@ -178,12 +199,30 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
     // The anti-drift guard, and the reason the rows are not a second
     // description of this screen: both are projections of the same keyed
     // sections, so a section added to one appears in the other or this fails.
-    for (const runId of [RUN_ID, 'nope']) {
-      const { screen, context } = await opened(doc, runId);
-      expect(screen.renderNonInteractive(context)).toEqual(
-        renderTree(runDetailTree(doc, runId)),
-      );
+    for (const document of [doc, withPr]) {
+      for (const runId of [RUN_ID, 'nope']) {
+        const { screen, context } = await opened(document, runId);
+        const pipe = screen.renderNonInteractive(context);
+        const tree = renderTree(
+          runDetailTree(
+            document,
+            runId,
+            document === withPr ? BASE_URL : undefined,
+          ),
+        );
+        expect(pipe).toEqual(tree.map((row) => row.trimEnd()));
+      }
     }
+  });
+
+  it('a link in the pipe prints one `* <url>` row', async () => {
+    const { screen, context } = await opened(withPr, RUN_ID);
+    expect(screen.renderNonInteractive(context).slice(0, 4)).toEqual([
+      'Links',
+      '* https://b.test/bakers/ticket/bb-340',
+      '* https://github.com/o/r/pull/229',
+      '',
+    ]);
   });
 
   it('R3 — `present()` still hands over a tree and no `lines` surface', async () => {

@@ -176,7 +176,7 @@ export class ConductorsScreen extends ListScreen<
       restartRunsRequest({
         level: 'conductor',
         label: row.label,
-        conductorIds: [row.id],
+        args: { conductor: row.id },
         online: row.derivedStatus === 'online',
       }),
     );

@@ -355,6 +355,26 @@ final class DeleteDialogTest extends KernelTestBase {
   }
 
   /**
+   * A revoke confirmed in the dialog closes it and refreshes the Members list.
+   *
+   * No page load: the list stays where it was and re-renders in place.
+   */
+  public function testInviteRevokeInDialogClosesItAndRefreshesMembers(): void {
+    $invite = $this->createEntity('bb_invite', [
+      'email' => 'invitee@example.com',
+      'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
+    ]);
+
+    $response = $this->confirmInDialog($invite);
+
+    self::assertNull($this->reload($invite), 'the invitation is revoked');
+    self::assertFalse($response->headers->has('HX-Location'), 'no page load');
+    self::assertSame('closest [data-dialog]', $response->headers->get('HX-Retarget'));
+    self::assertSame('delete', $response->headers->get('HX-Reswap'));
+    self::assertStringContainsString('bakers.members.changed', (string) $response->headers->get('HX-Trigger'));
+  }
+
+  /**
    * A list's Delete operation opens the overlay instead of core's modal.
    */
   public function testListDeleteOperationOpensTheOverlay(): void {

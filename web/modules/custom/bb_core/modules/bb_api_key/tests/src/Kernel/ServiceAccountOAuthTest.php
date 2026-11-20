@@ -98,6 +98,7 @@ final class ServiceAccountOAuthTest extends KernelTestBase {
     ] as $type) {
       $this->installEntitySchema($type);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['system', 'user', 'og', 'bb_core', 'bb_api_key', 'simple_oauth']);
     Og::addGroup('bb_workspace', 'bb_workspace');
     Og::addGroup('bb_team', 'bb_team');

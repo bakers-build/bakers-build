@@ -4,7 +4,7 @@
 import { createBdd } from 'playwright-bdd';
 import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
-import { php } from '../../support/drush';
+import { DEADLOCK, phpWithRetry } from '../../support/drush';
 import { clickHeaderAction } from '../../support/shell';
 
 const { When, Then, After } = createBdd(test);
@@ -12,22 +12,30 @@ const { When, Then, After } = createBdd(test);
 /** Names this scenario's page wrote, so cleanup removes exactly those. */
 const written = new WeakMap<Page, string[]>();
 
-function remember(page: Page, name: string): void {
+/** Deletes the named terms; idempotent, so a deadlocked parallel worker is retried. */
+async function deleteTerms(names: string[]): Promise<void> {
+  await phpWithRetry(
+    '$s = \\Drupal::entityTypeManager()->getStorage("bb_term");' +
+      ` $ids = $s->getQuery()->accessCheck(FALSE)->condition("name", ${JSON.stringify(names)}, "IN")->execute();` +
+      ' $s->delete($s->loadMultiple($ids)); print count($ids);',
+    [DEADLOCK],
+  );
+}
+
+/** Records a name and deletes any leftover of it, so a lost cleanup cannot break this run. */
+async function remember(page: Page, name: string): Promise<void> {
   written.set(page, [...(written.get(page) ?? []), name]);
+  await deleteTerms([name]);
 }
 
 After({ tags: '@feature:workspace-terms' }, async ({ page }) => {
   const names = written.get(page) ?? [];
-  if (names.length === 0) return;
-  php(
-    '$s = \\Drupal::entityTypeManager()->getStorage("bb_term");' +
-      ` $ids = $s->getQuery()->accessCheck(FALSE)->condition("name", ${JSON.stringify(names)}, "IN")->execute();` +
-      ' $s->delete($s->loadMultiple($ids)); print count($ids);',
-  );
+  if (names.length > 0) await deleteTerms(names);
 });
 
 function termRow(page: Page, name: string): Locator {
-  return page.locator('li[data-list-item]').filter({ hasText: name });
+  // Exact name: "Added term label" must not also match "Added term label no-JS".
+  return page.locator('li[data-list-item]').filter({ has: page.getByText(name, { exact: true }) });
 }
 
 /** Fills the term form, in the dialog with JavaScript or on the page without, and saves it. */
@@ -52,19 +60,19 @@ async function editOperation(page: Page, name: string): Promise<Locator> {
 }
 
 When('I add the term {string} with the action {string}', async ({ page }, name: string, action: string) => {
-  remember(page, name);
+  await remember(page, name);
   await clickHeaderAction(page, action);
   await saveTermForm(page, name);
 });
 
 When('I rename the term {string} to {string}', async ({ page }, from: string, to: string) => {
-  remember(page, to);
+  await remember(page, to);
   await (await editOperation(page, from)).click();
   await saveTermForm(page, to);
 });
 
 When('I rename the term {string} to {string} and cancel', async ({ page }, from: string, to: string) => {
-  remember(page, to);
+  await remember(page, to);
   await (await editOperation(page, from)).click();
   await page.getByLabel('Name', { exact: true }).fill(to);
   await page.getByRole('link', { name: 'Cancel', exact: true }).click();

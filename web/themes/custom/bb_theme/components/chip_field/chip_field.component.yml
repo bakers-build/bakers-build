@@ -1,0 +1,48 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Chip Field
+status: stable
+group: Form
+description: >-
+  Entries shown as removable chips over the plain control in the `field` slot,
+  which stays the submitted value; the `chipField` Alpine component hides it
+  and keeps it in step with the chips. Backspace in the empty input removes the
+  last chip. Free mode wraps a textarea of e-mail addresses (one per line):
+  Enter, comma, semicolon, space, blur and paste turn the typed text into
+  chips, and an address the browser does not accept is marked, in text as well
+  as colour. List mode wraps a multiple select: typing opens a listbox of the
+  matching options not chosen yet, ArrowUp/ArrowDown move through it, Enter or
+  Tab takes the highlighted one, and text matching no option never becomes a
+  chip. Without JavaScript the chip box stays hidden and the control is the
+  field. Distinct from option_picker, a pill with a popover.
+provider: bb_theme
+props:
+  type: object
+  required:
+    - label
+  properties:
+    label:
+      type: string
+      title: Accessible name of the text input
+    mode:
+      type: string
+      title: Free text (textarea) or picks from the select's options
+      enum:
+        - free
+        - list
+    placeholder:
+      type: string
+      title: Placeholder of the text input
+    invalid_label:
+      type: string
+      title: Text that marks an invalid chip for assistive technology
+    remove_label:
+      type: string
+      title: Remove button name, with @label for the chip's text
+slots:
+  field:
+    title: Field
+    description: The textarea (free) or multiple select (list) the form submits.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

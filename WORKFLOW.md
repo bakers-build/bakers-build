@@ -4,8 +4,10 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 ## bb-phase-provision
 
-Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site;
-`config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
+Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site.
+A site whose database is behind the code (for example after a merge that brings an update hook)
+gets `provision_exec('down')` first, which stops it and drops its reuse marker, so the next
+`provision_up('recipe-test')` installs afresh. `config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
 `existing-config` install at the same revision. Commands in the web container run through
 fixed `provision_exec` keys: `phpcs`, `phpmd`, `phpstan`, `phpunit` and `phpunit-mariadb` (test paths), `paratest`
 (one suite or path), `uli` (`[<persona>, <url>?]`), `playwright`

@@ -1,5 +1,5 @@
 # The workspace Members settings screen invites through its dialog, opened by
-# the Members zone's "Invite members" action: an e-mail textarea taking one or
+# the page header's "Invite members" action: an e-mail textarea taking one or
 # more addresses, and below it the Workspace role and Team pills.
 # `invitation.feature` starts from a seeded invite; this feature is the other
 # half — that the real dialog is what creates one.
@@ -22,9 +22,14 @@ Feature: Inviting workspace members from the Members settings screen
     Then the invite dialog is closed
     And the Members screen confirms "Invited 2 people."
     And each invited address is listed as pending with the role "Admin" and the team "Automation Crew"
+    And members and invitations share one list
+    And the document was not reloaded
     And exactly one invitation mail reaches each invited address
     When I revoke the pending invitation of the first invited address
     Then the first invited address is no longer listed as a pending invitation
+    And Invite members has focus
+    And the screen reader hears the revoke of the first invited address
+    And the document was not reloaded
 
   Scenario: A workspace member who does not lead it cannot open the Members settings screen
     Given I am signed in as a workspace member who does not lead it
