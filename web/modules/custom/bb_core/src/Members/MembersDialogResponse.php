@@ -45,7 +45,8 @@ final class MembersDialogResponse {
    *   The toast with its text in `#bb_result`, or an uncacheable nothing.
    */
   public static function result(MessengerInterface $messenger): array {
-    $messages = $messenger->messagesByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
+    // Consumed: a fragment answer never reaches the page's status messages.
+    $messages = $messenger->deleteByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
     $build = ['#weight' => -5, '#cache' => ['max-age' => 0]];
     if ($messages === []) {
       return $build;

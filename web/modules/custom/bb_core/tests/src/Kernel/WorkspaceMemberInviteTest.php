@@ -19,6 +19,7 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Form\BbWorkspaceJoinForm;
 use Drupal\bb_core\Form\GroupMembersForm;
 use Drupal\bb_core\Form\WorkspaceInviteForm;
+use Drupal\bb_core\Members\MembersDialogResponse;
 use Drupal\bb_core\Members\WorkspaceInvite;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\island\IslandViewAccessInterface;
@@ -1041,6 +1042,22 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     self::assertSame('delete', $response->headers->get('HX-Reswap'));
     self::assertStringContainsString('bakers.members.changed', (string) $response->headers->get('HX-Trigger'));
     self::assertSame(['Invited 1 person.'], $this->resultMessages(), 'the result waits for the refreshed list');
+  }
+
+  /**
+   * A dialog's result shows once: the next rebuild of the face has no toast.
+   */
+  public function testDialogResultIsShownOnce(): void {
+    $messenger = $this->container->get('messenger');
+    $messenger->addMessage('Invited 1 person.', WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
+
+    $first = MembersDialogResponse::result($messenger);
+    $second = MembersDialogResponse::result($messenger);
+
+    self::assertSame('Invited 1 person.', $first['#bb_result'] ?? NULL);
+    self::assertSame('bb_theme:toast', $first['message']['#component'] ?? NULL);
+    self::assertArrayNotHasKey('#bb_result', $second, 'the result is consumed');
+    self::assertSame([], $messenger->messagesByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE));
   }
 
   /**

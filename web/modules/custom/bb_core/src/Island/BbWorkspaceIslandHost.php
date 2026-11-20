@@ -24,8 +24,9 @@ final class BbWorkspaceIslandHost implements IslandContextProviderInterface, Isl
   use MembersIslandPlacementTrait;
 
   /**
-   * The workspace Members screen's own gate: the roster lists invited
-   * addresses.
+   * The workspace Members screen's own gate.
+   *
+   * The roster lists invited addresses.
    */
   private const string MEMBERS_ACCESS = 'update';
 

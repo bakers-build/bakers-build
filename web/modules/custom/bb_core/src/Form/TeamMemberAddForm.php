@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\bb_core\Entity\BbTeamInterface;
@@ -12,6 +13,8 @@ use Drupal\bb_core\Members\MemberItemBuilder;
 use Drupal\bb_core\Members\MembersDialogResponse;
 use Drupal\bb_core\Members\MembershipWriter;
 use Drupal\island\Form\WrappedDialogFormBase;
+use Drupal\og\Entity\OgMembership;
+use Drupal\og\OgMembershipInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -44,12 +47,18 @@ final class TeamMemberAddForm extends WrappedDialogFormBase {
   protected MemberFaceOutcome $face;
 
   /**
+   * Loads the person a role is checked for.
+   */
+  protected EntityTypeManagerInterface $entityTypeManager;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container): static {
     $form = parent::create($container);
     $translation = $container->get('string_translation');
     $form->membershipWriter = $container->get('bb_core.membership_writer');
+    $form->entityTypeManager = $container->get('entity_type.manager');
     $form->itemBuilder = new MemberItemBuilder($container->get('bb_core.date'), $translation, $container->get('module_handler'));
     $form->face = new MemberFaceOutcome($form->membershipWriter, $form->itemBuilder, $container->get('bb_core.workspace_invite'), $translation);
     return $form;
@@ -133,10 +142,30 @@ final class TeamMemberAddForm extends WrappedDialogFormBase {
     };
     if ($refusal !== NULL) {
       $form_state->setErrorByName('account', $refusal);
+      return;
     }
-    if (isset($form['role']) && !isset(MemberItemBuilder::assignableRoles($team)[$this->role($form_state)])) {
-      $form_state->setErrorByName('role', $this->t('Choose one of the offered roles.'));
+    if (isset($form['role']) && !isset($this->rolesFor($team, (int) $uid)[$this->role($form_state)])) {
+      $form_state->setErrorByName('role', $this->t('This person cannot hold that role.'));
     }
+  }
+
+  /**
+   * The roles this person may hold here, narrowed like their row picker.
+   *
+   * @return array<string, \Drupal\og\OgRoleInterface>
+   *   The roles, keyed by name.
+   */
+  private function rolesFor(BbTeamInterface $team, int $uid): array {
+    $account = $this->entityTypeManager->getStorage('user')->load($uid);
+    $roles = MemberItemBuilder::assignableRoles($team);
+    if ($account === NULL) {
+      return [];
+    }
+    // Unsaved: it only carries the person and the group to the narrowing hook.
+    $candidate = OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+      ->setOwner($account)
+      ->setGroup($team);
+    return $this->itemBuilder->rowRoles($candidate, $roles, $team);
   }
 
   /**

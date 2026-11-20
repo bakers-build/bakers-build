@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Entity\EntityStorageException;
+use Drupal\Core\Form\FormState;
+use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Form\TeamMemberAddForm;
 use Drupal\bb_core\Members\MemberItemBuilder;
 use Drupal\og\Entity\OgMembership;
 use Drupal\og\Entity\OgRole;
@@ -18,6 +21,9 @@ use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
  * The Members surface offers a service account only allowed roles.
@@ -42,7 +48,7 @@ final class ServiceAccountMemberRoleOptionsTest extends KernelTestBase {
   protected static $modules = [
     'system', 'user', 'serialization', 'options', 'image', 'file',
     'text', 'link', 'filter', 'markdown_easy', 'field', 'state_machine', 'entity', 'og',
-    'consumers', 'simple_oauth', 'views', 'bb_core', 'bb_api_key',
+    'consumers', 'simple_oauth', 'views', 'island', 'bb_core', 'bb_api_key',
   ];
 
   /**
@@ -228,6 +234,40 @@ final class ServiceAccountMemberRoleOptionsTest extends KernelTestBase {
     $this->setCurrentUser($lead);
     $writer->add($team, $service->id());
     self::assertInstanceOf(OgMembershipInterface::class, Og::getMembership($team, $service));
+  }
+
+  /**
+   * The add dialog refuses a team role a service account may not hold.
+   *
+   * Refused on the field, before any write: no half-made membership.
+   */
+  public function testAddDialogRefusesRoleServiceAccountMayNotHold(): void {
+    [$workspace, $team] = $this->workspaceWithTeam();
+    $this->setCurrentUser($this->leadOf($workspace));
+    $service = $this->serviceAccount($workspace, 'service-ci-dddddddd');
+    OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+      ->setOwner($service)
+      ->setGroup($workspace)
+      ->setState(OgMembershipInterface::STATE_ACTIVE)
+      ->save();
+    $this->container->get('router.builder')->rebuild();
+    $request = Request::create('/service-account-add-dialog-test');
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, 'bb_core.bb_team.member_add');
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $this->container->get('router.route_provider')->getRouteByName('bb_core.bb_team.member_add'));
+    $request->attributes->set('bb_workspace', $workspace);
+    $request->attributes->set('bb_team', $team);
+    $request->setSession(new Session(new MockArraySessionStorage()));
+    $this->container->get('request_stack')->push($request);
+
+    $form_state = (new FormState())->setValues([
+      'account' => (string) $service->id(),
+      'role' => 'lead',
+      'op' => 'Add member',
+    ]);
+    $this->container->get('form_builder')->submitForm(TeamMemberAddForm::class, $form_state);
+
+    self::assertArrayHasKey('role', $form_state->getErrors(), 'the role is refused on its field');
+    self::assertNull(Og::getMembership($team, $service, OgMembershipInterface::ALL_STATES), 'nothing is written');
   }
 
   /**

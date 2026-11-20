@@ -17,7 +17,7 @@ import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { MEMBERS_ISLAND, RAIL_ISLAND, uidOf } from '../../support/shell';
 import { pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
-import { ADD_DIALOG, openAddMemberDialog } from '../../support/add-member-dialog';
+import { ADD_DIALOG, addMemberTrigger, openAddMemberDialog } from '../../support/add-member-dialog';
 
 // BB-484 — the Overview body, which is the `full` view mode's own markup and
 // NOT a controller hull. There is deliberately no `[data-bakers-tab-body]` here:
@@ -125,6 +125,8 @@ When('I add the member {string}', async ({ page }, value: string) => {
   await answered;
   await expect(page.locator(ADD_DIALOG), 'the add dialog did not close').toHaveCount(0, { timeout: 15000 });
   await expect(page.locator(`${MEMBERS_ISLAND} #members-role-${uidOf(value)}`)).toBeAttached({ timeout: 15000 });
+  // The flow ends when focus is back on Add member; a next step must not race it.
+  await expect(addMemberTrigger(page)).toBeFocused({ timeout: 15000 });
 });
 
 /**
