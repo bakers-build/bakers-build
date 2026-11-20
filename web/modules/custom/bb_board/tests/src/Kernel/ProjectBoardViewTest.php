@@ -69,7 +69,6 @@ final class ProjectBoardViewTest extends KernelTestBase {
     parent::setUp();
     $this->installEntitySchema('search_api_task');
     $this->installSchema('search_api', ['search_api_item']);
-    $this->installSchema('user', ['users_data']);
     $this->installEntitySchema('path_alias');
     $this->installReadScopeEnvironment();
     $this->installConfig(['search_api']);
