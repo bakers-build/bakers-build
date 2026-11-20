@@ -26,7 +26,7 @@ use Drupal\user\EntityOwnerInterface;
  *
  * Bundled by bb_vocabulary (`type`, `recipe`, `label`). Flat (no hierarchy).
  * Used by the ticket's `ticket_type`, `recipe` and `labels` fields. Managed on
- * the workspace settings tabs: add, edit and delete forms, no page of its own.
+ * the workspace settings tabs; its page carries Edit and Delete.
  *
  * Stays on ContentEntityBase: it has no created/changed fields, and inheriting
  * them from BbContentEntityBase would change its schema and API.
@@ -61,6 +61,7 @@ use Drupal\user\EntityOwnerInterface;
     'route_provider' => ['html' => BbTermRouteProvider::class],
   ],
   links: [
+    'canonical' => '/_workspace/{bb_workspace}/term/{bb_term}',
     'add-form' => '/_workspace/{bb_workspace}/term/{bb_vocabulary}/add',
     'edit-form' => '/_workspace/{bb_workspace}/term/{bb_term}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/term/{bb_term}/delete',

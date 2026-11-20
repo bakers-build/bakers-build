@@ -63,16 +63,17 @@ Feature: User Machines listing and View
   Scenario: The owner sees its conductors and opens Restart runs behind a confirmation
     Given I am signed in as a member of the "bakers" workspace
     When I visit the machine "e2e default host"
-    Then the machine Overview lists the conductor "srv01-bakers" with "Restart runs"
+    Then the machine Overview lists the conductor "srv01-bakers" as one link
     And the machine Overview lists the conductor "srv01-bakers" in the project "bakers.build Platform"
     When I open "Restart runs" on the machine
     Then a dialog asks "e2e default host"
     When I choose "Cancel" in the dialog
-    Then the machine Overview lists the conductor "srv01-bakers" with "Restart runs"
-    When I open "Restart runs" on the conductor "srv01-bakers"
+    Then the machine Overview lists the conductor "srv01-bakers" as one link
+    When I open the conductor "srv01-bakers" from the machine Overview
+    And I open "Restart runs" on the conductor page
     Then a dialog asks "srv01-bakers"
     When I press Escape in the Restart runs dialog
-    Then the machine Overview lists the conductor "srv01-bakers" with "Restart runs"
+    Then the page heading is "srv01-bakers"
 
   Scenario Outline: Restart runs is the owner's alone
     Given I am logged in as the account "<account>"

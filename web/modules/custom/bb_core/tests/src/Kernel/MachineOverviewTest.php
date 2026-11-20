@@ -264,9 +264,9 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The Overview lists the machine's conductors, Restart runs for the owner.
+   * The Overview lists the machine's conductors, each row one link.
    */
-  public function testOverviewListsConductorsWithRestartRunsForTheOwner(): void {
+  public function testOverviewListsConductorsAsLinks(): void {
     $shipped = (string) file_get_contents(dirname(DRUPAL_ROOT) . '/recipes/bakers/config/core.entity_view_display.bb_machine.bb_machine.full.yml');
     self::assertStringContainsString("plugin_id: 'views_block:conductors-machine_conductors'", $shipped);
     self::assertStringContainsString('source_id: bb_machine_actions', $shipped);
@@ -279,7 +279,7 @@ final class MachineOverviewTest extends KernelTestBase {
       'owner_user_id' => $this->accounts['lead']->id(),
       'status' => 'online',
     ];
-    $this->create('bb_conductor', $conductor + [
+    $north = $this->create('bb_conductor', $conductor + [
       'conductor_id' => 'c-north',
       'label' => 'North conductor',
       'machine' => $this->labelled->id(),
@@ -291,16 +291,10 @@ final class MachineOverviewTest extends KernelTestBase {
     self::assertStringContainsString('North conductor', $html);
     self::assertStringNotContainsString('South conductor', $html);
     self::assertStringContainsString('>Platform<', $html, 'Each conductor row names its project.');
-    self::assertStringContainsString('Restart runs', $html);
-    // The row action opens its confirmation in the overlay, like the buttons.
-    self::assertStringContainsString('hx-target="#bakers-overlay"', $html);
-    self::assertStringContainsString('_wrapper_format=island_dialog', $html);
-
-    $admin = $this->createAccount('admin', ['administer bakers']);
-    $this->container->get('account_switcher')->switchTo($admin);
-    $html = $this->renderMachineConductors();
-    self::assertStringContainsString('North conductor', $html);
+    // A row is one link, to the conductor; Restart runs is on its detail.
     self::assertStringNotContainsString('Restart runs', $html);
+    preg_match_all('/<a\s[^>]*href="([^"]*)"/', $html, $links);
+    self::assertSame([$north->toUrl()->toString()], array_map('html_entity_decode', $links[1]));
   }
 
   /**

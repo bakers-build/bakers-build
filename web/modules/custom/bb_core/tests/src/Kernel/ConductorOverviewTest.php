@@ -383,6 +383,13 @@ final class ConductorOverviewTest extends KernelTestBase {
     self::assertSame('Save', (string) $settings['actions']['submit']['#value']);
     self::assertNull($this->container->get('entity_type.manager')->getDefinition('bb_conductor')->getFormClass('configuration'));
     self::assertSame('Disable conductor', $this->actionsSource($mine)['activity']['#props']['label'] ?? NULL);
+    // Delete moved from the list row to the detail, for who may delete.
+    self::assertArrayNotHasKey('delete', $this->actionsSource($mine), 'The owner holds no delete right.');
+    $this->actAs($this->createAccount('conductor-admin', ['administer bakers']));
+    $delete = $this->actionsSource($mine)['delete']['#props'] ?? [];
+    self::assertSame($base . '/delete', $delete['href'] ?? NULL);
+    self::assertSame('Delete', $delete['label'] ?? NULL);
+    $this->actAs($owner);
     // The owner's confirm writes, although the stored project is a reference
     // this account could not select in a form.
     $action = $this->container->get('entity_type.manager')->getFormObject('bb_conductor', 'action');
@@ -397,6 +404,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     $this->actAs($this->accounts['contributor']);
     self::assertSame(403, $this->statusOf($base . '/settings'));
     self::assertSame(403, $this->statusOf($base . '/action'));
+    self::assertSame(403, $this->statusOf($base . '/delete'));
     $form = $this->container->get('entity.form_builder')->getForm($stored, 'identity');
     self::assertArrayNotHasKey('label', $form);
     self::assertEmpty($form['actions'] ?? []);

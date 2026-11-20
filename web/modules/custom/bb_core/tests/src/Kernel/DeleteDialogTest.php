@@ -11,6 +11,7 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Template\Attribute;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\bb_core\Entity\BbInvite;
+use Drupal\bb_core\Plugin\UiPatterns\Source\BbInviteActionsSource;
 use Drupal\bb_core\Form\BbContentEntityFormBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -338,7 +339,7 @@ final class DeleteDialogTest extends KernelTestBase {
   }
 
   /**
-   * The Members screen's invite revoke opens the overlay.
+   * The invitation detail's Revoke opens the overlay.
    */
   public function testInviteRevokeOpensTheOverlay(): void {
     $invite = $this->createEntity('bb_invite', [
@@ -348,18 +349,16 @@ final class DeleteDialogTest extends KernelTestBase {
     self::assertInstanceOf(BbInvite::class, $invite);
     $this->openScreenUnder();
 
-    $remove = $this->container->get('bb_core.workspace_invite')->inviteItems([$invite], TRUE)['controls'][0]['remove'];
+    $remove = BbInviteActionsSource::revokeButton($invite);
 
     self::assertSame($invite->toUrl('delete-form')->toString(), $remove['#props']['href']);
     $this->assertOpensOverlay($invite->toUrl('delete-form')->toString(), $remove['#props']['attributes']->toArray());
   }
 
   /**
-   * A revoke confirmed in the dialog closes it and refreshes the Members list.
-   *
-   * No page load: the list stays where it was and re-renders in place.
+   * A revoke confirmed in the dialog leaves the invitation's page for Members.
    */
-  public function testInviteRevokeInDialogClosesItAndRefreshesMembers(): void {
+  public function testInviteRevokeInDialogReturnsToMembers(): void {
     $invite = $this->createEntity('bb_invite', [
       'email' => 'invitee@example.com',
       'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
@@ -368,10 +367,7 @@ final class DeleteDialogTest extends KernelTestBase {
     $response = $this->confirmInDialog($invite);
 
     self::assertNull($this->reload($invite), 'the invitation is revoked');
-    self::assertFalse($response->headers->has('HX-Location'), 'no page load');
-    self::assertSame('closest [data-dialog]', $response->headers->get('HX-Retarget'));
-    self::assertSame('delete', $response->headers->get('HX-Reswap'));
-    self::assertStringContainsString('bakers.members.changed', (string) $response->headers->get('HX-Trigger'));
+    self::assertStringContainsString('/settings/members', (string) $response->headers->get('HX-Location'), 'back to the roster');
   }
 
   /**

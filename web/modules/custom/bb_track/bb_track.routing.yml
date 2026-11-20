@@ -110,6 +110,24 @@ bb_track.account_edit:
       bb_track_account:
         type: entity:bb_track_account
 
+# The billing account detail: its terms and its Edit, Make default and
+# Archive. The list gate, so a member who may not edit the project gets none.
+entity.bb_track_account.canonical:
+  path: '/_workspace/{bb_workspace}/project/{bb_project}/accounts/{bb_track_account}'
+  defaults:
+    _entity_view: 'bb_track_account.full'
+    _title_callback: '\Drupal\Core\Entity\Controller\EntityController::title'
+  requirements:
+    _entity_access: 'bb_project.update'
+    bb_track_account: '\d+'
+  options:
+    parameters:
+      bb_project:
+        type: entity:bb_project
+        converter: bb_core.paramconverter.entity_uuid
+      bb_track_account:
+        type: entity:bb_track_account
+
 entity.bb_track_submission.canonical:
   path: '/time/submission/{bb_track_submission}'
   defaults:

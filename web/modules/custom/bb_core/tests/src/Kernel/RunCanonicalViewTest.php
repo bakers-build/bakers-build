@@ -428,10 +428,7 @@ final class RunCanonicalViewTest extends KernelTestBase {
     $source->setContextValue('entity', $this->run);
     $item = $source->getPropValue()[0];
     self::assertSame($reason, $item['detail']);
-    self::assertSame($log, isset($item['cells']['log']), 'Run row Log cell.');
-    if ($log) {
-      self::assertTrue($item['cells']['log']['full_load'], 'The Log downloads as a whole document, outside the boost.');
-    }
+    self::assertArrayNotHasKey('log', $item['cells'], 'The run row offers no Log: the detail does.');
   }
 
   /**

@@ -48,7 +48,7 @@ final class BbTeamIslandHost implements IslandContextProviderInterface, IslandVi
     }
     // The key is `group`, not `team`: the shared island and form stay
     // type-blind so the workspace member surface can reuse them.
-    return ['group' => $team];
+    return ['group' => $team] + $this->memberData('bb_team', ['bb_team' => (int) $team->id()]);
   }
 
 }

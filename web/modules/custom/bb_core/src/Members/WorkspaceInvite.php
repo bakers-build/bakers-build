@@ -12,10 +12,8 @@ use Drupal\Core\Mail\MailManagerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
-use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbInvite;
-use Drupal\bb_core\Form\OverlayTrigger;
 use Drupal\bb_core\Time\BbDate;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\og\OgMembershipInterface;
@@ -305,67 +303,41 @@ final class WorkspaceInvite {
   }
 
   /**
-   * List items for pending invitations.
+   * List items for pending invitations; an invitation's detail reads them too.
    *
    * @param array<int, \Drupal\bb_core\Entity\BbInvite> $invites
    *   The invitations.
-   * @param bool $may_write
-   *   Whether the acting account may revoke them.
    *
    * @return array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>}
-   *   The same shape MemberItemBuilder::items() returns.
+   *   The same shape MemberItemBuilder::items() returns, with no control:
+   *   Revoke is on the invitation's detail.
    */
-  public function inviteItems(array $invites, bool $may_write): array {
+  public function inviteItems(array $invites): array {
     $items = [];
-    $controls = [];
     foreach (array_values($invites) as $index => $invite) {
       $mail = $invite->getEmail();
-      $expired = $this->isExpired($invite);
-      $cells = [
-        // No account yet: a neutral mark keeps the row aligned with members.
-        'mark' => [
-          'kind' => 'person',
-          'initials' => '@',
-          'color' => 'offline',
-          'size' => 'md',
-          'display_name' => $mail,
-          'name_hidden' => TRUE,
+      $items[$index] = [
+        'cells' => [
+          // No account yet: a neutral mark keeps the row aligned with members.
+          'mark' => [
+            'kind' => 'person',
+            'initials' => '@',
+            'color' => 'offline',
+            'size' => 'md',
+            'display_name' => $mail,
+            'name_hidden' => TRUE,
+          ],
+          'name' => ['kind' => 'text', 'value' => $mail, 'emphasis' => 'strong'],
+          'role' => ['kind' => 'badge', 'label' => $this->roleLabel($invite), 'tone' => 'neutral'],
+          'team' => ['kind' => 'text', 'value' => $this->teamLabel($invite)],
+          // A row of the roster: its status, where a member's says Joined.
+          'joined' => ['kind' => 'badge', 'suffix' => $this->date->date($invite->getCreatedTime())] + ($this->isExpired($invite)
+            ? ['label' => (string) $this->t('Expired'), 'tone' => 'critical']
+            : ['label' => (string) $this->t('Invited'), 'tone' => 'neutral']),
         ],
-        'name' => ['kind' => 'text', 'value' => $mail, 'emphasis' => 'strong'],
-        'role' => ['kind' => 'badge', 'label' => $this->roleLabel($invite), 'tone' => 'neutral'],
-        'team' => ['kind' => 'text', 'value' => $this->teamLabel($invite)],
-        // A row of the roster: its status, where a member's says Joined.
-        'joined' => ['kind' => 'badge', 'suffix' => $this->date->date($invite->getCreatedTime())] + ($expired
-          ? ['label' => (string) $this->t('Expired'), 'tone' => 'critical']
-          : ['label' => (string) $this->t('Invited'), 'tone' => 'neutral']),
       ];
-      if ($may_write) {
-        $cells['controls'] = ['kind' => 'rendered'];
-        $controls[$index]['remove'] = [
-          '#type' => 'component',
-          '#component' => 'bb_theme:button',
-          // Opens the revoke confirm dialog; a revoke never happens in one
-          // click. The href is the confirm page without JavaScript.
-          '#attached' => ['library' => ['core/drupal.htmx']],
-          '#props' => [
-            'variant' => 'ghost',
-            'icon_only' => TRUE,
-            'label' => $this->t('Revoke invitation for @mail', ['@mail' => $mail]),
-            'href' => $invite->toUrl('delete-form')->toString(),
-            'attributes' => new Attribute(OverlayTrigger::attributes($invite->toUrl('delete-form'))),
-          ],
-          '#slots' => [
-            'icon' => [
-              '#type' => 'component',
-              '#component' => 'bb_theme:icon',
-              '#props' => ['name' => 'x-circle', 'size' => 'sm'],
-            ],
-          ],
-        ];
-      }
-      $items[$index] = ['cells' => $cells];
     }
-    return ['items' => $items, 'controls' => $controls];
+    return ['items' => $items, 'controls' => []];
   }
 
   /**

@@ -12,7 +12,6 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\EntityDeleteRules;
-use Drupal\bb_core\Members\MembersDialogResponse;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -201,17 +200,13 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
       parent::submitForm($form, $form_state);
       return;
     }
-    // The Members screen shows the result itself, after its list refreshed.
+    // Revoked from the invitation's page: the Members screen shows the result.
     $this->getEntity()->delete();
     // Plain text: the result is announced as well as shown.
     $this->messenger()->addMessage($this->t('Revoked the invitation for @email.', [
       '@email' => $this->getEntity()->label(),
     ]), WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
     $this->logDeletionMessage();
-    if ($this->isDialogRequest()) {
-      $form_state->setResponse(MembersDialogResponse::close());
-      return;
-    }
     $form_state->setRedirectUrl($this->getRedirectUrl());
   }
 
@@ -220,7 +215,7 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
    */
   public function getCancelUrl(): Url {
     $entity = $this->getEntity();
-    // An invitation has no page of its own to return to.
+    // An entity without a page of its own returns to its list.
     return $entity->hasLinkTemplate('canonical') || $entity->hasLinkTemplate('edit-form')
       ? parent::getCancelUrl()
       : $this->getRedirectUrl();

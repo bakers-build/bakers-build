@@ -1363,17 +1363,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        operations:
-          id: operations
-          table: bb_conductor
-          field: operations
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_conductor
-          plugin_id: entity_operations
-          label: ''
-          destination: true
       pager:
         type: none
         options:
@@ -1463,7 +1452,6 @@ display:
             project_id: project_id
             status: status
             last_seen: last_seen
-            operations: operations
           default: '-1'
           info:
             label:
@@ -1488,13 +1476,6 @@ display:
               empty_column: false
               responsive: null
             last_seen:
-              sortable: false
-              default_sort_order: asc
-              align: ''
-              separator: ''
-              empty_column: false
-              responsive: null
-            operations:
               sortable: false
               default_sort_order: asc
               align: ''

@@ -1,8 +1,9 @@
 @feature:ticket-interventions
 Feature: A person intervenes on the ticket page while agents drive the workflow
   The ticket page offers no workflow step: AI agents move the ticket. A person
-  freezes or unfreezes the ticket, cancels it from the Properties footer or one
-  run from its own row, retries a failed run, each confirmed in a dialog, and reaches the few
+  freezes or unfreezes the ticket, cancels it from the Properties footer, opens
+  one run from its Run history row (a row is only a link) to cancel or retry it
+  on the run's page, each confirmed in a dialog, and reaches the few
   exception fields through More settings. A closed ticket is read-only. Every
   scenario works on its own disposable ticket so the seeded fixtures stay
   untouched.
@@ -59,7 +60,10 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
   Scenario: Cancel run stops only that run and leaves the ticket's state
     Given a disposable "bb_work" ticket in state "working" with a running run
     When I visit the disposable ticket
-    And I open "Cancel run" on the disposable run's own row
+    Then the disposable run's row does not offer "Cancel run"
+    When I open the disposable run from its history row
+    Then the page heading is the disposable run title
+    When I open "Cancel run"
     Then the dialog names the disposable run and that the conductor may start another run
     And the dialog's first choice is "Keep the run"
     When I choose "Cancel run" in the dialog
@@ -70,9 +74,13 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
     Given a disposable "bb_work" ticket in state "working" whose last 3 runs failed with "plugins: claude install failed: 401"
     When I visit the disposable ticket
     Then the disposable run's row says why it failed: "plugins: claude install failed: 401"
-    And the disposable run's row offers "Re-dispatch"
-    And the disposable run's row offers "Log"
-    When I open "Retry" on the disposable run's own row
+    And the disposable run's row does not offer "Retry"
+    And the disposable run's row does not offer "Log"
+    When I open the disposable run from its history row
+    Then the page heading is the disposable run title
+    And the run page offers "Re-dispatch"
+    And the run page offers "Log"
+    When I open "Retry"
     Then a dialog asks "again on its next check, and the new run appears in Run history."
     When I choose "Retry run" in the dialog
     Then the page says "Retry requested."

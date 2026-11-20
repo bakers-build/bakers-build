@@ -268,10 +268,15 @@ final class ServiceAccountHooks {
       'help' => new TranslatableMarkup('Managed key metadata, one line per key.'),
       'field' => ['id' => 'bb_service_account_keys'],
     ];
-    $data['users_field_data']['bb_service_account_actions'] = [
-      'title' => new TranslatableMarkup('Service account actions'),
-      'help' => new TranslatableMarkup('Status, Manage API keys and Disable, as a row action menu.'),
-      'field' => ['id' => 'bb_service_account_actions'],
+    $data['users_field_data']['bb_service_account_name'] = [
+      'title' => new TranslatableMarkup('Service account name'),
+      'help' => new TranslatableMarkup('The account name, linking to its profile while it is active.'),
+      'field' => ['id' => 'bb_service_account_name'],
+    ];
+    $data['users_field_data']['bb_service_account_status'] = [
+      'title' => new TranslatableMarkup('Service account status'),
+      'help' => new TranslatableMarkup('Active or Disabled, as a badge.'),
+      'field' => ['id' => 'bb_service_account_status'],
     ];
   }
 

@@ -315,7 +315,8 @@ Feature: The team screen's five tabs are routes inside one island
     Then the members list has 4 rows
     When I add the member "both-bakeries"
     Then the members list has 5 rows
-    When I pick the role "lead" for the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
     When I pick the role "member" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
@@ -323,7 +324,6 @@ Feature: The team screen's five tabs are routes inside one island
     Then the members list has no member "both-bakeries"
     And the members list has 4 rows
     And the document was not reloaded
-    And the rail was not part of the swap
 
   # BB-419 — REMOVING, asserted here as well as on the project screen, because
   # the control is ONE component and a shared control proved on one call site is
@@ -363,9 +363,14 @@ Feature: The team screen's five tabs are routes inside one island
   # thing for the same reason, and this scenario asserts what
   # `project-members.feature`'s equivalent already does.
   Scenario: The remove control names the team it removes from
-    When I visit the team "Platform Crew" tab "Members"
+    Given the team "Platform Crew" has no member "both-bakeries"
+    And I visit the team "Platform Crew" tab "Members"
+    When I add the member "both-bakeries"
+    And I open the member "both-bakeries"
     Then the remove control names "Revokes their access."
     And no remove control names "no access is revoked"
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
 
   # The roster is an item list like the ticket and project lists, without
   # columns; a team's own roster names no team, because every row is that team.
@@ -373,6 +378,9 @@ Feature: The team screen's five tabs are routes inside one island
     When I visit the team "Platform Crew" tab "Members"
     Then the members are an item list without columns
 
+  # BAKERS-338: the roster row only opens the member's page, which holds the
+  # role control and Remove.
+  #
   # BB-435 — CRITERION 9 on this call site, REWRITTEN BY BB-456. This used to
   # assert an absence: a team granted no permissions, so an item carried its
   # membership STATE and no role control at all. BB-456's `bb_team-
@@ -393,14 +401,17 @@ Feature: The team screen's five tabs are routes inside one island
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
-    And the member "both-bakeries" shows their initial, role, joined date and remove control in their row
+    And the member row "both-bakeries" only opens the member's page
+    When I open the member "both-bakeries"
+    Then the member "both-bakeries" shows their initial, role, joined date and remove control in their row
     When I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
     And the document was not reloaded
     And the rail was not part of the swap
     When I visit the team "Platform Crew" tab "Members"
     Then the member "both-bakeries" shows the role "Lead"
-    When I pick the role "member" for the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I pick the role "member" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"

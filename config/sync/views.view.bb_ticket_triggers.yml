@@ -10,7 +10,7 @@ dependencies:
 id: bb_ticket_triggers
 label: 'Ticket triggers'
 module: views
-description: "A template's triggers: the Triggers tab of the template screen. Rows show type, schedule, enabled or paused, next run in the trigger's zone and the latest outcome, with Edit/Pause/Resume/Delete in its action menu; the Add trigger header action opens the template-scoped add form."
+description: "A template's triggers: the Triggers tab of the template screen. Rows show type, schedule, enabled or paused, next run in the trigger's zone and the latest outcome, each row linking to the trigger's page, which carries Edit, Pause/Resume and Delete; the Add trigger header action opens the template-scoped add form."
 tag: ''
 base_table: bb_ticket_trigger
 base_field: id
@@ -376,7 +376,7 @@ display:
           click_sort_column: target_id
           type: entity_reference_label
           settings:
-            link: true
+            link: false
           group_column: target_id
           group_columns: {  }
           group_rows: true
@@ -387,16 +387,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        actions:
-          id: actions
-          table: bb_ticket_trigger
-          field: actions
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_ticket_trigger
-          plugin_id: bb_ticket_trigger_actions
-          label: ''
       pager:
         type: full
         options:
@@ -483,8 +473,7 @@ display:
               - last_ticket_id
             description:
               - last_message
-            right:
-              - actions
+            right: {  }
             right_meta: {  }
       row:
         type: fields

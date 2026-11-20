@@ -258,38 +258,31 @@ Then('the service account is listed as active without its secret', async ({ page
 });
 
 /**
- * Opens the row's action menu and picks one action.
+ * Opens the account's Profile, its page: the row's one link.
  *
- * Create API key, Revoke and Disable live in a `bb_theme:action_menu`: menu items,
- * hidden until its trigger discloses them. They are plain links (no htmx
- * dialog wiring, unlike the page-header "Create service account" plus), so
- * each opens its full-page form, never a modal.
+ * The profile carries Manage API keys and Disable, plain links to their
+ * full-page forms.
  */
-async function pickRowAction(page: Page, name: string | RegExp): Promise<void> {
-  const row = accountRow(page);
-  await row.getByLabel(/^Actions for /).click();
-  await row.getByRole('menuitem', { name }).first().click();
-}
-
-/** Counts a row action, including ones inside the closed menu. */
-function rowActions(page: Page, name: string | RegExp) {
-  return accountRow(page).getByRole('menuitem', { name, includeHidden: true });
+async function openProfilePage(page: Page): Promise<void> {
+  await page.goto(servicedAccountsPath());
+  await accountRow(page).getByRole('link').click();
+  await expect(page).toHaveURL(/\/user\/\d+\/profile/);
 }
 
 /**
- * Opens the account's API keys page through its row menu.
+ * Opens the account's API keys page from its Profile.
  *
  * It is the same list a person sees for their own keys, at
- * /user/{uid}/api-keys: one row per key with its own Revoke.
+ * /user/{uid}/api-keys: one row per key, linking to the key's page.
  */
 async function openKeysPage(page: Page): Promise<void> {
-  await page.goto(servicedAccountsPath());
-  await pickRowAction(page, 'Manage API keys');
-  await expect(page).toHaveURL(/\/user\/\d+\/api-keys/);
+  await openProfilePage(page);
+  await page.getByRole('link', { name: 'Manage API keys', exact: true }).click();
+  await expect(page).toHaveURL(/\/user\/\d+\/api-keys$/);
 }
 
-function revokeLinks(page: Page) {
-  return page.getByRole('link', { name: 'Revoke', exact: true });
+function keyRows(page: Page) {
+  return page.locator('[data-component-id="bb_theme:list"] > li');
 }
 
 When('I issue a second API key for that service account', async ({ page }) => {
@@ -307,12 +300,15 @@ When('I issue a second API key for that service account', async ({ page }) => {
 
 Then('the service account lists two keys', async ({ page }) => {
   await openKeysPage(page);
-  await expect(revokeLinks(page)).toHaveCount(2);
+  await expect(keyRows(page)).toHaveCount(2);
 });
 
 When('I revoke the first key of that service account', async ({ page }) => {
   await openKeysPage(page);
-  await revokeLinks(page).first().click();
+  // A key row opens the key's page, which carries Revoke.
+  await keyRows(page).first().getByRole('link').click();
+  await expect(page).toHaveURL(/\/user\/\d+\/api-keys\/\d+$/);
+  await page.getByRole('link', { name: 'Revoke', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm' }).click();
   // The submit returns to the Service Accounts list; later checks must not race it.
   await expect(page.getByRole('button', { name: 'Confirm' })).toHaveCount(0);
@@ -320,12 +316,12 @@ When('I revoke the first key of that service account', async ({ page }) => {
 
 Then('the service account lists exactly one key', async ({ page }) => {
   await openKeysPage(page);
-  await expect(revokeLinks(page)).toHaveCount(1);
+  await expect(keyRows(page)).toHaveCount(1);
 });
 
 When('I disable that service account', async ({ page }) => {
-  await page.goto(servicedAccountsPath());
-  await pickRowAction(page, 'Disable');
+  await openProfilePage(page);
+  await page.getByRole('link', { name: 'Disable', exact: true }).click();
   await page.getByRole('button', { name: 'Disable' }).click();
   // The API checks that follow must not race the submit.
   await expect(accountRow(page)).toContainText('Disabled');
@@ -334,13 +330,6 @@ When('I disable that service account', async ({ page }) => {
 const POSITION_LABEL = 'Position';
 const BACKGROUND_LABEL = 'What should bakers.build know about your background?';
 
-/** Opens the account's Profile page through its row menu. */
-async function openProfilePage(page: Page): Promise<void> {
-  await page.goto(servicedAccountsPath());
-  await pickRowAction(page, 'Profile');
-  await expect(page).toHaveURL(/\/user\/\d+\/profile/);
-}
-
 When(
   "I save the service account's profile with position {string} and background {string}",
   async ({ page }, position: string, background: string) => {
@@ -348,8 +337,10 @@ When(
     await page.getByLabel(POSITION_LABEL, { exact: true }).fill(position);
     await page.getByLabel(BACKGROUND_LABEL).fill(background);
     await page.getByRole('button', { name: 'Save' }).click();
-    // Saving returns to the Service Accounts list.
-    await expect(page).toHaveURL(/\/settings\/service-accounts/);
+    // Saving stays on the profile, the account's page.
+    await page.waitForLoadState('load');
+    await expect(page).toHaveURL(/\/user\/\d+\/profile/);
+    await expect(page.getByLabel(POSITION_LABEL, { exact: true })).toHaveValue(position);
   },
 );
 
@@ -369,8 +360,9 @@ Then('the service account is listed as disabled', async ({ page }) => {
 
 Then('the service account offers no Manage API keys or Disable action', async ({ page }) => {
   await page.goto(servicedAccountsPath());
-  await expect(rowActions(page, 'Manage API keys')).toHaveCount(0);
-  await expect(rowActions(page, 'Disable')).toHaveCount(0);
+  // A disabled account's row opens no profile, where those actions live.
+  await expect(accountRow(page)).toContainText('Disabled');
+  await expect(accountRow(page).getByRole('link')).toHaveCount(0);
 });
 
 When(

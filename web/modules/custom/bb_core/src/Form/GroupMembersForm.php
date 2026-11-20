@@ -35,7 +35,9 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  * markup, so the pressed trigger is read from the request, not from
  * `getTriggeringElement()`, and `#required` is not used.
  *
- * One form owns every write of the face (role, remove with its
+ * On the roster each row is one link to its member's page; that page (its
+ * route carries `{user}`) is the same island showing that member alone, with
+ * the controls. One form owns every write of the face (role, remove with its
  * confirmation, transfer, revoke), which is what keeps the island to one
  * POST target; the branching that costs lives in the write helpers. Adding
  * and inviting are dialogs of their own, opened from the page header.
@@ -149,17 +151,11 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $form['actions'] = $this->applyAction();
     }
 
-    $teams = $tenancy ? $this->membershipWriter->teamNamesByMember($group) : NULL;
-    $memberships = array_values($this->membershipWriter->memberships($group));
-    $rows = $this->itemBuilder->items($memberships, $group, $may_write, $may_transfer, $teams, (int) $this->currentUser()->id());
-    if ($tenancy) {
-      // Invitations are rows of the same list, in the same newest-first order.
-      $pending = $this->tenancyInvite->pendingInvites($group);
-      $rows = self::interleave(
-        $rows + ['entities' => $memberships],
-        $this->tenancyInvite->inviteItems($pending, $may_write) + ['entities' => $pending],
-      );
-    }
+    $data = $this->hostData($form_state);
+    $member = $data['member'] ?? NULL;
+    $rows = is_int($member)
+      ? $this->memberRows($group, $member, $may_write, $may_transfer, $tenancy)
+      : $this->rosterRows($group, $data['routes']['member'], $tenancy);
     $form['roster'] = $this->listZone(
       $rows,
       $this->t('@group has no members yet.', ['@group' => $group->label()]),
@@ -228,6 +224,91 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
         '#attributes' => ['hidden' => 'hidden', 'formnovalidate' => 'formnovalidate'],
       ],
     ];
+  }
+
+  /**
+   * A member's page: that member alone, with every control.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $group
+   *   The group.
+   * @param int $member
+   *   The member's account id.
+   * @param bool $may_write
+   *   Whether the acting account may change the crew.
+   * @param bool $may_transfer
+   *   Whether the acting account owns the group.
+   * @param bool $tenancy
+   *   Whether the group is the workspace, whose rows name their teams.
+   *
+   * @return array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>}
+   *   The one row and its controls.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+   */
+  private function memberRows(ContentEntityInterface $group, int $member, bool $may_write, bool $may_transfer, bool $tenancy): array {
+    $membership = $this->membershipWriter->membershipOf($group, $member);
+    $teams = $tenancy ? $this->membershipWriter->teamNamesByMember($group) : NULL;
+    return $this->itemBuilder->items($membership === NULL ? [] : [$membership], $group, $may_write, $may_transfer, $teams, (int) $this->currentUser()->id());
+  }
+
+  /**
+   * The roster: each row one link to its member's or invitation's page.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $group
+   *   The group.
+   * @param array{0: string, 1: array<string, int|string>} $member_route
+   *   The member page's route name and parameters.
+   * @param bool $tenancy
+   *   Whether the group is the workspace, which lists invitations too.
+   *
+   * @return array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>}
+   *   The rows, without controls.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+   */
+  private function rosterRows(ContentEntityInterface $group, array $member_route, bool $tenancy): array {
+    $teams = $tenancy ? $this->membershipWriter->teamNamesByMember($group) : NULL;
+    $memberships = array_values($this->membershipWriter->memberships($group));
+    $rows = $this->itemBuilder->items($memberships, $group, FALSE, FALSE, $teams, (int) $this->currentUser()->id());
+    [$route, $parameters] = $member_route;
+    $rows['items'] = self::linked($rows['items'], array_map(
+      static fn ($membership): Url => Url::fromRoute($route, ['user' => $membership->getOwnerId()] + $parameters),
+      $memberships,
+    ));
+    if (!$tenancy) {
+      return $rows;
+    }
+    // Invitations are rows of the same list, in the same newest-first order.
+    $pending = array_values($this->tenancyInvite->pendingInvites($group));
+    $invites = $this->tenancyInvite->inviteItems($pending);
+    $invites['items'] = self::linked($invites['items'], array_map(static fn ($invite): Url => $invite->toUrl(), $pending));
+    return self::interleave(
+      $rows + ['entities' => $memberships],
+      $invites + ['entities' => $pending],
+    );
+  }
+
+  /**
+   * Makes each item's name its one link, the whole row its hit area.
+   *
+   * @param array<int, array<string, mixed>> $items
+   *   The built items.
+   * @param array<int, \Drupal\Core\Url> $urls
+   *   Each item's detail, keyed like the items.
+   *
+   * @return array<int, array<string, mixed>>
+   *   The items, each name a `link` cell.
+   */
+  private static function linked(array $items, array $urls): array {
+    foreach ($items as $index => &$item) {
+      if (!isset($item['cells']['name'], $urls[$index])) {
+        continue;
+      }
+      $url = $urls[$index]->toString();
+      $item['cells']['name'] = ['kind' => 'link', 'value' => $item['cells']['name']['value'], 'url' => $url];
+      $item['url'] = $url;
+    }
+    return $items;
   }
 
   /**
@@ -454,7 +535,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       // The first press only asks.
       MemberItemBuilder::REMOVE_PREFIX => $this->askToRemove($uid),
       MemberFaceOutcome::CANCEL => $this->rememberOutcome(MemberItemBuilder::REMOVE_ID . $uid, ''),
-      MemberFaceOutcome::CONFIRM => $this->applyRemove($group, $uid),
+      MemberFaceOutcome::CONFIRM => $this->applyRemove($group, $uid, $form_state),
       // The role VALUE is not part of the key: every option row of one
       // member's picker shares `member_role_<uid>` and differs only in the
       // submitted value, so it is read from the input directly.
@@ -500,11 +581,13 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    *   The group.
    * @param int $uid
    *   The member to remove.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state, naming the member page the removal came from.
    *
    * @return \Drupal\island\IslandResponse
-   *   The rebuild, or the page load after leaving.
+   *   The rebuild, or the page load after leaving or off a member's page.
    */
-  private function applyRemove(ContentEntityInterface $group, int $uid): IslandResponse {
+  private function applyRemove(ContentEntityInterface $group, int $uid, FormStateInterface $form_state): IslandResponse {
     $name = $this->face->memberName($group, $uid);
     $uids = $this->face->rosterUids($group);
     $this->membershipWriter->remove($group, $uid);
@@ -515,6 +598,13 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       return IslandResponse::make()->location(
         $this->tenancyInvite->isTenancy($group) ? Url::fromRoute('<front>') : $group->toUrl(),
       );
+    }
+    $data = $this->hostData($form_state);
+    if (isset($data['member'])) {
+      // A member's page whose member is gone: back to the roster.
+      $this->messenger()->addStatus($this->t('Removed @name.', ['@name' => $name]));
+      [$route, $parameters] = $data['routes']['list'];
+      return IslandResponse::make()->location(Url::fromRoute($route, $parameters));
     }
     return $this->rememberOutcome(
       $this->face->afterRemoval($group, $uids, $uid),

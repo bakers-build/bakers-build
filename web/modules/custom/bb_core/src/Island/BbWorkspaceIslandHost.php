@@ -52,7 +52,7 @@ final class BbWorkspaceIslandHost implements IslandContextProviderInterface, Isl
     // The key is `group`, not `workspace` — BbTeamIslandHost keys the same
     // way for the same reason: the shared form and island stay type-blind, and
     // this class's whole job is saying WHICH entity the route is about.
-    return ['group' => $workspace];
+    return ['group' => $workspace] + $this->memberData('bb_workspace');
   }
 
 }

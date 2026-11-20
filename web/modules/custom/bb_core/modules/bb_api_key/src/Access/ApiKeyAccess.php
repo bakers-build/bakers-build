@@ -51,6 +51,19 @@ final class ApiKeyAccess {
   }
 
   /**
+   * A key's page: who may see the list, for a key the path user owns.
+   */
+  public function view(RouteMatchInterface $route_match, AccountInterface $account): AccessResultInterface {
+    $user = $route_match->getParameter('user');
+    $consumer = $route_match->getParameter('consumer');
+    if (!$user instanceof UserInterface || !$consumer instanceof ConsumerInterface) {
+      return AccessResult::forbidden()->addCacheContexts(['user', 'url.path']);
+    }
+    return $this->keyList($route_match, $account)
+      ->andIf(AccessResult::allowedIf($this->apiKeyManager->isOwnedBy($consumer, $user))->addCacheableDependency($consumer));
+  }
+
+  /**
    * The list/create routes: the path user must be the current account.
    */
   public function personal(RouteMatchInterface $route_match, AccountInterface $account): AccessResultInterface {

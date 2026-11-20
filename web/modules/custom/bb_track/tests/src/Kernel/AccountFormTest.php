@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_track\Kernel;
 
-use Drupal\Component\Utility\Crypt;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
-use Drupal\Core\Form\EnforcedResponseException;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Lock\DatabaseLockBackend;
 use Drupal\Core\Form\FormStateInterface;
@@ -45,105 +43,42 @@ final class AccountFormTest extends WorkTimeTestBase {
   }
 
   /**
-   * Rows offer exactly the actions the default/link rules allow.
+   * Every row, archived too, is one link to its account's detail.
+   *
+   * No row carries a control: Edit, Make default and Archive are on the
+   * detail.
    */
-  public function testRowsOfferOnlyAllowedActions(): void {
-    $unlinked = $this->assignments()->saveAccount(
-      $this->projectId(),
-      ['name' => 'Unlinked', 'external_id' => 'HARV-1'],
-    );
-    $linked = $this->assignments()->saveAccount(
-      $this->projectId(),
-      ['name' => 'Linked'],
-    );
+  public function testEachRowIsOneLinkToItsDetail(): void {
+    $linked = $this->assignments()->saveAccount($this->projectId(), ['name' => 'Linked']);
     $ticket = $this->ticket('Linked ticket');
     $this->assignments()->linkTicket((int) $ticket->id(), (int) $linked->id(), 0);
+    $archived = $this->assignments()->saveAccount($this->projectId(), ['name' => 'Pilot', 'external_id' => 'HARV-P']);
+    $this->assignments()->saveAccount($this->projectId(), [
+      'name' => 'Pilot',
+      'external_id' => 'HARV-P',
+      'active' => FALSE,
+    ], (int) $archived->id());
 
     $form = $this->buildForm();
-    $controls = $form['controls'];
-    self::assertSame(['edit'], Element::children($controls[$this->accountId]));
-    self::assertSame(['edit', 'make_default', 'archive'], Element::children($controls[(int) $unlinked->id()]));
-    self::assertSame(['edit', 'archive'], Element::children($controls[(int) $linked->id()]));
-    // The default leads the list; a row names the tickets it links.
+    self::assertArrayNotHasKey('controls', $form);
+    self::assertSame([], array_filter(Element::children($form), static fn ($key) => ($form[$key]['#type'] ?? '') === 'submit'));
     $items = $form['#bb_zone']['items'];
+    // The default leads the list; a row names the tickets it links.
     self::assertSame('Project work', $items[0]['cells']['name']['value']);
     self::assertSame('Default', $items[0]['cells']['default']['label']);
     self::assertSame('Linked', $items[1]['cells']['name']['value']);
     self::assertStringStartsWith('Linked to ', $items[1]['cells']['tickets']['value']);
-  }
-
-  /**
-   * Make default moves the flag to the pressed row's account.
-   */
-  public function testMakeDefault(): void {
-    $next = $this->assignments()->saveAccount($this->projectId(), ['name' => 'Next']);
-    $this->press('make_default', (int) $next->id(), 'Make default');
-    self::assertSame((int) $next->id(), (int) $this->assignments()->defaultAccount($this->projectId())->id());
-  }
-
-  /**
-   * Archive keeps the row readable among the archived accounts.
-   */
-  public function testArchiveKeepsTheRow(): void {
-    $other = $this->assignments()->saveAccount($this->projectId(), ['name' => 'Pilot', 'external_id' => 'HARV-P']);
-    $this->press('archive', (int) $other->id(), 'Archive');
-    self::assertArrayNotHasKey((int) $other->id(), $this->assignments()->activeAccounts($this->projectId()));
-    $saved = $this->container->get('entity_type.manager')->getStorage('bb_track_account')->loadUnchanged($other->id());
-    assert($saved instanceof Account);
-    self::assertSame('HARV-P', $saved->get('external_id')->value);
-    $form = $this->buildForm();
-    self::assertSame('Pilot', $form['#bb_zone']['archived'][0]['cells']['name']['value']);
+    $rows = [...$items, ...$form['#bb_zone']['archived']];
+    $accounts = [$this->accountId, (int) $linked->id(), (int) $archived->id()];
+    foreach ($rows as $index => $item) {
+      $url = $this->container->get('entity_type.manager')->getStorage('bb_track_account')->load($accounts[$index])->toUrl()->toString();
+      self::assertSame('link', $item['cells']['name']['kind']);
+      self::assertSame($url, $item['cells']['name']['url']);
+      $kinds = array_column($item['cells'], 'kind');
+      self::assertNotContains('rendered', $kinds, 'No control in a row.');
+      self::assertNotContains('action', $kinds);
+    }
     self::assertSame('HARV-P', $form['#bb_zone']['archived'][0]['cells']['type']['value']);
-    self::assertArrayNotHasKey((int) $other->id(), $form['controls']);
-  }
-
-  /**
-   * The default has no Archive.
-   *
-   * A forged one matches no control and writes nothing.
-   */
-  public function testArchivingTheDefaultIsRefused(): void {
-    $this->press('archive', $this->accountId, 'Archive', NULL);
-    $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_track_account')->loadUnchanged($this->accountId);
-    assert($reloaded instanceof Account);
-    self::assertTrue((bool) $reloaded->get('active')->value);
-    $default = $this->assignments()->defaultAccount($this->projectId());
-    assert($default instanceof Account);
-    self::assertSame($this->accountId, (int) $default->id());
-  }
-
-  /**
-   * A row control that vanished since the page loaded acts on no account.
-   *
-   * Form API would otherwise take the first remaining button, another row's.
-   */
-  public function testStaleRowControlChangesNothing(): void {
-    $kept = $this->assignments()->saveAccount($this->projectId(), ['name' => 'Kept']);
-    $gone = $this->assignments()->saveAccount($this->projectId(), ['name' => 'Gone']);
-    // Another tab archived it after this page rendered its Archive.
-    $this->assignments()->saveAccount($this->projectId(), [
-      'name' => 'Gone',
-      'active' => FALSE,
-    ], (int) $gone->id());
-
-    $form_state = new FormState();
-    $form_state->addBuildInfo('args', [$this->project]);
-    $form_state->setRequestMethod('POST');
-    $form_state->setUserInput([
-      'form_id' => 'bb_track_account',
-      'form_token' => $this->container->get('csrf_token')->get('form_token_placeholder_' . Crypt::hashBase64('bb_track_account')),
-      'archive_' . $gone->id() => 'Archive',
-    ]);
-    try {
-      $this->container->get('form_builder')->buildForm(AccountForm::class, $form_state);
-    }
-    catch (EnforcedResponseException) {
-      // The redirect after a submit.
-    }
-    $default = $this->assignments()->defaultAccount($this->projectId());
-    assert($default instanceof Account);
-    self::assertSame($this->accountId, (int) $default->id());
-    self::assertArrayHasKey((int) $kept->id(), $this->assignments()->activeAccounts($this->projectId()));
   }
 
   /**
@@ -329,6 +264,7 @@ final class AccountFormTest extends WorkTimeTestBase {
       'bb_track.account' => [],
       'bb_track.account_add' => [],
       'bb_track.account_edit' => ['bb_track_account' => $this->accountId],
+      'entity.bb_track_account.canonical' => ['bb_track_account' => $this->accountId],
     ];
     foreach ($routes as $route => $extra) {
       self::assertTrue($access_manager->checkNamedRoute($route, $parameters + $extra, $this->employee), $route);
@@ -369,31 +305,6 @@ final class AccountFormTest extends WorkTimeTestBase {
    */
   private function buildForm(): array {
     return $this->container->get('form_builder')->getForm(AccountForm::class, $this->project);
-  }
-
-  /**
-   * Presses one row's submit, asserting the outcome message type.
-   *
-   * @param string $action
-   *   The control's action prefix.
-   * @param int $id
-   *   The row's account id.
-   * @param string $label
-   *   The control's label.
-   * @param string|null $expected
-   *   The expected message type, or NULL when nothing may happen.
-   */
-  private function press(string $action, int $id, string $label, ?string $expected = 'status'): void {
-    $form_state = new FormState();
-    $form_state->addBuildInfo('args', [$this->project]);
-    $form_state->setValues([$action . '_' . $id => $label]);
-    $this->container->get('form_builder')->submitForm(AccountForm::class, $form_state);
-    $messages = $this->container->get('messenger')->deleteAll();
-    if ($expected === NULL) {
-      self::assertSame([], $messages);
-      return;
-    }
-    self::assertArrayHasKey($expected, $messages, print_r($messages, TRUE));
   }
 
   /**

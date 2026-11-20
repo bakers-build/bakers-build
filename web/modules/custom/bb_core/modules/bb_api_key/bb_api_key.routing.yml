@@ -14,6 +14,27 @@ bb_api_key.add:
     no_cache: TRUE
     _auth: ['cookie']
 
+# The key's own page: the owner's, or a service account's workspace
+# administrator's, like the list. Contrib's canonical page is admin-only.
+bb_api_key.view:
+  path: '/user/{user}/api-keys/{consumer}'
+  methods: [GET]
+  defaults:
+    _entity_view: 'consumer.full'
+    _title: 'API key'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _custom_access: 'Drupal\bb_api_key\Access\ApiKeyAccess::view'
+    user: '\d+'
+    consumer: '\d+'
+  options:
+    parameters:
+      user:
+        type: 'entity:user'
+      consumer:
+        type: 'entity:consumer'
+    _auth: ['cookie']
+
 bb_api_key.delete:
   path: '/user/{user}/api-keys/{consumer}/delete'
   defaults:
