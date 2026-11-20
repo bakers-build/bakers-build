@@ -36,7 +36,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   workspace's teams as children and the team create action, both resolved
  *   per request. Teams are not menu links;
  * - a link with the option `bb_children: favorites` gets the account's
- *   favorite projects of the ambient workspace, and is skipped without any.
+ *   favorite projects of the ambient workspace appended to its children; a
+ *   child linking to a favorite's Tickets is dropped for that one.
  *
  * ponytail: the ambient access step only runs here. Another renderer of these
  * menus (e.g. `system_menu_block`) would show headings and `<nolink>` rows.
@@ -210,8 +211,12 @@ final class BbMenuSource extends MenuSource {
    */
   private function withRequestChildren(array $entry, ?string $kind): ?array {
     if ($kind === 'favorites') {
-      $entry['below'] = $this->favoriteItems();
-      return $entry['below'] === [] ? NULL : $entry;
+      $favorites = $this->favoriteItems();
+      // One link per destination, so one Tickets entry is current.
+      $taken = array_column(array_merge(...array_column($favorites, 'below')), 'url');
+      $own = array_filter($entry['below'], static fn (array $child): bool => !in_array($child['url'] ?? NULL, $taken, TRUE));
+      $entry['below'] = array_merge(array_values($own), $favorites);
+      return $entry;
     }
     if ($kind !== 'teams') {
       return $entry;
@@ -240,7 +245,6 @@ final class BbMenuSource extends MenuSource {
     }
     $current = $this->routeMatch->getParameter('bb_team');
     $current_id = $current instanceof BbTeamInterface ? (int) $current->id() : NULL;
-    $on_tickets = $this->routeMatch->getRouteName() === 'view.tickets.team_tickets';
     $storage = $this->entityTypeManager->getStorage('bb_team');
     $ids = $storage->getQuery()
       ->accessCheck(TRUE)
@@ -252,29 +256,15 @@ final class BbMenuSource extends MenuSource {
       if (!$team instanceof BbTeamInterface) {
         continue;
       }
-      $is_current = (int) $team->id() === $current_id;
       $items[] = [
         'title' => (string) $team->label(),
         'url' => $team->toUrl()->toString(),
-        'in_active_trail' => $is_current,
+        'in_active_trail' => (int) $team->id() === $current_id,
         'mark' => [
           'initials' => self::markInitials((string) $team->label()),
           'color' => self::markColor((int) $team->id()),
         ],
-        // The query applied bb_team.view, and the Tickets route applies the
-        // same entity access check.
-        'below' => [
-          [
-            'title' => (string) $this->t('Tickets'),
-            'url' => Url::fromRoute('view.tickets.team_tickets', [
-              'bb_workspace' => $workspace->getSlug(),
-              'bb_team' => $team->id(),
-            ])->toString(),
-            'icon' => 'ticket',
-            'in_active_trail' => $is_current && $on_tickets,
-            'below' => [],
-          ],
-        ],
+        'below' => [],
       ];
     }
     return $items;
