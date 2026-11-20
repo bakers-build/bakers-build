@@ -304,6 +304,8 @@ config:
       - core.entity_form_mode.bb_team.settings
       - core.entity_form_display.bb_team.bb_team.settings
       - core.entity_form_mode.bb_workspace.settings
+      - core.entity_form_mode.bb_machine.settings
+      - core.entity_form_mode.bb_conductor.settings
       # THE TWO PAGE LAYOUTS ARE NOT ON THIS LIST, AND THAT IS THE POINT.
       # `display_builder_page_layout.page_layout.bb_shell` was named here
       # until BB-415, and `…bb_gate` never was. Both now ship in THIS
