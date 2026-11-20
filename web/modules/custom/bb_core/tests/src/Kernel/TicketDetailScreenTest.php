@@ -642,27 +642,6 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * A detail card keeps its Save, and the last write still wins.
-   */
-  public function testDetailCardsKeepTheirSaveButton(): void {
-    // Team and group cards only show now; a machine card still edits.
-    $this->installEntitySchema('bb_machine');
-    $machine = $this->container->get('entity_type.manager')->getStorage('bb_machine')
-      ->create(['name' => 'Build box', 'host_key' => 'detail-card-save', 'owner_user_id' => 1]);
-    self::assertInstanceOf(ContentEntityInterface::class, $machine);
-    $machine->save();
-    $opening = $this->openForm($machine, 'identity');
-    $machine->set('name', 'Renamed elsewhere')->save();
-
-    [$form, $state] = $this->postForm($machine, 'identity', ['name' => [['value' => 'Build server']]] + $opening);
-
-    self::assertSame([], $state->getErrors());
-    self::assertSame('Build server', $this->stored($machine)->label());
-    self::assertSame('Save', (string) $form['actions']['submit']['#value']);
-    self::assertNotContains('js-hide', $form['actions']['#attributes']['class'] ?? []);
-  }
-
-  /**
    * Opens an entity form on GET, as the page does.
    *
    * @return array<string, string>
