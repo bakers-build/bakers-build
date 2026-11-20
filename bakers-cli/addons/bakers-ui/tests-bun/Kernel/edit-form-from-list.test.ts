@@ -357,7 +357,7 @@ async function openList(
 
 // ---- AC-1 / AC-2 ------------------------------------------------------------
 
-it('`e` on the ticket list is inert and the footer advertises no row action (BAKERS-338)', async () => {
+it('`e` on the ticket list is inert and the footer advertises no row action', async () => {
   const h = harness();
   const { tui, press, quit } = await openList(h);
   expect(plain(tui.frame())).not.toContain('e:Edit');

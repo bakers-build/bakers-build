@@ -361,7 +361,7 @@ describe('the Conductors screen', () => {
     await quit(tui);
   });
 
-  it('the list advertises no row action, and s/x/r on a row do nothing (BAKERS-338)', async () => {
+  it('the list advertises no row action, and s/x/r on a row do nothing', async () => {
     const host = fakeHost();
     const tui = await openConductors({
       host,

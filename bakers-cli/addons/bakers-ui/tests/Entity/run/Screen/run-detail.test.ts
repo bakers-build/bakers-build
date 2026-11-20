@@ -65,7 +65,7 @@ it('shows the run state the server reports now after a reload', async () => {
   expect(screen.renderNonInteractive(opened)).toContain('state:         done');
 });
 
-it('loads the run itself when opened without a ticket snapshot (BAKERS-338)', async () => {
+it('loads the run itself when opened without a ticket snapshot', async () => {
   const requests: string[] = [];
   const context = {
     params: { ticketId: 't1', runId: 'r1' },

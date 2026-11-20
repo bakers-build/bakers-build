@@ -167,7 +167,7 @@ describe('the Conductors screen', () => {
     }
   });
 
-  it('offers no Restart runs on a row (BAKERS-338)', async () => {
+  it('offers no Restart runs on a row', async () => {
     const screen = new ConductorsScreen();
     screen.enter(harness());
     await tick();

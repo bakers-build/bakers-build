@@ -119,6 +119,7 @@ entity.bb_track_account.canonical:
     _title_callback: '\Drupal\Core\Entity\Controller\EntityController::title'
   requirements:
     _entity_access: 'bb_project.update'
+    _custom_access: '\Drupal\bb_track\Access\AccountRouteAccess::ownProject'
     bb_track_account: '\d+'
   options:
     parameters:

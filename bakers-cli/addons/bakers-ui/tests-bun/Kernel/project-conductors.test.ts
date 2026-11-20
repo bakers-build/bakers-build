@@ -319,7 +319,7 @@ describe('the project-scoped Conductors tab', () => {
     await quit(tui);
   });
 
-  it('the list acts on no row: no Start/Stop, s/x do nothing (BAKERS-338)', async () => {
+  it('the list acts on no row: no Start/Stop, s/x do nothing', async () => {
     const host = fakeHost();
     const tui = await openProjectConductors({
       host,

@@ -104,6 +104,16 @@ final class AccountDetailTest extends WorkTimeTestBase {
   }
 
   /**
+   * Another project's account is not readable under this project's URL.
+   */
+  public function testAccountOfAnotherProjectIsNotFound(): void {
+    $other = $this->project->createDuplicate();
+    $other->set('key', 'OTHR')->save();
+    $foreign = $this->assignments()->saveAccount((int) $other->id(), ['name' => 'Foreign']);
+    self::assertFalse($this->routeAccess($foreign, $this->employee));
+  }
+
+  /**
    * The assignments service.
    */
   private function assignments(): WorkAssignments {

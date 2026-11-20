@@ -65,7 +65,7 @@ it('publishes count/page in meta and Enter/Tab in actions — not a status ladde
   ).toBe('x closed: hidden');
 });
 
-it('Enter opens the run detail of the selected row (BAKERS-338)', () => {
+it('Enter opens the run detail of the selected row', () => {
   const screen = new WorkspaceMemberRunsScreen();
   screen.showRows([{ id: 'r-1', ticketId: 't-1' }] as never);
   const navigate = vi.fn();

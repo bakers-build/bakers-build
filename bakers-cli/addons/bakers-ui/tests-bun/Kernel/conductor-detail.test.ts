@@ -238,7 +238,7 @@ describe('the conductor detail scope', () => {
     await quit(tui);
   });
 
-  it('`r` on the overview of an owned conductor opens Restart runs (BAKERS-338)', async () => {
+  it('`r` on the overview of an owned conductor opens Restart runs', async () => {
     const tui = await bootConductors({ currentUser: 'cw' });
     await tui.press('\r');
     await settle();
@@ -281,7 +281,7 @@ describe('the conductor detail scope', () => {
     await quit(tui);
   });
 
-  it('Enter on a held run opens that run detail (BAKERS-338)', async () => {
+  it('Enter on a held run opens that run detail', async () => {
     const tui = await bootConductors({ runs: [runDoc()] });
     await tui.press('\r');
     await settle();

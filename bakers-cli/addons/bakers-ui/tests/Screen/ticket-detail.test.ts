@@ -162,7 +162,7 @@ describe('TicketDetailScreen interaction ownership', () => {
     );
   });
 
-  it('x on the Runs tab acts on no row: Cancel run lives on the run detail (BAKERS-338)', () => {
+  it('x on the Runs tab acts on no row: Cancel run lives on the run detail', () => {
     const screen = new TicketRunsScreen();
     const ctx = context();
 

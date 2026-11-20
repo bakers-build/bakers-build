@@ -33,7 +33,9 @@ final class ListRowActionsConfigTest extends UnitTestCase {
    */
   public function testProductListRowsCarryNoActions(): void {
     $offending = [];
-    foreach (glob(dirname(__DIR__, 7) . '/config/sync/views.view.*.yml') ?: [] as $file) {
+    $files = glob(dirname(__DIR__, 7) . '/config/sync/views.view.*.yml') ?: [];
+    self::assertNotEmpty($files, 'The guard reads the exported views.');
+    foreach ($files as $file) {
       $view = Yaml::parseFile($file);
       $displays = $view['display'] ?? [];
       $defaultFields = $displays['default']['display_options']['fields'] ?? [];
