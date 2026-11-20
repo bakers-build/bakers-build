@@ -613,7 +613,8 @@ const linksSection = (
   return HeadlineMarkdown({
     id,
     headline: 'links',
-    paddingBottom: 1,
+    // The documents' marginTop spaces them; HeadlineMarkdown's default would add a row.
+    paddingBottom: 0,
     children: [
       h(
         BoxRenderable,
@@ -666,9 +667,9 @@ const overview = (id: string, props: TicketContentProps): VNode => {
         // Side by side it yields WIDTH to the sidebar; stacked, nothing may
         // squeeze its height below the documents it holds.
         flexShrink: sideBySide ? 1 : 0,
-        gap: sideBySide ? 0 : 2,
       },
-      // Links first: directly under the header at both widths.
+      // Links first: directly under the header at both widths. The documents'
+      // marginTop alone spaces them, one row as between two documents.
       ...(links === null ? [] : [links]),
       overviewDocuments(`${id}-documents`, main, props),
     ),

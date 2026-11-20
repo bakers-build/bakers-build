@@ -408,7 +408,9 @@ describe('TicketContent', () => {
         '* https://example.test/result',
         '* https://tracker.test/16',
       ]);
-      expect(head + 4).toBeLessThan(description);
+      // One blank row to the first document, as between two documents.
+      expect(linkAt(painted.rows, head + 5)).toBe('');
+      expect(description).toBe(head + 6);
       // No key, no label, no underline.
       expect(painted.frame).not.toContain('PR #229');
       expect(painted.frame).not.toContain('Result:');
