@@ -53,7 +53,6 @@ final class OnboardingFirstProjectStepTest extends KernelTestBase {
     parent::setUp();
     $this->installReadScopeEnvironment();
     $this->buildTwoWorkspaceWorld();
-    $this->installSchema('user', ['users_data']);
     $this->installEntitySchema('bb_profile');
     $this->container->get('router.builder')->rebuild();
     $this->installOnboardingFields();
