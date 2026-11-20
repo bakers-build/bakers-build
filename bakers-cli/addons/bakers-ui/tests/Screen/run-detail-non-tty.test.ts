@@ -33,7 +33,7 @@ import {
 import { ContextBag } from '../../src/Routing/context.js';
 import type { ScreenContext } from '../../src/Screen/screen.js';
 import type { TicketDetailDocument } from '../../src/types.js';
-import { nodeById, renderTree } from '../render-tree.js';
+import { renderTree } from '../render-tree.js';
 
 const RUN_ID = '69407ed7-07c2-4dc3-92fa-c1e1a1e77c0f';
 
@@ -88,7 +88,7 @@ const doc: TicketDetailDocument = {
 
 /** CAPTURED FROM THE PRE-CONVERSION BASELINE — subject 5's structured rows. */
 const ROWS = [
-  // BAKERS-332: the Links section leads; offline (no base URL, no PR) it states so.
+  // BAKERS-332: the Links section leads; with no served `url` and no PR it states so.
   'Links',
   'No links.',
   '',
@@ -199,7 +199,6 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
     // The anti-drift guard, and the reason the rows are not a second
     // description of this screen: both are projections of the same keyed
     // sections, so a section added to one appears in the other or this fails.
-    // A link's full URL is its own row, so pipe rows equal tree rows.
     for (const document of [doc, withPr]) {
       for (const runId of [RUN_ID, 'nope']) {
         const { screen, context } = await opened(document, runId);
@@ -216,42 +215,14 @@ describe('F5 — the run detail prints its own text into a pipe', () => {
     }
   });
 
-  it('a link in the pipe prints its full URL on the row below its label', async () => {
+  it('a link in the pipe prints one `* <url>` row', async () => {
     const { screen, context } = await opened(withPr, RUN_ID);
-    expect(screen.renderNonInteractive(context).slice(0, 6)).toEqual([
+    expect(screen.renderNonInteractive(context).slice(0, 4)).toEqual([
       'Links',
-      'ticket:        BB-340',
-      '  https://b.test/bakers/ticket/bb-340',
-      'PR:            PR #229',
-      '  https://github.com/o/r/pull/229',
+      '* https://b.test/bakers/ticket/bb-340',
+      '* https://github.com/o/r/pull/229',
       '',
     ]);
-  });
-
-  it('AC-2: pressing a link copies its full URL and says so', async () => {
-    const { screen, context } = await opened(withPr, RUN_ID);
-    const writer = vi.fn(() => 'copied' as const);
-    const live = { ...context, copyToClipboard: writer };
-    const row = nodeById(screen.present(live).body, 'run-detail-link-pr-0');
-    const props = row?.props as { onMouse: (event: unknown) => void };
-    expect(props, 'the PR row is rendered').toBeDefined();
-    props.onMouse({
-      type: 'down',
-      button: 0,
-      stopPropagation: () => {},
-    });
-    expect(writer).toHaveBeenCalledWith('https://github.com/o/r/pull/229');
-    expect(screen.present(live).toast).toBe(
-      'copied the link https://github.com/o/r/pull/229',
-    );
-    // Opening another run must not carry the old copy result over.
-    screen.leave();
-    screen.enter({
-      ...live,
-      params: { ticketId: 'ticket-340', runId: 'nope' },
-    });
-    await tick();
-    expect(screen.present(live).toast).toBeUndefined();
   });
 
   it('R3 — `present()` still hands over a tree and no `lines` surface', async () => {

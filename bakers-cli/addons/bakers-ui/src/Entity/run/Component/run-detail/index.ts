@@ -31,7 +31,6 @@ import {
   columnNode,
   paragraphNode,
   plainRun,
-  pressHandler,
   textNode,
 } from '../../../../lib/vnode.js';
 import type {
@@ -79,10 +78,8 @@ function scalar(value: unknown): string {
 interface KeyedRow {
   readonly key: string;
   readonly text: string;
-  /** A link row's full URL, pressed on screen. */
-  readonly href?: string;
-  /** Word-wrapped instead of cut at the edge: a URL is never shortened. */
-  readonly wrap?: boolean;
+  /** A link row: word-wrapped, never shortened, `* ` then this OSC 8 URL. */
+  readonly link?: string;
 }
 
 /** A titled block of keyed rows — the run block's own shape (see D4). */
@@ -169,24 +166,21 @@ function keyedSections(
   const a = run.attributes ?? {};
   // AC-4 (BAKERS-332): the owning ticket's URL and its PRs, before everything.
   const topLinks = ticketTopLinks(document);
-  // AC-7: each link's label row, then its full URL on the row below.
-  const linkPair = (key: string, text: string, href: string): KeyedRow[] => [
-    { key, text, href },
-    { key: `${key}-url`, text: `  ${href}`, href, wrap: true },
-  ];
+  // AC-7: one `* <full URL>` row per link; the terminal makes it an OSC 8 link.
+  const linkRow = (key: string, href: string): KeyedRow => ({
+    key,
+    text: `* ${href}`,
+    link: href,
+  });
   const linkRows: KeyedRow[] = [
     // The served ticket entry leads when present; a stored link never matches its href.
     ...topLinks
       .slice(0, 1)
       .filter((link) => link.href === document.data?.attributes?.url)
-      .flatMap((link) =>
-        linkPair('link-ticket', row('ticket', link.label), link.href),
-      ),
+      .map((link) => linkRow('link-ticket', link.href)),
     ...topLinks
       .filter((link) => link.pullRequest)
-      .flatMap((link, index) =>
-        linkPair(`link-pr-${index}`, row(link.key, link.label), link.href),
-      ),
+      .map((link, index) => linkRow(`link-pr-${index}`, link.href)),
   ];
   // The transcript/error payload no longer lives on the entity (BB-556) —
   // preSave() writes it to a private file and clears the field, so what the
@@ -320,18 +314,8 @@ function runLogUrl(
  * stops being an ATX heading has to stop being bold, which a prop the next tree
  * omits can never do (`lib/vnode.ts`).
  */
-const textRow = (
-  key: string,
-  text: string,
-  bold = false,
-  onPress?: () => void,
-): VNode =>
-  textNode({
-    id: `run-detail-${key}`,
-    content: text,
-    bold,
-    onMouse: pressHandler(onPress),
-  });
+const textRow = (key: string, text: string, bold = false): VNode =>
+  textNode({ id: `run-detail-${key}`, content: text, bold });
 
 /**
  * The sections FLATTENED into the rows the screen draws, in draw order.
@@ -353,8 +337,7 @@ function flatRows(
   key: string;
   text: string;
   bold: boolean;
-  href?: string;
-  wrap?: boolean;
+  link?: string;
 }[] {
   return keyedSections(document, runId, baseUrl).flatMap((section) => [
     { key: `section-${section.key}`, text: section.heading, bold: true },
@@ -365,8 +348,7 @@ function flatRows(
       // starting with `#` must not render one way on screen and another way in a
       // pipe. Nothing else in an entry is parsed, deliberately — see the header.
       ...markdownRow(entry.text),
-      ...(entry.href === undefined ? {} : { href: entry.href }),
-      ...(entry.wrap === true ? { wrap: true } : {}),
+      ...(entry.link === undefined ? {} : { link: entry.link }),
     })),
     // The blank row between two sections, which the flattened surface pushed
     // after every block. The kernel's non-interactive branch drops empties, so
@@ -389,26 +371,18 @@ export function runDetailTree(
   document: TicketDetailDocument,
   runId: string | null | undefined,
   baseUrl?: string | undefined,
-  onLink?: (href: string) => void,
 ): VNode {
   return columnNode(
     'run-detail',
-    ...flatRows(document, runId, baseUrl).map(
-      ({ key, text, bold, href, wrap }) => {
-        const press =
-          href === undefined || onLink === undefined
-            ? undefined
-            : () => onLink(href);
-        return wrap === true
-          ? paragraphNode({
-              id: `run-detail-${key}`,
-              runs: [plainRun(text)],
-              fg: FOREGROUND,
-              width: '100%',
-              onMouseDown: press,
-            })
-          : textRow(key, text, bold, press);
-      },
+    ...flatRows(document, runId, baseUrl).map(({ key, text, bold, link }) =>
+      link !== undefined
+        ? paragraphNode({
+            id: `run-detail-${key}`,
+            runs: [plainRun('* '), { ...plainRun(link), link }],
+            fg: FOREGROUND,
+            width: '100%',
+          })
+        : textRow(key, text, bold),
     ),
   );
 }

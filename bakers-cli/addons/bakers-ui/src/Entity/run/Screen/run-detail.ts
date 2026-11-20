@@ -1,7 +1,6 @@
 import type { VNode } from '@opentui/core';
 import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import { actionItem } from '../../../Component/footer-actions/index.js';
-import { copyThrough } from '../../../lib/clipboard.js';
 import { defineContext } from '../../../Routing/context.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import { AsyncScreen } from '../../../Screen/async-screen.js';
@@ -93,17 +92,6 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
       document,
       context.params?.runId ?? '',
       context.services?.baseUrl,
-      (href) => {
-        if (!context.isActive()) return;
-        // A terminal cannot open a browser; copying the URL is the stand-in.
-        this.toast = copyThrough(
-          context.copyToClipboard,
-          href,
-          `the link ${href}`,
-          'nothing to copy',
-        );
-        context.requestDraw();
-      },
     );
   }
 

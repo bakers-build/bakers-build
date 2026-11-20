@@ -617,30 +617,30 @@ describe('links at the top across the breakpoint', () => {
       });
       const tui = await bootDocument(document, 120, 40);
       const links = 'ticket-content-overview-links';
-      const prUrl = `${links}-items-1-url`;
+      const prRow = `${links}-items-1`;
       try {
-        expect(tui.frame()).toContain('PR #229');
-        expect(tui.frame()).toContain('BAKERS-332');
-        expect(tui.frame()).toContain('https://github.com/o/r/pull/229');
+        expect(tui.frame()).toContain('* https://github.com/o/r/pull/229');
+        expect(tui.frame()).toContain(
+          '* https://example.test/bakers/ticket/bakers-332',
+        );
         const node = tui.renderer.root.findDescendantById(links);
         expect(node, 'links section is mounted').toBeDefined();
-        const urlNode = tui.renderer.root.findDescendantById(prUrl);
-        expect(urlNode, 'PR URL row is mounted').toBeDefined();
+        const prNode = tui.renderer.root.findDescendantById(prRow);
+        expect(prNode, 'PR row is mounted').toBeDefined();
         for (const columns of [80, 120]) {
           tui.resize(columns, 40);
           await settle();
           await tui.renderOnce();
-          expect(tui.frame(), `PR at ${columns} columns`).toContain('PR #229');
           expect(tui.frame(), `PR URL at ${columns} columns`).toContain(
-            'https://github.com/o/r/pull/229',
+            '* https://github.com/o/r/pull/229',
           );
           expect(
             tui.renderer.root.findDescendantById(links) === node,
             `same links node at ${columns} columns`,
           ).toBe(true);
           expect(
-            tui.renderer.root.findDescendantById(prUrl) === urlNode,
-            `same PR URL row at ${columns} columns`,
+            tui.renderer.root.findDescendantById(prRow) === prNode,
+            `same PR row at ${columns} columns`,
           ).toBe(true);
         }
         await quit(tui);

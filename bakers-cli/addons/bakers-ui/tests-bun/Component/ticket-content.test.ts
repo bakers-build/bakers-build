@@ -15,6 +15,7 @@ import {
 } from '../../src/Entity/ticket/Component/ticket-content/model.js';
 import type { AssignmentLabels } from '../../src/Entity/ticket/Component/ticket-detail/index.js';
 import type { TicketAddons } from '../../src/Entity/ticket/Data/addons.js';
+import { UNDERLINE } from '../../src/lib/vnode.js';
 import type { JsonApiResource, TicketDetailDocument } from '../../src/types.js';
 import { type PaintedSpan, paintTree } from '../paint-tree.js';
 
@@ -344,9 +345,8 @@ describe('TicketContent', () => {
     expect(wide.frame).toContain('[Details]');
     expect(wide.frame).toContain('Related');
     expect(wide.frame).toContain('feat/a_b_c');
-    // AC-7: the short label, and the full URL written out below it.
-    expect(wide.frame).toContain('example.test/result');
-    expect(wide.frame).toContain('https://example.test/result');
+    // AC-7: the full URL, one `* <url>` row.
+    expect(wide.frame).toContain('* https://example.test/result');
     expect(wide.frame).toContain('runner-1');
     expect(wide.frame).not.toMatch(/… \+\d+ more lines/);
   });
@@ -373,14 +373,19 @@ describe('TicketContent', () => {
   const rowIndex = (rows: readonly string[], text: string): number =>
     rows.findIndex((row) => row.includes(text));
 
+  /** The `* <url>` that starts a row, ignoring a wide sidebar beside it. */
+  const linkAt = (rows: readonly string[], at: number): string =>
+    /^\* \S+/.exec(rows[at]?.trim() ?? '')?.[0] ?? '';
+
   // AC-1/AC-5/AC-7: the links sit above the first document at both widths,
-  // once, each as one short label.
+  // once, each as one `* <full URL>` row: ticket, PR, other links, origin.
   for (const width of [80, 120]) {
     it(`paints the ticket URL and the PR above the documents at ${width} columns`, async () => {
       const painted = await paintLinks(
         document({
           identifier: 'BAKERS-332',
           url: 'https://b.test/bakers/ticket/bakers-332',
+          origin: 'https://tracker.test/16',
           links: [
             { title: 'Result', uri: 'https://example.test/result' },
             { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
@@ -393,46 +398,26 @@ describe('TicketContent', () => {
           row.includes('Description') && !row.includes('Short description'),
       );
       expect(description).toBeGreaterThan(0);
-      for (const text of [
-        '* links',
-        'BAKERS-332',
-        'https://b.test/bakers/ticket/bakers-332',
-        'PR #229',
-        'https://github.com/o/r/pull/229',
-      ]) {
-        const at = rowIndex(painted.rows, text);
-        expect(at, `${text} is painted`).toBeGreaterThanOrEqual(0);
-        expect(at, `${text} comes before Description`).toBeLessThan(
-          description,
-        );
-      }
-      // AC-7: each URL starts the row right below its label (the wide
-      // sidebar may share that row to the right).
-      const below = (label: string) =>
-        (painted.rows[rowIndex(painted.rows, label) + 1] ?? '')
-          .trim()
-          .split(/\s/)[0];
-      expect(below('BAKERS-332')).toBe(
-        'https://b.test/bakers/ticket/bakers-332',
-      );
-      expect(below('PR #229')).toBe('https://github.com/o/r/pull/229');
+      const head = rowIndex(painted.rows, '* links');
+      expect(head).toBeGreaterThanOrEqual(0);
+      expect(
+        [1, 2, 3, 4].map((offset) => linkAt(painted.rows, head + offset)),
+      ).toEqual([
+        '* https://b.test/bakers/ticket/bakers-332',
+        '* https://github.com/o/r/pull/229',
+        '* https://example.test/result',
+        '* https://tracker.test/16',
+      ]);
+      expect(head + 4).toBeLessThan(description);
+      // No key, no label, no underline.
+      expect(painted.frame).not.toContain('PR #229');
+      expect(painted.frame).not.toContain('Result:');
+      for (const row of painted.spans.slice(head + 1, head + 5))
+        for (const span of row)
+          expect(span.attributes & UNDERLINE, span.text).toBe(0);
       expect(painted.frame.split('* links').length - 1).toBe(1);
     });
   }
-
-  it('prints a key once when its label repeats it', async () => {
-    const painted = await paintLinks(
-      document({
-        links: [{ title: 'PR #288', uri: 'https://github.com/o/r/pull/288' }],
-      }),
-      80,
-    );
-    const at = rowIndex(painted.rows, 'PR #288');
-    expect(painted.rows[at]?.trim()).toBe('PR #288');
-    expect(painted.rows[at + 1]?.trim()).toBe(
-      'https://github.com/o/r/pull/288',
-    );
-  });
 
   it('writes a long URL out in full, wrapped, at 60 columns', async () => {
     const url = `https://example.test/${'segment/'.repeat(12)}end`;
@@ -441,16 +426,17 @@ describe('TicketContent', () => {
       document({ links: [{ title: 'Docs', uri: url }] }),
       60,
     );
-    const label = rowIndex(painted.rows, 'Docs');
-    expect(painted.rows[label]?.trim()).toBe('Docs: example.test/…/end');
-    const after = painted.rows
-      .slice(label + 1, label + 4)
+    const at = rowIndex(painted.rows, '* https://example.test/');
+    expect(at).toBeGreaterThanOrEqual(0);
+    const wrapped = painted.rows
+      .slice(at, at + 4)
       .map((row) => row.trim())
       .join('');
-    expect(after).toContain(url);
+    expect(wrapped).toContain(`* ${url}`);
+    expect(painted.frame).not.toContain('Docs');
   });
 
-  it('gives a non-web origin one line and no URL line', async () => {
+  it('gives a non-web origin one line', async () => {
     const painted = await paintLinks(
       document({ origin: 'legacy-tracker#16', links: [] }),
       80,
@@ -472,9 +458,11 @@ describe('TicketContent', () => {
     );
     const links = rowIndex(painted.rows, '* links');
     expect(links).toBeGreaterThanOrEqual(0);
-    const items = painted.rows.slice(links + 1, links + 3).join('\n');
-    expect(items).toMatch(/ticket\s*:?\s*BAKERS-1/);
-    expect(items).not.toContain('none');
+    expect(linkAt(painted.rows, links + 1)).toBe(
+      '* https://b.test/bakers/ticket/bakers-1',
+    );
+    expect(linkAt(painted.rows, links + 2)).toBe('');
+    expect(painted.rows[links + 1]).not.toContain('none');
   });
 
   it('keeps feat/a_b_c literal in technical details and comment metadata', async () => {

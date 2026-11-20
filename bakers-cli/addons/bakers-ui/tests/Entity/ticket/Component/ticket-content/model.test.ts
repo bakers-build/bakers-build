@@ -443,7 +443,7 @@ describe('ticketContentModel Overview', () => {
     expect(model.sidebar?.links).toEqual([
       {
         key: '*not-bold*',
-        value: 'example.test/result',
+        value: 'https://example.test/result',
         href: 'https://example.test/result',
       },
     ]);
@@ -467,22 +467,22 @@ describe('ticketContentModel Overview', () => {
     expect(model.sidebar?.links).toEqual([
       {
         key: 'ticket',
-        value: 'BAKERS-332',
+        value: 'https://b.test/bakers/ticket/bakers-332',
         href: 'https://b.test/bakers/ticket/bakers-332',
       },
       {
         key: 'PR',
-        value: 'PR #229',
+        value: 'https://github.com/o/r/pull/229',
         href: 'https://github.com/o/r/pull/229',
       },
       {
         key: 'Result',
-        value: 'example.test/…/result',
+        value: 'https://example.test/a/b/result',
         href: 'https://example.test/a/b/result',
       },
       {
         key: 'origin',
-        value: 'git.test/…/16',
+        value: 'https://git.test/g/p/-/issues/16',
         href: 'https://git.test/g/p/-/issues/16',
       },
     ]);

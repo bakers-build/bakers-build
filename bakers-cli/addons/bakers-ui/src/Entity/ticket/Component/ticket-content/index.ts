@@ -27,7 +27,6 @@ import {
   plainRun,
   pressHandler,
   type StyledLine,
-  UNDERLINE,
 } from '../../../../lib/vnode.js';
 import type { TicketAddons } from '../../Data/addons.js';
 import {
@@ -593,42 +592,21 @@ const addonsCard = (
 const linksSection = (
   id: string,
   links: readonly TicketProperty[],
-  activateProperty: ((item: TicketProperty) => void) | undefined,
 ): VNode | null => {
   // No served URL and no links: no section at all, never "links : none".
   if (links.length === 0) return null;
-  // AC-7: `key: label`, then the full URL written out below; both activate.
-  // A fixed list per draw, so the index-based ids survive a resize (AC-8).
-  const rows = links.flatMap((item, index) => {
-    const row = `${id}-items-${index}`;
-    const linked = item.ticketId !== undefined || item.href !== undefined;
-    const press =
-      linked && activateProperty !== undefined
-        ? () => activateProperty(item)
-        : undefined;
-    const attributes = linked ? UNDERLINE : 0;
-    const label = paragraphNode({
-      id: row,
-      runs: [
-        plainRun(
-          item.value === item.key ? item.key : `${item.key}: ${item.value}`,
-          attributes,
-        ),
-      ],
+  // AC-7: one `* <full URL>` row per link, an OSC 8 link the terminal opens
+  // and copies (AC-2). A fixed list per draw, so the ids survive a resize (AC-8).
+  const rows = links.map((item, index) =>
+    paragraphNode({
+      id: `${id}-items-${index}`,
+      runs:
+        item.href === undefined
+          ? [plainRun(`${item.key}: ${item.value}`)]
+          : [plainRun('* '), { ...plainRun(item.href), link: item.href }],
       fg: FOREGROUND_HIGHLIGHT,
-      onMouseDown: press,
-    });
-    if (item.href === undefined) return [label];
-    return [
-      label,
-      paragraphNode({
-        id: `${row}-url`,
-        runs: [plainRun(`  ${item.href}`, attributes)],
-        fg: FOREGROUND,
-        onMouseDown: press,
-      }),
-    ];
-  });
+    }),
+  );
   return HeadlineMarkdown({
     id,
     headline: 'links',
@@ -652,11 +630,7 @@ const overview = (id: string, props: TicketContentProps): VNode => {
   const { model } = props;
   const wide = props.terminalColumns >= WIDE_OVERVIEW_COLUMNS;
   const main = model.entries.filter((entry) => entry.key !== TECHNICAL_KEY);
-  const links = linksSection(
-    `${id}-links`,
-    model.sidebar?.links ?? [],
-    props.activateProperty,
-  );
+  const links = linksSection(`${id}-links`, model.sidebar?.links ?? []);
   const sidebar =
     model.sidebar === undefined
       ? null

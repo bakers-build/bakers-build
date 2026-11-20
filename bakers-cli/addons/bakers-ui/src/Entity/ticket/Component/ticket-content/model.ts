@@ -5,7 +5,7 @@ import {
   type SectionLine,
   styledOf,
 } from '../../../../Component/section-list/index.js';
-import { linkLabel, ticketTopLinks } from '../../../../lib/ticket-links.js';
+import { ticketTopLinks } from '../../../../lib/ticket-links.js';
 import type { TicketDetailDocument } from '../../../../types.js';
 import { relativeCreated } from '../comment-item/index.js';
 import { TICKET_SECTIONS } from '../sections/index.js';
@@ -371,18 +371,14 @@ const overviewModel = (
   const details = technicalProperties(byHeading, document, labels);
   const technical = asLines(details);
   const origin = originProperty(document);
-  const links = [
-    ...ticketTopLinks(document).map(
-      ({ key, label, href }): TicketProperty => ({ key, value: label, href }),
-    ),
-    // A short label here too (AC-7); the Related `source` row keeps the full value.
-    ...(origin === undefined
-      ? []
-      : [
-          origin.href === undefined
-            ? origin
-            : { ...origin, value: linkLabel(origin.href) },
-        ]),
+  // AC-7: each link is its full URL; a non-web origin keeps `origin: value`.
+  const links: TicketProperty[] = [
+    ...ticketTopLinks(document).map(({ key, href }) => ({
+      key,
+      value: href,
+      href,
+    })),
+    ...(origin === undefined ? [] : [origin]),
   ];
   return {
     entries: [

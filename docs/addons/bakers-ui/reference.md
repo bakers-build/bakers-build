@@ -54,7 +54,7 @@ The root **Members** tab is available to workspace leads.
 
 ## The ticket sections
 
-**Overview** opens with **links**: the ticket's own web address (its identifier), then its pull or merge requests, then its other links and its origin, each one short label such as `PR #229` with its full URL written out on the line below. A click on either line copies the full URL. Below them comes the **latest summary**: the newest comment whose `bb_comment_type` is `summary`, the handoff that says where the work stands. It is a collapsible entry, a five-line extract until expanded, and "newest" is the History tab's own order. The type match is exact, so a ticket with no `summary` comment, a typo included, shows "No summary comment."
+**Overview** opens with **links**: the ticket's own web address, then its pull or merge requests, then its other links and its origin, each as one line `* <URL>` with the full URL written out. The URL is a terminal hyperlink (OSC 8), so the terminal opens and copies it; a terminal without hyperlinks shows plain text. `Y` still copies the ticket's address. Below them comes the **latest summary**: the newest comment whose `bb_comment_type` is `summary`, the handoff that says where the work stands. It is a collapsible entry, a five-line extract until expanded, and "newest" is the History tab's own order. The type match is exact, so a ticket with no `summary` comment, a typo included, shows "No summary comment."
 
 **Latest spec**, **Latest plan** and **Latest test** live on **Planning** under the same rules. **Description** starts expanded; collapsed it shows five lines, then `… +N more lines`. At 100 columns or wider a sidebar adds **Details** and **Related**: parent, sub-tickets, referenced tickets and **Blocked by**, one `<identifier> · <title>` row per blocker.
 
@@ -74,7 +74,7 @@ Rendered: headings, `**strong**`, `*em*`, `~~struck~~` (dim), code, lists, quote
 
 ### Runs
 
-The ticket's **Runs** tab lists its runs as selectable rows, newest started first. `Enter` (or a click) opens the **run detail**: links to the ticket and its pull requests (a click copies the URL; a pipe prints it), state, timing, footprint (tokens, tool calls, agent turns), worktree and the full, scrollable **Log** and **Error log**. A run in state `claimed` or `running` also offers `x` to cancel it, on the run detail and on the selected row of the Runs tab.
+The ticket's **Runs** tab lists its runs as selectable rows, newest started first. `Enter` (or a click) opens the **run detail**: the ticket's address and its pull requests, one `* <URL>` terminal hyperlink each (a pipe prints them), state, timing, footprint (tokens, tool calls, agent turns), worktree and the full, scrollable **Log** and **Error log**. A run in state `claimed` or `running` also offers `x` to cancel it, on the run detail and on the selected row of the Runs tab.
 
 The project **Runs** tab lists the project's runs, newest first, 20 per page. A `running` or `claimed` run with a heartbeat older than 600 seconds, or a lapsed claim lease, shows as `stale`. Lists state `N of M ticket(s)`: rows on screen of all rows matching the filters, `M` from the server's `meta.count`, or `?` when it reports none.
 
