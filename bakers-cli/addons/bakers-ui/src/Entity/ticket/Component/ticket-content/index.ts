@@ -20,6 +20,7 @@ import {
   FOREGROUND_ACTIVE,
   FOREGROUND_HIGHLIGHT,
 } from '../../../../lib/theme.js';
+import { linkRuns } from '../../../../lib/ticket-links.js';
 import {
   BOLD,
   DIM,
@@ -603,8 +604,10 @@ const linksSection = (
       runs:
         item.href === undefined
           ? [plainRun(`${item.key}: ${item.value}`)]
-          : [plainRun('* '), { ...plainRun(item.href), link: item.href }],
+          : linkRuns(item.href),
       fg: FOREGROUND_HIGHLIGHT,
+      // Char wrap keeps `* ` on the URL's row; word wrap would orphan it.
+      ...(item.href === undefined ? {} : { wrapMode: 'char' as const }),
     }),
   );
   return HeadlineMarkdown({

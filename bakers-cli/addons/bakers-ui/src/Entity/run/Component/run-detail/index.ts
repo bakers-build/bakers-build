@@ -26,11 +26,10 @@ import type { VNode } from '@opentui/core';
 import { markdownRow } from '../../../../Component/markdown/index.js';
 import { asString } from '../../../../lib/format.js';
 import { FOREGROUND } from '../../../../lib/theme.js';
-import { ticketTopLinks } from '../../../../lib/ticket-links.js';
+import { linkRuns, ticketTopLinks } from '../../../../lib/ticket-links.js';
 import {
   columnNode,
   paragraphNode,
-  plainRun,
   textNode,
 } from '../../../../lib/vnode.js';
 import type {
@@ -378,7 +377,8 @@ export function runDetailTree(
       link !== undefined
         ? paragraphNode({
             id: `run-detail-${key}`,
-            runs: [plainRun('* '), { ...plainRun(link), link }],
+            runs: linkRuns(link),
+            wrapMode: 'char',
             fg: FOREGROUND,
             width: '100%',
           })

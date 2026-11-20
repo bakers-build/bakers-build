@@ -311,9 +311,11 @@ it('AC-2: a link row is an OSC 8 hyperlink with no press handler of its own', ()
       content?: { chunks: readonly { text: string; link?: { url: string } }[] };
       onMouse?: unknown;
       onMouseDown?: unknown;
+      wrapMode?: string;
     };
     const links = (props.content?.chunks ?? []).filter((c) => c.link);
     expect(links.map((c) => [c.text, c.link?.url])).toEqual([[url, url]]);
     expect(props.onMouse ?? props.onMouseDown).toBeUndefined();
+    expect(props.wrapMode).toBe('char');
   }
 });

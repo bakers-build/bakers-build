@@ -1,4 +1,13 @@
 import type { TicketDetailDocument } from '../types.js';
+import { plainRun, type StyledRun } from './vnode.js';
+
+/** `* <href>`; only http(s) gets an OSC 8 target, as in `hyperlink.ts`. */
+export const linkRuns = (href: string): StyledRun[] => [
+  plainRun('* '),
+  /^https?:\/\//.test(href)
+    ? { ...plainRun(href), link: href }
+    : plainRun(href),
+];
 
 /** One link shown at the top of the ticket and run detail. */
 export interface TopLink {

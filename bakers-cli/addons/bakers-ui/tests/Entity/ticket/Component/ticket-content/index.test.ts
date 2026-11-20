@@ -20,7 +20,10 @@ const doc: TicketDetailDocument = {
       title: 'links on top',
       url: 'https://b.test/bakers/ticket/bakers-332',
       origin: 'legacy-tracker#16',
-      links: [{ title: 'PR', uri: 'https://github.com/o/r/pull/229' }],
+      links: [
+        { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
+        { title: 'Node', uri: 'internal:/node/1' },
+      ],
     },
     relationships: {},
   },
@@ -33,6 +36,7 @@ interface LinkRowProps {
     | { chunks: readonly { text: string; link?: { url: string } }[] };
   onMouseDown?: unknown;
   onMouse?: unknown;
+  wrapMode?: string;
 }
 
 const row = (index: number): LinkRowProps | undefined => {
@@ -73,12 +77,21 @@ it('renders each link as one `* <url>` OSC 8 row without a press handler', () =>
       chunks.filter((c) => c.link).map((c) => [c.text, c.link?.url]),
     ).toEqual([[url, url]]);
     expect(props?.onMouseDown ?? props?.onMouse).toBeUndefined();
+    // Char wrap keeps `* ` and an over-long URL on one row, then continues.
+    expect(props?.wrapMode).toBe('char');
   }
-  expect(row(1)).toBeDefined();
+});
+
+// Like lib/hyperlink.ts: only http(s) becomes a terminal hyperlink.
+it('writes a non-web link out without an OSC 8 target', () => {
+  const props = row(2);
+  expect(textOf(props)).toBe('* internal:/node/1');
+  const chunks = typeof props?.content === 'object' ? props.content.chunks : [];
+  expect(chunks.some((c) => c.link)).toBe(false);
 });
 
 it('keeps a non-web origin as one plain `origin: value` row', () => {
-  const props = row(2);
+  const props = row(3);
   expect(textOf(props)).toBe('origin: legacy-tracker#16');
-  expect(row(3)).toBeUndefined();
+  expect(row(4)).toBeUndefined();
 });

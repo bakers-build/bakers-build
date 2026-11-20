@@ -800,7 +800,7 @@ export interface ParagraphInput {
   readonly fg: RGBA;
   readonly attributes?: number;
   readonly width?: number | `${number}%` | 'auto';
-  readonly wrapMode?: 'word' | 'none';
+  readonly wrapMode?: 'word' | 'char' | 'none';
   readonly flexGrow?: number;
   readonly flexShrink?: number;
   readonly onMouseDown?: (() => void) | undefined;
