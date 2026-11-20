@@ -388,3 +388,18 @@ Then('the members list offers no controls', async ({ page }) => {
   await expect(page.locator(MEMBER_ITEM).first()).toBeVisible();
   await expect(page.locator(`${MEMBERS_ISLAND} [name^="remove_member_"], #members-add`)).toHaveCount(0);
 });
+
+/**
+ * Each roster row reads like a project row at any width: the mark leads in
+ * `avatar` and the name is the headline, visible rather than collapsed away.
+ */
+Then("every member row shows the person's name beside the mark", async ({ page }) => {
+  const items = page.locator(MEMBER_ITEM);
+  await expect(items.first()).toBeVisible();
+  for (const item of await items.all()) {
+    await expect(item.locator('[data-list-region="avatar"] [data-cell="mark"]')).toBeVisible();
+    const name = item.locator('[data-list-region="headline"] [data-cell="name"]');
+    await expect(name).toBeVisible();
+    await expect(name).not.toHaveText('');
+  }
+});

@@ -268,7 +268,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   The cells, keyed by the name that addresses each value.
    */
   private function cells(OgMembershipInterface $membership, array $roles, bool $may_write, bool $show_transfer): array {
-    $cells = ['person' => $this->personCell($membership)];
+    $cells = $this->personCells($membership);
     $cells += $this->rankCell($membership, $roles, $may_write);
     // A list has no header, so the status names the date.
     $cells['joined'] = [
@@ -329,38 +329,36 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   }
 
   /**
-   * The person cell, which is the SUBJECT of the item rather than a reference.
+   * The person cells: the mark, the name and, where readable, the mail.
    *
-   * THE MAIL IS OFFERED, NOT ASSUMED, and the cell derives the two-line
-   * identity from its presence. `UserAccessControlHandler` grants `view` on
-   * `mail` to the account itself and to `administer users`, so an ordinary
-   * member reading a colleague's item is refused and gets the compact identity.
-   * That is a real difference between two readers of one screen, and the honest
-   * one: the alternative is leaking an address.
+   * The row reads like a project row: the mark leads in `avatar`, the name is
+   * the headline, the mail a description line.
+   *
+   * THE MAIL IS OFFERED, NOT ASSUMED. `UserAccessControlHandler` grants `view`
+   * on `mail` to the account itself and to `administer users`, so an ordinary
+   * member reading a colleague's item gets no address rather than a leaked one.
    *
    * @param \Drupal\og\OgMembershipInterface $membership
    *   The membership.
    *
-   * @return array<string, mixed>
-   *   The cell.
+   * @return array<string, array<string, mixed>>
+   *   The `mark`, `name` and optional `mail` cells.
    */
-  private function personCell(OgMembershipInterface $membership): array {
+  private function personCells(OgMembershipInterface $membership): array {
     $account = $membership->getOwner();
-    $name = $this->displayName($membership);
-    $cell = [
-      'kind' => 'person',
-      'display_name' => $name,
-      'initials' => $this->personInitials($name),
-      'color' => $this->personColor((int) $membership->getOwnerId()),
-    ];
     if (!$account instanceof UserInterface) {
-      return $cell;
+      return ['mark' => ['kind' => 'person', 'initials' => '?', 'color' => 'offline', 'size' => 'md']];
     }
+    $mark = $this->personMark($account);
+    $cells = [
+      'mark' => ['kind' => 'person', 'size' => 'md', 'name_hidden' => TRUE] + $mark,
+      'name' => ['kind' => 'text', 'value' => $mark['display_name'], 'emphasis' => 'strong'],
+    ];
     $mail = (string) ($account->getEmail() ?? '');
     if ($mail !== '' && $account->get('mail')->access('view')) {
-      $cell['mail'] = $mail;
+      $cells['mail'] = ['kind' => 'text', 'value' => $mail, 'emphasis' => 'faint'];
     }
-    return $cell;
+    return $cells;
   }
 
   /**

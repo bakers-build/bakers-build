@@ -322,7 +322,16 @@ final class WorkspaceInvite {
       $mail = $invite->getEmail();
       $expired = $this->isExpired($invite);
       $cells = [
-        'person' => ['kind' => 'text', 'value' => $mail, 'emphasis' => 'strong'],
+        // No account yet: a neutral mark keeps the row aligned with members.
+        'mark' => [
+          'kind' => 'person',
+          'initials' => '@',
+          'color' => 'offline',
+          'size' => 'md',
+          'display_name' => $mail,
+          'name_hidden' => TRUE,
+        ],
+        'name' => ['kind' => 'text', 'value' => $mail, 'emphasis' => 'strong'],
         'role' => ['kind' => 'badge', 'label' => $this->roleLabel($invite), 'tone' => 'neutral'],
         'team' => ['kind' => 'text', 'value' => $this->teamLabel($invite)],
         // A row of the roster: its status, where a member's says Joined.

@@ -51,6 +51,28 @@ trait PersonIdentityTrait {
   }
 
   /**
+   * An account's `person` cell identity, from its computed person fields.
+   *
+   * The picture is only set when the account has one, so the cell falls back
+   * to the initials.
+   *
+   * @return array<string, string>
+   *   `display_name`, `initials`, `color` and, with a picture, `picture`.
+   */
+  protected function personMark(UserInterface $account): array {
+    $mark = [
+      'display_name' => $this->personDisplayName($account),
+      'initials' => (string) $account->get('person_initials')->value,
+      'color' => (string) $account->get('person_color')->value,
+    ];
+    $picture = (string) $account->get('person_picture')->value;
+    if ($picture !== '') {
+      $mark['picture'] = $picture;
+    }
+    return $mark;
+  }
+
+  /**
    * The full name if the account entered one, else its account name.
    *
    * Scoped to bakers.build's person props on purpose: a global

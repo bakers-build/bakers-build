@@ -648,14 +648,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
     }
     $account = $items->entity;
     if ($account instanceof UserInterface) {
-      $name = $this->personDisplayName($account);
-      return [
-        'kind' => 'person',
-        'display_name' => $name,
-        'initials' => $this->personInitials($name),
-        'color' => $this->personColor((int) $account->id()),
-        'name_hidden' => TRUE,
-      ];
+      return ['kind' => 'person', 'name_hidden' => TRUE] + $this->personMark($account);
     }
     return [
       'kind' => 'person',

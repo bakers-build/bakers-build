@@ -337,8 +337,10 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
         '#props' => [
           'layout' => 'lines',
           'pattern' => [
-            'headline' => ['person'],
+            'avatar' => ['mark'],
+            'headline' => ['name'],
             'meta' => ['team', 'joined'],
+            'description' => ['mail'],
             'right' => ['role', 'controls'],
           ],
           'items' => $built['items'],

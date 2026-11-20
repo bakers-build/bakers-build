@@ -81,3 +81,9 @@ Feature: The workspace Members screen keeps focus and says what happened
     Given I am signed in as "north-guest"
     When I request the workspace Members settings screen
     Then access to the Members settings screen is denied
+
+  Scenario: On a phone every member row still shows the name
+    Given I am signed in as a workspace lead
+    When I open the workspace Members settings screen
+    And I set the viewport to 390 by 844
+    Then every member row shows the person's name beside the mark

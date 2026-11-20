@@ -117,3 +117,9 @@ Feature: Managing a team's members keeps focus and says what happened
     Given I am signed in as "north-guest"
     When I visit the team "Platform Crew" tab "Members"
     Then the members list offers no controls
+
+  Scenario: On a phone every member row still shows the name
+    Given I am signed in as "north-lead"
+    And I visit the team "Design Crew" tab "Members"
+    When I set the viewport to 390 by 844
+    Then every member row shows the person's name beside the mark

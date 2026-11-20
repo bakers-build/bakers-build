@@ -197,6 +197,21 @@ final class GroupMembersListTest extends KernelTestBase {
   }
 
   /**
+   * A row reads like a project row: the mark leads, the name heads the text.
+   *
+   * With the whole person cell in the headline, the meta line wrapped under
+   * the circle and a phone showed the circle without the name.
+   */
+  public function testRowPutsTheMarkInAvatarAndTheNameInTheHeadline(): void {
+    $page = new Crawler($this->renderFace('team', $this->team));
+    $row = $page->filter('li[data-list-item]')->first();
+
+    self::assertCount(1, $row->filter('[data-list-region="avatar"] [data-cell="mark"]'), 'the mark leads the row');
+    self::assertSame('rosa', trim($row->filter('[data-list-region="headline"] [data-cell="name"]')->text()));
+    self::assertCount(1, $row->filter('[data-list-region="meta"] [data-cell="joined"]'), 'the status sits beside the mark');
+  }
+
+  /**
    * A reader who may not change the crew gets the roster and no affordance.
    *
    * ABSENT, NOT DISABLED. The list of people is information; the controls are
