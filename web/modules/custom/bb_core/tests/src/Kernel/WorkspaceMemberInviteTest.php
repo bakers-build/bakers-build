@@ -1060,7 +1060,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
 
     self::assertSame('Invited 1 person.', $page['#bb_result'] ?? NULL);
     self::assertSame('bb_theme:toast', $page['message']['#component'] ?? NULL);
-    // The face announces the result through Drupal.announce; the toast must not speak it twice.
+    // Drupal.announce speaks the result; the toast must not say it twice.
     self::assertSame('off', (string) ($page['message']['#props']['attributes']['aria-live'] ?? ''));
     self::assertSame('Invited 1 person.', $fragment['#bb_result'] ?? NULL, 'the same request shows it again');
     self::assertArrayNotHasKey('#bb_result', $next, 'the result is consumed');

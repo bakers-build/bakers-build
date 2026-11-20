@@ -71,7 +71,7 @@ final class MembersDialogResponse {
         '#props' => [
           'message' => $text,
           'attributes' => new Attribute([
-            // The face speaks the result through Drupal.announce; once is enough.
+            // Drupal.announce already speaks the result; once is enough.
             'aria-live' => 'off',
             'x-data' => '',
             'x-init' => 'setTimeout(() => { $el.hidden = true }, 5000)',
