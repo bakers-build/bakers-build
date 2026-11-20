@@ -4,7 +4,7 @@ Feature: A conductor owner edits a conductor on its Settings and disables it on 
   Identity card, with Disable or Enable below it. The page shows none of the
   conductor's status, last seen and load: the heartbeat writes them. The
   owner's Settings tab edits the label, served states and assignment, and
-  offers Delete; the owner disables or enables the conductor through a
+  offers Delete to whoever may delete it, the instance admin; the owner disables or enables the conductor through a
   confirmation. A peer only reads the card and gets no Settings. There is no
   administrative edit form.
   Activities list the claims of this conductor's own runs that the reader may
@@ -29,7 +29,6 @@ Feature: A conductor owner edits a conductor on its Settings and disables it on 
     Then the Settings offer "Label"
     And the Settings offer "States"
     And the Settings offer "Assignment"
-    And the Settings offer the action "Delete conductor"
     When I set "Label" to "Owner renamed conductor" on the Settings
     And I choose "plan, working" for "States" on the Settings
     And I save the Settings
@@ -77,7 +76,10 @@ Feature: A conductor owner edits a conductor on its Settings and disables it on 
     When I visit the fixture conductor "conductor.properties"
     Then the tab "Settings" is offered
     And the "Identity" card offers no Save and no inputs
-    When I open "Disable conductor"
+    When I click the tab "Settings"
+    Then the Settings offer the action "Delete conductor"
+    When I visit the fixture conductor "conductor.properties"
+    And I open "Disable conductor"
     And I choose "Keep enabled" in the dialog
     Then the fixture conductor "conductor.properties" is active
     And the fixture conductor "conductor.properties" administrative edit form answers 404

@@ -50,7 +50,6 @@ Feature: User Machines listing and View
     Then the Settings offer "Name"
     And the Settings offer "Max parallel"
     And the Settings offer "Assignment"
-    And the Settings offer the action "Delete machine"
     When I visit the former edit address of the machine "e2e default host"
     Then the address is the detail of the machine "e2e default host"
     And the page heading is "e2e default host"

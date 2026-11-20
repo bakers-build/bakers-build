@@ -163,6 +163,18 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
+   * Settings offer Delete in a danger zone to who may delete, not the owner.
+   */
+  public function testSettingsOfferDeleteOnlyToWhoMayDelete(): void {
+    $builder = $this->container->get('entity.form_builder');
+    $this->actAs($this->accounts['lead']);
+    self::assertArrayNotHasKey('danger_zone', $builder->getForm($this->labelled, 'settings'));
+    $this->actAs($this->createAccount('machine-admin', ['administer bakers']));
+    $form = $builder->getForm($this->labelled, 'settings');
+    self::assertSame('Delete machine', (string) ($form['danger_zone']['#props']['title'] ?? ''));
+  }
+
+  /**
    * Delete sits in the owner's user area, with today's delete access.
    */
   public function testDeleteIsInTheUserArea(): void {
