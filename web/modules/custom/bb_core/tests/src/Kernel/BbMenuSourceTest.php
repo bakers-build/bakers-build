@@ -76,6 +76,7 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->installEntitySchema('bb_group');
     $this->installEntitySchema('bb_project');
     $this->installEntitySchema('bb_profile');
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['system', 'user']);
     $this->setUpCurrentUser(['uid' => 1]);
 

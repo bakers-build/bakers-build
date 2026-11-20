@@ -62,7 +62,6 @@ abstract class ActivityMailKernelTestBase extends KernelTestBase {
     parent::setUp();
     // Before any account exists: hook_user_insert writes a row per account.
     $this->installEntitySchema('bb_notification_setting');
-    $this->installSchema('user', ['users_data']);
     $this->installConfig(['system']);
     $this->installReadScopeEnvironment();
     $this->installEntitySchema('bb_activity');

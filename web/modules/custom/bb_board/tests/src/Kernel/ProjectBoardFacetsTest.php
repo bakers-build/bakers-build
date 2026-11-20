@@ -101,7 +101,6 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     parent::setUp();
     $this->installEntitySchema('search_api_task');
     $this->installSchema('search_api', ['search_api_item']);
-    $this->installSchema('user', ['users_data']);
     $this->installEntitySchema('bb_activity');
     $this->installReadScopeEnvironment();
     $this->installConfig(['search_api']);

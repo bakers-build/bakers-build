@@ -43,6 +43,7 @@ final class BbProfileTest extends KernelTestBase {
     foreach (['user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group', 'bb_project', 'bb_profile'] as $type) {
       $this->installEntitySchema($type);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['user']);
     $this->installOgScopeFixture();
     $this->createUser([], 'uid1-dummy');
@@ -117,6 +118,7 @@ final class BbProfileTest extends KernelTestBase {
       'favorite_projects' => [7],
       'changed' => 200,
     ])->save();
+    $this->setDefaultProfile($account, 'Onboarding title', 'Onboarding.');
     $profiles = $this->container->get(Profiles::class);
 
     $new = $profiles->forEditing((int) $account->id(), (int) $south->id());
@@ -152,8 +154,50 @@ final class BbProfileTest extends KernelTestBase {
     self::assertCount(2, $profiles->ofAccount((int) $account->id()), 'an existing profile stays the only one');
 
     $newcomer = $this->person();
+    $this->setDefaultProfile($newcomer, '', '');
     $this->addMembership($south, $newcomer);
     self::assertSame([], $profiles->ofAccount((int) $newcomer->id()), 'no source profile: nothing stored');
+  }
+
+  /**
+   * Without a stored profile, a new one starts from the default profile.
+   */
+  public function testNewProfileFallsBackToTheDefaultProfile(): void {
+    $account = $this->person();
+    $north = $this->workspace('north');
+    $south = $this->workspace('south');
+    $this->setDefaultProfile($account, 'Product Lead', 'I ship Drupal.');
+    $profiles = $this->container->get(Profiles::class);
+
+    $new = $profiles->forEditing((int) $account->id(), (int) $north->id());
+    self::assertSame(['Product Lead', 'I ship Drupal.'], [$new->position(), $new->background()]);
+    $read = $profiles->forAccount((int) $account->id(), (int) $north->id());
+    self::assertSame(['', ''], [$read->position(), $read->background()], 'readers see no default profile');
+
+    $this->addMembership($south, $account);
+    $stored = $profiles->ofAccount((int) $account->id())[(int) $south->id()] ?? NULL;
+    self::assertNotNull($stored, 'the first workspace stores the default profile');
+    self::assertSame(['Product Lead', 'I ship Drupal.'], [$stored->position(), $stored->background()]);
+  }
+
+  /**
+   * Deleting the account removes its default profile.
+   */
+  public function testAccountDeletionClearsTheDefaultProfile(): void {
+    $account = $this->person();
+    $this->setDefaultProfile($account, 'Product Lead', 'I ship Drupal.');
+    $uid = (int) $account->id();
+
+    $account->delete();
+
+    self::assertNull($this->container->get('user.data')->get('bb_core', $uid, 'default_profile'));
+  }
+
+  /**
+   * Stores the account's default profile as the onboarding wizard does.
+   */
+  private function setDefaultProfile(UserInterface $account, string $position, string $background): void {
+    $this->container->get(Profiles::class)->setDefaultProfile((int) $account->id(), $position, $background);
   }
 
   /**
