@@ -301,10 +301,11 @@ final class BbMenuSource extends MenuSource {
       if (!$project instanceof BbProjectInterface || !$project->access('view')) {
         continue;
       }
+      $is_current = (int) $project->id() === $current_id;
       $items[] = [
         'title' => (string) $project->label(),
         'url' => $project->toUrl()->toString(),
-        'in_active_trail' => (int) $project->id() === $current_id,
+        'in_active_trail' => $is_current,
         'mark' => [
           'initials' => self::markInitials((string) $project->label()),
           'color' => self::markColor((int) $project->id()),
@@ -315,10 +316,13 @@ final class BbMenuSource extends MenuSource {
             'title' => (string) $this->t('Tickets'),
             'url' => Url::fromRoute('view.tickets.project_tickets', [
               'bb_workspace' => $workspace->getSlug(),
-              'bb_project' => $project->id(),
+              // The request's own form (id, UUID or key), as
+              // `bb_core.rail.project_tickets` uses it, so the dedupe in
+              // `withRequestChildren()` matches.
+              'bb_project' => $is_current ? $this->routeMatch->getRawParameter('bb_project') : $project->id(),
             ])->toString(),
             'icon' => 'ticket',
-            'in_active_trail' => (int) $project->id() === $current_id && $on_tickets,
+            'in_active_trail' => $is_current && $on_tickets,
             'below' => [],
           ],
         ],

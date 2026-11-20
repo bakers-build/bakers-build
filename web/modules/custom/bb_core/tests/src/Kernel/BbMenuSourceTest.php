@@ -578,6 +578,18 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->visit('entity.bb_project.canonical', ['bb_workspace' => 'acme', 'bb_project' => $favorite->id()]);
     self::assertSame([], $this->currentTickets($this->emitted()));
     self::assertSame(['Alpha'], array_column($this->projectsRow()['below'], 'title'), 'one link per ticket list');
+
+    // The rail links a project by its key, e.g. `/acme/project/alpha`.
+    foreach (['ALPHA', 'alpha'] as $key) {
+      $this->visit('entity.bb_project.canonical', ['bb_workspace' => 'acme', 'bb_project' => $key]);
+      self::assertSame(['Alpha'], array_column($this->projectsRow()['below'], 'title'), "one link per ticket list by key $key");
+
+      $this->visit('view.tickets.project_tickets', ['bb_workspace' => 'acme', 'bb_project' => $key]);
+      $below = $this->projectsRow()['below'];
+      self::assertSame(['Alpha'], array_column($below, 'title'), "no contextual Tickets beside the favorite by key $key");
+      self::assertCount(1, $this->currentTickets($this->emitted()));
+      self::assertTrue($below[0]['below'][0]['in_active_trail']);
+    }
   }
 
   /**

@@ -49,7 +49,12 @@ Then('the rail lists the favorite {string} under Projects', async ({ page }, nam
 });
 
 Then('the rail lists the Tickets of the favorite {string}', async ({ page }, name: string) => {
-  await expect(railRow(page, name).getByRole('link', { name: 'Tickets', exact: true })).toHaveAttribute('href', /\/project\/\d+\/tickets$/);
+  await expect(railRow(page, name).getByRole('link', { name: 'Tickets', exact: true })).toHaveAttribute('href', /\/project\/[^/]+\/tickets$/);
+});
+
+// One link per ticket list: no `Projects` › `Tickets` beside the favorite's own.
+Then('the rail offers a single Tickets link', async ({ page }) => {
+  await expect(page.locator(RAIL_ISLAND).getByRole('link', { name: 'Tickets', exact: true })).toHaveCount(1);
 });
 
 Then('the rail has no Favorites section', async ({ page }) => {
@@ -67,7 +72,7 @@ When('I open the Tickets of the favorite {string} from the rail', async ({ page 
   const before = page.url();
   await railRow(page, name).getByRole('link', { name: 'Tickets', exact: true }).click();
   await expect.poll(() => page.url(), { timeout: 20000 }).not.toBe(before);
-  expect(page.url()).toMatch(/\/project\/\d+\/tickets$/);
+  expect(page.url()).toMatch(/\/project\/[^/]+\/tickets$/);
 });
 
 // `aria-current` is what `nav` emits for the current entry.

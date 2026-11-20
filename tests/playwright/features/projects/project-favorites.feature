@@ -26,9 +26,14 @@ Feature: Favorite projects in the navigation rail
   Scenario: On a favorite's ticket list only its own Tickets is current
     When I visit the project "bakers.build Platform"
     And I click the favorite toggle "Add to favorites"
-    And I open the Tickets of the favorite "bakers.build Platform" from the rail
+    And I visit the "Projects" listing
+    And I open the favorite "bakers.build Platform" from the rail
+    Then the rail offers a single Tickets link
+    When I open the Tickets of the favorite "bakers.build Platform" from the rail
     And I click the rail entry "My work"
-    And I open the Tickets of the favorite "bakers.build Platform" from the rail
+    And I open the favorite "bakers.build Platform" from the rail
+    Then the rail offers a single Tickets link
+    When I open the Tickets of the favorite "bakers.build Platform" from the rail
     Then exactly one rail Tickets entry is current, the one of the favorite "bakers.build Platform"
     When I reload the page
     Then exactly one rail Tickets entry is current, the one of the favorite "bakers.build Platform"
