@@ -153,7 +153,10 @@ carve-out to look up before designing a create surface.
 **Nothing here weakens *Inline edit*.** A reversible organisation field —
 a membership role, a project's teams, a term's weight — is picked in place
 under that section's existing rule, and none of them has a side effect to
-name.
+name. **In place means on the record's detail page, never on a list row**
+(BAKERS-338): a list row only opens its entity's detail page and carries no
+control — no inline picker, no row button, no action menu, no row submit
+(`layout.md` states the rule and its exemptions).
 
 ## The widget grammar of an add or edit surface
 

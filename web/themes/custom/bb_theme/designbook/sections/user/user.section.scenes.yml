@@ -2198,7 +2198,9 @@ scenes:
     docs: >-
       BB-668 design preview, no backend. `/user/{user}/api-keys`: the
       owner-only listing of self-service pipeline credentials (Name, Client
-      ID, Created, Expires, Status, Revoke). Reuses `list` and `badge`
+      ID, Created, Expires, Status). Each row only opens the key's page
+      (`/user/{user}/api-keys/{id}`), which carries Revoke; the name is the
+      link and the row has no action (BAKERS-338). Reuses `list` and `badge`
       exactly as `personal-time` reuses them for the week's entries; no new
       component was needed.
     items:
@@ -2227,10 +2229,12 @@ scenes:
                   - component: bb_theme:list
                     props:
                       items:
-                        - cells:
+                        - url: /user/7/api-keys/3
+                          cells:
                             name:
-                              kind: text
+                              kind: link
                               value: Pipeline deploy
+                              url: /user/7/api-keys/3
                             client_id:
                               kind: text
                               value: bakers-key-7f3a9c2e
@@ -2246,15 +2250,12 @@ scenes:
                               props:
                                 label: Active
                                 tone: running
-                            revoke:
-                              kind: link
-                              value: Revoke
-                              url: >-
-                                /?path=/story/designbook-sections-user-scenes--api-keys-list
-                        - cells:
+                        - url: /user/7/api-keys/2
+                          cells:
                             name:
-                              kind: text
+                              kind: link
                               value: Nightly report
+                              url: /user/7/api-keys/2
                             client_id:
                               kind: text
                               value: bakers-key-1b8e4f10
@@ -2270,11 +2271,6 @@ scenes:
                               props:
                                 label: Expired
                                 tone: critical
-                            revoke:
-                              kind: link
-                              value: Revoke
-                              url: >-
-                                /?path=/story/designbook-sections-user-scenes--api-keys-list
   - name: api-keys-list-empty
     group: User
     section: user
