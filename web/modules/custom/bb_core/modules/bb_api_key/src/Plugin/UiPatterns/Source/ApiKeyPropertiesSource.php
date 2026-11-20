@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Drupal\bb_api_key\Plugin\UiPatterns\Source;
 
 use Drupal\Component\Datetime\TimeInterface;
-use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_api_key\Plugin\views\field\ApiKeyStatus;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\consumers\Entity\ConsumerInterface;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
@@ -33,7 +33,7 @@ final class ApiKeyPropertiesSource extends SourcePluginBase {
   /**
    * Formats the key's dates.
    */
-  protected DateFormatterInterface $dateFormatter;
+  protected BbDate $date;
 
   /**
    * The current time, for the status.
@@ -45,7 +45,7 @@ final class ApiKeyPropertiesSource extends SourcePluginBase {
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $instance->dateFormatter = $container->get('date.formatter');
+    $instance->date = $container->get(BbDate::class);
     $instance->time = $container->get('datetime.time');
     return $instance;
   }
@@ -91,7 +91,7 @@ final class ApiKeyPropertiesSource extends SourcePluginBase {
    * A stored timestamp as a date, or a dash.
    */
   private function date(mixed $timestamp): string {
-    return is_numeric($timestamp) ? $this->dateFormatter->format((int) $timestamp, 'custom', 'Y-m-d') : '—';
+    return is_numeric($timestamp) ? $this->date->date((int) $timestamp) : '—';
   }
 
 }
