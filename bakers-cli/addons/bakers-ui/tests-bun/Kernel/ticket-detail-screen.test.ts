@@ -445,9 +445,12 @@ describe('Overview — open Description, header identity, no carets', () => {
     expect(header, 'Description is the first overview entry').toBeGreaterThan(
       0,
     );
-    expect(body.slice(1, header).filter((line) => line.includes('* '))).toEqual(
-      [],
-    );
+    // Only `* <URL>` link rows; no other headline above Description.
+    expect(
+      body
+        .slice(1, header)
+        .filter((line) => line.includes('* ') && !/\* https?:\/\//.test(line)),
+    ).toEqual([]);
     expect(body[header]).not.toMatch(NATIVE_CARET);
     await quit(tui);
   });
@@ -518,12 +521,10 @@ describe('Overview — parent on the sidebar, links in the left column', () => {
     expect(chrome).not.toContain('Created by:');
     expect(bodyRows(tui).join('\n')).toMatch(/parent\s+:\s+BB-200/);
     const body = bodyRows(tui);
-    // Links render at the top of the left column: the short label, then the
-    // full URL on the row below (BAKERS-332).
+    // Links render at the top of the left column, one `* <URL>` row each.
     expect(body.some((row) => row.includes('* links'))).toBe(true);
-    expect(body.join('\n')).toMatch(
-      /MR: git\.example\/…\/255[\s│]+https:\/\/git\.example\/mr\/255/,
-    );
+    expect(body.join('\n')).toContain('* https://git.example/mr/255');
+    expect(body.join('\n')).not.toContain('MR:');
     await quit(tui);
   });
 

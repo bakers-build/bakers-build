@@ -27,11 +27,7 @@ import { markdownRow } from '../../../../Component/markdown/index.js';
 import { asString } from '../../../../lib/format.js';
 import { FOREGROUND } from '../../../../lib/theme.js';
 import { linkRuns, ticketTopLinks } from '../../../../lib/ticket-links.js';
-import {
-  columnNode,
-  paragraphNode,
-  textNode,
-} from '../../../../lib/vnode.js';
+import { columnNode, paragraphNode, textNode } from '../../../../lib/vnode.js';
 import type {
   JsonApiResource,
   TicketDetailDocument,
