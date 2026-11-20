@@ -100,6 +100,8 @@ async function openMachines() {
     },
     patch: async () => ({}),
     post: async () => ({}),
+    // bakers_run_list restartable: nothing on this machine to restart.
+    callTool: async () => ({ runs: [] }),
   } as unknown as DropshClient;
   const services: RendererServices = {
     client,

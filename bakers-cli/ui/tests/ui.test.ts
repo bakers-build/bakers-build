@@ -9,8 +9,13 @@ import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { BbCommandHost, BbConnectionConfig } from '@bakers-build/core';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cmdUi, type RunBbUiOptions, runLogReader } from '../src/ui.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  cmdUi,
+  type RunBbUiOptions,
+  runLogReader,
+  siteToolCaller,
+} from '../src/ui.js';
 
 // BB-201 (AC-3): `bakers ui` reads its connection scope + the registry and
 // delegates to `runBbUi`.
@@ -897,5 +902,29 @@ describe('runLogReader', () => {
     await expect(reader(404, 'nope').read('run-1', 'log')).rejects.toThrow(
       '404',
     );
+  });
+});
+
+describe('siteToolCaller', () => {
+  it('calls the site tool by its wire name and returns its structured result', async () => {
+    const call = vi.fn(async () => ({
+      content: [],
+      structuredContent: { runs: ['run-1'] },
+    }));
+    const callTool = siteToolCaller({ call } as never);
+    await expect(
+      callTool('bakers_run_cancel', { runs: ['run-1'], reason: 'stop' }),
+    ).resolves.toEqual({ runs: ['run-1'] });
+    expect(call).toHaveBeenCalledWith('tool_api__bakers_run_cancel', {
+      runs: ['run-1'],
+      reason: 'stop',
+    });
+  });
+
+  it('answers an empty result for a tool without structured content', async () => {
+    const callTool = siteToolCaller({
+      call: async () => ({ content: [] }),
+    } as never);
+    await expect(callTool('bakers_run_list', {})).resolves.toEqual({});
   });
 });

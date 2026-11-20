@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   cancelTicketRequest,
-  restartRunRequest,
+  restartTicketRequest,
 } from '../../../../src/Entity/ticket/Screen/ticket-actions.js';
 import {
   TicketDetailScreen,
@@ -16,11 +16,7 @@ import {
 import type { ScreenContext } from '../../../../src/Screen/screen.js';
 import type { TicketDetailDocument } from '../../../../src/types.js';
 import { renderTree } from '../../../render-tree.js';
-import {
-  type FakeClient,
-  fakeClient,
-  queryStringOf,
-} from '../../../test-support.js';
+import { type FakeClient, fakeClient } from '../../../test-support.js';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -166,174 +162,121 @@ const withRuns = (...runs: ReturnType<typeof run>[]): TicketDetailDocument => ({
   included: runs,
 });
 
-describe('restart run through the confirmation dialog', () => {
-  it.each([
-    [
-      'an included claimed run',
-      ticket({ state: 'working' }, [run('run-1', 'claimed', 7)]),
-    ],
-    [
-      'derived_status running',
-      ticket({ state: 'working', derived_status: 'running' }),
-    ],
-  ])('r is offered with %s', (_name, document) => {
-    const { screen, context } = detailFor(document);
+/** A client whose site tools list `runs` as the ticket's restartable runs. */
+const siteWith = (
+  runs: { uuid: string; number: number; state: string }[],
+  documents: Record<string, unknown> = {},
+) => {
+  const callTool = vi.fn(async (name: string, args: Record<string, unknown>) =>
+    name === 'bakers_run_list'
+      ? {
+          runs: runs.map((run) => ({
+            ...run,
+            ticket: 'BB-1',
+            ticket_title: 'A ticket',
+          })),
+          next_offset: null,
+        }
+      : { runs: args.runs },
+  );
+  return Object.assign(fakeClient({ documents }), { callTool });
+};
+
+describe('restart runs of a ticket through the confirmation dialog', () => {
+  it('r is offered on an open ticket that is not frozen', () => {
+    const { screen, context } = detailFor(ticket({ state: 'working' }));
     expect(screen.actionForInput?.('r', context)).toMatchObject({
       type: 'navigate',
       routeId: ConfirmDialogScreen.route.id,
     });
-    expect(keysOf(screen, context)).toContain('r restart run');
+    expect(keysOf(screen, context)).toContain('r restart runs');
   });
 
-  it('r is not offered without an active run', () => {
-    const { screen, context } = detailFor(
-      ticket({ state: 'working', derived_status: 'done' }, [
-        run('run-1', 'done', 6),
-      ]),
-    );
+  it.each([
+    ['frozen', ticket({ state: 'working', frozen: true })],
+    ['closed', ticket({ state: 'done' })],
+  ])('r is not offered on a %s ticket', (_name, document) => {
+    const { screen, context } = detailFor(document);
     expect(screen.actionForInput?.('r', context)).toBeUndefined();
-    expect(keysOf(screen, context)).not.toContain('r restart run');
+    expect(keysOf(screen, context)).not.toContain('r restart runs');
   });
 
-  it('reads the runs when it opens and names the active one', async () => {
-    const client = fakeClient({
-      documents: {
-        'bb_ticket/bb_ticket/ticket-1': withRuns(
-          run('run-0', 'done', 6),
-          run('run-1', 'running', 7),
-        ),
-      },
-    });
+  it("asks the site for the ticket's runs and names them, with OK and Cancel", async () => {
+    const client = siteWith([{ uuid: 'run-1', number: 7, state: 'failed' }]);
     const { screen, context } = await dialogFor(
-      restartRunRequest('ticket-1', 'BB-1'),
+      restartTicketRequest('ticket-1', 'BB-1'),
       client,
     );
-    const query = decodeURIComponent(queryStringOf(client.requests[0]?.params));
-    expect(client.requests[0]?.path).toBe('bb_ticket/bb_ticket/ticket-1');
-    expect(query).toContain('include=runs');
-    expect(query).toContain('fields[bb_run--bb_run]=state,drupal_internal__id');
+    expect(client.callTool).toHaveBeenCalledWith('bakers_run_list', {
+      ticket: 'ticket-1',
+      restartable: true,
+    });
     const shown = screen.present(context);
-    expect(shown.title).toBe('↻ Restart run');
+    expect(shown.title).toBe('↻ Restart runs');
     const text = renderTree(shown.body)
       .map((row) => row.trim())
       .join(' ');
-    expect(text).toContain('Restart run #7 of BB-1?');
-    expect(text).toContain(
-      'The active run is cancelled; the conductor starts a new one.',
-    );
+    expect(text).toContain('Restart BB-1?');
+    expect(text).toContain('run #7 (failed) is cancelled');
+    expect(text).toContain('[ OK ]');
+    expect(text).not.toContain('[x]');
   });
 
-  it('confirming cancels exactly the active run and writes nothing else', async () => {
-    const client = fakeClient({
-      documents: {
-        'bb_ticket/bb_ticket/ticket-1': withRuns(
-          run('run-0', 'done', 6),
-          run('run-1', 'running', 7),
-        ),
-      },
+  it('OK cancels its runs through bakers_run_cancel and returns the ticket as read after', async () => {
+    const after = ticket({ state: 'working', derived_status: 'idle' });
+    const client = siteWith([{ uuid: 'run-1', number: 7, state: 'running' }], {
+      'bb_ticket/bb_ticket/ticket-1': after,
     });
     const { screen, context } = await dialogFor(
-      restartRunRequest('ticket-1', 'BB-1'),
+      restartTicketRequest('ticket-1', 'BB-1'),
       client,
     );
     screen.handleInput('enter', context);
     await settle();
-    expect(client.writes).toEqual([
-      {
-        type: 'bb_run--bb_run',
-        id: 'run-1',
-        body: { attributes: { state: 'cancelled' } },
-      },
-    ]);
-    expect(context.back).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'run-cancelled', runId: 'run-1' }),
-    );
-  });
-
-  it('returns the ticket as read after the cancel, so a stale derived_status does not keep r', async () => {
-    const before = withRuns(run('run-1', 'running', 7));
-    before.data = {
-      ...before.data,
-      type: 'bb_ticket--bb_ticket',
-      id: 'ticket-1',
-      attributes: { identifier: 'BB-1', derived_status: 'running' },
-    };
-    const after = withRuns(run('run-1', 'cancelled', 7));
-    after.data = {
-      ...after.data,
-      type: 'bb_ticket--bb_ticket',
-      id: 'ticket-1',
-      attributes: { identifier: 'BB-1', derived_status: 'cancelled' },
-    };
-    const client = fakeClient();
-    client.get = vi
-      .fn()
-      .mockResolvedValueOnce(before)
-      .mockResolvedValueOnce(after);
-    const { screen, context } = await dialogFor(
-      restartRunRequest('ticket-1', 'BB-1'),
-      client,
-    );
-    screen.handleInput('enter', context);
-    await settle();
-    expect(client.writes).toHaveLength(1);
+    expect(client.callTool).toHaveBeenCalledWith('bakers_run_cancel', {
+      runs: ['run-1'],
+      reason: 'Restart runs (ticket BB-1)',
+    });
+    expect(client.writes).toEqual([]);
     const result = vi.mocked(context.back).mock.calls[0]?.[0] as {
+      type: string;
       document: TicketDetailDocument;
     };
-    expect(result.document.data?.attributes?.derived_status).toBe('cancelled');
+    expect(result.type).toBe('run-cancelled');
+    expect(result.document.data?.attributes?.derived_status).toBe('idle');
   });
 
   it('a failed read after the cancel still reports the cancel', async () => {
-    const client = fakeClient();
-    client.get = vi
-      .fn()
-      .mockResolvedValueOnce(withRuns(run('run-1', 'running', 7)))
-      .mockRejectedValueOnce(new Error('offline'));
+    const client = siteWith([{ uuid: 'run-1', number: 7, state: 'running' }]);
+    client.get = vi.fn().mockRejectedValue(new Error('offline'));
     const { screen, context } = await dialogFor(
-      restartRunRequest('ticket-1', 'BB-1'),
+      restartTicketRequest('ticket-1', 'BB-1'),
       client,
     );
     screen.handleInput('enter', context);
     await settle();
-    expect(client.writes).toHaveLength(1);
     expect(context.back).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'run-cancelled', runId: 'run-1' }),
+      expect.objectContaining({ type: 'run-cancelled' }),
     );
   });
 
-  it('a run that ended before the dialog opened is not cancelled', async () => {
-    const client = fakeClient({
-      documents: {
-        'bb_ticket/bb_ticket/ticket-1': withRuns(run('run-1', 'done', 7)),
-      },
-    });
+  it('a ticket with nothing to restart says so and cancels nothing', async () => {
+    const client = siteWith([]);
     const { screen, context } = await dialogFor(
-      restartRunRequest('ticket-1', 'BB-1'),
+      restartTicketRequest('ticket-1', 'BB-1'),
       client,
     );
     expect(renderTree(screen.present(context).body)).toContain(
-      'No active run any more.',
+      'There is no run to restart.',
     );
-    // Only Close is offered; Enter presses it.
     expect(screen.handleInput('enter', context)).toBe(true);
     expect(screen.takeAction()).toEqual({ type: 'back' });
     await settle();
-    expect(client.writes).toEqual([]);
-  });
-
-  it('Esc writes nothing', async () => {
-    const client = fakeClient({
-      documents: {
-        'bb_ticket/bb_ticket/ticket-1': withRuns(run('run-1', 'running', 7)),
-      },
-    });
-    const { screen, context } = await dialogFor(
-      restartRunRequest('ticket-1', 'BB-1'),
-      client,
-    );
-    screen.handleInput('escape', context);
-    expect(screen.takeAction()).toEqual({ type: 'back' });
-    expect(client.writes).toEqual([]);
+    expect(
+      client.callTool.mock.calls.filter(
+        ([name]) => name === 'bakers_run_cancel',
+      ),
+    ).toEqual([]);
   });
 
   it('the detail keeps its own includes when the cancelled run comes back', () => {
@@ -356,6 +299,5 @@ describe('restart run through the confirmation dialog', () => {
     expect(included.find((r) => r.id === 'run-1')?.attributes?.state).toBe(
       'cancelled',
     );
-    expect(screen.actionForInput?.('r', context)).toBeUndefined();
   });
 });

@@ -387,12 +387,12 @@ importers:
 
   addons/herdr-core:
     dependencies:
-      '@bakers-build/addon-workspace-git':
-        specifier: workspace:^
-        version: link:../workspace-git
       '@bakers-build/addon-herdr':
         specifier: workspace:^
         version: link:../herdr
+      '@bakers-build/addon-workspace-git':
+        specifier: workspace:^
+        version: link:../workspace-git
     devDependencies:
       '@bakers-build/conductor':
         specifier: workspace:^
@@ -882,6 +882,9 @@ importers:
       '@bakers-build/core':
         specifier: workspace:^
         version: link:../core
+      '@dropsh/plugin-tool':
+        specifier: ^0.8.2
+        version: 0.8.2(dropsh@0.8.2(patch_hash=50e2bc365918a3fc358150f6c87ed4b4b6f19d512e76074d245fe805662d5c88))(zod@4.6.7)
       commander:
         specifier: ^12.1.0
         version: 12.1.0

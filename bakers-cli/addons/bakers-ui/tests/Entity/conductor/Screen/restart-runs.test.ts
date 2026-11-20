@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  restartCoveredRuns,
+  type RestartableTicket,
   restartRunsRequest,
 } from '../../../../src/Entity/conductor/Screen/restart-runs.js';
 import { ContextBag } from '../../../../src/Routing/context.js';
@@ -11,115 +11,49 @@ import {
 } from '../../../../src/Screen/confirm-dialog.js';
 import type { ScreenContext } from '../../../../src/Screen/screen.js';
 import { renderTree } from '../../../render-tree.js';
-import { fakeClient, queryStringOf } from '../../../test-support.js';
+import { fakeClient } from '../../../test-support.js';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-type Run = {
-  id: string;
-  state: string;
-  ticket: string;
-  log?: string;
-  changed?: number;
-};
-type Ticket = {
-  id: string;
-  identifier: string;
-  closed?: boolean;
-  frozen?: boolean;
-};
-
-/**
- * The same shape as the PHP kernel fixture (RestartRunsTest): active runs,
- * a ticket whose newest run failed, one whose failure was followed by a
- * done run, and a closed ticket whose newest run failed.
- */
-const RUNS: Run[] = [
-  { id: 'r-running', state: 'running', ticket: 't-1' },
-  { id: 'r-claimed', state: 'claimed', ticket: 't-2' },
-  { id: 'r-failed', state: 'failed', ticket: 't-3', log: 'boom' },
-  { id: 'r-old-failed', state: 'failed', ticket: 't-4' },
-  { id: 'r-closed-failed', state: 'failed', ticket: 't-5' },
-];
-const NEWEST: Record<string, string> = {
-  't-3': 'r-failed',
-  't-4': 'r-later-done',
-  't-5': 'r-closed-failed',
-  't-6': 'r-a',
-};
-const TICKETS: Ticket[] = [
-  { id: 't-1', identifier: 'BB-1', frozen: true },
-  { id: 't-2', identifier: 'BB-2' },
-  { id: 't-3', identifier: 'BB-3' },
-  { id: 't-4', identifier: 'BB-4' },
-  { id: 't-5', identifier: 'BB-5', closed: true },
-  { id: 't-6', identifier: 'BB-6' },
+const TICKETS: RestartableTicket[] = [
+  {
+    ticket: 'BB-1',
+    title: 'Ship it',
+    runs: [{ uuid: 'r-1', number: 1, state: 'running' }],
+  },
+  {
+    ticket: 'BB-3',
+    title: 'Fix it',
+    runs: [{ uuid: 'r-3', number: 3, state: 'failed' }],
+  },
 ];
 
-/** A client answering the covered-set read and each ticket's newest run. */
-const serverWith = (runs: Run[] = RUNS, failGet = false, failLog = false) => {
-  // Like the server: JSON:API returns error_log empty (BbRun::preSave moves it
-  // to a private file); only its size and the log route tell the text.
-  const client = Object.assign(fakeClient(), {
-    runLog: vi.fn(async (runId: string, kind: string) => {
-      expect(kind).toBe('error_log');
-      if (failLog) throw new Error('log route failed');
-      return runs.find((run) => run.id === runId)?.log ?? '';
-    }),
-  });
-  client.get = vi.fn(async (path: string, params?: unknown) => {
-    if (failGet) throw new Error('read failed');
-    const query = queryStringOf(params);
-    expect(path).toBe('bb_run/bb_run');
-    const newestOf = /filter\[ticket_id\.id\]=([^&]+)/.exec(query)?.[1];
-    if (newestOf)
-      return { data: [{ type: 'bb_run--bb_run', id: NEWEST[newestOf] }] };
-    // Like the server: state and ticket-closed filters, sort, page limit.
-    const states = [
-      ...query.matchAll(
-        /filter\[(?:state|\d+)\](?:\[condition\]\[value\](?:\[\d+\])?)?=(\w+)/g,
-      ),
-    ].map((m) => m[1]);
-    const openOnly = query.includes('filter[ticket_id.closed]=0');
-    const limit = Number(/page\[limit\]=(\d+)/.exec(query)?.[1] ?? 50);
-    const rows = runs
-      .map((run, i) => ({ run, n: i + 1 }))
-      .filter(({ run }) => states.length === 0 || states.includes(run.state))
-      .filter(
-        ({ run }) =>
-          !openOnly || !TICKETS.find((t) => t.id === run.ticket)?.closed,
-      );
-    if (query.includes('sort=-changed'))
-      rows.sort(
-        (a, b) => (b.run.changed ?? 0) - (a.run.changed ?? 0) || b.n - a.n,
-      );
-    else if (query.includes('sort=-drupal_internal__id')) rows.reverse();
-    return {
-      data: rows.slice(0, limit).map(({ run, n }) => ({
-        type: 'bb_run--bb_run',
-        id: run.id,
-        attributes: {
-          state: run.state,
-          drupal_internal__id: n,
-          error_log: null,
-          error_log_bytes: run.log?.length ?? 0,
-        },
-        relationships: {
-          ticket_id: { data: { type: 'bb_ticket--bb_ticket', id: run.ticket } },
-        },
-      })),
-      included: TICKETS.map((t) => ({
-        type: 'bb_ticket--bb_ticket',
-        id: t.id,
-        attributes: {
-          identifier: t.identifier,
-          closed: t.closed ?? false,
-          frozen: t.frozen ?? false,
-        },
-      })),
-    };
-  }) as never;
-  return client;
+/** The site's tools: the restartable run list flattens `tickets()`, a cancel echoes its runs. */
+const siteWith = (
+  tickets: () => RestartableTicket[] = () => TICKETS,
+  refuse?: string,
+) => {
+  const callTool = vi.fn(
+    async (name: string, args: Record<string, unknown>) => {
+      if (name === 'bakers_run_list')
+        return {
+          runs: tickets().flatMap((t) =>
+            t.runs.map((run) => ({
+              ...run,
+              ticket: t.ticket,
+              ticket_title: t.title,
+            })),
+          ),
+          next_offset: null,
+        };
+      if (refuse) throw new Error(refuse);
+      return { runs: args.runs };
+    },
+  );
+  const client = Object.assign(fakeClient(), { callTool });
+  const cancels = () =>
+    callTool.mock.calls.filter(([name]) => name === 'bakers_run_cancel');
+  return { client, callTool, cancels };
 };
 
 const dialogFor = async (request: ConfirmRequest, client: unknown) => {
@@ -135,177 +69,128 @@ const dialogFor = async (request: ConfirmRequest, client: unknown) => {
   };
   screen.enter(context);
   await settle();
-  return { screen, context };
+  const shown = () => renderTree(screen.present(context).body).join('\n');
+  return { screen, context, shown };
 };
 
-const TARGET = {
+const MACHINE = {
   level: 'machine',
   label: 'workstation',
-  conductorIds: ['c-1', 'c-2'],
+  args: { machine_id: 'host-1' },
   online: true,
 } as const;
 
-describe('restart runs covered set', () => {
-  it('covers active runs and each open ticket newest failed run', async () => {
-    const client = serverWith();
-    const covered = await restartCoveredRuns(client, ['c-1', 'c-2']);
-    expect(covered.map((run) => run.id)).toEqual([
-      'r-running',
-      'r-claimed',
-      'r-failed',
-    ]);
-    const query = queryStringOf(vi.mocked(client.get).mock.calls[0]?.[1]);
-    expect(query).toContain('filter[conductor_id.id][condition][value][0]=c-1');
-    expect(query).toContain('filter[conductor_id.id][condition][value][1]=c-2');
-  });
-
-  it('covers a ticket whose newest failed run has the lower id but changed last', async () => {
-    const covered = await restartCoveredRuns(
-      serverWith([
-        { id: 'r-a', state: 'failed', ticket: 't-6', changed: 2 },
-        { id: 'r-b', state: 'failed', ticket: 't-6', changed: 1 },
-      ]),
-      ['c-1'],
-    );
-    expect(covered.map((run) => run.id)).toEqual(['r-a']);
-  });
-
-  it('covers a running run behind more than a page of old failed runs', async () => {
-    const old: Run[] = Array.from({ length: 60 }, (_, i) => ({
-      id: `r-old-${i}`,
-      state: 'failed',
-      ticket: 't-4',
-    }));
-    const covered = await restartCoveredRuns(
-      serverWith([
-        ...old,
-        { id: 'r-running', state: 'running', ticket: 't-1' },
-      ]),
-      ['c-1'],
-    );
-    expect(covered.map((run) => run.id)).toEqual(['r-running']);
-  });
-});
-
 describe('restart runs dialog', () => {
-  it('names the target, the runs and a frozen ticket', async () => {
-    const { screen, context } = await dialogFor(
-      restartRunsRequest(TARGET),
-      serverWith(),
-    );
-    const shown = renderTree(screen.present(context).body).join(' ');
-    expect(shown).toContain('Restart runs on machine workstation?');
-    expect(shown).toContain('BB-1 · run #1 · running · frozen');
-    expect(shown).toContain('BB-3 · run #3 · failed');
-    expect(shown).not.toContain('BB-4');
-    expect(shown).not.toContain('next start');
+  it('reads the restartable tickets and lists them checked, with OK and Cancel', async () => {
+    const site = siteWith();
+    const { shown } = await dialogFor(restartRunsRequest(MACHINE), site.client);
+    expect(site.callTool).toHaveBeenCalledWith('bakers_run_list', {
+      machine_id: 'host-1',
+      restartable: true,
+    });
+    expect(shown()).toContain('Restart runs on machine workstation?');
+    expect(shown()).toContain('[x] BB-1 · Ship it · run #1 (running)');
+    expect(shown()).toContain('[x] BB-3 · Fix it · run #3 (failed)');
+    expect(shown()).toContain('[ OK ]');
+    expect(shown()).toContain('[ Cancel ]');
+    expect(shown()).not.toContain('next start');
   });
 
   it('says cleanup and fresh runs follow the next start when offline', async () => {
-    const { screen, context } = await dialogFor(
-      restartRunsRequest({ ...TARGET, online: false }),
-      serverWith(),
+    const { shown } = await dialogFor(
+      restartRunsRequest({ ...MACHINE, online: false }),
+      siteWith().client,
     );
-    expect(renderTree(screen.present(context).body).join(' ')).toContain(
-      'next start',
-    );
+    expect(shown()).toContain('next start');
   });
 
-  it('confirming cancels each run with an appended note naming level and person', async () => {
-    const client = serverWith();
+  it('OK cancels the runs of the checked tickets through bakers_run_cancel', async () => {
+    const site = siteWith();
     const { screen, context } = await dialogFor(
-      restartRunsRequest(TARGET),
-      client,
+      restartRunsRequest(MACHINE),
+      site.client,
     );
+    screen.handleInput('down', context);
+    screen.handleInput(' ', context);
     screen.handleInput('enter', context);
     await settle();
-    const note = 'Restart runs (machine workstation) by cw';
-    expect(client.writes).toEqual([
-      {
-        type: 'bb_run--bb_run',
-        id: 'r-running',
-        body: { attributes: { state: 'cancelled', error_log: note } },
-      },
-      {
-        type: 'bb_run--bb_run',
-        id: 'r-claimed',
-        body: { attributes: { state: 'cancelled', error_log: note } },
-      },
-      {
-        type: 'bb_run--bb_run',
-        id: 'r-failed',
-        body: {
-          attributes: { state: 'cancelled', error_log: `boom\n${note}` },
-        },
-      },
+    expect(site.cancels()).toEqual([
+      [
+        'bakers_run_cancel',
+        { runs: ['r-1'], reason: 'Restart runs (machine workstation)' },
+      ],
     ]);
+    expect(context.back).toHaveBeenCalledWith({
+      type: 'runs-restarted',
+      count: 1,
+    });
   });
 
-  it('Esc writes nothing; a failed read writes nothing', async () => {
-    const client = serverWith();
-    const { screen, context } = await dialogFor(
-      restartRunsRequest(TARGET),
-      client,
+  it('OK with none checked and Esc cancel nothing', async () => {
+    const site = siteWith();
+    const none = await dialogFor(restartRunsRequest(MACHINE), site.client);
+    none.screen.handleInput(' ', none.context);
+    none.screen.handleInput('down', none.context);
+    none.screen.handleInput(' ', none.context);
+    none.screen.handleInput('enter', none.context);
+    await settle();
+    const esc = await dialogFor(restartRunsRequest(MACHINE), site.client);
+    esc.screen.handleInput('escape', esc.context);
+    await settle();
+    expect(site.cancels()).toEqual([]);
+  });
+
+  it('a ticket list that changed since the dialog opened cancels nothing', async () => {
+    let tickets = TICKETS.slice(0, 1);
+    const site = siteWith(() => tickets);
+    const { screen, context, shown } = await dialogFor(
+      restartRunsRequest(MACHINE),
+      site.client,
     );
-    screen.handleInput('escape', context);
+    tickets = TICKETS;
+    screen.handleInput('enter', context);
     await settle();
-    expect(client.writes).toEqual([]);
-
-    const failing = serverWith(RUNS, true);
-    const failed = await dialogFor(restartRunsRequest(TARGET), failing);
-    failed.screen.handleInput('enter', failed.context);
-    await settle();
-    expect(failing.writes).toEqual([]);
+    expect(site.cancels()).toEqual([]);
+    expect(shown()).toContain('changed');
   });
 
-  it('a failed error-log read writes nothing', async () => {
-    const client = serverWith(RUNS, false, true);
-    const { screen, context } = await dialogFor(
-      restartRunsRequest(TARGET),
-      client,
+  it("shows the server's refusal", async () => {
+    const site = siteWith(() => TICKETS, 'You may not cancel run r-1.');
+    const { screen, context, shown } = await dialogFor(
+      restartRunsRequest(MACHINE),
+      site.client,
     );
     screen.handleInput('enter', context);
     await settle();
-    expect(client.writes).toEqual([]);
+    expect(shown()).toContain('You may not cancel run r-1.');
   });
 
-  it('confirms when the same runs come back in another order', async () => {
-    let runs = RUNS.slice(0, 2);
-    const client = serverWith();
-    const base = client.get;
-    client.get = vi.fn((path: string, params?: unknown) =>
-      (serverWith(runs).get as typeof base)(path, params),
-    ) as never;
-    const { screen, context } = await dialogFor(
-      restartRunsRequest(TARGET),
-      client,
+  it('a conductor asks by its uuid', async () => {
+    const site = siteWith();
+    await dialogFor(
+      restartRunsRequest({
+        level: 'conductor',
+        label: 'north',
+        args: { conductor: 'c-1' },
+        online: true,
+      }),
+      site.client,
     );
-    runs = [RUNS[1]!, RUNS[0]!];
-    screen.handleInput('enter', context);
-    await settle();
-    expect(client.writes.map((write) => write.id)).toEqual([
-      'r-claimed',
-      'r-running',
-    ]);
+    expect(site.callTool).toHaveBeenCalledWith('bakers_run_list', {
+      conductor: 'c-1',
+      restartable: true,
+    });
   });
 
-  it('a list that changed since the dialog opened writes nothing', async () => {
-    let runs = RUNS.slice(0, 1);
-    const client = serverWith();
-    const base = client.get;
-    client.get = vi.fn((path: string, params?: unknown) =>
-      (serverWith(runs).get as typeof base)(path, params),
-    ) as never;
-    const { screen, context } = await dialogFor(
-      restartRunsRequest(TARGET),
-      client,
+  it('a target with nothing to restart offers nothing to confirm', async () => {
+    const site = siteWith(() => []);
+    const { screen, context, shown } = await dialogFor(
+      restartRunsRequest(MACHINE),
+      site.client,
     );
-    runs = RUNS.slice(0, 2);
+    expect(shown()).toContain('No runs to restart on machine workstation.');
     screen.handleInput('enter', context);
     await settle();
-    expect(client.writes).toEqual([]);
-    expect(renderTree(screen.present(context).body).join(' ')).toContain(
-      'changed',
-    );
+    expect(site.cancels()).toEqual([]);
   });
 });

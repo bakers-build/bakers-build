@@ -100,7 +100,7 @@ export class MachinesScreen extends ListScreen<MachineRow> {
       restartRunsRequest({
         level: 'machine',
         label: row.name,
-        conductorIds: row.conductorIds,
+        args: { machine_id: row.hostKey },
         online: row.online,
       }),
     );

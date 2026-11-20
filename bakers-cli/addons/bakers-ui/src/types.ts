@@ -63,6 +63,15 @@ export interface DropshClient {
    * returns `log` and `error_log` empty.
    */
   runLog?(runId: string, kind: 'log' | 'error_log'): Promise<string>;
+  /**
+   * Calls a site tool on `/mcp` by its plain name (`bakers_run_cancel`) and
+   * returns its structured result; a refusal throws with the site's text.
+   * Only the write client built by `bakers ui` carries it.
+   */
+  callTool?(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>;
 }
 
 /** A JSON:API relationship linkage. */
