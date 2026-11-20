@@ -5,8 +5,8 @@ dependencies:
   config:
     - core.entity_view_mode.bb_invite.full
   module:
-    - display_builder
     - bb_core
+    - display_builder
 third_party_settings:
   display_builder:
     profile: default
@@ -63,4 +63,6 @@ targetEntityType: bb_invite
 bundle: bb_invite
 mode: full
 content: {  }
-hidden: {  }
+hidden:
+  created: true
+  search_api_excerpt: true

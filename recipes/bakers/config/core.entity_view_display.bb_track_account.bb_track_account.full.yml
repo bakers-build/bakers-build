@@ -4,8 +4,8 @@ dependencies:
   config:
     - core.entity_view_mode.bb_track_account.full
   module:
-    - display_builder
     - bb_track
+    - display_builder
 third_party_settings:
   display_builder:
     profile: default
@@ -62,4 +62,5 @@ targetEntityType: bb_track_account
 bundle: bb_track_account
 mode: full
 content: {  }
-hidden: {  }
+hidden:
+  search_api_excerpt: true

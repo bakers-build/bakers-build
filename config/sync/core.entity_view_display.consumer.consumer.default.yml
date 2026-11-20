@@ -126,4 +126,13 @@ content:
     third_party_settings: {  }
     weight: 100
     region: content
-hidden: {  }
+hidden:
+  client_uri: true
+  contacts: true
+  jwks_uri: true
+  logo_uri: true
+  policy_uri: true
+  search_api_excerpt: true
+  software_id: true
+  software_version: true
+  tos_uri: true
