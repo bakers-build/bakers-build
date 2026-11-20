@@ -55,6 +55,7 @@ is how a single-step action stays honest.
 | Transition `plan` to `working` | yes | dispatches an agent run |
 | Transition to `done` | yes | terminal, no rollback |
 | Cancel ticket | yes | discards the ticket |
+| Remove member / Leave | yes | revokes access |
 
 Three rows need their nuance spelled out. The transition row covers every
 sibling transition, not only `plan` to `working`, because each of them
@@ -68,6 +69,12 @@ wherever it is set: the ticket is claimed at the next poll and an agent
 run starts. So the create dialog names it beneath the pill row, and an
 **inline** conductor pick on a detail screen names it at the field too.
 Every other inline field is reversible and names nothing.
+
+The **member** row is the one exception to the first half of the rule: a
+removal ends no ticket, but it revokes the person's access, and re-adding
+them does not restore what they lost meanwhile. Pressing remove (or *Leave*
+on your own row) opens the confirmation in place, inside the members form,
+with **Cancel** focused; its body is the same sentence the control names.
 
 A confirmation names the concrete effect and never asks "are you sure?".
 "Move BB-332 to `working`? This dispatches an agent run on
@@ -114,24 +121,16 @@ lose, which is the rule's own first reason. `project-create` is one: it
 adds to the projects list and the list is what tells the operator the
 addition worked.
 
-An **assignment inside a face** is not one. Adding a member to a group is a
-control *of* the Members face: it acts on the very list it sits above, and a
-successful submit re-renders that face and nothing else, so there is no
-context to lose and a dialog would take the roster away in order to add to
-it. The pattern that applies to it is the one below — a form the operator
-submits, with one primary action — and not the hull. This is a narrowing of
-the rule's reach, not an exception to it: the two conditions that make the
-dialog right are simply absent, and a rule does not extend to a case
-neither of its arguments touches.
-
-**The workspace invitation is the one exception, and it is an operator
-ruling, not a reading of the rule.** Inviting takes several addresses, a
-workspace role and a team, which is a surface of its own rather than one
-control above the roster; the operator chose one focused dialog for it. It
-opens from the Members zone's primary **Invite members** action and closes
-back onto the face it came from, so the roster is covered only while the
-dialog is open. Adding an existing workspace member to a team stays the
-inline control above.
+**Adding to a Members face is an operator ruling, not a reading of the
+rule.** Both member surfaces open a dialog from the page header's create
+action, the icon-only `+` at the top right: **Invite members** on the
+workspace (several addresses as chips, a workspace role, a team) and **Add
+member** on a team (a person picker and a role). The operator chose the
+dialog for one place of the create action on every screen. Neither dialog
+takes the roster away: it closes in place, only the members island
+re-renders, focus returns to the `+` that opened it, and the result is
+announced and shown as a toast. Without JavaScript each dialog is its own
+page.
 
 The distinction is drawn on the CONTEXT and not on the entity, so it cannot
 be claimed by whatever wants to avoid a dialog. A surface that adds from a

@@ -470,6 +470,22 @@ bb_core.workspace_invite:
       bb_workspace:
         type: 'entity:bb_workspace'
 
+# A team's add-member dialog, opened from the team Members page header; the
+# same route renders as its own page without JavaScript.
+bb_core.bb_team.member_add:
+  path: '/_workspace/{bb_workspace}/team/{bb_team}/members/add'
+  defaults:
+    _form: '\Drupal\bb_core\Form\TeamMemberAddForm'
+    _title: 'Add member'
+  requirements:
+    _entity_access: 'bb_team.update'
+  options:
+    parameters:
+      bb_workspace:
+        type: 'entity:bb_workspace'
+      bb_team:
+        type: 'entity:bb_team'
+
 bb_core.bb_workspace.members:
   path: '/_workspace/{bb_workspace}/settings/members'
   defaults:

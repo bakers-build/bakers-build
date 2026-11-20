@@ -13,6 +13,7 @@ use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Plugin\Context\ContextRepositoryInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\Core\Utility\Token;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
@@ -199,6 +200,24 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
   }
 
   /**
+   * The trigger's element id, for a dialog that returns focus to it.
+   *
+   * @return string
+   *   An id, or empty for none.
+   */
+  protected function triggerId(): string {
+    return '';
+  }
+
+  /**
+   * Sets the trigger's id on its attributes, when it has one.
+   */
+  private function withTriggerId(Attribute $attributes): Attribute {
+    $id = $this->triggerId();
+    return $id === '' ? $attributes : $attributes->setAttribute('id', $id);
+  }
+
+  /**
    * Whether this trigger belongs on the current route.
    *
    * The shell page-header island offers every create source; each source
@@ -247,7 +266,7 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
         'href' => $this->dialogUrl(FALSE)->toString(),
         'variant' => 'primary',
         'icon_only' => TRUE,
-        'attributes' => (new Htmx())
+        'attributes' => $this->withTriggerId((new Htmx())
           ->get($this->dialogUrl(TRUE))
           ->target('#' . static::TARGET_ID)
           // Stated, never inherited: the content island's inherited
@@ -258,7 +277,7 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
           // crop's, out of its form.
           ->select('dialog:not(dialog dialog)')
           ->swap('innerHTML')
-          ->getAttributes(),
+          ->getAttributes()),
       ],
       '#slots' => [
         'icon' => [
@@ -322,7 +341,7 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
     if (!$workspace instanceof BbWorkspaceInterface) {
       return AccessResult::forbidden()->addCacheContexts(['route']);
     }
-    $route_access = Url::fromRoute($this->dialogRoute(), ['bb_workspace' => $workspace->getSlug()])
+    $route_access = Url::fromRoute($this->dialogRoute(), ['bb_workspace' => $workspace->getSlug()] + $this->dialogRouteParameters())
       ->access($this->currentUser, TRUE);
     return AccessResult::allowed()->addCacheContexts(['route'])->andIf($route_access);
   }

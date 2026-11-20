@@ -53,7 +53,6 @@ final class PeopleDirectory {
         ];
         continue;
       }
-      $name = $this->personDisplayName($account);
       $names = [];
       foreach ($teams as $team) {
         if ($this->membershipManager?->getMembership($team, (int) $account->id()) !== NULL) {
@@ -61,12 +60,7 @@ final class PeopleDirectory {
         }
       }
       $cells[$key] = [
-        'label' => [
-          'kind' => 'person',
-          'display_name' => $name,
-          'initials' => $this->personInitials($name),
-          'color' => $this->personColor((int) $account->id()),
-        ],
+        'label' => ['kind' => 'person'] + $this->personMark($account),
         'team' => $names === []
           ? ['kind' => 'text', 'value' => '—', 'emphasis' => 'faint']
           : ['kind' => 'text', 'value' => implode(', ', $names)],

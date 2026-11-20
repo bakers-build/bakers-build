@@ -288,14 +288,15 @@ final class WorkspaceInvite {
    * Pending invitations for this workspace.
    *
    * @return array<int, \Drupal\bb_core\Entity\BbInvite>
-   *   The invitations, oldest first.
+   *   The invitations, newest first.
    */
   public function pendingInvites(ContentEntityInterface $group): array {
     $storage = $this->entityTypeManager->getStorage('bb_invite');
     $ids = $storage->getQuery()
       ->accessCheck(FALSE)
       ->condition('workspace_id', $group->id())
-      ->sort('created')
+      ->sort('created', 'DESC')
+      ->sort('id', 'DESC')
       ->execute();
     return array_values(array_filter(
       $storage->loadMultiple($ids),
@@ -321,17 +322,22 @@ final class WorkspaceInvite {
       $mail = $invite->getEmail();
       $expired = $this->isExpired($invite);
       $cells = [
-        'person' => ['kind' => 'text', 'value' => $mail, 'emphasis' => 'strong'],
+        // No account yet: a neutral mark keeps the row aligned with members.
+        'mark' => [
+          'kind' => 'person',
+          'initials' => '@',
+          'color' => 'offline',
+          'size' => 'md',
+          'display_name' => $mail,
+          'name_hidden' => TRUE,
+        ],
+        'name' => ['kind' => 'text', 'value' => $mail, 'emphasis' => 'strong'],
         'role' => ['kind' => 'badge', 'label' => $this->roleLabel($invite), 'tone' => 'neutral'],
         'team' => ['kind' => 'text', 'value' => $this->teamLabel($invite)],
-        'state' => $expired
-          ? ['kind' => 'badge', 'label' => (string) $this->t('Expired'), 'tone' => 'critical']
-          : ['kind' => 'badge', 'label' => (string) $this->t('Invited'), 'tone' => 'neutral'],
-        'joined' => [
-          'kind' => 'text',
-          'value' => $this->date->date((int) $invite->get('created')->value),
-          'emphasis' => 'faint',
-        ],
+        // A row of the roster: its status, where a member's says Joined.
+        'joined' => ['kind' => 'badge', 'suffix' => $this->date->date($invite->getCreatedTime())] + ($expired
+          ? ['label' => (string) $this->t('Expired'), 'tone' => 'critical']
+          : ['label' => (string) $this->t('Invited'), 'tone' => 'neutral']),
       ];
       if ($may_write) {
         $cells['controls'] = ['kind' => 'rendered'];

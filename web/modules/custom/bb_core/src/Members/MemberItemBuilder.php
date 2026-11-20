@@ -50,6 +50,16 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    */
   public const string TRANSFER_PREFIX = 'transfer_owner_';
 
+  /**
+   * The id prefix of a member's role trigger, a focus target after a write.
+   */
+  public const string ROLE_ID = 'members-role-';
+
+  /**
+   * The id prefix of a member's remove control.
+   */
+  public const string REMOVE_ID = 'members-remove-';
+
   public function __construct(
     private readonly BbDate $date,
     TranslationInterface $string_translation,
@@ -81,12 +91,14 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    * @param array<int, string>|null $teams
    *   Each member's team names keyed by user id, for a roster with a Team
    *   column; NULL for a roster without one.
+   * @param int $actor
+   *   The acting account's uid, whose own row offers Leave; 0 for none.
    *
    * @return array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>}
-   *   The table rows, and the control render arrays keyed by row index and
+   *   The list items, and the control render arrays keyed by row index and
    *   then by cell key.
    */
-  public function items(array $memberships, ContentEntityInterface $group, bool $may_write, bool $may_transfer, ?array $teams = NULL): array {
+  public function items(array $memberships, ContentEntityInterface $group, bool $may_write, bool $may_transfer, ?array $teams = NULL, int $actor = 0): array {
     $items = [];
     $controls = [];
     $roles = $this->assignableRoles($group);
@@ -105,7 +117,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
       if ($teams !== NULL) {
         $items[$index]['cells']['team'] = ['kind' => 'text', 'value' => $teams[(int) $membership->getOwnerId()] ?? '-'];
       }
-      $controls[$index] = $this->controls($membership, $group, $row_roles, $may_write, $show_transfer);
+      $controls[$index] = $this->controls($membership, $group, $row_roles, $may_write, $show_transfer, $actor);
     }
     return ['items' => $items, 'controls' => $controls];
   }
@@ -157,7 +169,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   public static function renderControls(array $element): array {
     $renderer = \Drupal::service('renderer');
     foreach ($element['#bb_member_controls'] ?? [] as $index => $controls) {
-      $cells = &$element['list']['#props']['rows'][$index]['cells'];
+      $cells = &$element['list']['#props']['items'][$index]['cells'];
       $own = array_intersect_key($controls, $cells);
       foreach ($own as $key => $control) {
         $cells[$key]['markup'] = $renderer->render($control);
@@ -169,44 +181,6 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
       unset($cells);
     }
     return $element;
-  }
-
-  /**
-   * The columns of the pending invitations table.
-   *
-   * @return array<int, array{key: string, label: string}>
-   *   The columns, in render order.
-   */
-  public function inviteColumns(): array {
-    return [
-      ['key' => 'person', 'label' => (string) $this->t('Email')],
-      ['key' => 'team', 'label' => (string) $this->t('Team')],
-      ['key' => 'role', 'label' => (string) $this->t('Role')],
-      ['key' => 'state', 'label' => (string) $this->t('Status')],
-      ['key' => 'joined', 'label' => (string) $this->t('Invited')],
-      ['key' => 'controls', 'label' => ''],
-    ];
-  }
-
-  /**
-   * The roster table's columns.
-   *
-   * @param bool $with_team
-   *   Whether to show each member's teams; a team's own roster has no Team
-   *   column, because every row is that team.
-   *
-   * @return array<int, array{key: string, label: string}>
-   *   The columns, in render order.
-   */
-  public function columns(bool $with_team): array {
-    $team = $with_team ? [['key' => 'team', 'label' => (string) $this->t('Team')]] : [];
-    return [
-      ['key' => 'person', 'label' => (string) $this->t('Name')],
-      ...$team,
-      ['key' => 'role', 'label' => (string) $this->t('Role')],
-      ['key' => 'joined', 'label' => (string) $this->t('Joined')],
-      ['key' => 'controls', 'label' => ''],
-    ];
   }
 
   /**
@@ -294,12 +268,12 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   The cells, keyed by the name that addresses each value.
    */
   private function cells(OgMembershipInterface $membership, array $roles, bool $may_write, bool $show_transfer): array {
-    $cells = ['person' => $this->personCell($membership)];
+    $cells = $this->personCells($membership);
     $cells += $this->rankCell($membership, $roles, $may_write);
-    // The Joined column header names the date.
+    // A list has no header, so the status names the date.
     $cells['joined'] = [
       'kind' => 'text',
-      'value' => $this->date->date($membership->getCreatedTime()),
+      'value' => (string) $this->t('Joined @date', ['@date' => $this->date->date($membership->getCreatedTime())]),
       'emphasis' => 'faint',
     ];
     if ($show_transfer || $may_write) {
@@ -355,38 +329,36 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   }
 
   /**
-   * The person cell, which is the SUBJECT of the item rather than a reference.
+   * The person cells: the mark, the name and, where readable, the mail.
    *
-   * THE MAIL IS OFFERED, NOT ASSUMED, and the cell derives the two-line
-   * identity from its presence. `UserAccessControlHandler` grants `view` on
-   * `mail` to the account itself and to `administer users`, so an ordinary
-   * member reading a colleague's item is refused and gets the compact identity.
-   * That is a real difference between two readers of one screen, and the honest
-   * one: the alternative is leaking an address.
+   * The row reads like a project row: the mark leads in `avatar`, the name is
+   * the headline, the mail a description line.
+   *
+   * THE MAIL IS OFFERED, NOT ASSUMED. `UserAccessControlHandler` grants `view`
+   * on `mail` to the account itself and to `administer users`, so an ordinary
+   * member reading a colleague's item gets no address rather than a leaked one.
    *
    * @param \Drupal\og\OgMembershipInterface $membership
    *   The membership.
    *
-   * @return array<string, mixed>
-   *   The cell.
+   * @return array<string, array<string, mixed>>
+   *   The `mark`, `name` and optional `mail` cells.
    */
-  private function personCell(OgMembershipInterface $membership): array {
+  private function personCells(OgMembershipInterface $membership): array {
     $account = $membership->getOwner();
-    $name = $this->displayName($membership);
-    $cell = [
-      'kind' => 'person',
-      'display_name' => $name,
-      'initials' => $this->personInitials($name),
-      'color' => $this->personColor((int) $membership->getOwnerId()),
-    ];
     if (!$account instanceof UserInterface) {
-      return $cell;
+      return ['mark' => ['kind' => 'person', 'initials' => '?', 'color' => 'offline', 'size' => 'md']];
     }
+    $mark = $this->personMark($account);
+    $cells = [
+      'mark' => ['kind' => 'person', 'size' => 'md', 'name_hidden' => TRUE] + $mark,
+      'name' => ['kind' => 'text', 'value' => $mark['display_name'], 'emphasis' => 'strong'],
+    ];
     $mail = (string) ($account->getEmail() ?? '');
     if ($mail !== '' && $account->get('mail')->access('view')) {
-      $cell['mail'] = $mail;
+      $cells['mail'] = ['kind' => 'text', 'value' => $mail, 'emphasis' => 'faint'];
     }
-    return $cell;
+    return $cells;
   }
 
   /**
@@ -404,20 +376,23 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   Whether THIS row is a live transfer target for the acting account —
    *   the same per-row decision `cells()` receives, resolved once by
    *   `items()`. No default: every caller states it explicitly.
+   * @param int $actor
+   *   The acting account's uid, whose own row offers Leave.
    *
    * @return array<string, array<string, mixed>>
    *   The control render arrays.
    */
-  private function controls(OgMembershipInterface $membership, ContentEntityInterface $group, array $roles, bool $may_write, bool $show_transfer): array {
+  private function controls(OgMembershipInterface $membership, ContentEntityInterface $group, array $roles, bool $may_write, bool $show_transfer, int $actor): array {
     $controls = [];
     $name = $this->displayName($membership);
     if ($show_transfer) {
-      $controls['transfer'] = $this->transferControl($membership, $name);
+      $controls['transfer'] = $this->transferControl($membership, $name, (string) $group->label());
     }
     if (!$may_write) {
       return $controls;
     }
-    $controls['remove'] = $this->removeControl($group, $membership, $name);
+    $own = (int) $membership->getOwnerId() === $actor;
+    $controls['remove'] = $this->removeControl($membership, $this->removalSentence($group, $name, $own));
     if ($roles !== []) {
       $controls['role'] = $this->roleControl($membership, $roles, $name);
     }
@@ -435,11 +410,13 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   The membership.
    * @param string $name
    *   The person's display name, for the accessible name.
+   * @param string $group
+   *   The group's name.
    *
    * @return array<string, mixed>
    *   The render array.
    */
-  private function transferControl(OgMembershipInterface $membership, string $name): array {
+  private function transferControl(OgMembershipInterface $membership, string $name, string $group): array {
     $uid = (int) $membership->getOwnerId();
     return [
       '#type' => 'component',
@@ -448,7 +425,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
         'variant' => 'ghost',
         'type' => 'submit',
         'icon_only' => TRUE,
-        'label' => $this->t('Make @name the owner of this workspace.', ['@name' => $name]),
+        'label' => $this->t('Make @name the owner of @group.', ['@name' => $name, '@group' => $group]),
       ],
       '#slots' => [
         'icon' => [
@@ -506,9 +483,11 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
       '#component' => 'bb_theme:option_picker',
       '#props' => [
         'variant' => 'inline',
-        'label' => $this->t('Role'),
+        // The inline variant never shows the label, but its script rebuilds
+        // the accessible name from it on a pick, so it names the person too.
+        'label' => $this->t("@name's role", ['@name' => $name]),
         'name' => 'role',
-        'id' => 'member-role-' . $membership->id(),
+        'id' => self::ROLE_ID . $membership->getOwnerId(),
         'multiple' => FALSE,
         'open' => FALSE,
         'value_labels' => [$label],
@@ -536,19 +515,17 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   }
 
   /**
-   * The remove control for one membership.
+   * The remove (or, on the acting account's own row, leave) control.
    *
-   * @param \Drupal\Core\Entity\ContentEntityInterface $group
-   *   The group.
    * @param \Drupal\og\OgMembershipInterface $membership
    *   The membership.
-   * @param string $name
-   *   The person's display name.
+   * @param string $sentence
+   *   The control's accessible name, naming its effect.
    *
    * @return array<string, mixed>
    *   The render array.
    */
-  private function removeControl(ContentEntityInterface $group, OgMembershipInterface $membership, string $name): array {
+  private function removeControl(OgMembershipInterface $membership, string $sentence): array {
     $uid = (int) $membership->getOwnerId();
     return [
       '#type' => 'component',
@@ -560,13 +537,11 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
         // needs.
         'type' => 'submit',
         'icon_only' => TRUE,
-        // THE EFFECT, NAMED, which is what replaces a confirm step: the rule
-        // confirms an action exactly when it ends or discards the ticket, and
-        // a membership removal does neither — but it can revoke access, which
-        // is a server-side effect. `icon_only` moves this sentence into
-        // `aria-label`, so the naming reaches a screen reader and never the
-        // visible line.
-        'label' => $this->removeSentence($group, $name),
+        // THE EFFECT, NAMED. Pressing it opens a confirmation in place,
+        // because removing a member revokes access (action-pattern.md).
+        // `icon_only` moves this sentence into `aria-label`, so the naming
+        // reaches a screen reader and never the visible line.
+        'label' => $sentence,
       ],
       '#slots' => [
         'icon' => [
@@ -582,6 +557,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
         'name' => self::REMOVE_PREFIX . $uid,
         'value' => (string) $uid,
         'formnovalidate' => 'formnovalidate',
+        'id' => self::REMOVE_ID . $uid,
         // The documented machine handle the browser suite addresses. Every
         // item's control carries the same label by design, so a caller that
         // has to pick one has only this: the account NAME is not a usable
@@ -595,7 +571,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   }
 
   /**
-   * What removing this member does, in the group's own noun.
+   * What removing this member does, or leaving on the actor's own row.
    *
    * The sentence differs by what the group GRANTS, and that is the reason it
    * cannot live in a template. A group whose roles carry permissions revokes
@@ -608,22 +584,41 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   The group.
    * @param string $name
    *   The person's display name.
+   * @param bool $own
+   *   Whether the row is the acting account's own, which reads Leave.
    *
    * @return string
    *   The accessible sentence.
    */
-  private function removeSentence(ContentEntityInterface $group, string $name): string {
-    $noun = (string) $group->getEntityType()->getSingularLabel();
+  public function removalSentence(ContentEntityInterface $group, string $name, bool $own): string {
+    if ($own) {
+      return (string) $this->t('Leave @group. Revokes your access.', ['@group' => (string) $group->label()]);
+    }
     if ($this->assignableRoles($group) === []) {
       return (string) $this->t(
         'Remove @name from the @group. A @group membership grants no permissions, so no access is revoked.',
-        ['@name' => $name, '@group' => $noun],
+        ['@name' => $name, '@group' => (string) $group->getEntityType()->getSingularLabel()],
       );
     }
-    return (string) $this->t('Remove @name from the @group. Revokes their access.', [
+    return (string) $this->t('Remove @name from @group. Revokes their access.', [
       '@name' => $name,
-      '@group' => $noun,
+      '@group' => (string) $group->label(),
     ]);
+  }
+
+  /**
+   * The label of the role a membership holds, for an announcement.
+   *
+   * @param \Drupal\og\OgMembershipInterface $membership
+   *   The membership.
+   * @param \Drupal\Core\Entity\ContentEntityInterface $group
+   *   The group.
+   *
+   * @return string
+   *   The role label.
+   */
+  public function roleLabel(OgMembershipInterface $membership, ContentEntityInterface $group): string {
+    return $this->currentRoleLabel($membership, $this->assignableRoles($group));
   }
 
   /**

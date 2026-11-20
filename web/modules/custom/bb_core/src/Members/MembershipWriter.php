@@ -142,7 +142,7 @@ final class MembershipWriter {
    *   The group.
    *
    * @return array<int, \Drupal\og\OgMembershipInterface>
-   *   The memberships.
+   *   The memberships, newest first; the roster's order.
    */
   public function memberships(ContentEntityInterface $group): array {
     $storage = $this->entityTypeManager->getStorage('og_membership');
@@ -150,7 +150,8 @@ final class MembershipWriter {
       ->accessCheck(FALSE)
       ->condition('entity_type', $group->getEntityTypeId())
       ->condition('entity_id', (string) $group->id())
-      ->sort('created')
+      ->sort('created', 'DESC')
+      ->sort('id', 'DESC')
       ->execute();
     return array_filter(
       $storage->loadMultiple($ids),

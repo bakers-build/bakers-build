@@ -15,7 +15,8 @@ import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { MEMBERS_ISLAND, RAIL_ISLAND, memberHandle, uidOf } from '../../support/shell';
+import { MEMBERS_ISLAND, RAIL_ISLAND, uidOf } from '../../support/shell';
+import { ADD_DIALOG, addMemberTrigger, chooseInAddDialog, openAddMemberDialog } from '../../support/add-member-dialog';
 
 // BB-484 — the Overview body, which is the `full` view mode's own markup and
 // NOT a controller hull. There is deliberately no `[data-bakers-tab-body]` here:
@@ -97,44 +98,32 @@ Then('the rail was part of the swap', async ({ page }) => {
 });
 
 /**
- * How many members the roster shows: the roster table's body rows, direct
+ * How many members the roster shows: the roster list's items, direct
  * children only, so a role picker's own option rows are never counted.
  */
 Then('the members list has {int} rows', async ({ page }, count: number) => {
-  await expect(page.locator(`${MEMBERS_ISLAND} table > tbody > tr`)).toHaveCount(count);
+  await expect(page.locator(`${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`)).toHaveCount(count);
 });
 
 // One step for the whole affordance, because a scenario that filled the field
 // and clicked separately would be asserting the widget rather than the island.
-//
-// The value is typed in entity_autocomplete's OWN "Label (id)" form rather
-// than picked from the suggestion list. That is not a shortcut around a broken
-// widget: the suggestion list is jQuery UI, it needs core/drupal.autocomplete
-// on the page, and a scenario that depends on it would be asserting Drupal's
-// widget instead of this island's submit. The raw form is what the element
-// parses either way.
+// The page header's Add member opens the dialog; type the person's name into
+// the chip field and take their listed match, keep the role, press Add member.
+// The dialog closes and the members island re-renders in place, so the step
+// waits for the new row.
 When('I add the member {string}', async ({ page }, value: string) => {
-  const island = page.locator(MEMBERS_ISLAND);
-  await island.getByRole('textbox', { name: 'Member' }).fill(memberHandle(value));
-  // Waited on the submit's OWN response, not on a duration. An island submit
-  // answers with a fragment and fires no navigation event, so there is no
-  // navigation to await — but there is a POST, and its response is the moment
-  // the server has decided. A fixed sleep was standing in for that, and it made
-  // the SECOND add of the duplicate scenario assert nothing: `toHaveCount(4)`
-  // is satisfied instantly whether or not the submit was ever processed.
+  const dialog = await openAddMemberDialog(page);
+  await chooseInAddDialog(dialog, value);
   const answered = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'POST' && response.url().includes('/members'),
+    (response) => response.request().method() === 'POST' && response.url().includes('/members/add'),
     { timeout: 15000 },
   );
-  // THE LABEL IS `Add member` SINCE BB-435, and it was `Add`. The add surface
-  // is now a `bb_theme:form` whose one primary submit is labelled the way the
-  // Designbook scenes label it, and the scenes are the source for that wording.
-  // `exact` is kept: the roster's per-item remove controls are buttons too, and
-  // a loose match would be ambiguous the moment one of them is named `Add`
-  // anything.
-  await island.getByRole('button', { name: 'Add member', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Add member', exact: true }).click();
   await answered;
+  await expect(page.locator(ADD_DIALOG), 'the add dialog did not close').toHaveCount(0, { timeout: 15000 });
+  await expect(page.locator(`${MEMBERS_ISLAND} #members-role-${uidOf(value)}`)).toBeAttached({ timeout: 15000 });
+  // The flow ends when focus is back on Add member; a next step must not race it.
+  await expect(addMemberTrigger(page)).toBeFocused({ timeout: 15000 });
 });
 
 /**

@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Drupal\bb_core\Members;
+
+use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Template\Attribute;
+use Drupal\bb_core\Form\WorkspaceInviteForm;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Closes a Members dialog and has the members island re-render in place.
+ *
+ * No page load, so the list stays where it was. The island subscribes to
+ * EVENT (`MembersIslandPlacementTrait`), and `island.events.js` refreshes it;
+ * the refreshed face then shows the result and moves focus.
+ */
+final class MembersDialogResponse {
+
+  /**
+   * The island event a finished Members dialog announces.
+   */
+  public const string EVENT = 'bakers.members.changed';
+
+  /**
+   * The request attribute holding the result consumed for this request.
+   */
+  private const string RESULT_ATTRIBUTE = 'bb_members_dialog_result';
+
+  /**
+   * The empty answer that deletes the dialog and announces EVENT.
+   */
+  public static function close(): Response {
+    return new Response('', 200, [
+      'Content-Type' => 'text/html; charset=UTF-8',
+      'HX-Retarget' => 'closest [data-dialog]',
+      'HX-Reswap' => 'delete',
+      'HX-Trigger' => self::EVENT,
+    ]);
+  }
+
+  /**
+   * The result a finished dialog left for the Members face, as a toast.
+   *
+   * A toast like every other confirmation: fixed, so the list does not move,
+   * and hidden again after a few seconds, as the status messages are.
+   *
+   * @return array<string, mixed>
+   *   The toast with its text in `#bb_result`, or an uncacheable nothing.
+   */
+  public static function result(MessengerInterface $messenger, Request $request): array {
+    // Consumed, since a fragment answer never reaches the page's status
+    // messages; kept on the request, because one boosted GET builds the face
+    // twice (the page, then the island fragment) and both must show it.
+    if (!$request->attributes->has(self::RESULT_ATTRIBUTE)) {
+      $request->attributes->set(self::RESULT_ATTRIBUTE, $messenger->deleteByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE));
+    }
+    $messages = $request->attributes->get(self::RESULT_ATTRIBUTE);
+    $build = ['#weight' => -5, '#cache' => ['max-age' => 0]];
+    if ($messages === []) {
+      return $build;
+    }
+    $text = implode(' ', array_map('strval', $messages));
+    return $build + [
+      '#bb_result' => $text,
+      'message' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:toast',
+        '#props' => [
+          'message' => $text,
+          'attributes' => new Attribute([
+            // Drupal.announce already speaks the result; once is enough.
+            'aria-live' => 'off',
+            'x-data' => '',
+            'x-init' => 'setTimeout(() => { $el.hidden = true }, 5000)',
+          ]),
+        ],
+      ],
+    ];
+  }
+
+}

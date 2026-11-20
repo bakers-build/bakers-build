@@ -169,6 +169,8 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
           'bb_term_create_action',
           'bb_ticket_trigger_create_action',
           'bb_group_create_action',
+          'bb_member_invite_action',
+          'bb_team_member_add_action',
           'bb_worklog_create_action',
           'bb_track_billing_account_create_action',
           'bb_service_account_create_action',

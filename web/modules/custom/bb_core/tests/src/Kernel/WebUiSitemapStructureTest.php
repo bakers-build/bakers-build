@@ -978,6 +978,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'entity.bb_team.canonical' => 403,
     'bb_core.bb_team.stats' => 403,
     'bb_core.bb_team.members' => 403,
+    'bb_core.bb_team.member_add' => 403,
     'bb_core.bb_team.settings' => 403,
     'view.tickets.team_tickets' => 403,
     'view.runs.team_runs' => 403,
@@ -1057,6 +1058,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.bb_team.members' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     // Like group Settings: `update any bb_team` is the lead's alone.
     'bb_core.bb_team.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
+    'bb_core.bb_team.member_add' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'view.project_board.project_board' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.projects.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.groups.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],

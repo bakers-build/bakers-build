@@ -49,12 +49,7 @@ final class BbPersonCellFormatter extends FormatterBase {
         $elements[$delta] = $this->cellElement(['kind' => 'text', 'value' => $name]);
         continue;
       }
-      $cell = [
-        'kind' => 'person',
-        'display_name' => $name,
-        'initials' => $this->personInitials($name),
-        'color' => $this->personColor((int) $account->id()),
-      ];
+      $cell = ['kind' => 'person', 'display_name' => $name] + $this->personMark($account);
       $mail = (string) ($account->getEmail() ?? '');
       if ($mail !== '' && $account->get('mail')->access('view')) {
         $cell['mail'] = $mail;
