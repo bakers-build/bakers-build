@@ -1,8 +1,8 @@
 @functional @api @feature:entity-edit-access
 Feature: Entity edit access across browser, session token and CLI
   Workspace lead, referenced team lead, a project's creator, and machine/conductor owners may edit
-  the fields the product exposes. A machine and a conductor are edited on
-  their detail page Identity card; their form address here is the card's own route. Peers, foreign leads and rankless accounts
+  the fields the product exposes. Every entity here is edited on its Settings
+  form. Peers, foreign leads and rankless accounts
   are refused. Session tokens are real OAuth Bearers. Server-maintained fields
   stay read-only on a saved row.
 

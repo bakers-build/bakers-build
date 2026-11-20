@@ -227,10 +227,9 @@ final class ConductorActivityFeedTest extends KernelTestBase {
     foreach ($gone as $text) {
       self::assertStringNotContainsString($text, $html);
     }
-    // Disable/Enable is the Identity card's footer, after its form.
-    $form = strpos($html, '/conductor/' . $this->labelled->id() . '/card/identity');
-    self::assertNotFalse($form);
-    self::assertGreaterThan($form, strpos($html, 'Disable conductor'));
+    // The card posts nothing; Disable/Enable stays its footer, after it.
+    self::assertStringNotContainsString('/card/identity', $html);
+    self::assertGreaterThan(strpos($html, 'Identity'), strpos($html, 'Disable conductor'));
   }
 
   /**
