@@ -187,7 +187,8 @@ final class ServiceAccountHooks {
    * is untouched. Mirrors the `ogMembershipPresave()` allowlist exactly, so
    * the Members surface never even offers a role the presave guard would
    * reject. Only an administrator of the account's workspace may change its
-   * rank; anyone else (e.g. a team owner) is offered the current rank alone.
+   * rank; anyone else (e.g. a team owner) is offered the current rank alone,
+   * and no rank at all for an add, which the presave guard would refuse.
    *
    * @param array<string, \Drupal\og\OgRoleInterface> $roles
    *   The group's full assignable-role set, keyed by bare role name.
@@ -208,7 +209,8 @@ final class ServiceAccountHooks {
     if ($this->serviceAccountManager->workspace($owner)?->access('update', $this->currentUser) !== TRUE) {
       $group = $context['group'];
       $current = $group instanceof BbWorkspaceInterface || $group instanceof BbTeamInterface ? $this->serviceAccountManager->roleName($group, $owner) : NULL;
-      $allowed = array_intersect($allowed, [$current ?? OgRoleInterface::AUTHENTICATED]);
+      // An add (an unsaved membership) is refused at save, so it gets no role.
+      $allowed = $context['membership']->isNew() ? [] : array_intersect($allowed, [$current ?? OgRoleInterface::AUTHENTICATED]);
     }
     $roles = array_intersect_key($roles, array_flip($allowed));
   }

@@ -271,6 +271,48 @@ final class ServiceAccountMemberRoleOptionsTest extends KernelTestBase {
   }
 
   /**
+   * A team owner's add of a person and a service account adds nobody.
+   *
+   * Only the workspace administrator may add a service account, so the add
+   * dialog refuses it before any write rather than adding the person first.
+   */
+  public function testTeamOwnerAddWithServiceAccountAddsNobody(): void {
+    [$workspace, $team] = $this->workspaceWithTeam();
+    // Created first, so the owner below is not uid 1.
+    $this->leadOf($workspace);
+    $owner = $this->teamOwnerOf($workspace, $team);
+    $human = $this->createUser();
+    self::assertInstanceOf(UserInterface::class, $human);
+    $service = $this->serviceAccount($workspace, 'service-ci-eeeeeeee');
+    foreach ([$human, $service] as $account) {
+      OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+        ->setOwner($account)
+        ->setGroup($workspace)
+        ->setState(OgMembershipInterface::STATE_ACTIVE)
+        ->save();
+    }
+    $this->setCurrentUser($owner);
+    $this->container->get('router.builder')->rebuild();
+    $request = Request::create('/service-account-add-dialog-test');
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, 'bb_core.bb_team.member_add');
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $this->container->get('router.route_provider')->getRouteByName('bb_core.bb_team.member_add'));
+    $request->attributes->set('bb_workspace', $workspace);
+    $request->attributes->set('bb_team', $team);
+    $request->setSession(new Session(new MockArraySessionStorage()));
+    $this->container->get('request_stack')->push($request);
+
+    $form_state = (new FormState())->setValues([
+      'account' => [(string) $human->id(), (string) $service->id()],
+      'op' => 'Add member',
+    ]);
+    $this->container->get('form_builder')->submitForm(TeamMemberAddForm::class, $form_state);
+
+    self::assertNotSame([], $form_state->getErrors(), 'the service account is refused in the dialog');
+    self::assertNull(Og::getMembership($team, $human, OgMembershipInterface::ALL_STATES), 'the person is not added either');
+    self::assertNull(Og::getMembership($team, $service, OgMembershipInterface::ALL_STATES));
+  }
+
+  /**
    * The owner sees a transfer control on a human row, never a service row.
    */
   public function testServiceAccountRowOffersNoOwnershipTransfer(): void {
