@@ -13,9 +13,10 @@ use Symfony\Component\Routing\Route;
 /**
  * Uses the full Display Builder view for the canonical conductor screen.
  *
- * The product Overview is core's `_entity_view: bb_conductor.full`; only
- * its title callback is replaced. Do not add a controller that merely renders
- * the view mode.
+ * The product Overview is core's `_entity_view: bb_conductor.full`, whose
+ * card only shows the conductor; its Settings tab edits it. Only the title
+ * callback is replaced. Do not add a controller that merely renders the view
+ * mode.
  *
  * @see \Drupal\bb_core\Routing\BbTeamRouteProvider
  */
@@ -31,6 +32,25 @@ final class BbConductorRouteProvider extends AdminHtmlRouteProvider {
   public static function title(BbConductorInterface $bb_conductor): string {
     $label = trim((string) $bb_conductor->label());
     return $label !== '' ? $label : (string) new TranslatableMarkup('(unnamed)');
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Adds Settings, the conductor's edit form as a page.
+   */
+  public function getRoutes(EntityTypeInterface $entity_type) {
+    $collection = parent::getRoutes($entity_type);
+    $collection->add('bb_core.bb_conductor.settings', new Route(
+      '/_workspace/{bb_workspace}/conductor/{bb_conductor}/settings',
+      [
+        '_entity_form' => 'bb_conductor.settings',
+        '_title_callback' => static::class . '::title',
+      ],
+      ['_entity_access' => 'bb_conductor.update'],
+      ['parameters' => ['bb_conductor' => ['type' => 'entity:bb_conductor']]],
+    ));
+    return $collection;
   }
 
   /**

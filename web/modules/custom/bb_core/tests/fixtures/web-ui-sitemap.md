@@ -98,17 +98,19 @@ table above.
 | Overview (default) | `entity.bb_group.canonical` | `/{ws}/group/{id}` | View mode (`_entity_view: bb_group.full`) | `bb_group.view` | `_entity_access` |
 | Settings | `bb_core.bb_group.settings` | `/{ws}/group/{id}/settings` | Entity form | `bb_group.update` (→ `update any bb_group`, workspace lead) | `_entity_form` + `_entity_access` |
 
-## Conductor detail — one tab, Overview default
+## Conductor detail — two tabs, Overview default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
 | Overview (default) | `entity.bb_conductor.canonical` | `/{ws}/conductor/{id}` | View mode (`_entity_view: bb_conductor.full`) | `bb_conductor.view` | `_entity_access` |
+| Settings | `bb_core.bb_conductor.settings` | `/{ws}/conductor/{id}/settings` | Entity form | `bb_conductor.update` | `_entity_form` + `_entity_access` |
 
-## Machine detail — one tab, View default
+## Machine detail — two tabs, View default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
 | View (default) | `entity.bb_machine.canonical` | `/user/{user}/machine/{id}` | View mode (`_entity_view: bb_machine.full`) | `bb_machine.view` | `_entity_access` |
+| Settings | `bb_core.bb_machine.settings` | `/user/{user}/machine/{id}/settings` | Entity form | `bb_machine.update` (owner only) | `_entity_form` + `_entity_access` + owner match |
 
 ## Admin routes
 

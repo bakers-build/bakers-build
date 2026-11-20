@@ -288,9 +288,9 @@ final class ConductorOverviewTest extends KernelTestBase {
   }
 
   /**
-   * Overview is the only product tab; there are no admin routes.
+   * Overview and Settings are the product tabs; there are no admin routes.
    */
-  public function testOverviewIsTheOnlyProductTabAndNoAdminRoutes(): void {
+  public function testOverviewAndSettingsAreTheProductTabsAndNoAdminRoutes(): void {
     self::assertSame([], $this->container->get('router.route_provider')->getRoutesByNames([
       'entity.bb_conductor.collection',
       'entity.bb_conductor.add_form',
@@ -298,19 +298,36 @@ final class ConductorOverviewTest extends KernelTestBase {
     ]));
 
     self::assertSame(
-      ['entity.bb_conductor.canonical'],
+      ['entity.bb_conductor.canonical', 'bb_core.bb_conductor.settings'],
       $this->tabRoutesOn('entity.bb_conductor.canonical', $this->accounts['lead']),
-      'The product canonical carries Overview alone — no Settings tab.',
+      'The owner sees Overview and Settings.',
+    );
+    $settings = $this->container->get('router.route_provider')->getRouteByName('bb_core.bb_conductor.settings');
+    self::assertSame('/_workspace/{bb_workspace}/conductor/{bb_conductor}/settings', $settings->getPath());
+    self::assertSame('bb_conductor.settings', $settings->getDefault('_entity_form'));
+    self::assertSame('bb_conductor.update', $settings->getRequirement('_entity_access'));
+    self::assertSame('TRUE', $settings->getRequirement('_bb_workspace_match'));
+    self::assertFalse($settings->getOption('_admin_route'));
+  }
+
+  /**
+   * A contributor who does not own the conductor sees no Settings tab.
+   *
+   * Its own test: the tab manager caches one route's tabs per instance.
+   */
+  public function testNonOwnerSeesNoSettingsTab(): void {
+    self::assertNotContains(
+      'bb_core.bb_conductor.settings',
+      $this->tabRoutesOn('entity.bb_conductor.canonical', $this->accounts['contributor']),
     );
   }
 
   /**
-   * The cards and the confirmation share the detail's boundaries.
+   * The confirmation shares the detail's boundaries; the card posts nothing.
    */
-  public function testCardAndActionRoutesShareTheDetailBoundaries(): void {
+  public function testActionRouteSharesTheDetailBoundariesAndTheCardPostsNothing(): void {
     $provider = $this->container->get('router.route_provider');
     foreach ([
-      'entity.bb_conductor.identity_form' => ['/card/identity', 'bb_conductor.identity'],
       'entity.bb_conductor.action_form' => ['/action', 'bb_conductor.action'],
     ] as $name => [$suffix, $form]) {
       $route = $provider->getRouteByName($name);
@@ -320,17 +337,20 @@ final class ConductorOverviewTest extends KernelTestBase {
       self::assertSame('TRUE', $route->getRequirement('_bb_workspace_match'));
       self::assertFalse($route->getOption('_admin_route'));
     }
-    // The Identity card edits the served states; there is no second card.
-    self::assertSame([], $provider->getRoutesByNames(['entity.bb_conductor.configuration_form']));
+    // Settings edits the conductor; its card has no POST route.
+    self::assertSame([], $provider->getRoutesByNames([
+      'entity.bb_conductor.identity_form',
+      'entity.bb_conductor.configuration_form',
+    ]));
     $delete = $provider->getRouteByName('entity.bb_conductor.delete_form');
     self::assertSame('/_workspace/{bb_workspace}/conductor/{bb_conductor}/delete', $delete->getPath());
     self::assertSame('bb_conductor.delete', $delete->getRequirement('_entity_access'));
   }
 
   /**
-   * The owner edits and may disable; a peer only reads, and is refused.
+   * The owner edits on Settings and may disable; a peer only reads.
    */
-  public function testOwnerEditsAndPeerOnlyReadsTheCards(): void {
+  public function testOwnerEditsOnSettingsAndPeerOnlyReadsTheCard(): void {
     $owner = $this->createAccount('owner', ['register bakers conductor']);
     $this->addMembership($this->home, $owner, ['contributor']);
     $mine = $this->create('bb_conductor', [
@@ -345,14 +365,22 @@ final class ConductorOverviewTest extends KernelTestBase {
     $base = '/bakers/conductor/' . $mine->id();
 
     $this->actAs($owner);
-    self::assertSame(200, $this->statusOf($base . '/card/identity'));
+    self::assertSame(200, $this->statusOf($base . '/settings'));
+    self::assertSame(404, $this->statusOf($base . '/card/identity'));
     self::assertSame(200, $this->statusOf($base . '/action'));
-    self::assertSame(404, $this->statusOf('/other/conductor/' . $mine->id() . '/card/identity'));
-    $form = $this->container->get('entity.form_builder')->getForm($mine, 'identity');
-    self::assertArrayHasKey('label', $form);
-    self::assertSame('Save', (string) $form['actions']['submit']['#value']);
-    self::assertArrayHasKey('states', $form, 'The card edits the served states.');
-    self::assertArrayNotHasKey('active', $form, 'Activity changes only through the confirmation.');
+    self::assertSame(404, $this->statusOf('/other/conductor/' . $mine->id() . '/settings'));
+    $card = $this->container->get('entity.form_builder')->getForm($mine, 'identity');
+    self::assertArrayNotHasKey('label', $card, 'The card only shows the conductor.');
+    self::assertEmpty($card['actions'] ?? [], 'The card offers no Save and no Delete.');
+    $rows = (string) $this->container->get('renderer')->renderInIsolation($card['readonly']);
+    self::assertStringContainsString('Mine', $rows);
+    self::assertStringContainsString('States', $rows);
+    self::assertStringContainsString('Assignment', $rows);
+    $settings = $this->container->get('entity.form_builder')->getForm($mine, 'settings');
+    foreach (['label', 'states', 'assignment'] as $field) {
+      self::assertArrayHasKey($field, $settings, 'Settings edits ' . $field . '.');
+    }
+    self::assertSame('Save', (string) $settings['actions']['submit']['#value']);
     self::assertNull($this->container->get('entity_type.manager')->getDefinition('bb_conductor')->getFormClass('configuration'));
     self::assertSame('Disable conductor', $this->actionsSource($mine)['activity']['#props']['label'] ?? NULL);
     // The owner's confirm writes, although the stored project is a reference
@@ -367,7 +395,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     self::assertFalse((bool) $stored->get('active')->value);
 
     $this->actAs($this->accounts['contributor']);
-    self::assertSame(403, $this->statusOf($base . '/card/identity'));
+    self::assertSame(403, $this->statusOf($base . '/settings'));
     self::assertSame(403, $this->statusOf($base . '/action'));
     $form = $this->container->get('entity.form_builder')->getForm($stored, 'identity');
     self::assertArrayNotHasKey('label', $form);
@@ -604,10 +632,9 @@ final class ConductorOverviewTest extends KernelTestBase {
     foreach ($gone as $text) {
       self::assertStringNotContainsString($text, $html);
     }
-    // Disable/Enable is the Identity card's footer, after its form.
-    $form = strpos($html, '/conductor/' . $this->labelled->id() . '/card/identity');
-    self::assertNotFalse($form);
-    self::assertGreaterThan($form, strpos($html, 'Disable conductor'));
+    // The card posts nothing; Disable/Enable stays its footer, after it.
+    self::assertStringNotContainsString('/card/identity', $html);
+    self::assertGreaterThan(strpos($html, 'Identity'), strpos($html, 'Disable conductor'));
   }
 
   /**
@@ -871,6 +898,10 @@ final class ConductorOverviewTest extends KernelTestBase {
     $manager->clearCachedDefinitions();
     $tabs = [];
     foreach ($manager->getLocalTasks($route_name, 0)['tabs'] as $tab) {
+      // The manager marks a tab the account may not open; it never renders.
+      if (!$tab['#access']->isAllowed()) {
+        continue;
+      }
       $tabs[] = $tab['#link']['url']->getRouteName();
     }
     $this->container->get('request_stack')->pop();
