@@ -7,6 +7,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 use Drupal\bb_core\Profile\Profiles;
 use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Url;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\field\Entity\FieldConfig;
@@ -154,9 +155,60 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
       $profile = $this->container->get(Profiles::class)->forAccount((int) $account->id(), (int) $workspace->id());
       self::assertSame(['Product Lead', 'I ship Drupal.'], [$profile->position(), $profile->background()]);
     }
+    self::assertSame(['position' => 'Product Lead', 'background' => 'I ship Drupal.'], $this->defaultProfile($account));
     self::assertSame(3, (int) $this->userData()->get('bb_core', (int) $account->id(), 'onboarding_step'));
     self::assertSame(3, (int) $form_state->get('bb_onboarding_step'));
     self::assertTrue($form_state->isRebuilding());
+  }
+
+  /**
+   * About you without a workspace keeps the answers as the default profile.
+   */
+  public function testAboutWithoutWorkspaceKeepsTheDefaultProfile(): void {
+    $account = $this->submitAboutWithoutWorkspace();
+
+    self::assertSame(['position' => 'Product Lead', 'background' => 'I ship Drupal.'], $this->defaultProfile($account));
+    self::assertSame([], $this->container->get(Profiles::class)->ofAccount((int) $account->id()));
+  }
+
+  /**
+   * The first workspace the account creates stores the default profile.
+   */
+  public function testFirstWorkspaceGetsTheDefaultProfile(): void {
+    $account = $this->submitAboutWithoutWorkspace();
+    $this->container->get('current_user')->setAccount(new AnonymousUserSession());
+
+    $workspace = $this->container->get('bb_core.workspace_provisioner')->provision('North', $account, 'Core');
+
+    $this->assertStoredProfile($account, $workspace);
+  }
+
+  /**
+   * Accepting an invitation to the first workspace stores the default profile.
+   */
+  public function testInvitationJoinGetsTheDefaultProfile(): void {
+    $account = $this->submitAboutWithoutWorkspace();
+    $this->container->get('current_user')->setAccount(new AnonymousUserSession());
+    $workspace = $this->workspace('north');
+
+    $refusal = $this->container->get('bb_core.invite_acceptance')->accept($this->invite($account, $workspace), $workspace, $account);
+
+    self::assertNull($refusal);
+    $this->assertStoredProfile($account, $workspace);
+  }
+
+  /**
+   * Reopening About you without a workspace shows the default profile.
+   */
+  public function testAboutPrefillsFromTheDefaultProfile(): void {
+    $account = $this->submitAboutWithoutWorkspace();
+
+    $form_state = new FormState();
+    $form_state->set('bb_onboarding_step', 2);
+    $form = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
+
+    self::assertSame('Product Lead', $form['fields']['position']['#default_value']);
+    self::assertSame('I ship Drupal.', $form['fields']['background']['#default_value']);
   }
 
   /**
@@ -443,6 +495,39 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     self::assertStringNotContainsString('evil@example.com', $blob);
     self::assertStringNotContainsString('$(reboot)', $blob);
     self::assertStringNotContainsString('rm -rf /', $blob);
+  }
+
+  /**
+   * A new account in no workspace submits About you; it stays current.
+   */
+  private function submitAboutWithoutWorkspace(): UserInterface {
+    $account = $this->createUser();
+    self::assertInstanceOf(UserInterface::class, $account);
+    $this->container->get('current_user')->setAccount($account);
+    $form_state = new FormState();
+    $form_state->set('bb_onboarding_step', 2);
+    $form_state->setValue('position', 'Product Lead');
+    $form_state->setValue('background', 'I ship Drupal.');
+    $form_state->setTriggeringElement(['#name' => 'next']);
+    $form = [];
+    BbOnboardingWizardForm::create($this->container)->submitForm($form, $form_state);
+    return $account;
+  }
+
+  /**
+   * The account's default profile in user.data.
+   */
+  private function defaultProfile(UserInterface $account): mixed {
+    return $this->userData()->get('bb_core', (int) $account->id(), 'default_profile');
+  }
+
+  /**
+   * The account has a stored profile in the workspace with the About you answers.
+   */
+  private function assertStoredProfile(UserInterface $account, BbWorkspaceInterface $workspace): void {
+    $stored = $this->container->get(Profiles::class)->ofAccount((int) $account->id())[(int) $workspace->id()] ?? NULL;
+    self::assertNotNull($stored, 'the first workspace has a stored profile');
+    self::assertSame(['Product Lead', 'I ship Drupal.'], [$stored->position(), $stored->background()]);
   }
 
   /**
