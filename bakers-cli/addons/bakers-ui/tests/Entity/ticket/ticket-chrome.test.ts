@@ -19,6 +19,7 @@ const DOC: TicketDetailDocument = {
       identifier: 'BB-1',
       title: 'a title',
       state: 'active',
+      url: 'https://bakers.example.test/bakers/ticket/bb-1',
     },
     relationships: { labels: { data: [] } },
   },
@@ -225,7 +226,7 @@ describe('ticket chrome helpers', () => {
     expect(ctx.copyToClipboard).toHaveBeenNthCalledWith(1, 'BB-1');
     expect(ctx.copyToClipboard).toHaveBeenNthCalledWith(
       2,
-      'https://bakers.example.test/admin/bakers/ticket/ticket-uuid',
+      'https://bakers.example.test/bakers/ticket/bb-1',
     );
   });
 

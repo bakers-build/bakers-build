@@ -28,7 +28,6 @@ import {
   type TicketPage,
   type TicketRow,
 } from '../Data/tickets.js';
-import { ticketUrl } from '../Data/url.js';
 import { TicketFilterBar } from './ticket-filter-bar.js';
 import { TicketSearch } from './ticket-search.js';
 
@@ -416,9 +415,9 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
     return link
       ? copyThrough(
           context.copyToClipboard,
-          ticketUrl(context.services?.baseUrl, row.id),
+          row.url,
           `the link to ${row.identifier}`,
-          `no link to ${row.identifier} · this session has no base URL`,
+          `no link to ${row.identifier} · the server sent no URL`,
         )
       : copyThrough(
           context.copyToClipboard,

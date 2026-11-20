@@ -25,7 +25,9 @@
 import type { VNode } from '@opentui/core';
 import { markdownRow } from '../../../../Component/markdown/index.js';
 import { asString } from '../../../../lib/format.js';
-import { columnNode, textNode } from '../../../../lib/vnode.js';
+import { FOREGROUND } from '../../../../lib/theme.js';
+import { linkRuns, ticketTopLinks } from '../../../../lib/ticket-links.js';
+import { columnNode, paragraphNode, textNode } from '../../../../lib/vnode.js';
 import type {
   JsonApiResource,
   TicketDetailDocument,
@@ -71,6 +73,8 @@ function scalar(value: unknown): string {
 interface KeyedRow {
   readonly key: string;
   readonly text: string;
+  /** A link row: word-wrapped, never shortened, `* ` then this OSC 8 URL. */
+  readonly link?: string;
 }
 
 /** A titled block of keyed rows — the run block's own shape (see D4). */
@@ -155,6 +159,24 @@ function keyedSections(
     ];
   }
   const a = run.attributes ?? {};
+  // AC-4 (BAKERS-332): the owning ticket's URL and its PRs, before everything.
+  const topLinks = ticketTopLinks(document);
+  // AC-7: one `* <full URL>` row per link; the terminal makes it an OSC 8 link.
+  const linkRow = (key: string, href: string): KeyedRow => ({
+    key,
+    text: `* ${href}`,
+    link: href,
+  });
+  const linkRows: KeyedRow[] = [
+    // The served ticket entry leads when present; a stored link never matches its href.
+    ...topLinks
+      .slice(0, 1)
+      .filter((link) => link.href === document.data?.attributes?.url)
+      .map((link) => linkRow('link-ticket', link.href)),
+    ...topLinks
+      .filter((link) => link.pullRequest)
+      .map((link, index) => linkRow(`link-pr-${index}`, link.href)),
+  ];
   // The transcript/error payload no longer lives on the entity (BB-556) —
   // preSave() writes it to a private file and clears the field, so what the
   // API returns is the byte count, not the text. `bytes > 0` and "unset"
@@ -182,6 +204,14 @@ function keyedSections(
   };
 
   return [
+    {
+      key: 'links',
+      heading: 'Links',
+      rows:
+        linkRows.length > 0
+          ? linkRows
+          : [{ key: 'links-empty', text: 'No links.' }],
+    },
     {
       key: 'run',
       heading: 'Run',
@@ -298,7 +328,12 @@ function flatRows(
   document: TicketDetailDocument,
   runId: string | null | undefined,
   baseUrl: string | undefined,
-): { key: string; text: string; bold: boolean }[] {
+): {
+  key: string;
+  text: string;
+  bold: boolean;
+  link?: string;
+}[] {
   return keyedSections(document, runId, baseUrl).flatMap((section) => [
     { key: `section-${section.key}`, text: section.heading, bold: true },
     ...section.rows.map((entry) => ({
@@ -308,6 +343,7 @@ function flatRows(
       // starting with `#` must not render one way on screen and another way in a
       // pipe. Nothing else in an entry is parsed, deliberately — see the header.
       ...markdownRow(entry.text),
+      ...(entry.link === undefined ? {} : { link: entry.link }),
     })),
     // The blank row between two sections, which the flattened surface pushed
     // after every block. The kernel's non-interactive branch drops empties, so
@@ -333,8 +369,16 @@ export function runDetailTree(
 ): VNode {
   return columnNode(
     'run-detail',
-    ...flatRows(document, runId, baseUrl).map((entry) =>
-      textRow(entry.key, entry.text, entry.bold),
+    ...flatRows(document, runId, baseUrl).map(({ key, text, bold, link }) =>
+      link !== undefined
+        ? paragraphNode({
+            id: `run-detail-${key}`,
+            runs: linkRuns(link),
+            wrapMode: 'char',
+            fg: FOREGROUND,
+            width: '100%',
+          })
+        : textRow(key, text, bold),
     ),
   );
 }

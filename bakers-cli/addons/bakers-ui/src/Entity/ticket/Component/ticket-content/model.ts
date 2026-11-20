@@ -5,6 +5,7 @@ import {
   type SectionLine,
   styledOf,
 } from '../../../../Component/section-list/index.js';
+import { ticketTopLinks } from '../../../../lib/ticket-links.js';
 import type { TicketDetailDocument } from '../../../../types.js';
 import { relativeCreated } from '../comment-item/index.js';
 import { TICKET_SECTIONS } from '../sections/index.js';
@@ -74,10 +75,9 @@ const sectionByHeading = (
   document: TicketDetailDocument,
   labels: AssignmentLabels | undefined,
   nowSeconds: number,
-  baseUrl?: string,
 ): Map<string, Section> =>
   new Map(
-    sectionsForTab(document, OVERVIEW_TAB, labels, nowSeconds, baseUrl).map(
+    sectionsForTab(document, OVERVIEW_TAB, labels, nowSeconds).map(
       (section) => [section.heading, section],
     ),
   );
@@ -297,25 +297,6 @@ const technicalProperties = (
   ];
 };
 
-const linkProperties = (lines: readonly SectionLine[]): TicketProperty[] => {
-  const meaningful = lines.filter((line) => {
-    const text = lineText(line).trim();
-    return text !== '' && text !== 'No links.';
-  });
-  if (meaningful.length === 0) return [property('links', '')];
-  return meaningful.map((line) => {
-    const text = lineText(line).trim();
-    const match = /^(.*?)\s+(https?:\/\/\S+)$/.exec(text);
-    if (match?.[1] !== undefined && match[2] !== undefined) {
-      return property(match[1], match[2], { href: match[2] });
-    }
-    if (text.startsWith('http://') || text.startsWith('https://')) {
-      return property('link', text, { href: text });
-    }
-    return property('link', text);
-  });
-};
-
 const relatedProperties = (
   document: TicketDetailDocument,
 ): TicketProperty[] => [
@@ -352,9 +333,8 @@ const overviewModel = (
   document: TicketDetailDocument,
   labels: AssignmentLabels | undefined,
   nowSeconds: number,
-  baseUrl?: string,
 ): { entries: TicketContentEntry[]; sidebar: TicketSidebar } => {
-  const byHeading = sectionByHeading(document, labels, nowSeconds, baseUrl);
+  const byHeading = sectionByHeading(document, labels, nowSeconds);
   const summaryLines = byHeading.get('Latest summary')?.lines ?? [];
   const documents: TicketContentEntry[] = [];
   if (hasSummary(summaryLines)) {
@@ -390,12 +370,16 @@ const overviewModel = (
   );
   const details = technicalProperties(byHeading, document, labels);
   const technical = asLines(details);
-  const listedLinks = linkProperties(byHeading.get('Links')?.lines ?? []);
   const origin = originProperty(document);
-  const links =
-    origin === undefined
-      ? listedLinks
-      : [origin, ...listedLinks.filter((item) => item.value !== 'none')];
+  // AC-7: each link is its full URL; a non-web origin keeps `origin: value`.
+  const links: TicketProperty[] = [
+    ...ticketTopLinks(document).map(({ key, href }) => ({
+      key,
+      value: href,
+      href,
+    })),
+    ...(origin === undefined ? [] : [origin]),
+  ];
   return {
     entries: [
       ...documents,
@@ -462,15 +446,9 @@ export function ticketContentModel(
   tab: TicketContentTab,
   labels: AssignmentLabels | undefined,
   nowSeconds: number,
-  baseUrl?: string,
 ): TicketContentModel {
   if (tab === 'overview') {
-    const { entries, sidebar } = overviewModel(
-      document,
-      labels,
-      nowSeconds,
-      baseUrl,
-    );
+    const { entries, sidebar } = overviewModel(document, labels, nowSeconds);
     return {
       entries,
       selectableKeys: entries.map((entry) => entry.key),

@@ -58,22 +58,11 @@ export class TicketDetailScreen extends TicketContentScreen {
   ): string[] {
     const nowSeconds = context.nowSeconds?.() ?? Math.floor(Date.now() / 1000);
     return flattenSections([
-      ...detailSections(
-        document,
-        this.labels,
-        nowSeconds,
-        context.services?.baseUrl,
-      ).filter(
+      ...detailSections(document, this.labels, nowSeconds).filter(
         (section) =>
           section.heading === 'State' || section.heading === 'Labels',
       ),
-      ...sectionsForTab(
-        document,
-        0,
-        this.labels,
-        nowSeconds,
-        context.services?.baseUrl,
-      ),
+      ...sectionsForTab(document, 0, this.labels, nowSeconds),
     ]).lines;
   }
 }
