@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Form\TicketNavigation;
 use Drupal\bb_track\Entity\Account;
 use Drupal\bb_track\WorkAssignments;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -152,7 +153,9 @@ final class AccountActionsForm extends FormBase {
     }
     $billing_account = $form_state->get('account');
     assert($billing_account instanceof Account);
-    $form_state->setRedirectUrl($billing_account->toUrl());
+    // Core drops form redirects on htmx requests; a rebuilt page here would
+    // still show the account as it was before the write.
+    TicketNavigation::finishAt($billing_account->toUrl(), $form_state, $this->getRequest());
   }
 
   /**

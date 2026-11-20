@@ -334,20 +334,22 @@ Feature: The team screen's five tabs are routes inside one island
   # than one member, so "back to the noted length" was satisfied just as well by
   # deleting the wrong one — which is exactly what the control did when this
   # scenario first reported green.
-  Scenario: Removing a member re-renders only the members island
+  #
+  # BAKERS-338: Remove sits on the member's page and returns to the roster, a
+  # navigation without a reload; only the add still re-renders the island in
+  # place, so the rail is asserted after the add.
+  Scenario: Removing a member from their page returns to the roster without a reload
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     And I note the members list
     When I add the member "both-bakeries"
     Then the members list has one more row
+    And the rail was not part of the swap
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
     And the members list is back to the members I noted
     And the document was not reloaded
-    And the rail was not part of the swap
-    # THE SECOND CLICK, landing on the fragment the REMOVE handed back rather
-    # than on one a navigation produced — one swap deeper than any tab-only
-    # scenario reaches.
+    # THE SECOND CLICK, landing on the page the REMOVE returned to.
     When I click the tab "Runs"
     Then the document was not reloaded
     And the tab "Runs" is current

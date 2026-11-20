@@ -43,6 +43,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  * and inviting are dialogs of their own, opened from the page header.
  *
  * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
 final class GroupMembersForm extends IslandFormBase implements TrustedCallbackInterface {
 
@@ -281,7 +282,9 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     // Invitations are rows of the same list, in the same newest-first order.
     $pending = array_values($this->tenancyInvite->pendingInvites($group));
     $invites = $this->tenancyInvite->inviteItems($pending);
-    $invites['items'] = self::linked($invites['items'], array_map(static fn ($invite): Url => $invite->toUrl(), $pending));
+    // The invitation page is no member page: a boosted click inside this
+    // island would re-render the island there, so it loads as a document.
+    $invites['items'] = self::linked($invites['items'], array_map(static fn ($invite): Url => $invite->toUrl(), $pending), TRUE);
     return self::interleave(
       $rows + ['entities' => $memberships],
       $invites + ['entities' => $pending],
@@ -295,17 +298,26 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    *   The built items.
    * @param array<int, \Drupal\Core\Url> $urls
    *   Each item's detail, keyed like the items.
+   * @param bool $full_load
+   *   Whether the link leaves the island for a page of another surface.
    *
    * @return array<int, array<string, mixed>>
    *   The items, each name a `link` cell.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
    */
-  private static function linked(array $items, array $urls): array {
+  private static function linked(array $items, array $urls, bool $full_load = FALSE): array {
     foreach ($items as $index => &$item) {
       if (!isset($item['cells']['name'], $urls[$index])) {
         continue;
       }
       $url = $urls[$index]->toString();
-      $item['cells']['name'] = ['kind' => 'link', 'value' => $item['cells']['name']['value'], 'url' => $url];
+      $item['cells']['name'] = [
+        'kind' => 'link',
+        'value' => $item['cells']['name']['value'],
+        'url' => $url,
+        'full_load' => $full_load,
+      ];
       $item['url'] = $url;
     }
     return $items;
@@ -601,8 +613,9 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     }
     $data = $this->hostData($form_state);
     if (isset($data['member'])) {
-      // A member's page whose member is gone: back to the roster.
-      $this->messenger()->addStatus($this->t('Removed @name.', ['@name' => $name]));
+      // A member's page whose member is gone: back to the roster, whose face
+      // shows the result; a boosted page answer carries no status messages.
+      $this->messenger()->addMessage($this->t('Removed @name.', ['@name' => $name]), WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
       [$route, $parameters] = $data['routes']['list'];
       return IslandResponse::make()->location(Url::fromRoute($route, $parameters));
     }
