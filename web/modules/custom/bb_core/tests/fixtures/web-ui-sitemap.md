@@ -67,6 +67,15 @@ table above.
 |---|---|---|---|---|---|
 | Invite members | `bb_core.workspace_invite` | `/{ws}/invite` | Form (island dialog) | `bb_workspace.update` | `_entity_access` |
 
+## Team member add — a dialog, not a tab
+
+The **Add member** button in the team page header opens a dialog on its own
+route; without JavaScript it is its own page.
+
+| Place | Route name | Path | Renders | Gate | Mechanism |
+|---|---|---|---|---|---|
+| Add member | `bb_core.bb_team.member_add` | `/{ws}/team/{id}/members/add` | Form (island dialog) | `bb_team.update` | `_entity_access` |
+
 ## Project detail — eight tabs, Overview default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
