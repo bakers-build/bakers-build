@@ -109,6 +109,7 @@ trait WorkspaceReadScopeTestTrait {
     foreach (self::READ_SCOPE_ENTITY_TYPES as $entity_type_id) {
       $this->installEntitySchema($entity_type_id);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['user']);
     // The term bundles are owned by the recipe, which a kernel test does
     // not apply, so the fixture creates them itself.

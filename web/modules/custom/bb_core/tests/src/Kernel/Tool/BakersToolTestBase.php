@@ -57,6 +57,7 @@ abstract class BakersToolTestBase extends KernelTestBase {
     ] as $type) {
       $this->installEntitySchema($type);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['user', 'filter']);
     $this->installOgScopeFixture();
     FilterFormat::create(['format' => 'bb_rich', 'name' => 'Rich'])->save();

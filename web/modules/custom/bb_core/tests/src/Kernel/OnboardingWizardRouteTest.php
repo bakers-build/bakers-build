@@ -201,7 +201,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
    * Reopening About you without a workspace shows the default profile.
    */
   public function testAboutPrefillsFromTheDefaultProfile(): void {
-    $account = $this->submitAboutWithoutWorkspace();
+    $this->submitAboutWithoutWorkspace();
 
     $form_state = new FormState();
     $form_state->set('bb_onboarding_step', 2);
@@ -522,7 +522,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
   }
 
   /**
-   * The account has a stored profile in the workspace with the About you answers.
+   * The account's stored profile in the workspace holds the answers.
    */
   private function assertStoredProfile(UserInterface $account, BbWorkspaceInterface $workspace): void {
     $stored = $this->container->get(Profiles::class)->ofAccount((int) $account->id())[(int) $workspace->id()] ?? NULL;

@@ -43,6 +43,7 @@ final class ProfileMigrationTest extends KernelTestBase {
     foreach (['user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group', 'bb_project', 'bb_profile'] as $type) {
       $this->installEntitySchema($type);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installSchema('dblog', ['watchdog']);
     $this->installConfig(['user']);
     $this->installOgScopeFixture();

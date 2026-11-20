@@ -798,8 +798,7 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
-   * Saves About-you fields from step 2 as the default profile and into each
-   * workspace's profile.
+   * Saves About-you fields as the default profile and in each workspace.
    */
   private function saveAbout(FormStateInterface $form_state): void {
     $user = $this->currentUserEntity();
