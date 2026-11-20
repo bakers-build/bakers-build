@@ -26,21 +26,23 @@ use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\island\Form\WrappedDialogFormTrait;
 
 /**
- * Confirms Restart runs on a machine or one conductor.
+ * Confirms Restart runs on a machine, one conductor or one ticket.
  *
- * Lists the covered runs; the confirm cancels them through
- * TicketInterventions::restartRuns(), and each ticket gets one fresh run. The
- * posted list must still be the covered set, else the dialog re-renders.
- * Only the machine's owner reaches it.
+ * A machine or conductor lists its covered tickets, all checked; OK cancels
+ * the runs of the checked ones through
+ * TicketInterventions::cancelSelectedRuns(), and each ticket gets one fresh
+ * run. A ticket confirms its own runs. The posted tickets must still be the
+ * covered set, else the dialog re-renders. Only the machine's owner reaches
+ * a machine or conductor; a ticket's editor reaches the ticket.
  */
 final class BbRestartRunsForm extends EntityForm {
 
   use WrappedDialogFormTrait;
 
   /**
-   * The machine or conductor.
+   * The machine, conductor or ticket.
    *
-   * @var \Drupal\bb_core\Entity\BbMachineInterface|\Drupal\bb_core\Entity\BbConductorInterface
+   * @var \Drupal\bb_core\Entity\BbMachineInterface|\Drupal\bb_core\Entity\BbConductorInterface|\Drupal\bb_core\Entity\BbTicketInterface
    */
   protected $entity;
 
@@ -58,7 +60,7 @@ final class BbRestartRunsForm extends EntityForm {
   /**
    * The confirmation, as a dialog or as a plain page.
    */
-  public static function confirmationUrl(BbMachineInterface|BbConductorInterface $target, bool $dialog, ?string $destination = NULL): Url {
+  public static function confirmationUrl(BbMachineInterface|BbConductorInterface|BbTicketInterface $target, bool $dialog, ?string $destination = NULL): Url {
     $query = ['destination' => $destination ?? $target->toUrl()->toString()];
     if ($dialog) {
       $query['_wrapper_format'] = 'island_dialog';
@@ -69,7 +71,7 @@ final class BbRestartRunsForm extends EntityForm {
   /**
    * The htmx attributes that open the confirmation in the overlay.
    */
-  public static function dialogAttributes(BbMachineInterface|BbConductorInterface $target, ?string $destination = NULL): Attribute {
+  public static function dialogAttributes(BbMachineInterface|BbConductorInterface|BbTicketInterface $target, ?string $destination = NULL): Attribute {
     // The create-trigger contract: the overlay is the target, and only the
     // answer's `dialog` element is swapped in.
     return (new Htmx())->get(self::confirmationUrl($target, TRUE, $destination))
@@ -82,7 +84,7 @@ final class BbRestartRunsForm extends EntityForm {
    * @return array<string, mixed>
    *   The button render array.
    */
-  public static function button(BbMachineInterface|BbConductorInterface $target): array {
+  public static function button(BbMachineInterface|BbConductorInterface|BbTicketInterface $target): array {
     $attributes = self::dialogAttributes($target);
     return [
       '#type' => 'component',
@@ -106,34 +108,32 @@ final class BbRestartRunsForm extends EntityForm {
     $form['#cache']['max-age'] = 0;
     $this->attachDialogHtmx($form);
 
-    $available = TicketInterventions::mayRestartRuns($target, $this->currentUser());
-    $runs = $available ? TicketInterventions::restartCoveredRuns($target) : [];
-    $question = match (TRUE) {
-      !$available => $this->t('This action is not available.'),
-      $runs === [] => $this->t('@target has no runs to restart.', ['@target' => $this->name()]),
-      default => $this->t('Restart runs on @target? Each run below is cancelled, and its ticket gets one fresh run.', ['@target' => $this->name()]),
-    };
-    if ($runs !== [] && !$this->isOnline()) {
-      $question .= ' ' . $this->t('It is offline: tab and runtime cleanup and the fresh runs follow its next start.');
-    }
+    $available = $this->available($target);
+    $groups = $available ? TicketInterventions::byTicket($this->covered($target)) : [];
     $form['question'] = [
       '#type' => 'component',
       '#component' => 'bb_theme:message',
-      '#props' => ['status' => $runs === [] ? 'status' : 'warning'],
-      '#slots' => ['body' => ['#plain_text' => (string) $question]],
+      '#props' => ['status' => $groups === [] ? 'status' : 'warning'],
+      '#slots' => ['body' => ['#plain_text' => $this->question($available, $groups)]],
       '#weight' => -10,
     ];
-    $form['runs'] = [
-      '#theme' => 'item_list',
-      '#items' => array_values(array_map(fn (BbRunInterface $run): string => $this->runLine($run), $runs)),
-      '#weight' => -5,
-    ];
+    if ($groups !== [] && !$target instanceof BbTicketInterface) {
+      $options = array_map(fn (array $runs): string => $this->ticketLine($runs), $groups);
+      $form['tickets'] = [
+        '#type' => 'checkboxes',
+        '#title' => $this->t('Tickets'),
+        '#title_display' => 'invisible',
+        '#options' => $options,
+        '#default_value' => array_keys($options),
+        '#weight' => -5,
+      ];
+    }
     $form['actions'] = ['#type' => 'actions'];
     $form['actions']['keep'] = [
       '#type' => 'component',
       '#component' => 'bb_theme:button',
       '#props' => [
-        'label' => (string) $this->t('Keep runs'),
+        'label' => (string) $this->t('Cancel'),
         'href' => ($this->getRequest()->query->has('destination') ? $this->returnUrl() : $target->toUrl())->toString(),
         'variant' => 'ghost',
         // island.dialog.js closes on Esc and the close control through this.
@@ -141,15 +141,15 @@ final class BbRestartRunsForm extends EntityForm {
       ],
       '#weight' => 0,
     ];
-    if ($runs === []) {
+    if ($groups === []) {
       return $form;
     }
-    // The set the person saw; a different set at submit is stale.
-    $form['bb_covered'] = ['#type' => 'hidden', '#value' => implode(',', array_keys($runs))];
+    // The tickets the person saw; a different set at submit is stale.
+    $form['bb_covered'] = ['#type' => 'hidden', '#value' => implode(',', array_keys($groups))];
     $form['actions']['bb_confirm'] = [
       '#type' => 'submit',
       '#name' => 'bb_confirm',
-      '#value' => $this->t('Restart runs'),
+      '#value' => $this->t('OK'),
       '#bb_variant' => 'danger',
       '#theme_wrappers' => ['input__submit__bb_button'],
       '#limit_validation_errors' => [],
@@ -157,6 +157,32 @@ final class BbRestartRunsForm extends EntityForm {
       '#weight' => 10,
     ];
     return $form;
+  }
+
+  /**
+   * The question the dialog asks.
+   *
+   * @param bool $available
+   *   Whether the current account may restart the target.
+   * @param array<int, array<int|string, \Drupal\bb_core\Entity\BbRunInterface>> $groups
+   *   The covered runs by ticket.
+   */
+  private function question(bool $available, array $groups): string {
+    $target = $this->entity;
+    if (!$available) {
+      return (string) ($target instanceof BbTicketInterface ? $this->t('There is no run to restart.') : $this->t('This action is not available.'));
+    }
+    if ($groups === []) {
+      return (string) $this->t('@target has no runs to restart.', ['@target' => $this->name()]);
+    }
+    if ($target instanceof BbTicketInterface) {
+      return (string) $this->t('Restart @target? @runs is cancelled, and the ticket gets one fresh run.', [
+        '@target' => $this->name(),
+        '@runs' => $this->runList(reset($groups)),
+      ]);
+    }
+    $question = (string) $this->t('Restart runs on @target? The runs of each checked ticket are cancelled, and the ticket gets one fresh run.', ['@target' => $this->name()]);
+    return $this->isOnline() ? $question : $question . ' ' . $this->t('It is offline: tab and runtime cleanup and the fresh runs follow its next start.');
   }
 
   /**
@@ -174,7 +200,7 @@ final class BbRestartRunsForm extends EntityForm {
   }
 
   /**
-   * Cancels the covered runs, when they are still the ones listed.
+   * Cancels the runs of the checked tickets, when the list is still current.
    *
    * Form API submit handler; the form array is part of its signature.
    *
@@ -183,34 +209,74 @@ final class BbRestartRunsForm extends EntityForm {
   public function submitRestart(array &$form, FormStateInterface $form_state): void {
     $trigger = $form_state->getTriggeringElement();
     $input = $form_state->getUserInput() + $form_state->getValues();
-    $posted = (string) ($input['bb_covered'] ?? '');
     $target = $this->entityTypeManager->getStorage($this->entity->getEntityTypeId())->loadUnchanged($this->entity->id());
     if (($trigger['#name'] ?? '') !== 'bb_confirm'
-      || !($target instanceof BbMachineInterface || $target instanceof BbConductorInterface)
-      || !TicketInterventions::mayRestartRuns($target, $this->currentUser())) {
+      || !($target instanceof BbMachineInterface || $target instanceof BbConductorInterface || $target instanceof BbTicketInterface)
+      || !$this->available($target)) {
       $this->messenger()->addError($this->t('This action is not available.'));
       return;
     }
-    if ($posted !== implode(',', array_keys(TicketInterventions::restartCoveredRuns($target)))) {
+    $groups = TicketInterventions::byTicket($this->covered($target));
+    if ((string) ($input['bb_covered'] ?? '') !== implode(',', array_keys($groups))) {
       $this->messenger()->addError($this->t('The runs changed since the dialog opened. Check the list again.'));
       $form_state->setRebuild();
       return;
     }
-    $runs = TicketInterventions::restartRuns($target, $this->currentUser());
+    $checked = $target instanceof BbTicketInterface ? $groups : array_intersect_key($groups, array_filter((array) ($input['tickets'] ?? [])));
+    $runs = $checked === [] ? [] : array_replace(...array_values($checked));
+    try {
+      TicketInterventions::cancelSelectedRuns($runs, $this->currentUser(), TicketInterventions::restartReason($target));
+    }
+    catch (\InvalidArgumentException) {
+      $this->messenger()->addError($this->t('This action is not available.'));
+      $form_state->setRebuild();
+      return;
+    }
     $this->messenger()->addStatus($this->formatPlural(count($runs), 'Restarted 1 run.', 'Restarted @count runs.'));
     $this->respondAtReturnUrl($form_state);
   }
 
   /**
-   * One run's line: ticket, run number, state, and a frozen ticket's wait.
+   * Whether the current account may restart the target.
    */
-  private function runLine(BbRunInterface $run): string {
-    $ticket = $run->getTicket();
-    $identifier = $ticket instanceof BbTicketInterface ? $ticket->getIdentifier() : '?';
-    $line = sprintf('%s · run #%s · %s', $identifier, $run->id(), $run->getRunState());
-    return $ticket instanceof BbTicketInterface && $ticket->isFrozen()
-      ? $line . ' · ' . $this->t('frozen: the fresh run follows unfreeze')
-      : $line;
+  private function available(BbMachineInterface|BbConductorInterface|BbTicketInterface $target): bool {
+    return $target instanceof BbTicketInterface
+      ? TicketInterventions::mayRestartTicket($target)
+      : TicketInterventions::mayRestartRuns($target, $this->currentUser());
+  }
+
+  /**
+   * The runs the target's Restart runs covers.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The runs keyed by id.
+   */
+  private function covered(BbMachineInterface|BbConductorInterface|BbTicketInterface $target): array {
+    return $target instanceof BbTicketInterface
+      ? TicketInterventions::ticketRestartRuns($target)
+      : TicketInterventions::restartCoveredRuns($target);
+  }
+
+  /**
+   * One ticket's line: identifier, title and its runs.
+   *
+   * @param non-empty-array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs
+   *   The ticket's covered runs.
+   */
+  private function ticketLine(array $runs): string {
+    $ticket = reset($runs)->getTicket();
+    $label = $ticket instanceof BbTicketInterface ? $ticket->getIdentifier() . ' · ' . $ticket->getTitle() : '?';
+    return $label . ' · ' . $this->runList($runs);
+  }
+
+  /**
+   * The runs as `run #12 (running), run #9 (failed)`.
+   *
+   * @param array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs
+   *   The runs.
+   */
+  private function runList(array $runs): string {
+    return implode(', ', array_map(static fn (BbRunInterface $run): string => sprintf('run #%s (%s)', $run->id(), $run->getRunState()), $runs));
   }
 
   /**
@@ -231,9 +297,11 @@ final class BbRestartRunsForm extends EntityForm {
    * The target's visible name.
    */
   private function name(): string {
-    return $this->entity instanceof BbMachineInterface
-      ? BbMachineRouteProvider::title($this->entity)
-      : BbConductorRouteProvider::title($this->entity);
+    return match (TRUE) {
+      $this->entity instanceof BbMachineInterface => BbMachineRouteProvider::title($this->entity),
+      $this->entity instanceof BbConductorInterface => BbConductorRouteProvider::title($this->entity),
+      default => $this->entity->getIdentifier() !== '' ? $this->entity->getIdentifier() : (string) $this->entity->label(),
+    };
   }
 
 }

@@ -363,6 +363,21 @@ entity.bb_ticket.action_form:
       bb_ticket:
         type: 'entity:bb_ticket'
 
+# Restart runs of one ticket: a dialog over the ticket with JavaScript, a page
+# without it.
+entity.bb_ticket.restart_form:
+  path: '/_workspace/{bb_workspace}/ticket/{bb_ticket}/restart'
+  defaults:
+    _entity_form: 'bb_ticket.restart'
+    _title: 'Restart runs'
+  requirements:
+    _entity_access: 'bb_ticket.update'
+    _user_is_logged_in: 'TRUE'
+  options:
+    parameters:
+      bb_ticket:
+        type: 'entity:bb_ticket'
+
 # Disable / Enable confirmation: a dialog over the Overview with JavaScript,
 # a page without it.
 entity.bb_conductor.action_form:
