@@ -30,6 +30,10 @@ When('I open the device verification page for that code', async ({ page }) => {
   await markDocument(page);
 });
 
+When("I open the consent's {string} details", async ({ page }, label: string) => {
+  await page.locator(GATE_CONTENT).locator('summary', { hasText: label }).click();
+});
+
 When('I confirm the device sign-in', async ({ page }) => {
   // The link filled in the code; the person compares it and only decides.
   await page.getByRole('button', { name: 'Confirm sign-in' }).click();
@@ -71,7 +75,7 @@ Then('the consent lists the membership {string} below its workspace', async ({ p
 Then('the consent says in plain words what confirming grants', async ({ page }) => {
   await expect(page.locator(GATE_CONTENT).getByText(/^If you confirm, the device can do everything you can do/)).toBeVisible();
   // The raw scope stays behind the collapsed technical details.
-  const details = page.locator(GATE_CONTENT).locator('details:not([open])');
+  const details = page.locator(GATE_CONTENT).locator('details:not([open])', { hasText: 'Technical details' });
   await expect(details).toContainText('bb:session');
   await expect(details.getByText('bb:session')).toBeHidden();
 });

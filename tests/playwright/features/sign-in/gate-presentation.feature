@@ -10,8 +10,9 @@ Feature: Device sign-in consent and result
     When I open the device verification page for that code
     Then the consent names the requesting client
     And the device code field shows that code
-    And the consent lists the membership "Team Design Crew — Member" below its workspace
     And the consent says in plain words what confirming grants
+    When I open the consent's "Your workspaces and roles" details
+    Then the consent lists the membership "Team Design Crew — Member" below its workspace
     And the page has exactly one h1
     When I confirm the device sign-in
     Then the address carries "done=confirmed"

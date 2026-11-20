@@ -447,6 +447,13 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
       'Workspace solo',
       'Team Orphan — Member',
     ], $lines, 'Each group once, teams below their workspace, workspaces sorted.');
+    $hidden = (new \DOMXPath(Html::load($content)))->query('//details[not(@open)][summary[contains(., "Your workspaces and roles")]]//p');
+    $this->assertInstanceOf(\DOMNodeList::class, $hidden);
+    $inside = [];
+    foreach ($hidden as $paragraph) {
+      $inside[] = trim($paragraph->nodeValue ?? '');
+    }
+    $this->assertSame($lines, $inside, 'The group lines sit only in the closed memberships element.');
     $text = $this->textOf($content);
     $this->assertStringNotContainsString('Elsewhere', $text);
     $this->assertStringNotContainsString('Lead, Lead', $text);
@@ -488,7 +495,8 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $content = $this->consentPage();
     $text = $this->textOf($content);
     $this->assertStringContainsString('Device functional client wants to sign in to bakers.build (localhost) as ' . $user->getDisplayName() . '.', $text);
-    $this->assertStringContainsString('If you confirm, the device can do everything you can do on bakers.build, in the workspaces and teams below, with your roles there.', $text);
+    $this->assertStringContainsString('If you confirm, the device can do everything you can do on bakers.build, in your workspaces and teams, with your roles there.', $text);
+    $this->assertStringNotContainsString('teams below', $text);
     $this->assertStringNotContainsString('Requested access:', $text);
 
     $xpath = new \DOMXPath(Html::load($content));
@@ -497,9 +505,9 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $this->assertSame(1, $details->length, 'The scopes sit in one collapsed element.');
     $this->assertSame(1, substr_count($text, 'test:device'), 'No scope appears outside it.');
 
-    $links = $xpath->query('//a[@href="https://bakers.build/docs/provision/security/access-and-data#roles-and-permissions"][contains(., "What do these roles mean?")]');
+    $links = $xpath->query('//details[not(@open)][summary[contains(., "Your workspaces and roles")]][following::details[contains(., "Technical details")]]//a[@href="https://bakers.build/docs/provision/security/access-and-data#roles-and-permissions"][contains(., "What do these roles mean?")]');
     $this->assertInstanceOf(\DOMNodeList::class, $links);
-    $this->assertSame(1, $links->length);
+    $this->assertSame(1, $links->length, 'The docs link sits in the closed memberships element, above the technical details.');
   }
 
   /**
@@ -522,6 +530,7 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $this->assertStringContainsString("You aren't in any workspace yet, so the device can't reach any workspace content.", $text);
     $this->assertStringNotContainsString('Workspace keytec', $text);
     $this->assertStringNotContainsString('What do these roles mean?', $text);
+    $this->assertStringNotContainsString('Your workspaces and roles', $text);
   }
 
   /**

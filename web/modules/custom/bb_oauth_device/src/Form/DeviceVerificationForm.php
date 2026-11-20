@@ -92,7 +92,7 @@ class DeviceVerificationForm extends FormBase {
     // The page's one h1: the gate chrome carries the mark, not a heading.
     $form['heading'] = $this->text($this->t('Sign in a device'), [
       'as' => 'h1',
-      'size' => 'section-title',
+      'size' => 'page-title',
     ]) + ['#weight' => -20];
     $form['user_code'] = [
       '#type' => 'textfield',
@@ -158,17 +158,19 @@ class DeviceVerificationForm extends FormBase {
       '@site' => $site,
       '@host' => $this->getRequest()->getHost(),
       '@account' => $this->currentUser->getDisplayName(),
-    ]), ['size' => 'section-title']);
+    ]));
     $memberships = $this->membershipBlocks();
     $form['consent_access'] = $this->text($memberships
-      ? $this->t('If you confirm, the device can do everything you can do on @site, in the workspaces and teams below, with your roles there.', ['@site' => $site])
+      ? $this->t('If you confirm, the device can do everything you can do on @site, in your workspaces and teams, with your roles there.', ['@site' => $site])
       : $this->t("You aren't in any workspace yet, so the device can't reach any workspace content."));
-    foreach ($memberships as $delta => $block) {
+    // Closed by default: the lines lengthen the centred decision frame.
+    $lines = [];
+    foreach ($memberships as $block) {
       // One paragraph per line keeps each line escaped once; the gapless
       // zone keeps a workspace's lines together, its teams smaller below.
       $head = array_shift($block);
       $team = ['size' => 'meta', 'tone' => 'light'];
-      $form['consent_membership_' . $delta] = [
+      $lines[] = [
         '#type' => 'component',
         '#component' => 'bb_theme:zone',
         '#props' => ['inset' => 'none', 'gap' => 'none'],
@@ -181,9 +183,26 @@ class DeviceVerificationForm extends FormBase {
       ];
     }
     if ($memberships) {
-      $form['consent_roles'] = $this->text($this->t('What do these roles mean?'), [
+      $lines[] = $this->text($this->t('What do these roles mean?'), [
         'href' => 'https://bakers.build/docs/provision/security/access-and-data#roles-and-permissions',
       ]);
+      $form['consent_memberships'] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:collapsible',
+        '#slots' => [
+          'label' => $this->text($this->t('Your workspaces and roles'), [
+            'as' => 'span',
+            'size' => 'meta',
+            'tone' => 'faint',
+          ]),
+          'content' => [
+            '#type' => 'component',
+            '#component' => 'bb_theme:zone',
+            '#props' => ['inset' => 'none', 'gap' => 'sm'],
+            '#slots' => ['content' => $lines],
+          ],
+        ],
+      ];
     }
     $scopes = array_map(static fn ($scope) => $scope->getIdentifier(), $device_code->getScopes());
     $form['consent_scopes'] = [
