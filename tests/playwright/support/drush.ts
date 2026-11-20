@@ -49,6 +49,9 @@ export async function phpUnderLock(snippet: string): Promise<string> {
   return phpWithRetry(snippet, ['Time data is being changed']);
 }
 
+/** MariaDB's deadlock victim message; only idempotent snippets may retry it. */
+export const DEADLOCK = '1213 Deadlock found';
+
 /** Retries only the named transient failures, preserving the final error. */
 export async function phpWithRetry(snippet: string, transientErrors: string[]): Promise<string> {
   for (let attempt = 1; ; attempt++) {
