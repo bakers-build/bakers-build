@@ -64,3 +64,30 @@ it('shows the run state the server reports now after a reload', async () => {
   await tick();
   expect(screen.renderNonInteractive(opened)).toContain('state:         done');
 });
+
+it('loads the run itself when opened without a ticket snapshot (BAKERS-338)', async () => {
+  const requests: string[] = [];
+  const context = {
+    params: { ticketId: 't1', runId: 'r1' },
+    sessionGeneration: 1,
+    requestDraw: vi.fn(),
+    isActive: () => true,
+    services: {
+      client: {
+        get: async (path: string) => {
+          requests.push(path);
+          return ticketWithRun('running');
+        },
+      },
+    },
+  } as unknown as ScreenContext;
+  const screen = new RunDetailScreen();
+  screen.enter(context);
+  await tick();
+  expect(requests).toEqual(['bb_ticket/bb_ticket/t1']);
+  expect(screen.renderNonInteractive(context)).toContain(
+    'state:         running',
+  );
+  // Running and the newest run: the detail offers Cancel run.
+  expect(screen.commandForInput('x')).toBe('cancel-run');
+});

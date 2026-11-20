@@ -18,7 +18,7 @@ bakers tools tool_api__bakers_ticket_read --data '{"ticket":"<identifier>"}'
 
 ## Runs
 
-A run is one execution attempt for a ticket state: a claim, a worktree and an agent session hosted by the configured executor. A state may have retries. The ticket's **Runs** tab lists them; `Enter` opens one with its log and footprint (tokens, turns, tool calls).
+A run is one execution attempt for a ticket state: a claim, a worktree and an agent session hosted by the configured executor. A state may have retries. The ticket's **Runs** tab lists them; `Enter` opens one with its log and footprint (tokens, turns, tool calls), and `x` on that run detail cancels a `claimed` or `running` run. The list rows themselves only open.
 
 | Run state | Meaning |
 |---|---|

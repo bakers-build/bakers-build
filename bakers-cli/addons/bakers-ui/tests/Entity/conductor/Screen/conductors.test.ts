@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ConductorOverviewScreen } from '../../../../src/Entity/conductor/Screen/conductor-overview.js';
 import { ConductorsScreen } from '../../../../src/Entity/conductor/Screen/conductors.js';
 import type { ScreenContext } from '../../../../src/Screen/screen.js';
 import type {
@@ -87,7 +88,9 @@ function harness(
             : '';
           if (query.includes('page[limit]=1'))
             return { data: [], meta: { count: rows.length } };
-          return {
+          // The conductor detail's single read: one resource, not an array.
+          const single = path.split('?')[0]?.split('/')[2];
+          const doc = {
             data: rows.map((row) => ({
               id: row.id,
               type: 'bb_conductor--bb_conductor',
@@ -118,6 +121,9 @@ function harness(
             ],
             meta: { count: rows.length },
           };
+          return single
+            ? { ...doc, data: doc.data.find((row) => row.id === single) }
+            : doc;
         },
       } as unknown as DropshClient,
       baseUrl: 'http://web',
@@ -161,16 +167,29 @@ describe('the Conductors screen', () => {
     }
   });
 
-  it('offers Restart runs only when the operator owns the machine', async () => {
+  it('offers no Restart runs on a row (BAKERS-338)', async () => {
+    const screen = new ConductorsScreen();
+    screen.enter(harness());
+    await tick();
+    await tick();
+    expect(screen.actionForInput).toBeUndefined();
+    screen.leave();
+  });
+
+  it('the conductor overview offers Restart runs only when the operator owns the machine', async () => {
     for (const [owner, offered] of [
       ['user-cw', true],
       ['user-other', false],
       // No machine: the conductor's own owner decides, as on the site.
       [null, true],
     ] as const) {
-      const screen = new ConductorsScreen();
-      const context = harness([conductor()], owner);
+      const screen = new ConductorOverviewScreen();
+      const context = {
+        ...harness([conductor()], owner),
+        params: { conductorId: 'c-1' },
+      };
       screen.enter(context);
+      await tick();
       await tick();
       await tick();
       expect(screen.actionForInput('r') !== undefined).toBe(offered);

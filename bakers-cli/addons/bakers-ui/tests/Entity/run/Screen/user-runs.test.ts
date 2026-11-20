@@ -58,11 +58,24 @@ it('publishes count/page in meta and Enter/Tab in actions — not a status ladde
   } as ScreenContext);
   expect(shown.status).toBeUndefined();
   expect(shown.meta ?? '').toMatch(/page /);
-  expect(formatActionLadder(shown.actions)).toContain('Enter ticket');
+  expect(formatActionLadder(shown.actions)).toContain('Enter run');
   expect(formatActionLadder(shown.actions)).toContain('Tab tabs');
   expect(
     renderTree(nodeById(shown.body, 'user-runs-filter-closed-chip')!).join(''),
   ).toBe('x closed: hidden');
+});
+
+it('Enter opens the run detail of the selected row (BAKERS-338)', () => {
+  const screen = new WorkspaceMemberRunsScreen();
+  screen.showRows([{ id: 'r-1', ticketId: 't-1' }] as never);
+  const navigate = vi.fn();
+  const context = { navigate } as unknown as ScreenContext;
+
+  expect(screen.activate(0, context)).toBe(true);
+  expect(navigate).toHaveBeenCalledWith('run.detail', {
+    ticketId: 't-1',
+    runId: 'r-1',
+  });
 });
 
 it('a click selects an unselected row and rejects out-of-range rows', () => {

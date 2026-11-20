@@ -449,11 +449,3 @@ export function ticketRunRows(document: {
     .sort(compareRunsNewestFirst)
     .map((item) => mapRunData(item, ticketsById));
 }
-
-/** The selected run's ticket id, or null when out of range / ticket-less. */
-export function selectedRunTicketId(
-  rows: Pick<RunRow, 'ticketId'>[],
-  index: number,
-): string | null {
-  return rows[index]?.ticketId ?? null;
-}

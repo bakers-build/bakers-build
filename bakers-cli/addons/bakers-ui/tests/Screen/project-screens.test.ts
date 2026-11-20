@@ -366,8 +366,10 @@ describe('project tab screens own their asynchronous lifecycle', () => {
     for (const id of shown.rowIds ?? [])
       expect(nodes.has(id), `${id} names a node of the body`).toBe(true);
     expect(screen.handleInput('enter', routed)).toBe(true);
-    expect(navigate).toHaveBeenCalledWith('ticket.runs', {
+    // BAKERS-338: a run row opens the run's own detail.
+    expect(navigate).toHaveBeenCalledWith('run.detail', {
       ticketId: 'ticket-2',
+      runId: 'run-2',
     });
   });
 });

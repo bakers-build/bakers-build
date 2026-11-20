@@ -26,6 +26,10 @@ export interface ConductorDetail {
   maxParallel: number;
   /** THIS record's machine host_key, for the `mine` derivation. */
   hostKey: string | undefined;
+  /** The conductor's owner, `null` when unowned. */
+  ownerUserId: string | null;
+  /** The machine's owner; `null` when unreadable, `undefined` without a machine. */
+  machineOwnerUserId: string | null | undefined;
 }
 
 const str = (v: unknown): string | undefined =>
@@ -84,6 +88,12 @@ export async function loadConductorDetail(
     currentLoad: num(machineAttrs.current_load) ?? num(attrs.current_load) ?? 0,
     maxParallel: num(machineAttrs.max_parallel) ?? num(attrs.max_parallel) ?? 0,
     hostKey,
+    ownerUserId: singleRelId(raw, 'owner_user_id'),
+    machineOwnerUserId: machine
+      ? singleRelId(machine, 'owner_user_id')
+      : machineId
+        ? null
+        : undefined,
   };
 }
 
@@ -114,7 +124,7 @@ export async function readConductorDetail(
       nowSeconds,
     );
   const cached = context.store.get(key);
-  if (cached) return cached;
+  if (cached && context.store.has(key)) return cached;
   const detail = await loadConductorDetail(
     context.services.client,
     conductorId,
@@ -122,4 +132,12 @@ export async function readConductorDetail(
   );
   context.store.set(key, detail, ['detail']);
   return detail;
+}
+
+/** Drop the cached read, so the next {@link readConductorDetail} asks again. */
+export function forgetConductorDetail(
+  context: ConductorDetailContext,
+  conductorId: string,
+): void {
+  context.store?.invalidate(conductorDetailKey(conductorId));
 }

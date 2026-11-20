@@ -4,7 +4,6 @@ import {
   loadProjectRuns,
   mapRunData,
   RUN_LIST_ATTRIBUTES,
-  selectedRunTicketId,
   ticketRunRows,
 } from '../../../../src/Entity/run/Data/runs.js';
 import type { DropshClient, JsonApiResource } from '../../../../src/types.js';
@@ -135,15 +134,6 @@ it('renders a dash and null ticketId when the ticket include is absent', () => {
   expect(row.ticketIdentifier).toBe('—');
   expect(row.phase).toBe('—');
   expect(row.agent).toBe('—');
-});
-
-it('resolves the selected run row to its ticket id (or null)', () => {
-  const rows = [{ ticketId: 't1' }, { ticketId: null }] as ReturnType<
-    typeof mapRunData
-  >[];
-  expect(selectedRunTicketId(rows, 0)).toBe('t1');
-  expect(selectedRunTicketId(rows, 1)).toBeNull();
-  expect(selectedRunTicketId(rows, 9)).toBeNull();
 });
 
 // ---- BB-255 D5: the ticket's OWN runs, out of the detail document ---------
