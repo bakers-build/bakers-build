@@ -21,7 +21,11 @@ const document: TicketDetailDocument = {
   data: {
     type: 'bb_ticket--bb_ticket',
     id: 'uuid-of-1',
-    attributes: { identifier: 'BB-1', title: 'a ticket' },
+    attributes: {
+      identifier: 'BB-1',
+      title: 'a ticket',
+      url: `${BASE}/bakers/ticket/bb-1`,
+    },
   },
   included: [],
 };
@@ -66,7 +70,7 @@ describe('the ticket detail copies to the operator’s clipboard', () => {
   it('Y copies the open ticket’s page on the control plane', () => {
     const { screen, context, copied } = harness();
     expect(screen.handleInput('Y', context)).toBe(true);
-    expect(copied).toEqual([`${BASE}/admin/bakers/ticket/uuid-of-1`]);
+    expect(copied).toEqual([`${BASE}/bakers/ticket/bb-1`]);
     expect(screen.present(context).status).toContain('copied the link to BB-1');
   });
 

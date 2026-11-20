@@ -145,6 +145,8 @@ export interface StyledRun {
   readonly text: string;
   readonly attributes: number;
   readonly fg?: RGBA;
+  /** An OSC 8 target for the run; only {@link paragraphNode} writes it. */
+  readonly link?: string;
 }
 
 /**
@@ -753,7 +755,8 @@ const colourKey = (fg: RGBA | undefined): string =>
 const styledRuns = (id: string, runs: readonly StyledRun[]): StyledText => {
   const key = runs
     .map(
-      (run) => `${run.attributes}\u0001${colourKey(run.fg)}\u0001${run.text}`,
+      (run) =>
+        `${run.attributes}\u0001${colourKey(run.fg)}\u0001${run.link ?? ''}\u0001${run.text}`,
     )
     .join('\u0002');
   const cached = paragraphContent.get(id);
@@ -766,6 +769,7 @@ const styledRuns = (id: string, runs: readonly StyledRun[]): StyledText => {
         text: run.text,
         attributes: run.attributes,
         ...(run.fg === undefined ? {} : { fg: run.fg }),
+        ...(run.link === undefined ? {} : { link: { url: run.link } }),
       }),
     ),
   );
@@ -796,7 +800,7 @@ export interface ParagraphInput {
   readonly fg: RGBA;
   readonly attributes?: number;
   readonly width?: number | `${number}%` | 'auto';
-  readonly wrapMode?: 'word' | 'none';
+  readonly wrapMode?: 'word' | 'char' | 'none';
   readonly flexGrow?: number;
   readonly flexShrink?: number;
   readonly onMouseDown?: (() => void) | undefined;

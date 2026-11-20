@@ -230,7 +230,7 @@ describe('production ticket content', () => {
       expect(frame).toContain(IDENTIFIER);
       expect(frame).toContain(TITLE);
       expect(frame).toContain('[Overview]');
-      expect(frame).toContain('* Summary');
+      expect(frame).toContain(' Summary');
       expect(frame).toContain('PgUp/PgDn');
       expect(frame).not.toContain('Example document');
       expect(frame).not.toContain('Click to count');
@@ -296,7 +296,7 @@ describe('production ticket content', () => {
       expect(tui.frame()).toContain(IDENTIFIER);
       expect(tui.frame()).toContain('[Overview]');
       await page(tui, PAGE_UP, 80);
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       expect(tui.frame()).toContain(IDENTIFIER);
       expect(tui.frame()).toContain('[Overview]');
       await quit(tui);
@@ -343,9 +343,9 @@ describe('production ticket content', () => {
     const tui = await boot(80, 24);
     try {
       expect(tui.frame()).toContain('summary line 0');
-      expect(await clickText(tui, '* Summary')).toBe(true);
+      expect(await clickText(tui, ' Summary')).toBe(true);
       expect(tui.frame()).not.toContain('summary line 0');
-      expect(await clickText(tui, '* Summary')).toBe(true);
+      expect(await clickText(tui, ' Summary')).toBe(true);
       expect(tui.frame()).toContain('summary line 0');
       await quit(tui);
     } finally {
@@ -356,7 +356,7 @@ describe('production ticket content', () => {
   it('lets the assignment modal consume keys and returns to a single content binding', async () => {
     const tui = await boot(80, 24);
     try {
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       expect(tui.frame()).not.toContain(DESCRIPTION_END);
       await tui.press('e');
       expect(tui.frame()).toContain('Edit ticket');
@@ -368,10 +368,10 @@ describe('production ticket content', () => {
       await tui.press('\x1b');
       expect(tui.frame()).not.toContain('Edit ticket');
       expect(tui.frame()).toContain('[Overview]');
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       expect(tui.frame()).not.toContain(DESCRIPTION_END);
       expect(tui.frame()).toContain('summary line 0');
-      expect(await clickText(tui, '* Summary')).toBe(true);
+      expect(await clickText(tui, ' Summary')).toBe(true);
       expect(tui.frame()).not.toContain('summary line 0');
       await quit(tui);
     } finally {
@@ -600,6 +600,58 @@ describe('resize while scrolled', () => {
   );
 });
 
+// AC-1/AC-6/AC-8: the links sit at the top at both widths, and the section
+// node survives a resize across the 100-column breakpoint.
+describe('links at the top across the breakpoint', () => {
+  it(
+    'shows the PR without scrolling at 120 → 80 → 120 and keeps the node',
+    async () => {
+      const document = ticketDocument({
+        identifier: 'BAKERS-332',
+        title: 'links on top',
+        url: 'https://example.test/bakers/ticket/bakers-332',
+        description: {
+          value: Array.from({ length: 200 }, (_l, i) => `body ${i}`).join('\n'),
+        },
+        links: [{ title: 'PR', uri: 'https://github.com/o/r/pull/229' }],
+      });
+      const tui = await bootDocument(document, 120, 40);
+      const links = 'ticket-content-overview-links';
+      const prRow = `${links}-items-1`;
+      try {
+        expect(tui.frame()).toContain('* https://github.com/o/r/pull/229');
+        expect(tui.frame()).toContain(
+          '* https://example.test/bakers/ticket/bakers-332',
+        );
+        const node = tui.renderer.root.findDescendantById(links);
+        expect(node, 'links section is mounted').toBeDefined();
+        const prNode = tui.renderer.root.findDescendantById(prRow);
+        expect(prNode, 'PR row is mounted').toBeDefined();
+        for (const columns of [80, 120]) {
+          tui.resize(columns, 40);
+          await settle();
+          await tui.renderOnce();
+          expect(tui.frame(), `PR URL at ${columns} columns`).toContain(
+            '* https://github.com/o/r/pull/229',
+          );
+          expect(
+            tui.renderer.root.findDescendantById(links) === node,
+            `same links node at ${columns} columns`,
+          ).toBe(true);
+          expect(
+            tui.renderer.root.findDescendantById(prRow) === prNode,
+            `same PR row at ${columns} columns`,
+          ).toBe(true);
+        }
+        await quit(tui);
+      } finally {
+        await tui.stop();
+      }
+    },
+    { timeout: 20_000 },
+  );
+});
+
 describe('empty and missing ticket bodies', () => {
   it('shows No description. for absent, empty and whitespace-only bodies', async () => {
     for (const description of [
@@ -759,17 +811,17 @@ describe('native edit save and cancel keep expansion', () => {
       },
     });
     try {
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       await tui.press('e');
       expect(tui.frame()).toContain('Edit ticket');
       await tui.press('\x1b');
       expect(tui.frame()).not.toContain('Edit ticket');
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       expect(tui.frame()).toContain('[Overview]');
       await tui.press('e');
       await tui.press('\x13');
       expect(tui.frame()).not.toContain('[ Save ]');
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       const tabRow = tui
         .rows()
         .findIndex((line) => line.includes('[Overview]'));
@@ -782,7 +834,7 @@ describe('native edit save and cancel keep expansion', () => {
       expect(tui.frame()).toContain('[Planning]');
       await tui.press('\x1b[Z');
       expect(tui.frame()).toContain('[Overview]');
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
     } finally {
       await shutdown(tui);
     }

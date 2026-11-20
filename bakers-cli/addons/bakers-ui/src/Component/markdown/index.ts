@@ -237,6 +237,8 @@ export const Markdown = ({ id, source, width }: MarkdownProps): VNode =>
 export interface HeadlineMarkdownProps {
   id: string;
   headline: string;
+  /** What stands before the headline, `*` by default; an icon for a few. */
+  marker?: string;
   children: readonly VNode[];
   paddingBottom?: number;
   paddingLeft?: number;
@@ -253,6 +255,7 @@ export interface HeadlineMarkdownProps {
 export const HeadlineMarkdown = ({
   id,
   headline,
+  marker = '*',
   children,
   paddingBottom = 1,
   paddingLeft = 1,
@@ -274,7 +277,7 @@ export const HeadlineMarkdown = ({
       { id: row, flexDirection: 'row', flexShrink: 0 },
       paragraphNode({
         id: `${row}-text`,
-        runs: [plainRun(`* ${headline}`)],
+        runs: [plainRun(`${marker} ${headline}`)],
         fg: FOREGROUND,
         width: '100%',
         flexShrink: 0,

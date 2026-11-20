@@ -31,6 +31,7 @@ use Drupal\bb_core\Field\RunDurationItemList;
 use Drupal\bb_core\Field\SinceLabelItemList;
 use Drupal\bb_core\Field\StallReasonItemList;
 use Drupal\bb_core\Field\StateFlowItemList;
+use Drupal\bb_core\Field\TicketUrlItemList;
 use Drupal\bb_core\Field\WorkStateItemList;
 use Drupal\bb_core\Plugin\Validation\Constraint\BbGroupScopeConstraint;
 use Drupal\bb_core\Plugin\views\field\BbEntityOperations;
@@ -557,6 +558,12 @@ final class EntitySchemaHooks {
         ->setComputed(TRUE)
         ->setClass(EditUrlItemList::class)
         ->setDisplayConfigurable('view', TRUE);
+      // Absolute canonical URL served to API clients (bakers ui); readable by
+      // anyone who may read the ticket, unlike the action link above.
+      $fields['url'] = BaseFieldDefinition::create('string')
+        ->setLabel(new TranslatableMarkup('URL'))
+        ->setComputed(TRUE)
+        ->setClass(TicketUrlItemList::class);
     }
 
     if ($entity_type->id() === 'bb_comment') {
