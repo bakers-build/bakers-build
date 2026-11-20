@@ -71,18 +71,19 @@ When('I open the Tickets of the favorite {string} from the rail', async ({ page 
 });
 
 // `aria-current` is what `nav` emits for the current entry.
+const CURRENT_TICKETS = 'a[aria-current="page"][aria-label="Tickets"]';
 function currentTickets(page: Page): Locator {
-  return page.locator(RAIL_ISLAND).locator('a[aria-current="page"][aria-label="Tickets"]');
+  return page.locator(RAIL_ISLAND).locator(CURRENT_TICKETS);
 }
 
 Then('exactly one rail Tickets entry is current, the one of the favorite {string}', async ({ page }, name: string) => {
   await expect(currentTickets(page)).toHaveCount(1);
-  await expect(railRow(page, name).locator('a[aria-current="page"][aria-label="Tickets"]')).toHaveCount(1);
+  await expect(railRow(page, name).locator(CURRENT_TICKETS)).toHaveCount(1);
 });
 
 Then('exactly one rail Tickets entry is current, the one under Projects', async ({ page }) => {
   await expect(currentTickets(page)).toHaveCount(1);
-  await expect(railRow(page, 'Projects').locator(':scope > ul > li > div > a[aria-current="page"][aria-label="Tickets"]')).toHaveCount(1);
+  await expect(railRow(page, 'Projects').locator(`:scope > ul > li > div > ${CURRENT_TICKETS}`)).toHaveCount(1);
 });
 
 When('I open the favorite {string} from the rail', async ({ page }, name: string) => {
