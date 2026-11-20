@@ -1,0 +1,46 @@
+uuid: 0c5baf40-ef0d-4c7c-933a-525cb79f5ab2
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_form_mode.bb_conductor.settings
+  module:
+    - bb_core
+id: bb_conductor.bb_conductor.settings
+targetEntityType: bb_conductor
+bundle: bb_conductor
+mode: settings
+content:
+  assignment:
+    type: options_select
+    weight: 17
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  label:
+    type: string_textfield
+    weight: 1
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  states:
+    type: options_select
+    weight: 6
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+hidden:
+  active: true
+  conductor_id: true
+  conductor_name: true
+  last_pid: true
+  last_seen: true
+  lease_expires_at: true
+  machine: true
+  owner_user_id: true
+  project_id: true
+  reported_load: true
+  status: true
+  workspace_root: true
