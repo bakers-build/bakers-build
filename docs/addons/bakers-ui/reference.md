@@ -84,16 +84,16 @@ The project **Runs** tab lists the project's runs, newest first, 20 per page. A 
 
 ### Cancelling and restarting
 
-Cancelling and restarting are actions of their own, next to `e` in the footer, and each asks first in the same confirmation dialog. Its buttons **Confirm** and **Close** sit under the question, with Confirm focused. `←`/`→` or `Tab` moves between them and `Enter` presses the focused one. `Esc` closes like Close and writes nothing. A refused write shows the server's message and keeps the dialog open.
+Cancelling and restarting are actions of their own, next to `e` in the footer, and each asks first in the same confirmation dialog. Its buttons **Confirm** and **Close** (**OK** and **Cancel** for Restart runs) sit under the question, with the first focused. A Restart runs list starts with every ticket checked: `↑`/`↓` moves and `Space` checks or unchecks. `←`/`→` or `Tab` moves between them and `Enter` presses the focused one. `Esc` closes like Close and writes nothing. A refused write shows the server's message and keeps the dialog open.
 
 | Key | Where | What confirming does |
 |---|---|---|
 | `x` cancel ticket | Overview, Planning and History of a ticket that is neither `done`, `cancelled` nor closed | Writes only `state: cancelled`. |
-| `x` cancel run | Run detail and the Runs tab, for a run in `claimed` or `running` | Sets that run to `cancelled`. |
-| `r` restart run | Overview, Planning and History while the ticket has a run in `claimed` or `running` | Cancels exactly that run and nothing else; the conductor claims the ticket again and starts a new run. |
-| `r` restart runs | Machines and a machine's conductors, on a machine or conductor you own | Cancels its `claimed` or `running` runs and each open ticket's newest failed run, noting `Restart runs (<level> <name>) by <you>` in the error log; each ticket gets one fresh run, a frozen one after unfreeze. Offline, cleanup and fresh runs follow its next start. |
+| `x` cancel run | Run detail and the Runs tab, for a run in `claimed` or `running`, or the ticket's newest run when it failed | Sets that run to `cancelled`. |
+| `r` restart runs | Overview, Planning and History of an open ticket that is not frozen | Cancels the ticket's `claimed` or `running` runs and its newest run when that failed; the dialog names them, or says there is no run to restart. |
+| `r` restart runs | Machines and a machine's conductors, on a machine or conductor you own | Lists the tickets with such runs, all checked, frozen ones left out; OK cancels the runs of the checked tickets, noting `cancelled by <you>: Restart runs (<level> <name>)` in the error log, and each ticket gets one fresh run. Offline, cleanup and fresh runs follow its next start. |
 
-Restart run uses the same endpoint and permissions as Cancel run. If the run ended before the dialog opened, the dialog says so and confirms nothing.
+Every cancel and restart goes through the site tools `bakers_run_list` (`restartable`) and `bakers_run_cancel`, under the same rule as the web dialogs. If the tickets changed since the dialog opened, OK cancels nothing and asks you to open it again.
 
 ## The conductor sections
 
