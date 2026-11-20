@@ -87,9 +87,9 @@ entity.bb_ticket_template.edit_form:
   base_route: entity.bb_ticket_template.canonical
   weight: 1
 
-# --- Machine: View ---
-# Product tabs in the user area. Name and capacity are edited on the View
-# cards; the former Settings url redirects there.
+# --- Machine: View, Settings ---
+# Product tabs in the user area. View's cards only show the machine; Settings
+# edits it. The former `/edit` url redirects to View.
 
 entity.bb_machine.canonical:
   title: 'View'
@@ -97,14 +97,27 @@ entity.bb_machine.canonical:
   base_route: entity.bb_machine.canonical
   weight: 0
 
-# --- Conductor: Overview ---
-# One product tab. The heartbeat creates conductors; the card edits one.
+bb_core.bb_machine.settings:
+  title: 'Settings'
+  route_name: bb_core.bb_machine.settings
+  base_route: entity.bb_machine.canonical
+  weight: 6
+
+# --- Conductor: Overview, Settings ---
+# The heartbeat creates conductors; Overview's card only shows one, Settings
+# edits it.
 
 entity.bb_conductor.canonical:
   title: 'Overview'
   route_name: entity.bb_conductor.canonical
   base_route: entity.bb_conductor.canonical
   weight: 0
+
+bb_core.bb_conductor.settings:
+  title: 'Settings'
+  route_name: bb_core.bb_conductor.settings
+  base_route: entity.bb_conductor.canonical
+  weight: 6
 
 # --- Run: Overview ---
 # One product tab. Edit and delete stay on the un-nested workspace paths.

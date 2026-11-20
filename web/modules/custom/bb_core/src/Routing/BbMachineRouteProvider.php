@@ -15,8 +15,9 @@ use Symfony\Component\Routing\Route;
  * Uses the full Display Builder view for the canonical machine screen.
  *
  * The product Overview is core's `_entity_view: bb_machine.full`, whose
- * cards edit the machine. Only the title callback is replaced. Do not add a
- * controller that merely renders the view mode.
+ * cards only show the machine; its Settings tab edits it. Only the title
+ * callback is replaced. Do not add a controller that merely renders the view
+ * mode.
  *
  * @see \Drupal\bb_core\Routing\BbConductorRouteProvider
  */
@@ -36,8 +37,8 @@ final class BbMachineRouteProvider extends AdminHtmlRouteProvider {
   /**
    * {@inheritdoc}
    *
-   * Adds the former product Settings url, which the card route subscriber
-   * retires to a redirect onto the Overview.
+   * Adds Settings, and the former `/edit` url, which the card route
+   * subscriber retires to a redirect onto the Overview.
    */
   public function getRoutes(EntityTypeInterface $entity_type) {
     $collection = parent::getRoutes($entity_type);
@@ -47,7 +48,13 @@ final class BbMachineRouteProvider extends AdminHtmlRouteProvider {
       $delete->setDefault('_title_callback', BbContentEntityDeleteForm::class . '::title');
       $this->pinOwner($delete);
     }
-    $settings = new Route('/user/{user}/machine/{bb_machine}/edit');
+    $retired = new Route('/user/{user}/machine/{bb_machine}/edit');
+    $retired->setOption('parameters', ['bb_machine' => ['type' => 'entity:bb_machine']]);
+    $this->pinUserArea($retired);
+    $collection->add('bb_core.bb_machine.edit_retired', $retired);
+    $settings = new Route('/user/{user}/machine/{bb_machine}/settings', [
+      '_entity_form' => 'bb_machine.settings',
+    ], ['_entity_access' => 'bb_machine.update']);
     $settings->setOption('parameters', ['bb_machine' => ['type' => 'entity:bb_machine']]);
     $this->pinUserArea($settings);
     $collection->add('bb_core.bb_machine.settings', $settings);
