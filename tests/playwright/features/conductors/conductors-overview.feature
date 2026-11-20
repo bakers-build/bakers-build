@@ -4,9 +4,9 @@ Feature: User and project conductors listings and Overview
   Machines.
   That listing is the account's conductors. The project Conductors tab opens
   that project's conductors, any owner.
-  Opening a row shows the conductor Overview: its Identity card with the
-  project, and none of the values its heartbeat writes. There is no Settings
-  tab. Navigation runs inside the content island, so a navigating scenario
+  Opening a row shows the conductor Overview: its read-only Identity card
+  with the project, and none of the values its heartbeat writes. Its owner
+  also gets the Settings tab. Navigation runs inside the content island, so a navigating scenario
   clicks twice.
 
   @shell
@@ -40,7 +40,7 @@ Feature: User and project conductors listings and Overview
     Then the address is the detail of the conductor "srv01-bakers"
     And the page heading is "srv01-bakers"
     And the conductor Overview shows its project and no heartbeat values
-    And there is no tab "Settings"
+    And the tab "Settings" is offered
 
   Scenario: The project Conductors tab lists that project's conductors
     Given I am signed in as a member of the "bakers" workspace
