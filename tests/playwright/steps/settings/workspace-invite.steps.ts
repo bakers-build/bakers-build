@@ -11,7 +11,7 @@ import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '.
 import { markDocument } from '../../support/shell';
 import type { Page } from '@playwright/test';
 
-const { Given, When, Then } = createBdd(test);
+const { Given, When, Then, After } = createBdd(test);
 
 /** The addresses entered in this scenario, unique per run for the same reason
  * `invitation.steps.ts`'s `invitedAddress` is: a fixed address is skipped as
@@ -105,6 +105,16 @@ When('I request the workspace Members settings screen', async ({ page, apiClient
 
 Then('access to the Members settings screen is denied', async () => {
   expect(requestStatus).toBe(403);
+});
+
+// The fresh addresses a scenario invited, so the shared Members list does not grow per run.
+After(async () => {
+  const fresh = invitedAddresses.filter((address) => address.startsWith('bakers-members-invite-'));
+  invitedAddresses = [];
+  if (fresh.length === 0) return;
+  Drush.exec(
+    `php:eval '$s = \\Drupal::entityTypeManager()->getStorage("bb_invite"); $s->delete($s->loadByProperties(["email" => ${JSON.stringify(fresh)}]));'`,
+  );
 });
 
 /** A fresh address, unique per run. */
@@ -336,6 +346,14 @@ When('I move focus to the revoke of the first invited address', async ({ page })
 
 Then('the revoke confirmation is open', async ({ page }) => {
   await expect(page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])')).toBeVisible({ timeout: 20000 });
+});
+
+Then('the invite dialog Invite has focus', async ({ page }) => {
+  await expect(page.locator(DIALOG).getByRole('button', { name: 'Invite', exact: true })).toBeFocused();
+});
+
+Then('the revoke confirmation Delete has focus', async ({ page }) => {
+  await expect(page.locator('dialog[data-dialog][open]').getByRole('button', { name: 'Delete', exact: true })).toBeFocused();
 });
 
 Then('the revoke confirmation Cancel has focus', async ({ page }) => {

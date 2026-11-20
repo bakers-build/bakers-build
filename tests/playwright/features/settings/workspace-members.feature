@@ -29,7 +29,8 @@ Feature: The workspace Members screen keeps focus and says what happened
     And I press the key "Tab"
     And I press the key "Tab"
     And I press the key "Tab"
-    And I press the key "Enter"
+    Then the invite dialog Invite has focus
+    When I press the key "Enter"
     Then the invite dialog is closed
     And Invite members has focus
     And the screen reader hears "Invited 2 people."
@@ -39,7 +40,8 @@ Feature: The workspace Members screen keeps focus and says what happened
     Then the revoke confirmation is open
     And the revoke confirmation Cancel has focus
     When I press the key "Tab"
-    And I press the key "Enter"
+    Then the revoke confirmation Delete has focus
+    When I press the key "Enter"
     Then the first invited address is no longer listed as a pending invitation
     And Invite members has focus
     And the screen reader hears the revoke of the first invited address
