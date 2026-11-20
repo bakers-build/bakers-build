@@ -377,8 +377,12 @@ scenes:
                           props:
                             layout: lines
                             pattern:
+                              avatar:
+                                - mark
                               headline:
-                                - person
+                                - name
+                              description:
+                                - mail
                               meta:
                                 - team
                                 - joined
@@ -387,7 +391,14 @@ scenes:
                                 - controls
                             items:
                               - cells:
-                                  person:
+                                  mark:
+                                    kind: person
+                                    display_name: lena.fischer@keytec.example
+                                    initials: '@'
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
                                     kind: text
                                     value: lena.fischer@keytec.example
                                     emphasis: strong
@@ -411,12 +422,21 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Sven Gruber
                                     initials: SG
                                     color: running
-                                    mail: sven.gruber@keytec.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Sven Gruber
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: sven.gruber@keytec.example
+                                    emphasis: faint
                                   team:
                                     kind: text
                                     value: Design crew
@@ -435,7 +455,14 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
+                                    kind: person
+                                    display_name: m.vandijk@northwind.example
+                                    initials: '@'
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
                                     kind: text
                                     value: m.vandijk@northwind.example
                                     emphasis: strong
@@ -460,12 +487,21 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Christian Wiedemann
                                     initials: CW
                                     color: unassigned
-                                    mail: christian.wiedemann@keytec.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Christian Wiedemann
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: christian.wiedemann@keytec.example
+                                    emphasis: faint
                                   team:
                                     kind: text
                                     value: Platform crew
@@ -637,8 +673,12 @@ scenes:
                           props:
                             layout: lines
                             pattern:
+                              avatar:
+                                - mark
                               headline:
-                                - person
+                                - name
+                              description:
+                                - mail
                               meta:
                                 - team
                                 - joined
@@ -647,7 +687,14 @@ scenes:
                                 - controls
                             items:
                               - cells:
-                                  person:
+                                  mark:
+                                    kind: person
+                                    display_name: lena.fischer@keytec.example
+                                    initials: '@'
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
                                     kind: text
                                     value: lena.fischer@keytec.example
                                     emphasis: strong
@@ -671,12 +718,21 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Sven Gruber
                                     initials: SG
                                     color: running
-                                    mail: sven.gruber@keytec.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Sven Gruber
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: sven.gruber@keytec.example
+                                    emphasis: faint
                                   team:
                                     kind: text
                                     value: Design crew
@@ -695,7 +751,14 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
+                                    kind: person
+                                    display_name: m.vandijk@northwind.example
+                                    initials: '@'
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
                                     kind: text
                                     value: m.vandijk@northwind.example
                                     emphasis: strong
@@ -720,12 +783,21 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Christian Wiedemann
                                     initials: CW
                                     color: unassigned
-                                    mail: christian.wiedemann@keytec.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Christian Wiedemann
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: christian.wiedemann@keytec.example
+                                    emphasis: faint
                                   team:
                                     kind: text
                                     value: Platform crew
@@ -797,9 +869,12 @@ scenes:
 
       THE ROSTER IS AN ITEM LIST, the same as the workspace Members face and
       the ticket and project lists: `layout: lines` with the pattern
-      `headline: [person]`, `meta: [team, joined]`, `right: [role, controls]` —
-      the person and "Joined" with the date on the left, the role and the row
-      actions right-aligned, always newest created first.
+      `avatar: [mark]`, `headline: [name]`, `meta: [team, joined]`,
+      `description: [mail]`, `right: [role, controls]` — the row of a project:
+      the person's mark leads, the name heads the text with team and "Joined"
+      beside the mark, the role and the row actions right-aligned, always
+      newest created first. The mark shows the account's picture when it has
+      one.
 
       A view mode is still not the answer either, and for the original reason:
       membership is an `og_membership` entity, so this body is a query over a
@@ -981,8 +1056,12 @@ scenes:
                           props:
                             layout: lines
                             pattern:
+                              avatar:
+                                - mark
                               headline:
-                                - person
+                                - name
+                              description:
+                                - mail
                               meta:
                                 - team
                                 - joined
@@ -991,12 +1070,21 @@ scenes:
                                 - controls
                             items:
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Tom Beckett
                                     initials: TB
                                     color: offline
-                                    mail: tom.beckett@partner.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Tom Beckett
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: tom.beckett@partner.example
+                                    emphasis: faint
                                   role:
                                     kind: text
                                     value: Member
@@ -1012,12 +1100,21 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Sven Gruber
                                     initials: SG
                                     color: running
-                                    mail: sven.gruber@keytec.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Sven Gruber
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: sven.gruber@keytec.example
+                                    emphasis: faint
                                   role:
                                     kind: text
                                     value: Member
@@ -1033,12 +1130,21 @@ scenes:
                                     icon: x-circle
                                     icon_only: true
                               - cells:
-                                  person:
+                                  mark:
                                     kind: person
                                     display_name: Christian Wiedemann
                                     initials: CW
                                     color: unassigned
-                                    mail: christian.wiedemann@keytec.example
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Christian Wiedemann
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: christian.wiedemann@keytec.example
+                                    emphasis: faint
                                   role:
                                     kind: text
                                     value: Lead
