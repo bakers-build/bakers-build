@@ -387,6 +387,29 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   }
 
   /**
+   * A link whose code no longer waits says so instead of a blank field.
+   */
+  public function testUnresolvedLinkCodeSaysItIsNotValid(): void {
+    $decided = $this->requestDeviceAuthorization();
+    $user = $this->createConsentingUser();
+    $this->submitVerificationForm($decided['user_code'], 'deny');
+
+    foreach (['UNKNOWN1', $decided['user_code']] as $code) {
+      $content = (string) $this->httpKernel->handle(Request::create('/oauth/device', 'GET', ['user_code' => $code]))->getContent();
+      $text = $this->textOf($content);
+      $this->assertStringContainsString('That code is not valid. It may have expired — start the sign-in again in your terminal.', $text, $code);
+      $this->assertStringNotContainsString('wants to sign in', $text, $code);
+      $this->assertStringNotContainsString('Technical details', $text, $code);
+      $this->assertStringNotContainsString(' as ' . $user->getDisplayName() . '.', $text, $code);
+      $fields = (new \DOMXPath(Html::load($content)))->query('//input[@name="user_code"][@value!=""]');
+      $this->assertInstanceOf(\DOMNodeList::class, $fields);
+      $this->assertSame(0, $fields->length, 'The field stays empty for ' . $code);
+    }
+
+    $this->assertStringContainsString('wants to sign in', $this->consentText(), 'A fresh code still shows the consent.');
+  }
+
+  /**
    * Memberships are grouped by workspace, typed and listed once each.
    *
    * The account leads two workspaces and a team in one of them, is a plain
@@ -619,6 +642,8 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   public function testVerificationFormFloodRefusesFurtherAttempts(): void {
     $this->enableModules(['dblog']);
     $this->installSchema('dblog', ['watchdog']);
+    // enableModules() rebuilt the container; the kernel from setUp() is stale.
+    $this->httpKernel = $this->container->get('http_kernel');
     $account = $this->drupalCreateUser(['grant simple_oauth codes']);
     $this->assertInstanceOf(User::class, $account);
     $this->setCurrentUser($account);
@@ -640,6 +665,11 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $this->assertCount($before + 1, $rows);
     $this->assertSame('Device code attempts blocked for account %uid.', end($rows)->message);
     $this->assertSame(RfcLogLevel::NOTICE, (int) end($rows)->severity);
+
+    // An opened link says why it shows no consent, not that the code is bad.
+    $blocked = $this->textOf((string) $this->httpKernel->handle(Request::create('/oauth/device', 'GET', ['user_code' => 'WRONG-CODE']))->getContent());
+    $this->assertStringContainsString('Too many attempts. Wait a few minutes and try again.', $blocked);
+    $this->assertStringNotContainsString('That code is not valid.', $blocked);
 
     // A different, unaffected account can still attempt a lookup.
     $body = $this->requestDeviceAuthorization();

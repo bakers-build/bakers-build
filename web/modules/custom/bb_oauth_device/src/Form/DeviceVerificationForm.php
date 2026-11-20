@@ -100,11 +100,16 @@ class DeviceVerificationForm extends FormBase {
       '#description' => $this->t('Type the code shown in your own terminal.'),
       '#required' => TRUE,
       '#maxlength' => 32,
-      // After the consent, right above the decision it is compared for.
+      // Orders the core fallback; bb_theme's presenter template places it.
       '#weight' => 10,
     ];
 
-    if ($linkCode !== '' && $this->floodAllows()) {
+    if ($linkCode !== '' && !$this->floodAllows()) {
+      // The code may well be valid; calling it invalid would send the human
+      // back to the terminal for nothing.
+      $this->linkNotice($form, $this->t('Too many attempts. Wait a few minutes and try again.'));
+    }
+    elseif ($linkCode !== '') {
       $this->buildConsent($form, $linkCode);
     }
 
@@ -141,58 +146,78 @@ class DeviceVerificationForm extends FormBase {
     if ($device_code === NULL) {
       $this->flood->register(self::FLOOD_EVENT, self::FLOOD_WINDOW_SECONDS, $this->floodIdentifier());
     }
-    if ($device_code !== NULL && $device_code->getUserIdentifier() === NULL) {
-      $client = $this->drupalConsumer($device_code);
-      $site = (string) $this->config('system.site')->get('name');
-      $form['consent'] = $this->text($this->t('@client wants to sign in to @site (@host) as @account.', [
-        '@client' => $client->label(),
-        '@site' => $site,
-        '@host' => $this->getRequest()->getHost(),
-        '@account' => $this->currentUser->getDisplayName(),
-      ]), ['size' => 'section-title']);
-      $memberships = $this->membershipBlocks();
-      $form['consent_access'] = $this->text($memberships
-        ? $this->t('If you confirm, the device can do everything you can do on @site, in the workspaces and teams below, with your roles there.', ['@site' => $site])
-        : $this->t("You aren't in any workspace yet, so the device can't reach any workspace content."));
-      foreach ($memberships as $delta => $block) {
-        // One paragraph per line keeps each line escaped once; the gapless
-        // zone keeps a workspace's lines together, its teams smaller below.
-        $head = array_shift($block);
-        $team = ['size' => 'meta', 'tone' => 'light'];
-        $form['consent_membership_' . $delta] = [
-          '#type' => 'component',
-          '#component' => 'bb_theme:zone',
-          '#props' => ['inset' => 'none', 'gap' => 'none'],
-          '#slots' => [
-            'content' => [
-              $this->text($head),
-              ...array_map(fn (TranslatableMarkup $line): array => $this->text($line, $team), $block),
-            ],
-          ],
-        ];
-      }
-      if ($memberships) {
-        $form['consent_roles'] = $this->text($this->t('What do these roles mean?'), [
-          'href' => 'https://bakers.build/docs/provision/security/access-and-data#roles-and-permissions',
-        ]);
-      }
-      $scopes = array_map(static fn ($scope) => $scope->getIdentifier(), $device_code->getScopes());
-      $form['consent_scopes'] = [
+    if ($device_code === NULL || $device_code->getUserIdentifier() !== NULL) {
+      // Expired, decided or unknown: say so instead of a bare field.
+      $this->linkNotice($form, $this->t('That code is not valid. It may have expired — start the sign-in again in your terminal.'));
+      return;
+    }
+    $client = $this->drupalConsumer($device_code);
+    $site = (string) $this->config('system.site')->get('name');
+    $form['consent'] = $this->text($this->t('@client wants to sign in to @site (@host) as @account.', [
+      '@client' => $client->label(),
+      '@site' => $site,
+      '@host' => $this->getRequest()->getHost(),
+      '@account' => $this->currentUser->getDisplayName(),
+    ]), ['size' => 'section-title']);
+    $memberships = $this->membershipBlocks();
+    $form['consent_access'] = $this->text($memberships
+      ? $this->t('If you confirm, the device can do everything you can do on @site, in the workspaces and teams below, with your roles there.', ['@site' => $site])
+      : $this->t("You aren't in any workspace yet, so the device can't reach any workspace content."));
+    foreach ($memberships as $delta => $block) {
+      // One paragraph per line keeps each line escaped once; the gapless
+      // zone keeps a workspace's lines together, its teams smaller below.
+      $head = array_shift($block);
+      $team = ['size' => 'meta', 'tone' => 'light'];
+      $form['consent_membership_' . $delta] = [
         '#type' => 'component',
-        '#component' => 'bb_theme:collapsible',
+        '#component' => 'bb_theme:zone',
+        '#props' => ['inset' => 'none', 'gap' => 'none'],
         '#slots' => [
-          'label' => $this->text($this->t('Technical details'), ['as' => 'span', 'size' => 'meta', 'tone' => 'faint']),
-          'content' => $this->text($scopes
-            ? $this->t('Requested scopes: @scopes', ['@scopes' => implode(', ', $scopes)])
-            : $this->t('No specific access scopes were requested.'), ['size' => 'meta', 'tone' => 'faint']),
+          'content' => [
+            $this->text($head),
+            ...array_map(fn (TranslatableMarkup $line): array => $this->text($line, $team), $block),
+          ],
         ],
       ];
-      $form['consent_revoke'] = $this->text(
-        $this->t("You can't sign this device out yourself yet. Ask a site administrator to revoke it."),
-        ['size' => 'meta', 'tone' => 'faint'],
-      );
-      $form['user_code']['#default_value'] = $linkCode;
-      $form['user_code']['#description'] = $this->t('Compare with the code in your terminal.');
+    }
+    if ($memberships) {
+      $form['consent_roles'] = $this->text($this->t('What do these roles mean?'), [
+        'href' => 'https://bakers.build/docs/provision/security/access-and-data#roles-and-permissions',
+      ]);
+    }
+    $scopes = array_map(static fn ($scope) => $scope->getIdentifier(), $device_code->getScopes());
+    $form['consent_scopes'] = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:collapsible',
+      '#slots' => [
+        'label' => $this->text($this->t('Technical details'), ['as' => 'span', 'size' => 'meta', 'tone' => 'faint']),
+        'content' => $this->text($scopes
+          ? $this->t('Requested scopes: @scopes', ['@scopes' => implode(', ', $scopes)])
+          : $this->t('No specific access scopes were requested.'), ['size' => 'meta', 'tone' => 'faint']),
+      ],
+    ];
+    $form['consent_revoke'] = $this->text(
+      $this->t("You can't sign this device out yourself yet. Ask a site administrator to revoke it."),
+      ['size' => 'meta', 'tone' => 'faint'],
+    );
+    $form['user_code']['#default_value'] = $linkCode;
+    $form['user_code']['#description'] = $this->t('Compare with the code in your terminal.');
+  }
+
+  /**
+   * Says why an opened link shows no consent, in the consent's place.
+   *
+   * Only on GET: a submitted form already carries the same words as the
+   * code field's error.
+   *
+   * @param array<string, mixed> $form
+   *   The verification form.
+   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $notice
+   *   The reason, translated.
+   */
+  protected function linkNotice(array &$form, TranslatableMarkup $notice): void {
+    if ($this->getRequest()->isMethod('GET')) {
+      $form['consent'] = $this->text($notice);
     }
   }
 
