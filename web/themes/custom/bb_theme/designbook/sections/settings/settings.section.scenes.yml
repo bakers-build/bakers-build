@@ -326,7 +326,8 @@ scenes:
     docs: >-
       THE WORKSPACE MEMBERS FACE: members and pending invitations in ONE item
       `list` (`layout: lines`, like the ticket and project lists) in a zone
-      capped at the narrow measure (960px), always newest created first. Inviting is a DIALOG opened by the page header's create
+      that fills the content width with no heading of its own (the tab names
+      it), always newest created first. Inviting is a DIALOG opened by the page header's create
       action, the icon-only `+` **Invite members** at the top right, where every
       screen keeps its create action; `action-pattern.md` names the ruling. The
       dialog closes in place, only the members island re-renders, focus returns
@@ -369,9 +370,7 @@ scenes:
                   - component: bb_theme:zone
                     props:
                       inset: none
-                      measure: narrow
                     slots:
-                      heading: Members
                       content:
                         - component: bb_theme:list
                           props:
@@ -665,9 +664,7 @@ scenes:
                   - component: bb_theme:zone
                     props:
                       inset: none
-                      measure: narrow
                     slots:
-                      heading: Members
                       content:
                         - component: bb_theme:list
                           props:

@@ -161,7 +161,6 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       );
     }
     $form['roster'] = $this->listZone(
-      $this->t('Members'),
       $rows,
       $this->t('@group has no members yet.', ['@group' => $group->label()]),
       20,
@@ -286,12 +285,10 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       '#component' => 'bb_theme:zone',
       '#props' => [
         'inset' => 'none',
-        'measure' => 'narrow',
         'direction' => $element['#bb_zone_direction'] ?? 'column',
         'description' => (string) ($element['#bb_zone_description'] ?? ''),
       ],
       '#slots' => [
-        'heading' => ['#markup' => $element['#bb_zone_heading'] ?? ''],
         'content' => $content,
       ],
     ];
@@ -303,10 +300,8 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
   }
 
   /**
-   * A headed list zone: the roster.
+   * The roster zone; the tab already names it, so it has no heading.
    *
-   * @param \Drupal\Core\StringTranslation\TranslatableMarkup|string $heading
-   *   The zone heading.
    * @param array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>} $built
    *   Rows and deferred controls.
    * @param \Drupal\Core\StringTranslation\TranslatableMarkup|string $empty
@@ -317,7 +312,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    * @return array<string, mixed>
    *   The zone container.
    */
-  private function listZone(mixed $heading, array $built, mixed $empty, int $weight): array {
+  private function listZone(array $built, mixed $empty, int $weight): array {
     return [
       '#type' => 'container',
       '#weight' => $weight,
@@ -325,7 +320,6 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
         [MemberItemBuilder::class, 'renderControls'],
         [self::class, 'wrapInZone'],
       ],
-      '#bb_zone_heading' => $heading,
       '#bb_member_controls' => $built['controls'],
       'list' => $built['items'] === [] ? [
         '#type' => 'component',

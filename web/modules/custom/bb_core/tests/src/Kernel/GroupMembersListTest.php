@@ -212,6 +212,20 @@ final class GroupMembersListTest extends KernelTestBase {
   }
 
   /**
+   * The list stands alone at the content width, like the project list.
+   *
+   * The tab already names the screen, so a "Members" heading only repeated
+   * it, and the narrow measure left an empty band beside the list.
+   */
+  public function testListHasNoHeadingAndFillsTheWidth(): void {
+    $page = new Crawler($this->renderFace('team', $this->team));
+
+    self::assertCount(1, $page->filter('ul[role="list"]'), 'the roster still renders');
+    self::assertCount(0, $page->filter('h2'), 'no zone heading above the list');
+    self::assertCount(0, $page->filter('.max-w-narrow'), 'the list is not capped');
+  }
+
+  /**
    * A reader who may not change the crew gets the roster and no affordance.
    *
    * ABSENT, NOT DISABLED. The list of people is information; the controls are

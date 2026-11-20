@@ -291,7 +291,7 @@ Then('members and invitations share one list', async ({ page }) => {
 });
 
 Then('the Members screen still lists its members', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'Members', level: 2 })).toBeVisible();
+  await expect(page.locator(`${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`).first()).toBeVisible();
 });
 
 Then(
