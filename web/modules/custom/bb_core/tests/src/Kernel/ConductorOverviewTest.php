@@ -302,19 +302,24 @@ final class ConductorOverviewTest extends KernelTestBase {
       $this->tabRoutesOn('entity.bb_conductor.canonical', $this->accounts['lead']),
       'The owner sees Overview and Settings.',
     );
-    foreach (['contributor', 'guest'] as $rank) {
-      self::assertNotContains(
-        'bb_core.bb_conductor.settings',
-        $this->tabRoutesOn('entity.bb_conductor.canonical', $this->accounts[$rank]),
-        $rank . ' cannot update the conductor and sees no Settings tab.',
-      );
-    }
     $settings = $this->container->get('router.route_provider')->getRouteByName('bb_core.bb_conductor.settings');
     self::assertSame('/_workspace/{bb_workspace}/conductor/{bb_conductor}/settings', $settings->getPath());
     self::assertSame('bb_conductor.settings', $settings->getDefault('_entity_form'));
     self::assertSame('bb_conductor.update', $settings->getRequirement('_entity_access'));
     self::assertSame('TRUE', $settings->getRequirement('_bb_workspace_match'));
     self::assertFalse($settings->getOption('_admin_route'));
+  }
+
+  /**
+   * A contributor who does not own the conductor sees no Settings tab.
+   *
+   * Its own test: the tab manager caches one route's tabs per instance.
+   */
+  public function testNonOwnerSeesNoSettingsTab(): void {
+    self::assertNotContains(
+      'bb_core.bb_conductor.settings',
+      $this->tabRoutesOn('entity.bb_conductor.canonical', $this->accounts['contributor']),
+    );
   }
 
   /**

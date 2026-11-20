@@ -193,6 +193,14 @@ final class MachineOverviewTest extends KernelTestBase {
       ['View', 'Settings'],
       $this->tabTitlesOn('entity.bb_machine.canonical', $this->accounts['lead']),
     );
+  }
+
+  /**
+   * Another account sees no Settings tab.
+   *
+   * Its own test: the tab manager caches one route's tabs per instance.
+   */
+  public function testOthersSeeNoSettingsTab(): void {
     self::assertNotContains(
       'bb_core.bb_machine.settings',
       $this->tabRoutesOn('entity.bb_machine.canonical', $this->accounts['contributor']),
