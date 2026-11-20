@@ -18,25 +18,33 @@ Feature: Managing a team's members keeps focus and says what happened
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
 
-  Scenario: Adding a member with the keyboard only
+  # Two people in one submit: Tab takes the highlighted match as a chip and
+  # stays in the field; with nothing typed, Tab moves on to the role, Cancel
+  # and Add member. `fixture-profile` is a workspace member on no team.
+  Scenario: Adding two members with the keyboard only
     Given I am signed in as "north-lead"
     And the team "Design Crew" has no member "both-bakeries"
+    And the team "Design Crew" has no member "fixture-profile"
     And I visit the team "Design Crew" tab "Members"
     When I move focus to Add member
     And I press the key "Enter"
     Then the add dialog is open
-    When I press the key "Enter"
-    And I type the name "both-bakeries"
-    And I press the key "ArrowDown"
-    And I press the key "Enter"
+    When I type the name "both-bakeries"
+    And I press the key "Tab"
+    And I type the name "fixture-profile"
+    And I press the key "Tab"
     And I press the key "Tab"
     And I press the key "Tab"
     And I press the key "Tab"
     And I press the key "Enter"
     Then Add member has focus
-    And the screen reader hears "Added both-bakeries as Member."
+    And the screen reader hears "Added 2 members as Member."
+    And the members list has the member "both-bakeries"
+    And the members list has the member "fixture-profile"
     When I remove the member "both-bakeries"
+    And I remove the member "fixture-profile"
     Then the members list has no member "both-bakeries"
+    And the members list has no member "fixture-profile"
 
   Scenario: Changing a role keeps focus on that member's role control
     Given I am signed in as "north-lead"

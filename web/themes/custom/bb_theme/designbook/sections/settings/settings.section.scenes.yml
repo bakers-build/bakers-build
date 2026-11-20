@@ -530,7 +530,7 @@ scenes:
       THE INVITE DIALOG over the Members face (`settings › workspace-members`),
       opened by the page header's `+` **Invite members**, in the shell's overlay
       like the create dialogs. The `form` grammar places the e-mail field as the
-      one line: `email_chips` over the submitted TEXTAREA, so every address
+      one line: `chip_field` (free mode) over the submitted TEXTAREA, so every address
       becomes a chip with its own remove button, and an address that is not an
       e-mail is marked in text as well as colour. Without JavaScript the plain
       textarea remains. Below it sit the two property pills: Workspace role
@@ -555,11 +555,11 @@ scenes:
                   - component: bb_theme:form
                     slots:
                       lines:
-                        - component: bb_theme:email_chips
+                        - component: bb_theme:chip_field
                           props:
                             label: Email addresses
                             invalid_label: Not an e-mail address
-                            remove_label: Remove @address
+                            remove_label: Remove @label
                           slots:
                             field:
                               - component: bb_theme:form_textarea
@@ -857,8 +857,8 @@ scenes:
 
       ADDING IS THE HEADER ACTION, NOT AN INLINE FORM (BAKERS-329). The page
       header carries the icon-only `+` **Add member** at the top right, where
-      every screen keeps its create action; it opens a dialog with the person
-      picker and a role, the dialog closes in place, focus returns to the `+`
+      every screen keeps its create action; it opens the `team-member-add`
+      dialog, people as chips and one role, the dialog closes in place, focus returns to the `+`
       and the result is announced and shown as a toast, so the list does not
       move. `action-pattern.md` records the ruling; the workspace Members face
       does the same with **Invite members**. The members zone therefore holds
@@ -1033,7 +1033,261 @@ scenes:
                           label: Add member
                           icon_only: true
                           href: >-
-                            /?path=/story/designbook-sections-settings-scenes--team
+                            /?path=/story/designbook-sections-settings-scenes--team-member-add
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      description: >-
+                        Who is on this team, since when, and in which role. A
+                        team now carries a role, the same as a project: removing
+                        a lead or member revokes their access.
+                    slots:
+                      content:
+                        - component: bb_theme:list
+                          props:
+                            layout: lines
+                            pattern:
+                              avatar:
+                                - mark
+                              headline:
+                                - name
+                              description:
+                                - mail
+                              meta:
+                                - team
+                                - joined
+                              right:
+                                - role
+                                - controls
+                            items:
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Tom Beckett
+                                    initials: TB
+                                    color: offline
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Tom Beckett
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: tom.beckett@partner.example
+                                    emphasis: faint
+                                  role:
+                                    kind: text
+                                    value: Member
+                                  joined:
+                                    kind: text
+                                    value: Joined 14 Apr
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Tom Beckett from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Sven Gruber
+                                    initials: SG
+                                    color: running
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Sven Gruber
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: sven.gruber@keytec.example
+                                    emphasis: faint
+                                  role:
+                                    kind: text
+                                    value: Member
+                                  joined:
+                                    kind: text
+                                    value: Joined 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Sven Gruber from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  mark:
+                                    kind: person
+                                    display_name: Christian Wiedemann
+                                    initials: CW
+                                    color: unassigned
+                                    size: md
+                                    name_hidden: true
+                                  name:
+                                    kind: text
+                                    value: Christian Wiedemann
+                                    emphasis: strong
+                                  mail:
+                                    kind: text
+                                    value: christian.wiedemann@keytec.example
+                                    emphasis: faint
+                                  role:
+                                    kind: text
+                                    value: Lead
+                                  joined:
+                                    kind: text
+                                    value: Joined 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Christian Wiedemann from the team. Revokes their
+                                      access.
+                                    icon: x-circle
+                                    icon_only: true
+  - name: team-member-add
+    group: Screens
+    section: settings
+    docs: >-
+      THE ADD MEMBER DIALOG over the team Members face (`settings › team`),
+      opened by the page header's `+` **Add member**. It works like **Invite
+      members**: the one line is `chip_field` in list mode over a multiple
+      SELECT of the workspace's people who are not in the team yet. Typing
+      opens a list of the matches; ArrowUp/ArrowDown move through it, Enter or
+      Tab turns the highlighted person into a chip, and text that matches
+      nobody never becomes one. Backspace in the empty input removes the last
+      chip; each chip's remove button is named "Remove {name}". Below it the
+      Role pill picks the one role every chosen person gets. One submit adds
+      them all, the dialog closes in place, focus returns to the `+` and the
+      result is announced ("Added 2 members as Member."). Without JavaScript
+      the plain multiple select remains. Storybook runs no Drupal behaviour, so
+      nothing posts or closes here.
+    items:
+      - scene: design-system:shell
+        with:
+          overlay:
+            - component: bb_theme:dialog
+              props:
+                open: true
+                title: Add member
+                label: Add member
+                dismissible: true
+              slots:
+                body:
+                  - component: bb_theme:form
+                    slots:
+                      lines:
+                        - component: bb_theme:chip_field
+                          props:
+                            label: People
+                            mode: list
+                            placeholder: Type a name
+                            remove_label: Remove @label
+                          slots:
+                            field:
+                              - component: bb_theme:form_select
+                                props:
+                                  name: account[]
+                                  id: edit-account
+                                  multiple: true
+                                  options:
+                                    - value: '12'
+                                      label: Lena Fischer
+                                      selected: true
+                                    - value: '14'
+                                      label: Marit van Dijk
+                                      selected: true
+                                    - value: '17'
+                                      label: Jonas Weber
+                                      selected: false
+                                    - value: '21'
+                                      label: Priya Raman
+                                      selected: false
+                      pills:
+                        - component: bb_theme:property_pill
+                          props:
+                            name: role
+                            label: Role
+                            icon: user
+                            picker_id: edit-role
+                            value_label: Member
+                            values:
+                              - member
+                            open: false
+                            multiple: false
+                            options:
+                              - value: member
+                                label: Member
+                                selected: true
+                              - value: lead
+                                label: Lead
+                                selected: false
+                            aria_label: Change role. Currently Member.
+                actions:
+                  - component: bb_theme:button
+                    props:
+                      variant: ghost
+                      label: Cancel
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      label: Add member
+                      type: submit
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Platform crew
+                      description: >-
+                        keytec · owned by Christian Wiedemann · lead role grants
+                        access
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Team sections
+                          items:
+                            - label: Overview
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team-detail-overview
+                              active: false
+                            - label: Stats
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: false
+                            - label: Tickets
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Runs
+                              url: >-
+                                /?path=/story/designbook-sections-tickets-scenes--run-detail
+                              active: false
+                            - label: Members
+                              url: >-
+                                /?path=/story/designbook-sections-settings-scenes--team
+                              active: true
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Add member
+                          icon_only: true
+                          href: >-
+                            /?path=/story/designbook-sections-settings-scenes--team-member-add
                         slots:
                           icon:
                             component: bb_theme:icon

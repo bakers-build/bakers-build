@@ -83,7 +83,7 @@ final class TeamMemberAddForm extends WrappedDialogFormBase {
       '#title_display' => 'invisible',
       '#multiple' => TRUE,
       '#options' => $this->face->addOptions($team),
-      // Each chosen person shows as a removable chip; the select stays the value.
+      // Each chosen person shows as a chip; the select stays the value.
       '#theme' => 'select__bb_chip_field',
       // validateForm() refuses a pick outside the options, by name.
       '#validated' => TRUE,

@@ -16,7 +16,7 @@ import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import { MEMBERS_ISLAND, markDocument, uidOf } from '../../support/shell';
-import { ADD_DIALOG, addMemberTrigger, openAddMemberDialog } from '../../support/add-member-dialog';
+import { ADD_DIALOG, addMemberTrigger, openAddMemberDialog, peopleField } from '../../support/add-member-dialog';
 
 /**
  * One item of the roster list. Direct children only, so the rows of a role
@@ -378,10 +378,18 @@ Then('no confirmation is open', async ({ page }) => {
 
 Then('the add dialog does not offer {string}', async ({ page }, value: string) => {
   const dialog = await openAddMemberDialog(page);
-  await expect(dialog.locator('[role="option"]').first(), 'the add dialog offers nobody at all').toBeAttached();
-  await expect(dialog.locator(`[role="option"][data-value="${uidOf(value)}"]`)).toHaveCount(0);
+  // The chip field lists the select's options; the select is what is offered.
+  const options = dialog.locator('select[name="account[]"] option');
+  await expect(options.first(), 'the add dialog offers nobody at all').toBeAttached();
+  await expect(options.and(page.locator(`[value="${uidOf(value)}"]`))).toHaveCount(0);
+  await peopleField(dialog).fill(value);
+  await expect(dialog.getByRole('option', { name: value, exact: true })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(page.locator(ADD_DIALOG)).toHaveCount(0);
+});
+
+Then('the members list has the member {string}', async ({ page }, value: string) => {
+  await expect(page.locator(`${MEMBERS_ISLAND} #members-role-${uidOf(value)}`)).toBeAttached({ timeout: 15000 });
 });
 
 Then('the members list offers no controls', async ({ page }) => {

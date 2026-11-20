@@ -349,10 +349,11 @@ DELETED_ALLOWLIST=''
 # with what the action does and its button. `surface_card` frames in the
 # neutral border and has no action row; `note` is one hairline and no frame.
 # Layout (snake_case), sibling of `surface_card`. 70 + 1 = 71.
-# 72 SINCE BAKERS-329: `email_chips`, the invite dialog's address field - each
-# typed address a removable chip over the textarea the form still submits. No
-# component drew removable values in a text field: `property_pill` picks from
-# a fixed set. Form (snake_case). 71 + 1 = 72.
+# 72 SINCE BAKERS-329: `chip_field`, the invite dialog's address field and the
+# team Add member dialog's people field - each entry a removable chip over the
+# textarea or multiple select the form still submits. No component drew
+# removable values in a text field: `property_pill` picks from a fixed set.
+# Form (snake_case). 71 + 1 = 72.
 TARGET_COMPONENT_COUNT=72
 
 # The three containers and the props that make them containers (D2).
@@ -382,9 +383,10 @@ DISPLAY_GROUPS='Data Display|Media'
 # `form_check` joins as the checkbox/radio sibling of `form_input`, and
 # `form_field` as the field wrapper both sit in.
 #
-# `email_chips` joins as a widget of the invite dialog's address field: it
-# wraps a `form_textarea` and appears in no filter or inline edit.
-FORM_COMPONENTS='email_chips form form_check form_field form_input form_label form_rich_text form_select form_textarea image_crop property_pill'
+# `chip_field` joins as a widget of the invite and add-member dialogs: it
+# wraps a `form_textarea` or `form_select` and appears in no filter or inline
+# edit.
+FORM_COMPONENTS='chip_field form form_check form_field form_input form_label form_rich_text form_select form_textarea image_crop property_pill'
 
 # A `<tr>` open tag. The trailing guard is "anything that is not a name character", because the tag
 # is written `<tr{{ attributes }}` in this theme — a space/`>` guard would match none of the five row

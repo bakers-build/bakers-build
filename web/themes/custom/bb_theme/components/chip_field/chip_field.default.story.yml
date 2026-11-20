@@ -2,7 +2,7 @@ name: Default
 props:
   label: Email addresses
   invalid_label: Not an e-mail address
-  remove_label: Remove @address
+  remove_label: Remove @label
 slots:
   field:
     - type: component

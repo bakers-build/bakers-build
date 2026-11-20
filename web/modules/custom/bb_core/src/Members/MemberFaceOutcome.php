@@ -186,8 +186,8 @@ final class MemberFaceOutcome {
       return [];
     }
     // shortcut: every candidate renders as an option and the chip field
-    // filters them in the browser; move to a `search_url` route when a workspace
-    // outgrows a few hundred people.
+    // filters them in the browser; move to a `search_url` route when a
+    // workspace outgrows a few hundred people.
     $in_group = array_flip($this->rosterUids($group));
     $options = [];
     foreach ($this->membershipWriter->memberships($parent) as $membership) {

@@ -16,8 +16,7 @@ import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { MEMBERS_ISLAND, RAIL_ISLAND, uidOf } from '../../support/shell';
-import { pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
-import { ADD_DIALOG, addMemberTrigger, openAddMemberDialog } from '../../support/add-member-dialog';
+import { ADD_DIALOG, addMemberTrigger, chooseInAddDialog, openAddMemberDialog } from '../../support/add-member-dialog';
 
 // BB-484 — the Overview body, which is the `full` view mode's own markup and
 // NOT a controller hull. There is deliberately no `[data-bakers-tab-body]` here:
@@ -108,15 +107,13 @@ Then('the members list has {int} rows', async ({ page }, count: number) => {
 
 // One step for the whole affordance, because a scenario that filled the field
 // and clicked separately would be asserting the widget rather than the island.
-// The page header's Add member opens the dialog; pick the person's row (its
-// value is the uid), keep the role, press Add member. The dialog closes and the
-// members island re-renders in place, so the step waits for the new row.
+// The page header's Add member opens the dialog; type the person's name into
+// the chip field and take their listed match, keep the role, press Add member.
+// The dialog closes and the members island re-renders in place, so the step
+// waits for the new row.
 When('I add the member {string}', async ({ page }, value: string) => {
   const dialog = await openAddMemberDialog(page);
-  const trigger = pickerTrigger(page, ADD_DIALOG, 'Member');
-  await waitForPickerBehaviour(trigger);
-  await trigger.click();
-  await dialog.locator(`[role="option"][data-value="${uidOf(value)}"]`).click();
+  await chooseInAddDialog(dialog, value);
   const answered = page.waitForResponse(
     (response) => response.request().method() === 'POST' && response.url().includes('/members/add'),
     { timeout: 15000 },

@@ -184,7 +184,7 @@ function addressInput(page: Page) {
 
 /** The chips the invite dialog shows, one list item per entered address. */
 function addressChips(page: Page) {
-  return page.locator(`${DIALOG} [data-email-chips]`).getByRole('listitem');
+  return page.locator(`${DIALOG} [data-chip-field]`).getByRole('listitem');
 }
 
 When('I type {string} into the invite addresses', async ({ page }, text: string) => {
@@ -194,7 +194,7 @@ When('I type {string} into the invite addresses', async ({ page }, text: string)
 
 Then('the invite addresses show the chips {string}', async ({ page }, list: string) => {
   const addresses = list.split(',').map((address) => address.trim());
-  await expect(addressChips(page).locator('[data-email-chips-address]')).toHaveText(addresses);
+  await expect(addressChips(page).locator('[data-chip-field-label]')).toHaveText(addresses);
   await expect(page.locator(`${DIALOG} textarea[name="emails"]`)).toHaveValue(addresses.join('\n'));
 });
 
