@@ -20,6 +20,7 @@ trait UserProfileTestTrait {
    */
   protected function installUserProfileConfig(): void {
     $this->installEntitySchema('bb_profile');
+    $this->installSchema('user', ['users_data']);
   }
 
   /**

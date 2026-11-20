@@ -79,6 +79,7 @@ final class BbRailMyWorkTest extends KernelTestBase {
     $this->installEntitySchema('bb_group');
     $this->installEntitySchema('bb_project');
     $this->installEntitySchema('bb_profile');
+    $this->installSchema('user', ['users_data']);
     $this->installEntitySchema('bb_ticket');
     $this->installEntitySchema('search_api_task');
     $this->installConfig(['system', 'user', 'search_api']);
