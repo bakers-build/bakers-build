@@ -8,7 +8,7 @@ import { Drush } from '../../support/drush';
 import { test, expect } from '../../bdd.fixtures';
 import { messagesFor, clearMailboxFor } from '../../support/login-flow';
 import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
-import { markDocument } from '../../support/shell';
+import { MEMBERS_ISLAND, markDocument } from '../../support/shell';
 import type { Page } from '@playwright/test';
 
 const { Given, When, Then, After } = createBdd(test);
@@ -285,9 +285,9 @@ Then('the Members screen confirms {string}', async ({ page }, text: string) => {
 
 Then('members and invitations share one list', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Pending invitations' })).toHaveCount(0);
-  const invited = page.getByRole('row').filter({ hasText: invitedAddress });
-  await expect(page.getByRole('main').locator('table')).toHaveCount(1);
-  await expect(invited).toBeVisible();
+  const roster = page.locator(`${MEMBERS_ISLAND} ul[role="list"]:has(> li[data-list-item])`);
+  await expect(roster).toHaveCount(1);
+  await expect(roster.locator('> li').filter({ hasText: invitedAddress })).toBeVisible();
 });
 
 Then('the Members screen still lists its members', async ({ page }) => {
@@ -298,7 +298,7 @@ Then(
   'each invited address is listed as pending with the role {string} and the team {string}',
   async ({ page }, role: string, team: string) => {
     for (const address of invitedAddresses) {
-      const row = page.getByRole('row').filter({ hasText: address }).first();
+      const row = page.locator(`${MEMBERS_ISLAND} li[data-list-item]`).filter({ hasText: address }).first();
       await expect(row, `${address} is not listed as pending`).toBeVisible();
       await expect(row).toContainText(role);
       await expect(row).toContainText(team);

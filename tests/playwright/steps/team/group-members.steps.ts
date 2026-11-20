@@ -19,10 +19,10 @@ import { MEMBERS_ISLAND, markDocument, uidOf } from '../../support/shell';
 import { ADD_DIALOG, addMemberTrigger, openAddMemberDialog } from '../../support/add-member-dialog';
 
 /**
- * One row of the roster table. Direct children only, so the rows of a role
+ * One item of the roster list. Direct children only, so the rows of a role
  * picker's own option list are never counted as members.
  */
-const MEMBER_ITEM = `${MEMBERS_ISLAND} table > tbody > tr`;
+const MEMBER_ITEM = `${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`;
 
 /**
  * The public URL of a project, resolved by label rather than hardcoded.
@@ -260,12 +260,35 @@ Then(
   },
 );
 
-/** The roster is a table whose header row names its columns, in order. */
-Then('the members table has the columns {string}', async ({ page }, columns: string) => {
-  const table = page.locator(`${MEMBERS_ISLAND} table`).first();
-  const names = columns.split(',').map((name) => name.trim());
-  await expect(table.getByRole('columnheader').filter({ hasText: /\S/ })).toHaveText(names);
+/** The roster is an item list: no table, no column headers. */
+Then('the members are an item list without columns', async ({ page }) => {
   await expect(page.locator(MEMBER_ITEM).first()).toBeVisible();
+  await expect(page.locator(`${MEMBERS_ISLAND} table`)).toHaveCount(0);
+  await expect(page.locator(MEMBERS_ISLAND).getByRole('columnheader')).toHaveCount(0);
+});
+
+/** The roster's uids in list order, '' for an item without controls. */
+async function rosterOrder(page: import('@playwright/test').Page): Promise<string[]> {
+  return page.locator(MEMBER_ITEM).evaluateAll((items) =>
+    items.map((li) => li.querySelector('[data-bakers-member-uid]')?.getAttribute('data-bakers-member-uid') ?? ''),
+  );
+}
+
+let notedOrder: string[] | null = null;
+
+Then('the first member is {string}', async ({ page }, value: string) => {
+  await expect.poll(async () => (await rosterOrder(page))[0]).toBe(String(uidOf(value)));
+});
+
+Given('I note the order of the members', async ({ page }) => {
+  notedOrder = await rosterOrder(page);
+});
+
+Then('the members keep the noted order', async ({ page }) => {
+  if (notedOrder === null) {
+    throw new Error('Note the order of the members before asserting it.');
+  }
+  await expect.poll(() => rosterOrder(page)).toEqual(notedOrder);
 });
 
 Then(
@@ -275,7 +298,7 @@ Then(
     await expect(item).toBeVisible();
     await expect(item.locator('[data-person-mark]')).toHaveText(account.charAt(0).toUpperCase());
     await expect(item.locator('[data-option-picker-trigger]').first()).toBeVisible();
-    await expect(item.getByText(/^\d{1,2} [A-Z][a-z]{2}( \d{4})?$/)).toBeVisible();
+    await expect(item.getByText(/^Joined \d{1,2} [A-Z][a-z]{2}( \d{4})?$/)).toBeVisible();
     await expect(item.locator(`[data-bakers-member-uid="${uidOf(account)}"]`).first()).toBeVisible();
   },
 );

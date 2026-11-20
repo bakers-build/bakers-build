@@ -50,6 +50,19 @@ Feature: Managing a team's members keeps focus and says what happened
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
 
+  Scenario: The newest member comes first and a role change keeps the order
+    Given I am signed in as "north-lead"
+    And the team "Design Crew" has no member "both-bakeries"
+    And I visit the team "Design Crew" tab "Members"
+    And I add the member "both-bakeries"
+    Then the first member is "both-bakeries"
+    When I note the order of the members
+    And I pick the role "lead" for the member "both-bakeries"
+    Then the member "both-bakeries" shows the role "Lead"
+    And the members keep the noted order
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
+
   Scenario: Changing a role with the keyboard only
     Given I am signed in as "north-lead"
     And the team "Design Crew" has no member "both-bakeries"

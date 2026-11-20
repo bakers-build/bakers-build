@@ -367,11 +367,11 @@ Feature: The team screen's five tabs are routes inside one island
     Then the remove control names "Revokes their access."
     And no remove control names "no access is revoked"
 
-  # The roster is a table: Name, Role and Joined line up from row to row. A
-  # team's own roster has no Team column, because every row is that team.
-  Scenario: The team member list is a table with Name, Role and Joined columns
+  # The roster is an item list like the ticket and project lists, without
+  # columns; a team's own roster names no team, because every row is that team.
+  Scenario: The team member list is an item list without columns
     When I visit the team "Platform Crew" tab "Members"
-    Then the members table has the columns "Name, Role, Joined"
+    Then the members are an item list without columns
 
   # BB-435 — CRITERION 9 on this call site, REWRITTEN BY BB-456. This used to
   # assert an absence: a team granted no permissions, so an item carried its

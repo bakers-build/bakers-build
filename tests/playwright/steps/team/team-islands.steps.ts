@@ -99,11 +99,11 @@ Then('the rail was part of the swap', async ({ page }) => {
 });
 
 /**
- * How many members the roster shows: the roster table's body rows, direct
+ * How many members the roster shows: the roster list's items, direct
  * children only, so a role picker's own option rows are never counted.
  */
 Then('the members list has {int} rows', async ({ page }, count: number) => {
-  await expect(page.locator(`${MEMBERS_ISLAND} table > tbody > tr`)).toHaveCount(count);
+  await expect(page.locator(`${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`)).toHaveCount(count);
 });
 
 // One step for the whole affordance, because a scenario that filled the field
