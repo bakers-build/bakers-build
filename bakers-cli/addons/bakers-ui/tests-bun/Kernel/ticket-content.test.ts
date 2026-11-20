@@ -230,7 +230,7 @@ describe('production ticket content', () => {
       expect(frame).toContain(IDENTIFIER);
       expect(frame).toContain(TITLE);
       expect(frame).toContain('[Overview]');
-      expect(frame).toContain('* Summary');
+      expect(frame).toContain(' Summary');
       expect(frame).toContain('PgUp/PgDn');
       expect(frame).not.toContain('Example document');
       expect(frame).not.toContain('Click to count');
@@ -296,7 +296,7 @@ describe('production ticket content', () => {
       expect(tui.frame()).toContain(IDENTIFIER);
       expect(tui.frame()).toContain('[Overview]');
       await page(tui, PAGE_UP, 80);
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       expect(tui.frame()).toContain(IDENTIFIER);
       expect(tui.frame()).toContain('[Overview]');
       await quit(tui);
@@ -343,9 +343,9 @@ describe('production ticket content', () => {
     const tui = await boot(80, 24);
     try {
       expect(tui.frame()).toContain('summary line 0');
-      expect(await clickText(tui, '* Summary')).toBe(true);
+      expect(await clickText(tui, ' Summary')).toBe(true);
       expect(tui.frame()).not.toContain('summary line 0');
-      expect(await clickText(tui, '* Summary')).toBe(true);
+      expect(await clickText(tui, ' Summary')).toBe(true);
       expect(tui.frame()).toContain('summary line 0');
       await quit(tui);
     } finally {
@@ -356,7 +356,7 @@ describe('production ticket content', () => {
   it('lets the assignment modal consume keys and returns to a single content binding', async () => {
     const tui = await boot(80, 24);
     try {
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       expect(tui.frame()).not.toContain(DESCRIPTION_END);
       await tui.press('e');
       expect(tui.frame()).toContain('Edit ticket');
@@ -368,10 +368,10 @@ describe('production ticket content', () => {
       await tui.press('\x1b');
       expect(tui.frame()).not.toContain('Edit ticket');
       expect(tui.frame()).toContain('[Overview]');
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       expect(tui.frame()).not.toContain(DESCRIPTION_END);
       expect(tui.frame()).toContain('summary line 0');
-      expect(await clickText(tui, '* Summary')).toBe(true);
+      expect(await clickText(tui, ' Summary')).toBe(true);
       expect(tui.frame()).not.toContain('summary line 0');
       await quit(tui);
     } finally {
@@ -811,17 +811,17 @@ describe('native edit save and cancel keep expansion', () => {
       },
     });
     try {
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       await tui.press('e');
       expect(tui.frame()).toContain('Edit ticket');
       await tui.press('\x1b');
       expect(tui.frame()).not.toContain('Edit ticket');
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       expect(tui.frame()).toContain('[Overview]');
       await tui.press('e');
       await tui.press('\x13');
       expect(tui.frame()).not.toContain('[ Save ]');
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
       const tabRow = tui
         .rows()
         .findIndex((line) => line.includes('[Overview]'));
@@ -834,7 +834,7 @@ describe('native edit save and cancel keep expansion', () => {
       expect(tui.frame()).toContain('[Planning]');
       await tui.press('\x1b[Z');
       expect(tui.frame()).toContain('[Overview]');
-      expect(tui.frame()).toContain('* Summary');
+      expect(tui.frame()).toContain(' Summary');
     } finally {
       await shutdown(tui);
     }

@@ -441,7 +441,7 @@ describe('Overview — open Description, header identity, no carets', () => {
     expect(body.join('\n')).not.toContain('No summary comment.');
     const header = body.findIndex((line) => line.includes('Description'));
     // Only the links section (BAKERS-332) sits above the first document.
-    expect(body[0]).toContain('* links');
+    expect(body[0]).toContain(' links');
     expect(header, 'Description is the first overview entry').toBeGreaterThan(
       0,
     );
@@ -522,7 +522,7 @@ describe('Overview — parent on the sidebar, links in the left column', () => {
     expect(bodyRows(tui).join('\n')).toMatch(/parent\s+:\s+BB-200/);
     const body = bodyRows(tui);
     // Links render at the top of the left column, one `* <URL>` row each.
-    expect(body.some((row) => row.includes('* links'))).toBe(true);
+    expect(body.some((row) => row.includes(' links'))).toBe(true);
     expect(body.join('\n')).toContain('* https://git.example/mr/255');
     expect(body.join('\n')).not.toContain('MR:');
     await quit(tui);
@@ -534,7 +534,7 @@ describe('Overview — parent on the sidebar, links in the left column', () => {
     expect(text).not.toContain('No parent ticket.');
     expect(text).toMatch(/parent\s+:\s+none/);
     expect(text).not.toContain('No links.');
-    expect(text).not.toContain('* links');
+    expect(text).not.toContain(' links');
     await quit(tui);
   });
 });
@@ -731,7 +731,7 @@ describe('BB-255 D9 — ↑↓ scroll unless the tab has MORE THAN ONE entry', (
       bodyRows(tui).join('\n'),
       'Description stayed expanded while selection moved',
     ).toContain('TAIL-ONLY-LINE');
-    expect(bodyRows(tui).slice(0, 2).join('\n')).toContain('* links');
+    expect(bodyRows(tui).slice(0, 2).join('\n')).toContain(' links');
     await tui.press('\r');
     expect(
       bodyRows(tui).join('\n'),

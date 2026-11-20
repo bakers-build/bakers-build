@@ -1340,7 +1340,7 @@ describe('BB-241 — the wheel scrolls the viewport (AC-3)', () => {
     expect(
       before.slice(0, 2).join('\n'),
       'the Overview tab starts on its first section, the links',
-    ).toContain('* links');
+    ).toContain(' links');
     expect(
       before.join('\n'),
       'and the expanded body overflows the window',

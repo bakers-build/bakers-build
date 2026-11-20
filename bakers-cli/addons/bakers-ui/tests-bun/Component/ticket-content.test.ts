@@ -173,9 +173,9 @@ describe('TicketContent', () => {
       new Set(['section:Latest summary']),
     );
     expect(collapsed.frame).toContain('* Description');
-    expect(collapsed.frame).toContain('* Summary');
+    expect(collapsed.frame).toContain(' Summary');
     expect(collapsed.frame).not.toContain('[Description]');
-    expect(collapsed.frame.indexOf('* Summary')).toBeLessThan(
+    expect(collapsed.frame.indexOf(' Summary')).toBeLessThan(
       collapsed.frame.indexOf('* Description'),
     );
     expect(collapsed.frame).toContain('status line 7');
@@ -334,8 +334,8 @@ describe('TicketContent', () => {
     // the headline sits at the left edge, the URL itself is painted, and the
     // sidebar carries no Links tab.
     const linksCol = wide.rows
-      .find((row) => row.includes('* links'))
-      ?.indexOf('* links');
+      .find((row) => row.includes(' links'))
+      ?.indexOf(' links');
     expect(
       linksCol,
       'links headline is painted in the left column',
@@ -398,7 +398,7 @@ describe('TicketContent', () => {
           row.includes('Description') && !row.includes('Short description'),
       );
       expect(description).toBeGreaterThan(0);
-      const head = rowIndex(painted.rows, '* links');
+      const head = rowIndex(painted.rows, ' links');
       expect(head).toBeGreaterThanOrEqual(0);
       expect(
         [1, 2, 3, 4].map((offset) => linkAt(painted.rows, head + offset)),
@@ -417,7 +417,7 @@ describe('TicketContent', () => {
       for (const row of painted.spans.slice(head + 1, head + 5))
         for (const span of row)
           expect(span.attributes & UNDERLINE, span.text).toBe(0);
-      expect(painted.frame.split('* links').length - 1).toBe(1);
+      expect(painted.frame.split(' links').length - 1).toBe(1);
     });
   }
 
@@ -458,7 +458,7 @@ describe('TicketContent', () => {
       }),
       80,
     );
-    const links = rowIndex(painted.rows, '* links');
+    const links = rowIndex(painted.rows, ' links');
     expect(links).toBeGreaterThanOrEqual(0);
     expect(linkAt(painted.rows, links + 1)).toBe(
       '* https://b.test/bakers/ticket/bakers-1',

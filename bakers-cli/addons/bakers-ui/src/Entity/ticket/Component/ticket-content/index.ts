@@ -320,6 +320,10 @@ const headlineContent = (
   );
 };
 
+// Nerd Font glyphs (nf-fa-link, nf-fa-file_text); without that font the terminal shows a box.
+const LINKS_ICON = '\uf0c1';
+const SUMMARY_ICON = '\uf15c';
+
 const overviewDocuments = (
   id: string,
   documents: readonly TicketContentEntry[],
@@ -332,6 +336,7 @@ const overviewDocuments = (
       HeadlineMarkdown({
         id: `${id}-${entry.key}`,
         headline: documentTabLabel(entry.title),
+        ...(entry.title === 'Latest summary' ? { marker: SUMMARY_ICON } : {}),
         headlineId: ticketContentRowId(entry.key),
         onMouseDown: () => activate(entry, props.select, props.toggle),
         paddingBottom: 1,
@@ -613,6 +618,7 @@ const linksSection = (
   return HeadlineMarkdown({
     id,
     headline: 'links',
+    marker: LINKS_ICON,
     // The documents' marginTop spaces them; HeadlineMarkdown's default would add a row.
     paddingBottom: 0,
     children: [
