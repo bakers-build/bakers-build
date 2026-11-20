@@ -19,7 +19,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
- * The team's add-member dialog: one person of the workspace and a role.
+ * The team's add-member dialog: people of the workspace and one role.
  *
  * Opened from the team Members page header. A finished add closes the dialog
  * and the members list re-renders in place, showing the result.
@@ -78,12 +78,16 @@ final class TeamMemberAddForm extends WrappedDialogFormBase {
     $team = $this->team();
     $form['#theme'] = 'bb_create_dialog';
     $form['account'] = [
-      '#type' => 'bb_picker_value',
-      '#title' => $this->t('Member'),
+      '#type' => 'select',
+      '#title' => $this->t('People'),
       '#title_display' => 'invisible',
-      '#picker_region' => 'pills',
-      '#picker_options' => $this->face->addOptions($team),
-      '#pre_render' => [[MemberFaceOutcome::class, 'renderAddPicker']],
+      '#multiple' => TRUE,
+      '#options' => $this->face->addOptions($team),
+      // Each chosen person shows as a removable chip; the select stays the value.
+      '#theme' => 'select__bb_chip_field',
+      // validateForm() refuses a pick outside the options, by name.
+      '#validated' => TRUE,
+      '#picker_region' => 'lines',
     ];
     $roles = [];
     foreach (MemberItemBuilder::assignableRoles($team) as $name => $role) {
@@ -133,19 +137,31 @@ final class TeamMemberAddForm extends WrappedDialogFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state): void {
     $team = $this->team();
-    $uid = $this->picked($form_state, 'account');
-    $refusal = match (TRUE) {
-      $uid === '' || (int) $uid === 0 => $this->t('Choose the person to add.'),
-      $this->membershipWriter->membershipOf($team, (int) $uid) !== NULL => $this->t('That account is already a member of this team.'),
-      !isset($this->face->addOptions($team)[(int) $uid]) => $this->t('Only people who already belong to this workspace can join the team.'),
-      default => NULL,
-    };
-    if ($refusal !== NULL) {
-      $form_state->setErrorByName('account', $refusal);
+    $uids = $this->pickedPeople($form_state);
+    if ($uids === []) {
+      $form_state->setErrorByName('account', $this->t('Choose the people to add.'));
       return;
     }
-    if (isset($form['role']) && !isset($this->rolesFor($team, (int) $uid)[$this->role($form_state)])) {
-      $form_state->setErrorByName('role', $this->t('This person cannot hold that role.'));
+    $options = $this->face->addOptions($team);
+    foreach ($uids as $uid) {
+      $refusal = match (TRUE) {
+        $this->membershipWriter->membershipOf($team, $uid) !== NULL => $this->t('@name is already a member of this team.', ['@name' => $this->face->memberName($team, $uid)]),
+        !isset($options[$uid]) => $this->t('Only people who already belong to this workspace can join the team.'),
+        default => NULL,
+      };
+      if ($refusal !== NULL) {
+        $form_state->setErrorByName('account', $refusal);
+        return;
+      }
+    }
+    if (!isset($form['role'])) {
+      return;
+    }
+    foreach ($uids as $uid) {
+      if (!isset($this->rolesFor($team, $uid)[$this->role($form_state)])) {
+        $form_state->setErrorByName('role', $this->t('@name cannot hold that role.', ['@name' => $options[$uid]]));
+        return;
+      }
     }
   }
 
@@ -173,16 +189,18 @@ final class TeamMemberAddForm extends WrappedDialogFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state): void {
     $team = $this->team();
-    $uid = (int) $this->picked($form_state, 'account');
+    $uids = $this->pickedPeople($form_state);
     $roles = MemberItemBuilder::assignableRoles($team);
-    $this->membershipWriter->add($team, $uid);
-    if ($roles !== []) {
-      $this->membershipWriter->writeRole($team, $uid, $this->role($form_state), $roles);
+    foreach ($uids as $uid) {
+      $this->membershipWriter->add($team, $uid);
+      if ($roles !== []) {
+        $this->membershipWriter->writeRole($team, $uid, $this->role($form_state), $roles);
+      }
     }
-    $membership = $this->membershipWriter->membershipOf($team, $uid);
+    $membership = $this->membershipWriter->membershipOf($team, $uids[0]);
     if ($membership !== NULL) {
-      $this->messenger()->addMessage($this->t('Added @name as @role.', [
-        '@name' => $this->face->memberName($team, $uid),
+      $this->messenger()->addMessage($this->formatPlural(count($uids), 'Added @name as @role.', 'Added @count members as @role.', [
+        '@name' => $this->face->memberName($team, $uids[0]),
         '@role' => $this->itemBuilder->roleLabel($membership, $team),
       ]), WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
     }
@@ -199,6 +217,18 @@ final class TeamMemberAddForm extends WrappedDialogFormBase {
   private function role(FormStateInterface $form_state): string {
     $role = $this->picked($form_state, 'role');
     return $role === '' ? self::DEFAULT_ROLE : $role;
+  }
+
+  /**
+   * The chosen people's uids, each once, in the order sent.
+   *
+   * @return list<int>
+   *   The uids.
+   */
+  private function pickedPeople(FormStateInterface $form_state): array {
+    $value = $form_state->getValue('account');
+    $uids = array_map('intval', array_filter(is_array($value) ? $value : [$value], 'is_scalar'));
+    return array_values(array_unique(array_filter($uids)));
   }
 
   /**

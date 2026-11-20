@@ -260,7 +260,7 @@ final class ServiceAccountMemberRoleOptionsTest extends KernelTestBase {
     $this->container->get('request_stack')->push($request);
 
     $form_state = (new FormState())->setValues([
-      'account' => (string) $service->id(),
+      'account' => [(string) $service->id()],
       'role' => 'lead',
       'op' => 'Add member',
     ]);

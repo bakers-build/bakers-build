@@ -6,7 +6,6 @@ namespace Drupal\bb_core\Members;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\bb_core\Form\WorkspaceInviteForm;
-use Drupal\Core\Security\TrustedCallbackInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
 
@@ -16,9 +15,9 @@ use Drupal\Core\StringTranslation\TranslationInterface;
  * The members form marks its rebuilt face with `data-members-focus` (an
  * element id) and `data-members-announce`; `bb_core/members` applies them.
  * This class names those targets, builds the in-place removal confirmation
- * and the add picker. Like the form, it names no entity type.
+ * and the add options. Like the form, it names no entity type.
  */
-final class MemberFaceOutcome implements TrustedCallbackInterface {
+final class MemberFaceOutcome {
 
   use StringTranslationTrait;
 
@@ -54,13 +53,6 @@ final class MemberFaceOutcome implements TrustedCallbackInterface {
     TranslationInterface $string_translation,
   ) {
     $this->setStringTranslation($string_translation);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function trustedCallbacks(): array {
-    return ['renderAddPicker'];
   }
 
   /**
@@ -193,8 +185,8 @@ final class MemberFaceOutcome implements TrustedCallbackInterface {
     if (!$parent instanceof ContentEntityInterface) {
       return [];
     }
-    // shortcut: every candidate renders as an option and the picker filters
-    // them in the browser; move to a `search_url` route when a workspace
+    // shortcut: every candidate renders as an option and the chip field
+    // filters them in the browser; move to a `search_url` route when a workspace
     // outgrows a few hundred people.
     $in_group = array_flip($this->rosterUids($group));
     $options = [];
@@ -206,45 +198,6 @@ final class MemberFaceOutcome implements TrustedCallbackInterface {
     }
     natcasesort($options);
     return $options;
-  }
-
-  /**
-   * Renders the add field as a searchable picker from its processed value.
-   *
-   * @param array<string, mixed> $element
-   *   The processed picker element.
-   *
-   * @return array<string, mixed>
-   *   The element with its `control` child.
-   */
-  public static function renderAddPicker(array $element): array {
-    $value = (string) (($element['#value'] ?? [])[0] ?? '');
-    $rows = [];
-    foreach ($element['#picker_options'] as $uid => $label) {
-      $rows[] = ['value' => (string) $uid, 'label' => $label, 'selected' => (string) $uid === $value];
-    }
-    $chosen = $element['#picker_options'][$value] ?? NULL;
-    $request = \Drupal::request();
-    $element['control'] = [
-      '#type' => 'component',
-      '#component' => 'bb_theme:property_pill',
-      '#props' => [
-        'name' => $element['#name'],
-        'label' => (string) $element['#title'],
-        'icon' => 'user',
-        'picker_id' => $element['#id'],
-        'multiple' => FALSE,
-        'open' => FALSE,
-        'searchable' => TRUE,
-        // Without JavaScript the panel cannot open; a list stands in. Never in
-        // a swapped fragment, where the noscript content would become live.
-        'fallback' => !$request->isXmlHttpRequest() && !$request->headers->has('HX-Request'),
-        'values' => $chosen === NULL ? [] : [$value],
-        'value_label' => $chosen ?? '',
-        'options' => $rows,
-      ],
-    ];
-    return $element;
   }
 
 }

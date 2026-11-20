@@ -316,7 +316,8 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
     self::assertSame('Add member', (string) $trigger['#props']['label']);
     self::assertSame('members-add', (string) $trigger['#props']['attributes']['id']);
     $form = $this->buildAddForm();
-    self::assertSame('bb_picker_value', $form['account']['#type'] ?? NULL, 'The add field is the house picker.');
+    self::assertSame('select', $form['account']['#type'] ?? NULL, 'The add field is a select the chip field reads.');
+    self::assertTrue($form['account']['#multiple'] ?? FALSE, 'Several people are added in one submit.');
     self::assertSame('bb_picker_value', $form['role']['#type'] ?? NULL, 'The role is picked in the same dialog.');
 
     $errors = $this->submitAddForm($account);
@@ -426,7 +427,7 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
     $this->joinWorkspace($crew);
     Og::createMembership($this->team, $crew)->setState(OgMembershipInterface::STATE_ACTIVE)->save();
 
-    $options = $this->buildAddForm()['account']['#picker_options'] ?? [];
+    $options = $this->buildAddForm()['account']['#options'] ?? [];
 
     self::assertArrayHasKey((int) $candidate->id(), $options, 'a workspace member is offered');
     self::assertArrayNotHasKey((int) $crew->id(), $options, 'someone already in the team is not');
@@ -449,6 +450,61 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
       $this->membershipCountFor($outsider),
       'No team membership is created for an outsider.',
     );
+  }
+
+  /**
+   * One submit adds every chosen person with the one chosen role.
+   */
+  public function testOneSubmitAddsSeveralPeopleWithTheChosenRole(): void {
+    $this->createTeamRole('lead', 'Lead');
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $ada = $this->createUser([], 'ada');
+    $alan = $this->createUser([], 'alan');
+    self::assertInstanceOf(UserInterface::class, $ada);
+    self::assertInstanceOf(UserInterface::class, $alan);
+    $this->joinWorkspace($ada);
+    $this->joinWorkspace($alan);
+
+    $form_state = $this->submitAddState([$ada, $alan], 'lead');
+
+    self::assertSame([], array_map('strval', $form_state->getErrors()));
+    foreach ([$ada, $alan] as $account) {
+      // Queried, not Og::getMembership(): OG caches the account's memberships
+      // from before the write.
+      $ids = $this->container->get('entity_type.manager')->getStorage('og_membership')->getQuery()
+        ->accessCheck(FALSE)
+        ->condition('entity_type', 'bb_team')
+        ->condition('entity_id', (string) $this->team->id())
+        ->condition('uid', (string) $account->id())
+        ->execute();
+      $membership = OgMembership::load((int) reset($ids));
+      self::assertInstanceOf(OgMembershipInterface::class, $membership, sprintf('%s joined the team', $account->getAccountName()));
+      self::assertContains('bb_team-bb_team-lead', $membership->getRolesIds());
+    }
+    self::assertSame(
+      ['Added 2 members as Lead.'],
+      array_map('strval', $this->container->get('messenger')->messagesByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE)),
+    );
+  }
+
+  /**
+   * A chosen person already in the team is refused by name; nobody is added.
+   */
+  public function testSomeoneAlreadyInTheTeamIsRefusedByNameAndNobodyIsAdded(): void {
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $ada = $this->createUser([], 'ada');
+    $crew = $this->createUser([], 'crew');
+    self::assertInstanceOf(UserInterface::class, $ada);
+    self::assertInstanceOf(UserInterface::class, $crew);
+    $this->joinWorkspace($ada);
+    $this->joinWorkspace($crew);
+    Og::createMembership($this->team, $crew)->setState(OgMembershipInterface::STATE_ACTIVE)->save();
+
+    $errors = array_map('strval', $this->submitAddState([$ada, $crew])->getErrors());
+
+    self::assertSame(['account' => 'crew is already a member of this team.'], $errors);
+    self::assertSame(0, $this->membershipCountFor($ada), 'the valid pick is not added either');
+    self::assertSame(1, $this->membershipCountFor($crew));
   }
 
   /**
@@ -513,12 +569,17 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
 
   /**
    * Submits the add dialog and returns its state.
+   *
+   * @param \Drupal\user\UserInterface|array<\Drupal\user\UserInterface> $accounts
+   *   The person or people chosen.
+   * @param string|null $role
+   *   The chosen role, or none for the default.
    */
-  private function submitAddState(UserInterface $account, ?string $role = NULL): FormStateInterface {
+  private function submitAddState(UserInterface|array $accounts, ?string $role = NULL): FormStateInterface {
     $this->enterAddRoute();
     $form_state = new FormState();
     $form_state->setValues(array_filter([
-      'account' => (string) $account->id(),
+      'account' => array_map(static fn (UserInterface $account): string => (string) $account->id(), is_array($accounts) ? $accounts : [$accounts]),
       'role' => $role,
       'op' => 'Add member',
     ], static fn ($value): bool => $value !== NULL));
