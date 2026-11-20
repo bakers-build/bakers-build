@@ -1045,19 +1045,23 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   }
 
   /**
-   * A dialog's result shows once: the next rebuild of the face has no toast.
+   * A dialog's result shows in its request only: the next one has no toast.
+   *
+   * One boosted GET builds the face twice, page then fragment; both show it.
    */
   public function testDialogResultIsShownOnce(): void {
     $messenger = $this->container->get('messenger');
     $messenger->addMessage('Invited 1 person.', WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
+    $request = Request::create('/refresh');
 
-    $first = MembersDialogResponse::result($messenger);
-    $second = MembersDialogResponse::result($messenger);
+    $page = MembersDialogResponse::result($messenger, $request);
+    $fragment = MembersDialogResponse::result($messenger, $request);
+    $next = MembersDialogResponse::result($messenger, Request::create('/next'));
 
-    self::assertSame('Invited 1 person.', $first['#bb_result'] ?? NULL);
-    self::assertSame('bb_theme:toast', $first['message']['#component'] ?? NULL);
-    self::assertArrayNotHasKey('#bb_result', $second, 'the result is consumed');
-    self::assertSame([], $messenger->messagesByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE));
+    self::assertSame('Invited 1 person.', $page['#bb_result'] ?? NULL);
+    self::assertSame('bb_theme:toast', $page['message']['#component'] ?? NULL);
+    self::assertSame('Invited 1 person.', $fragment['#bb_result'] ?? NULL, 'the same request shows it again');
+    self::assertArrayNotHasKey('#bb_result', $next, 'the result is consumed');
   }
 
   /**

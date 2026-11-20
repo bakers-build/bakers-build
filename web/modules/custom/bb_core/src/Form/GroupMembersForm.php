@@ -144,7 +144,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     $may_transfer = $this->ownershipTransfer->isOwner($group, $this->currentUser());
     $tenancy = $this->tenancyInvite->isTenancy($group);
     // Inviting and adding happen in dialogs opened from the page header.
-    $form['invite_result'] = MembersDialogResponse::result($this->messenger());
+    $form['invite_result'] = MembersDialogResponse::result($this->messenger(), $this->getRequest());
     if ($may_write) {
       $form['actions'] = $this->applyAction();
     }

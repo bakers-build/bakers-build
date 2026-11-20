@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Members;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\bb_core\Form\WorkspaceInviteForm;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -24,6 +25,11 @@ final class MembersDialogResponse {
   public const string EVENT = 'bakers.members.changed';
 
   /**
+   * The request attribute holding the result consumed for this request.
+   */
+  private const string RESULT_ATTRIBUTE = 'bb_members_dialog_result';
+
+  /**
    * The empty answer that deletes the dialog and announces EVENT.
    */
   public static function close(): Response {
@@ -36,7 +42,7 @@ final class MembersDialogResponse {
   }
 
   /**
-   * The result a finished dialog left for the Members face, once, as a toast.
+   * The result a finished dialog left for the Members face, as a toast.
    *
    * A toast like every other confirmation: fixed, so the list does not move,
    * and hidden again after a few seconds, as the status messages are.
@@ -44,9 +50,14 @@ final class MembersDialogResponse {
    * @return array<string, mixed>
    *   The toast with its text in `#bb_result`, or an uncacheable nothing.
    */
-  public static function result(MessengerInterface $messenger): array {
-    // Consumed: a fragment answer never reaches the page's status messages.
-    $messages = $messenger->deleteByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
+  public static function result(MessengerInterface $messenger, Request $request): array {
+    // Consumed, since a fragment answer never reaches the page's status
+    // messages; kept on the request, because one boosted GET builds the face
+    // twice (the page, then the island fragment) and both must show it.
+    if (!$request->attributes->has(self::RESULT_ATTRIBUTE)) {
+      $request->attributes->set(self::RESULT_ATTRIBUTE, $messenger->deleteByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE));
+    }
+    $messages = $request->attributes->get(self::RESULT_ATTRIBUTE);
     $build = ['#weight' => -5, '#cache' => ['max-age' => 0]];
     if ($messages === []) {
       return $build;
