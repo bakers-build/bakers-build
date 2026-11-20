@@ -75,7 +75,7 @@
    * Moves focus into an opened dialog's first field, never its close control.
    *
    * A picker's trigger counts as a field: a dialog of pickers alone has no
-   * input to land on.
+   * input to land on. A dialog without fields focuses its Cancel.
    */
   Drupal.behaviors.islandDialogFocus = {
     attach(context) {
@@ -91,7 +91,9 @@
         // Rendered only: a closed picker's search field comes first but cannot take focus.
         const field = dialog.querySelector('[autofocus]')
           ?? [...dialog.querySelectorAll('input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled), [data-option-picker-trigger]')]
-            .find((el) => el.checkVisibility());
+            .find((el) => el.checkVisibility())
+          // A confirmation has no field: land on its safe choice, not behind it.
+          ?? dialog.querySelector('[data-dialog-cancel]');
         // Keyed on the field: the off-canvas container outlives its content, a field does not.
         if (field && once('island-dialog-focus', field).length) {
           field.focus();

@@ -203,7 +203,10 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
     }
     // The Members screen shows the result itself, after its list refreshed.
     $this->getEntity()->delete();
-    $this->messenger()->addMessage($this->getDeletionMessage(), WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
+    // Plain text: the result is announced as well as shown.
+    $this->messenger()->addMessage($this->t('Revoked the invitation for @email.', [
+      '@email' => $this->getEntity()->label(),
+    ]), WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
     $this->logDeletionMessage();
     if ($this->isDialogRequest()) {
       $form_state->setResponse(MembersDialogResponse::close());

@@ -1,8 +1,8 @@
 @feature:workspace-members
 Feature: The workspace Members screen keeps focus and says what happened
   Invite and cancel return focus to Invite members; a refused change is
-  announced and keeps focus on the refused control. Inviting and revoking
-  themselves are covered by `workspace-invite.feature`.
+  announced and keeps focus on the refused control. The keyboard-only invite
+  and revoke live here; their full data checks are in `workspace-invite.feature`.
 
   Scenario: Inviting returns focus to Invite members and announces the result
     Given I am signed in as a workspace lead
@@ -14,6 +14,35 @@ Feature: The workspace Members screen keeps focus and says what happened
     And Invite members has focus
     And the screen reader hears "Invited 2 people."
     And the Members screen confirms "Invited 2 people."
+    And the document was not reloaded
+
+  Scenario: Inviting and revoking with the keyboard only
+    Given I am signed in as a workspace lead
+    When I open the workspace Members settings screen
+    And I move focus to Invite members
+    And I press the key "Enter"
+    Then the invite dialog is open
+    And the invite addresses field has focus
+    When I type two fresh, never-used e-mail addresses
+    And I press the key "Enter"
+    And I press the key "Tab"
+    And I press the key "Tab"
+    And I press the key "Tab"
+    And I press the key "Tab"
+    And I press the key "Enter"
+    Then the invite dialog is closed
+    And Invite members has focus
+    And the screen reader hears "Invited 2 people."
+    And the document was not reloaded
+    When I move focus to the revoke of the first invited address
+    And I press the key "Enter"
+    Then the revoke confirmation is open
+    And the revoke confirmation Cancel has focus
+    When I press the key "Tab"
+    And I press the key "Enter"
+    Then the first invited address is no longer listed as a pending invitation
+    And Invite members has focus
+    And the screen reader hears the revoke of the first invited address
     And the document was not reloaded
 
   Scenario: Typed addresses become chips the keyboard can remove

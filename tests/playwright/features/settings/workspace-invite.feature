@@ -28,6 +28,7 @@ Feature: Inviting workspace members from the Members settings screen
     When I revoke the pending invitation of the first invited address
     Then the first invited address is no longer listed as a pending invitation
     And Invite members has focus
+    And the screen reader hears the revoke of the first invited address
     And the document was not reloaded
 
   Scenario: A workspace member who does not lead it cannot open the Members settings screen

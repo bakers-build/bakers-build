@@ -213,6 +213,13 @@ When('I enter two fresh, never-used e-mail addresses', async ({ page, baseURL })
   await enterAddresses(page, baseURL!, [freshAddress(1), freshAddress(2)]);
 });
 
+/** Keyboard only: types into whatever has focus, as a user would. */
+When('I type two fresh, never-used e-mail addresses', async ({ page }) => {
+  invitedAddresses = [freshAddress(1), freshAddress(2)];
+  invitedAddress = invitedAddresses[0];
+  await page.keyboard.type(invitedAddresses.join(', '));
+});
+
 When('I enter one fresh, never-used e-mail address', async ({ page, baseURL }) => {
   await enterAddresses(page, baseURL!, [freshAddress(1)]);
 });
@@ -316,6 +323,29 @@ When('I revoke the pending invitation of the first invited address', async ({ pa
   await expect(dialog, 'the revoke dialog did not close').toHaveCount(0, { timeout: 20000 });
 });
 
+When('I move focus to the revoke of the first invited address', async ({ page }) => {
+  const revoke = page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` });
+  // Enter on it must open the dialog, not follow the page link.
+  await expect
+    .poll(() => revoke.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
+      timeout: 20000,
+    })
+    .toBe(true);
+  await revoke.focus();
+});
+
+Then('the revoke confirmation is open', async ({ page }) => {
+  await expect(page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])')).toBeVisible({ timeout: 20000 });
+});
+
+Then('the revoke confirmation Cancel has focus', async ({ page }) => {
+  await expect(page.locator('dialog[data-dialog][open] [data-dialog-cancel]')).toBeFocused();
+});
+
+Then('the screen reader hears the revoke of the first invited address', async ({ page }) => {
+  await expect(page.locator('#drupal-live-announce')).toContainText(`Revoked the invitation for ${invitedAddress}.`);
+});
+
 Then('the first invited address is no longer listed as a pending invitation', async ({ page }) => {
   await expect(page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
   expect(inviteCount(invitedAddress)).toBe('0');
@@ -361,6 +391,21 @@ function inviteCount(address: string): string {
     `php:eval 'print count(\\Drupal::entityTypeManager()->getStorage("bb_invite")->loadByProperties(["email" => "${address}"]));'`,
   ).trim();
 }
+
+When('I move focus to Invite members', async ({ page }) => {
+  const trigger = page.locator('#members-invite');
+  // Enter on it must open the dialog, not follow the page link.
+  await expect
+    .poll(() => trigger.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
+      timeout: 20000,
+    })
+    .toBe(true);
+  await trigger.focus();
+});
+
+Then('the invite dialog is open', async ({ page }) => {
+  await expect(page.locator(DIALOG)).toBeVisible({ timeout: 20000 });
+});
 
 /** The `Invite members` trigger, where focus returns after its dialog. */
 Then('Invite members has focus', async ({ page }) => {
