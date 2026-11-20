@@ -448,8 +448,9 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
         ->setCreatedTime($created)
         ->save();
     }
-    BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => 'between@example.com', 'created' => $time - 200])->save();
-    BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => 'newest@example.com', 'created' => $time])->save();
+    foreach (['between@example.com' => $time - 200, 'newest@example.com' => $time] as $mail => $created) {
+      BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => $mail, 'created' => $created])->save();
+    }
 
     $order = array_values(array_filter(
       (new Crawler($this->renderWorkspaceFace()))->filter('li[data-list-item]')->each(static function (Crawler $li): string {

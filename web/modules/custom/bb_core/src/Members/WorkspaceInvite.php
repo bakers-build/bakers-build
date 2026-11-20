@@ -326,12 +326,9 @@ final class WorkspaceInvite {
         'role' => ['kind' => 'badge', 'label' => $this->roleLabel($invite), 'tone' => 'neutral'],
         'team' => ['kind' => 'text', 'value' => $this->teamLabel($invite)],
         // A row of the roster: its status, where a member's says Joined.
-        'joined' => [
-          'kind' => 'badge',
-          'label' => (string) ($expired ? $this->t('Expired') : $this->t('Invited')),
-          'tone' => $expired ? 'critical' : 'neutral',
-          'suffix' => $this->date->date($invite->getCreatedTime()),
-        ],
+        'joined' => ['kind' => 'badge', 'suffix' => $this->date->date($invite->getCreatedTime())] + ($expired
+          ? ['label' => (string) $this->t('Expired'), 'tone' => 'critical']
+          : ['label' => (string) $this->t('Invited'), 'tone' => 'neutral']),
       ];
       if ($may_write) {
         $cells['controls'] = ['kind' => 'rendered'];
