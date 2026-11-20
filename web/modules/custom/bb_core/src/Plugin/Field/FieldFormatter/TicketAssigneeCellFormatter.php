@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\Field\FieldFormatter;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Field\Attribute\FieldFormatter;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -63,11 +64,14 @@ class TicketAssigneeCellFormatter extends TicketReferenceCellFormatterBase {
 
     $elements = [];
     foreach ($entities as $delta => $entity) {
-      $elements[$delta] = $this->cellElement($this->person($entity instanceof UserInterface ? $this->personMark($entity) : [
+      $cache = CacheableMetadata::createFromObject($entity);
+      $elements[$delta] = $this->cellElement($this->person($entity instanceof UserInterface ? $this->personMark($entity, $cache) : [
         'display_name' => (string) $entity->label(),
         'initials' => $this->personInitials((string) $entity->label()),
         'color' => $this->personColor((int) $entity->id()),
       ]));
+      // A new picture or name saves the account: the cell follows it.
+      $cache->applyTo($elements[$delta]);
     }
     return $elements;
   }

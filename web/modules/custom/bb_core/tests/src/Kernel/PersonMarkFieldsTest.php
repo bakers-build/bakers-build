@@ -72,10 +72,29 @@ final class PersonMarkFieldsTest extends KernelTestBase {
     $file->save();
     $ada->set('user_picture', $file->id())->save();
 
-    self::assertStringContainsString('/styles/avatar/public/ada.png', (string) $ada->get('person_picture')->value);
+    $picture = (string) $ada->get('person_picture')->value;
+    self::assertStringContainsString('/styles/avatar/public/ada.png', $picture);
+    self::assertStringStartsWith('/', $picture, 'relative, so a cached mark serves every host');
     self::assertSame('AL', $ada->get('person_initials')->value);
     self::assertContains($ada->get('person_color')->value, ['running', 'attention', 'unassigned', 'lease', 'offline']);
     self::assertSame($ada->get('person_picture')->value, $this->cell($ada)['picture'], 'the person cell carries the picture');
+  }
+
+  /**
+   * Without the `avatar` style there is no picture, as for workspace marks.
+   */
+  public function testNoAvatarStyleLeavesInitials(): void {
+    ImageStyle::load('avatar')?->delete();
+    $ada = $this->createUser([], 'Ada Lovelace');
+    self::assertInstanceOf(UserInterface::class, $ada);
+    $uri = 'public://ada.png';
+    file_put_contents($uri, 'png');
+    $file = File::create(['uri' => $uri, 'uid' => $ada->id()]);
+    $file->setPermanent();
+    $file->save();
+    $ada->set('user_picture', $file->id())->save();
+
+    self::assertSame('', (string) $ada->get('person_picture')->value);
   }
 
   /**

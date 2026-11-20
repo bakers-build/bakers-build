@@ -51,9 +51,11 @@ final class PersonMarkItemList extends FieldItemList {
     }
     // Computed item lists take no injection.
     $style = \Drupal::entityTypeManager()->getStorage('image_style')->load('avatar');
+    // Relative, so a cached mark serves every host; no style, no picture, as
+    // EntityImageTrait answers for workspace marks.
     return $style instanceof ImageStyleInterface
-      ? $style->buildUrl($file->getFileUri())
-      : \Drupal::service('file_url_generator')->generateAbsoluteString($file->getFileUri());
+      ? \Drupal::service('file_url_generator')->transformRelative($style->buildUrl($file->getFileUri()))
+      : '';
   }
 
 }

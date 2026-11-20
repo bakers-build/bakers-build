@@ -269,6 +269,18 @@ final class TicketCellFormattersTest extends KernelTestBase {
   }
 
   /**
+   * The assignee cell carries the account's cache tag.
+   */
+  public function testTheAssigneeCellFollowsTheAccount(): void {
+    $ticket = $this->ticket(['assignee_user_id' => $this->reader->id()]);
+    $build = $ticket->get('assignee_user_id')->view(['type' => 'bb_ticket_assignee_cell', 'label' => 'hidden']);
+    $this->container->get('renderer')->renderInIsolation($build);
+
+    // A new picture saves the account, so its tag must reach the cached cell.
+    self::assertContains('user:' . $this->reader->id(), $build['#cache']['tags'] ?? []);
+  }
+
+  /**
    * An unclaimed ticket is NAMED rather than dashed.
    *
    * The em-dash is for a column with no data path; an unassigned ticket is a

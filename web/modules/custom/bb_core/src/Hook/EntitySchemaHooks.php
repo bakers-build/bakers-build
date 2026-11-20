@@ -595,6 +595,7 @@ final class EntitySchemaHooks {
         $fields[$name] = BaseFieldDefinition::create('string')
           ->setLabel($label)
           ->setComputed(TRUE)
+          ->setReadOnly(TRUE)
           ->setClass(PersonMarkItemList::class);
       }
     }
