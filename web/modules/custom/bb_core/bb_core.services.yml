@@ -197,6 +197,7 @@ services:
       - '@logger.channel.bb_core'
       - '@language_manager'
       - '@current_user'
+      - '@bb_core.date'
   # Applies an invitation's workspace role and team on joining.
   bb_core.invite_acceptance:
     class: Drupal\bb_core\Members\InviteAcceptance

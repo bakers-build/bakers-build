@@ -16,6 +16,7 @@ use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbInvite;
 use Drupal\bb_core\Form\OverlayTrigger;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\og\OgMembershipInterface;
 use Drupal\og\OgRoleInterface;
@@ -49,6 +50,7 @@ final class WorkspaceInvite {
     private readonly LoggerInterface $logger,
     private readonly LanguageManagerInterface $languageManager,
     private readonly AccountProxyInterface $currentUser,
+    private readonly BbDate $date,
   ) {
     $this->setStringTranslation($stringTranslation);
   }
@@ -286,14 +288,15 @@ final class WorkspaceInvite {
    * Pending invitations for this workspace.
    *
    * @return array<int, \Drupal\bb_core\Entity\BbInvite>
-   *   The invitations, oldest first.
+   *   The invitations, newest first.
    */
   public function pendingInvites(ContentEntityInterface $group): array {
     $storage = $this->entityTypeManager->getStorage('bb_invite');
     $ids = $storage->getQuery()
       ->accessCheck(FALSE)
       ->condition('workspace_id', $group->id())
-      ->sort('created')
+      ->sort('created', 'DESC')
+      ->sort('id', 'DESC')
       ->execute();
     return array_values(array_filter(
       $storage->loadMultiple($ids),
@@ -322,10 +325,13 @@ final class WorkspaceInvite {
         'person' => ['kind' => 'text', 'value' => $mail, 'emphasis' => 'strong'],
         'role' => ['kind' => 'badge', 'label' => $this->roleLabel($invite), 'tone' => 'neutral'],
         'team' => ['kind' => 'text', 'value' => $this->teamLabel($invite)],
-        // A row of the roster: the Joined column carries its status instead.
-        'joined' => $expired
-          ? ['kind' => 'badge', 'label' => (string) $this->t('Expired'), 'tone' => 'critical']
-          : ['kind' => 'badge', 'label' => (string) $this->t('Invited'), 'tone' => 'neutral'],
+        // A row of the roster: its status, where a member's says Joined.
+        'joined' => [
+          'kind' => 'badge',
+          'label' => (string) ($expired ? $this->t('Expired') : $this->t('Invited')),
+          'tone' => $expired ? 'critical' : 'neutral',
+          'suffix' => $this->date->date($invite->getCreatedTime()),
+        ],
       ];
       if ($may_write) {
         $cells['controls'] = ['kind' => 'rendered'];

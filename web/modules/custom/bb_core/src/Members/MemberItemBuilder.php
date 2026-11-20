@@ -95,7 +95,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
    *   The acting account's uid, whose own row offers Leave; 0 for none.
    *
    * @return array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>}
-   *   The table rows, and the control render arrays keyed by row index and
+   *   The list items, and the control render arrays keyed by row index and
    *   then by cell key.
    */
   public function items(array $memberships, ContentEntityInterface $group, bool $may_write, bool $may_transfer, ?array $teams = NULL, int $actor = 0): array {
@@ -169,7 +169,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   public static function renderControls(array $element): array {
     $renderer = \Drupal::service('renderer');
     foreach ($element['#bb_member_controls'] ?? [] as $index => $controls) {
-      $cells = &$element['list']['#props']['rows'][$index]['cells'];
+      $cells = &$element['list']['#props']['items'][$index]['cells'];
       $own = array_intersect_key($controls, $cells);
       foreach ($own as $key => $control) {
         $cells[$key]['markup'] = $renderer->render($control);
@@ -181,27 +181,6 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
       unset($cells);
     }
     return $element;
-  }
-
-  /**
-   * The roster table's columns.
-   *
-   * @param bool $with_team
-   *   Whether to show each member's teams; a team's own roster has no Team
-   *   column, because every row is that team.
-   *
-   * @return array<int, array{key: string, label: string}>
-   *   The columns, in render order.
-   */
-  public function columns(bool $with_team): array {
-    $team = $with_team ? [['key' => 'team', 'label' => (string) $this->t('Team')]] : [];
-    return [
-      ['key' => 'person', 'label' => (string) $this->t('Name')],
-      ...$team,
-      ['key' => 'role', 'label' => (string) $this->t('Role')],
-      ['key' => 'joined', 'label' => (string) $this->t('Joined')],
-      ['key' => 'controls', 'label' => ''],
-    ];
   }
 
   /**
@@ -291,10 +270,10 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   private function cells(OgMembershipInterface $membership, array $roles, bool $may_write, bool $show_transfer): array {
     $cells = ['person' => $this->personCell($membership)];
     $cells += $this->rankCell($membership, $roles, $may_write);
-    // The Joined column header names the date.
+    // A list has no header, so the status names the date.
     $cells['joined'] = [
       'kind' => 'text',
-      'value' => $this->date->date($membership->getCreatedTime()),
+      'value' => (string) $this->t('Joined @date', ['@date' => $this->date->date($membership->getCreatedTime())]),
       'emphasis' => 'faint',
     ];
     if ($show_transfer || $may_write) {

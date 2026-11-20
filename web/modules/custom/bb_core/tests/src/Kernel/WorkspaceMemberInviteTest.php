@@ -386,14 +386,12 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   }
 
   /**
-   * The workspace face renders members and invitations in one headed table.
+   * The workspace face renders members and invitations as one item list.
    *
-   * The Team column names every team of the member in this workspace, joined
-   * with commas, and "-" for none; the dates carry no word, since the column
-   * header names them. An invitation is a row of the same table whose Joined
-   * cell is its status.
+   * No table and no header: each row names its team ("-" for none), and its
+   * status says Joined or Invited with the date, since no column header does.
    */
-  public function testWorkspaceMembersRenderAsTable(): void {
+  public function testWorkspaceMembersRenderAsList(): void {
     $this->actAs(['view bb_workspace', 'update any bb_workspace']);
     $alpha = $this->createTeam($this->workspace, 'Alpha');
     $beta = $this->createTeam($this->workspace, 'Beta');
@@ -416,38 +414,62 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     }
     BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => 'waiting@example.com'])->save();
 
+    $page = new Crawler($this->renderWorkspaceFace());
+
+    self::assertCount(0, $page->filter('table'), 'no table remains');
+    self::assertStringNotContainsString('Pending invitations', $page->text());
+    $row = static function (Crawler $page, string $name): Crawler {
+      $rows = $page->filter('ul[role="list"] > li[data-list-item]')->reduce(static fn (Crawler $li): bool => str_contains($li->text(), $name));
+      self::assertCount(1, $rows, sprintf('One item names %s.', $name));
+      return $rows;
+    };
+    self::assertSame('Alpha, Beta', trim($row($page, 'in-both-teams')->filter('[data-cell="team"]')->text()));
+    self::assertSame('-', trim($row($page, 'in-no-team')->filter('[data-cell="team"]')->text()));
+    self::assertStringStartsWith('Joined', trim($row($page, 'in-no-team')->filter('[data-cell="joined"]')->text()));
+    $invited = $row($page, 'waiting@example.com');
+    self::assertStringStartsWith('Invited', trim($invited->filter('[data-cell="joined"]')->text()));
+    self::assertNotSame('Invited', trim($invited->filter('[data-cell="joined"]')->text()), 'the invitation carries its date');
+    self::assertCount(1, $invited->filter('[aria-label="Revoke invitation for waiting@example.com"], [title="Revoke invitation for waiting@example.com"]'), 'the row carries its revoke');
+  }
+
+  /**
+   * Members and invitations interleave newest first, ties by the higher id.
+   */
+  public function testRosterIsNewestFirst(): void {
+    $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    $time = \Drupal::time()->getRequestTime() - 86400;
+    foreach (['oldest' => $time - 300, 'tie-low' => $time - 100, 'tie-high' => $time - 100] as $name => $created) {
+      $account = $this->createUser([], $name);
+      self::assertInstanceOf(UserInterface::class, $account);
+      OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+        ->setOwner($account)
+        ->setGroup($this->workspace)
+        ->setState(OgMembershipInterface::STATE_ACTIVE)
+        ->setCreatedTime($created)
+        ->save();
+    }
+    BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => 'between@example.com', 'created' => $time - 200])->save();
+    BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => 'newest@example.com', 'created' => $time])->save();
+
+    $order = array_values(array_filter(
+      (new Crawler($this->renderWorkspaceFace()))->filter('li[data-list-item]')->each(static function (Crawler $li): string {
+        preg_match('/oldest|tie-low|tie-high|between@example\.com|newest@example\.com/', $li->text(), $match);
+        return $match[0] ?? '';
+      }),
+    ));
+
+    self::assertSame(['newest@example.com', 'tie-high', 'tie-low', 'between@example.com', 'oldest'], $order);
+  }
+
+  /**
+   * The workspace Members face, rendered.
+   */
+  private function renderWorkspaceFace(): string {
     $form = $this->container->get('form_builder')->getForm(
       GroupMembersForm::class,
       ['island_id' => 'members', 'host_id' => 'workspace'],
     );
-    $page = new Crawler((string) $this->container->get('renderer')->renderInIsolation($form));
-    $tables = $page->filter('table');
-    $headers = $tables->each(static fn (Crawler $table): array => $table->filter('thead th')->each(
-      static fn (Crawler $th): string => trim($th->text()),
-    ));
-
-    self::assertSame([
-      ['Name', 'Team', 'Role', 'Joined', ''],
-    ], $headers);
-    self::assertStringNotContainsString('Pending invitations', $page->text());
-    self::assertCount(0, $page->filter('[data-list-item]'), 'no card list remains');
-    $team_of = static function (Crawler $table, string $name): string {
-      foreach ($table->filter('tbody tr') as $row) {
-        $cells = (new Crawler($row))->filter('td, th');
-        if (str_contains($cells->eq(0)->text(), $name)) {
-          return trim($cells->eq(1)->text());
-        }
-      }
-      self::fail(sprintf('No row names %s.', $name));
-    };
-    $roster = $tables->eq(0);
-    self::assertSame('Alpha, Beta', $team_of($roster, 'in-both-teams'));
-    self::assertSame('-', $team_of($roster, 'in-no-team'));
-    self::assertStringNotContainsString('joined', $roster->filter('tbody')->text());
-    $invited = $roster->filter('tbody tr')->reduce(static fn (Crawler $row): bool => str_contains($row->text(), 'waiting@example.com'));
-    self::assertCount(1, $invited, 'the invitation is a row of the roster');
-    self::assertSame('Invited', trim($invited->filter('td, th')->eq(3)->text()));
-    self::assertCount(1, $invited->filter('[aria-label="Revoke invitation for waiting@example.com"], [title="Revoke invitation for waiting@example.com"]'), 'the row carries its revoke');
+    return (string) $this->container->get('renderer')->renderInIsolation($form);
   }
 
   /**

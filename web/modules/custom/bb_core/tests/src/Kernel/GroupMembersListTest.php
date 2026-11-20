@@ -180,21 +180,19 @@ final class GroupMembersListTest extends KernelTestBase {
   }
 
   /**
-   * The team tab's roster is a table without a Team column.
+   * The team tab's roster is an item list whose rows name no team.
    *
-   * Every row is that team, so the column would repeat one value.
+   * Every row is that team, so a team value would repeat one value.
    */
   public function testTeamMembersHaveNoTeamColumn(): void {
     $page = new Crawler($this->renderFace('team', $this->team));
 
-    self::assertSame(
-      ['Name', 'Role', 'Joined', ''],
-      $page->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())),
-    );
+    self::assertCount(0, $page->filter('table'), 'no table remains');
+    self::assertCount(0, $page->filter('[data-cell="team"]'));
     self::assertCount(
       count($this->container->get('bb_core.membership_writer')->memberships($this->team)),
-      $page->filter('table tbody tr'),
-      'one row per member',
+      $page->filter('ul[role="list"] > li[data-list-item]'),
+      'one item per member',
     );
   }
 
@@ -212,7 +210,7 @@ final class GroupMembersListTest extends KernelTestBase {
 
     $html = $this->renderFace('team', $this->team);
 
-    self::assertStringContainsString('<table', $html, 'the roster still renders');
+    self::assertStringContainsString('<li data-list-item', $html, 'the roster still renders');
     self::assertStringContainsString('rosa', $html);
     self::assertStringNotContainsString('remove_member_', $html, 'no removal is offered');
     self::assertStringNotContainsString('member_role_', $html, 'no role pick is offered');
@@ -261,7 +259,7 @@ final class GroupMembersListTest extends KernelTestBase {
   }
 
   /**
-   * The body rows of the rendered roster table.
+   * The items of the rendered roster list.
    *
    * Split on the row marker rather than matched as a tag pair: a row's role
    * control nests its own markup, so a non-greedy tag match would stop early.
@@ -273,10 +271,10 @@ final class GroupMembersListTest extends KernelTestBase {
    *   The rows, each from its own `<tr>` up to the next one.
    */
   private function itemsOf(string $html): array {
-    $chunks = preg_split('#(?=<tr data-table-row)#', $html) ?: [];
+    $chunks = preg_split('#(?=<li data-list-item)#', $html) ?: [];
     return array_values(array_filter(
       $chunks,
-      static fn (string $chunk): bool => str_starts_with($chunk, '<tr data-table-row'),
+      static fn (string $chunk): bool => str_starts_with($chunk, '<li data-list-item'),
     ));
   }
 

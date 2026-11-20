@@ -150,19 +150,19 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     }
 
     $teams = $tenancy ? $this->membershipWriter->teamNamesByMember($group) : NULL;
-    $rows = $this->itemBuilder->items($this->membershipWriter->memberships($group), $group, $may_write, $may_transfer, $teams, (int) $this->currentUser()->id());
+    $memberships = array_values($this->membershipWriter->memberships($group));
+    $rows = $this->itemBuilder->items($memberships, $group, $may_write, $may_transfer, $teams, (int) $this->currentUser()->id());
     if ($tenancy) {
-      // Invitations are rows of the same list, after the members.
-      $invites = $this->tenancyInvite->inviteItems($this->tenancyInvite->pendingInvites($group), $may_write);
-      $rows = [
-        'items' => [...$rows['items'], ...$invites['items']],
-        'controls' => $rows['controls'] + self::offsetKeys($invites['controls'], count($rows['items'])),
-      ];
+      // Invitations are rows of the same list, in the same newest-first order.
+      $pending = $this->tenancyInvite->pendingInvites($group);
+      $rows = self::interleave(
+        $rows + ['entities' => $memberships],
+        $this->tenancyInvite->inviteItems($pending, $may_write) + ['entities' => $pending],
+      );
     }
     $form['roster'] = $this->listZone(
       $this->t('Members'),
       $rows,
-      $this->itemBuilder->columns($tenancy),
       $this->t('@group has no members yet.', ['@group' => $group->label()]),
       20,
     );
@@ -232,22 +232,32 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
   }
 
   /**
-   * Shifts row-indexed controls by the rows that precede them.
+   * Merges two built lists newest created first, ties by the higher id.
    *
-   * @param array<int, mixed> $controls
-   *   Controls keyed by row index.
-   * @param int $offset
-   *   The number of rows before them.
+   * @param array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>, entities: array<int, \Drupal\Core\Entity\ContentEntityInterface>} ...$lists
+   *   Built lists, each beside the entities its items were built from.
    *
-   * @return array<int, mixed>
-   *   The same controls keyed by their row in the merged list.
+   * @return array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>}
+   *   One list, its controls keyed by their new row.
    */
-  private static function offsetKeys(array $controls, int $offset): array {
-    $shifted = [];
-    foreach ($controls as $index => $control) {
-      $shifted[$index + $offset] = $control;
+  private static function interleave(array ...$lists): array {
+    $rows = [];
+    foreach ($lists as $list) {
+      foreach ($list['items'] as $index => $item) {
+        $entity = $list['entities'][$index];
+        $created = method_exists($entity, 'getCreatedTime') ? (int) $entity->getCreatedTime() : 0;
+        $rows[] = [$created, (int) $entity->id(), $item, $list['controls'][$index] ?? NULL];
+      }
     }
-    return $shifted;
+    usort($rows, static fn (array $a, array $b): int => [$b[0], $b[1]] <=> [$a[0], $a[1]]);
+    $merged = ['items' => [], 'controls' => []];
+    foreach ($rows as $index => [, , $item, $controls]) {
+      $merged['items'][$index] = $item;
+      if ($controls !== NULL) {
+        $merged['controls'][$index] = $controls;
+      }
+    }
+    return $merged;
   }
 
   /**
@@ -299,8 +309,6 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    *   The zone heading.
    * @param array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>} $built
    *   Rows and deferred controls.
-   * @param array<int, array{key: string, label: string}> $columns
-   *   The table columns.
    * @param \Drupal\Core\StringTranslation\TranslatableMarkup|string $empty
    *   Empty-state sentence.
    * @param int $weight
@@ -309,7 +317,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    * @return array<string, mixed>
    *   The zone container.
    */
-  private function listZone(mixed $heading, array $built, array $columns, mixed $empty, int $weight): array {
+  private function listZone(mixed $heading, array $built, mixed $empty, int $weight): array {
     return [
       '#type' => 'container',
       '#weight' => $weight,
@@ -325,11 +333,15 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
         '#props' => ['message' => (string) $empty, 'compact' => TRUE],
       ] : [
         '#type' => 'component',
-        '#component' => 'bb_theme:table',
+        '#component' => 'bb_theme:list',
         '#props' => [
-          'columns' => $columns,
-          'rows' => $built['items'],
-          'row_height' => 'lg',
+          'layout' => 'lines',
+          'pattern' => [
+            'headline' => ['person'],
+            'meta' => ['team', 'joined'],
+            'right' => ['role', 'controls'],
+          ],
+          'items' => $built['items'],
         ],
       ],
     ];
