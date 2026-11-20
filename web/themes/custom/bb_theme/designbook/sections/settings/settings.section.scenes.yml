@@ -324,17 +324,19 @@ scenes:
     group: Screens
     section: settings
     docs: >-
-      THE WORKSPACE MEMBERS FACE: pending invitations and the roster, each a
-      headed `table` with 44px rows (`row_height: lg`) in a zone capped at the
-      narrow measure (960px). Inviting is a DIALOG opened by the primary
-      **Invite members** action on the Members zone, not a zone of this face;
-      `action-pattern.md` names the exception and its reason. After a successful
-      invite the dialog closes, the face re-renders and a status `message`, in a
-      narrow zone of its own, reports who was invited and who was skipped. The
-      invitations table reads Email, Team, Role, Status (a neutral Invited, a
-      critical Expired) and the Invited date, with Revoke as the row action; the
-      roster reads Name, Team, Role and Joined, with transfer and remove as the
-      row actions, as GroupMembersForm::listZone() renders it.
+      THE WORKSPACE MEMBERS FACE: members and pending invitations in ONE headed
+      `table` with 44px rows (`row_height: lg`) in a zone capped at the narrow
+      measure (960px). Inviting is a DIALOG opened by the page header's create
+      action, the icon-only `+` **Invite members** at the top right, where every
+      screen keeps its create action; `action-pattern.md` names the ruling. The
+      dialog closes in place, only the members island re-renders, focus returns
+      to the `+`, and the result is announced and shown as a `toast`, fixed at
+      the bottom right, so the list does not move. The table reads Name, Team,
+      Role and Joined. A member row carries its role and the remove action; an
+      invitation row follows the members, reads its address, its role as a badge
+      and its status in the Joined column (a neutral Invited, a critical
+      Expired), with Revoke as the row action, as
+      GroupMembersForm::buildIslandForm() renders it.
     items:
       - scene: design-system:shell
         with:
@@ -347,112 +349,28 @@ scenes:
                     props:
                       title: Members
                       description: keytec · who belongs to this workspace and in which role
+                    slots:
+                      actions:
+                        component: bb_theme:button
+                        props:
+                          variant: primary
+                          label: Invite members
+                          icon_only: true
+                          href: >-
+                            /?path=/story/designbook-sections-settings-scenes--workspace-invite
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
                 main:
                   - component: bb_theme:zone
                     props:
                       inset: none
                       measure: narrow
                     slots:
-                      content:
-                        - component: bb_theme:message
-                          props:
-                            status: status
-                          slots:
-                            body: >-
-                              Invited 2 people. Skipped:
-                              sven.gruber@keytec.example (already a member).
-                  - component: bb_theme:zone
-                    props:
-                      inset: none
-                      measure: narrow
-                    slots:
-                      heading: Pending invitations
-                      content:
-                        - component: bb_theme:table
-                          props:
-                            row_height: lg
-                            columns:
-                              - key: person
-                                label: Email
-                              - key: team
-                                label: Team
-                              - key: role
-                                label: Role
-                              - key: state
-                                label: Status
-                              - key: joined
-                                label: Invited
-                              - key: controls
-                                label: ''
-                            rows:
-                              - cells:
-                                  person:
-                                    kind: text
-                                    value: lena.fischer@keytec.example
-                                    emphasis: strong
-                                  team:
-                                    kind: text
-                                    value: Platform crew
-                                  role:
-                                    kind: badge
-                                    label: Contributor
-                                    tone: neutral
-                                  state:
-                                    kind: badge
-                                    label: Invited
-                                    tone: neutral
-                                  joined:
-                                    kind: text
-                                    value: 31 Oct
-                                    emphasis: faint
-                                  controls:
-                                    kind: action
-                                    label: >-
-                                      Revoke invitation for
-                                      lena.fischer@keytec.example
-                                    icon: x-circle
-                                    icon_only: true
-                              - cells:
-                                  person:
-                                    kind: text
-                                    value: m.vandijk@northwind.example
-                                    emphasis: strong
-                                  team:
-                                    kind: text
-                                    value: '-'
-                                    emphasis: faint
-                                  role:
-                                    kind: badge
-                                    label: Member
-                                    tone: neutral
-                                  state:
-                                    kind: badge
-                                    label: Expired
-                                    tone: critical
-                                  joined:
-                                    kind: text
-                                    value: 17 Oct
-                                    emphasis: faint
-                                  controls:
-                                    kind: action
-                                    label: >-
-                                      Revoke invitation for
-                                      m.vandijk@northwind.example
-                                    icon: x-circle
-                                    icon_only: true
-                  - component: bb_theme:zone
-                    props:
-                      inset: none
-                      measure: narrow
-                    slots:
                       heading: Members
-                      actions:
-                        component: bb_theme:button
-                        props:
-                          variant: primary
-                          label: Invite members
-                          href: >-
-                            /?path=/story/designbook-sections-settings-scenes--workspace-invite
                       content:
                         - component: bb_theme:table
                           props:
@@ -517,19 +435,75 @@ scenes:
                                       Revokes their access.
                                     icon: x-circle
                                     icon_only: true
+                              - cells:
+                                  person:
+                                    kind: text
+                                    value: lena.fischer@keytec.example
+                                    emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: Platform crew
+                                  role:
+                                    kind: badge
+                                    label: Contributor
+                                    tone: neutral
+                                  joined:
+                                    kind: badge
+                                    label: Invited
+                                    tone: neutral
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Revoke invitation for
+                                      lena.fischer@keytec.example
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  person:
+                                    kind: text
+                                    value: m.vandijk@northwind.example
+                                    emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: '-'
+                                    emphasis: faint
+                                  role:
+                                    kind: badge
+                                    label: Member
+                                    tone: neutral
+                                  joined:
+                                    kind: badge
+                                    label: Expired
+                                    tone: critical
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Revoke invitation for
+                                      m.vandijk@northwind.example
+                                    icon: x-circle
+                                    icon_only: true
+                  - component: bb_theme:toast
+                    props:
+                      message: >-
+                        Invited 2 people. Skipped: sven.gruber@keytec.example
+                        (already a member).
   - name: workspace-invite
     group: Screens
     section: settings
     docs: >-
       THE INVITE DIALOG over the Members face (`settings › workspace-members`),
-      in the shell's overlay like the create dialogs. The `form` grammar places
-      the e-mail TEXTAREA as the one line, taking several addresses (one per
-      line, or separated by commas), and below it the two property pills:
-      Workspace role (opens on Contributor; every role explains what it grants)
-      and Team (opens on the workspace's first team; `No team` clears it).
-      Cancel, Escape and the close control leave the face as it was. A malformed
-      entry keeps the dialog open with the text intact and names the entry.
-      Storybook runs no Drupal behaviour, so nothing posts or closes here.
+      opened by the page header's `+` **Invite members**, in the shell's overlay
+      like the create dialogs. The `form` grammar places the e-mail field as the
+      one line: `email_chips` over the submitted TEXTAREA, so every address
+      becomes a chip with its own remove button, and an address that is not an
+      e-mail is marked in text as well as colour. Without JavaScript the plain
+      textarea remains. Below it sit the two property pills: Workspace role
+      (opens on Contributor; every role explains what it grants) and Team (opens
+      on the workspace's first team; `No team` clears it). Cancel, Escape and
+      the close control leave the face as it was and return focus to the `+`. A
+      malformed entry keeps the dialog open with the text intact and names the
+      entry. Storybook runs no Drupal behaviour, so nothing posts or closes
+      here.
     items:
       - scene: design-system:shell
         with:
@@ -545,17 +519,25 @@ scenes:
                   - component: bb_theme:form
                     slots:
                       lines:
-                        - component: bb_theme:form_textarea
+                        - component: bb_theme:email_chips
                           props:
-                            name: emails
-                            id: edit-emails
-                            rows: 4
-                            placeholder: >-
-                              Email addresses, one per line or separated by
-                              commas
-                            value: |-
-                              lena.fischer@keytec.example
-                              m.vandijk@northwind.example
+                            label: Email addresses
+                            invalid_label: Not an e-mail address
+                            remove_label: Remove @address
+                          slots:
+                            field:
+                              - component: bb_theme:form_textarea
+                                props:
+                                  name: emails
+                                  id: edit-emails
+                                  rows: 4
+                                  placeholder: >-
+                                    Email addresses, one per line or separated
+                                    by commas
+                                  value: |-
+                                    lena.fischer@keytec.example
+                                    m.vandijk@northwind.example
+                                    not-an-address
                       pills:
                         - component: bb_theme:property_pill
                           props:
@@ -627,104 +609,44 @@ scenes:
                     props:
                       title: Members
                       description: keytec · who belongs to this workspace and in which role
-                main:
-                  - component: bb_theme:zone
                     slots:
-                      heading: Pending invitations
-                      content:
-                        - component: bb_theme:list
-                          props:
-                            layout: cards
-                            spacing: comfortable
-                            pattern:
-                              headline:
-                                - person
-                              meta:
-                                - joined
-                                - team
-                              right:
-                                - state
-                                - role
-                                - transfer
-                                - remove
-                            items:
-                              - cells:
-                                  person:
-                                    kind: text
-                                    value: lena.fischer@keytec.example
-                                    emphasis: strong
-                                  role:
-                                    kind: badge
-                                    label: Contributor
-                                    tone: neutral
-                                  team:
-                                    kind: text
-                                    value: Platform crew
-                                  state:
-                                    kind: badge
-                                    label: Invited
-                                    tone: wait
-                                  joined:
-                                    kind: mono
-                                    value: invited 2026-10-02
-                                  remove:
-                                    kind: rendered
-                                    markup: Revoke
-                                    label: >-
-                                      Revoke invitation for
-                                      lena.fischer@keytec.example
-                              - cells:
-                                  person:
-                                    kind: text
-                                    value: m.vandijk@northwind.example
-                                    emphasis: strong
-                                  role:
-                                    kind: badge
-                                    label: Member
-                                    tone: neutral
-                                  team:
-                                    kind: text
-                                    value: No team
-                                  state:
-                                    kind: badge
-                                    label: Expired
-                                    tone: critical
-                                  joined:
-                                    kind: mono
-                                    value: invited 2026-09-18
-                                  remove:
-                                    kind: rendered
-                                    markup: Revoke
-                                    label: >-
-                                      Revoke invitation for
-                                      m.vandijk@northwind.example
-                  - component: bb_theme:zone
-                    slots:
-                      heading: Members
                       actions:
                         component: bb_theme:button
                         props:
                           variant: primary
                           label: Invite members
+                          icon_only: true
                           href: >-
                             /?path=/story/designbook-sections-settings-scenes--workspace-invite
+                        slots:
+                          icon:
+                            component: bb_theme:icon
+                            props:
+                              name: plus
+                              size: sm
+                main:
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      measure: narrow
+                    slots:
+                      heading: Members
                       content:
-                        - component: bb_theme:list
+                        - component: bb_theme:table
                           props:
-                            layout: cards
-                            spacing: comfortable
-                            pattern:
-                              headline:
-                                - person
-                              meta:
-                                - joined
-                                - team
-                              right:
-                                - state
-                                - role
-                                - transfer
-                                - remove
-                            items:
+                            row_height: lg
+                            columns:
+                              - key: person
+                                label: Name
+                              - key: team
+                                label: Team
+                              - key: role
+                                label: Role
+                              - key: joined
+                                label: Joined
+                              - key: controls
+                                label: ''
+                            rows:
                               - cells:
                                   person:
                                     kind: person
@@ -732,12 +654,23 @@ scenes:
                                     initials: CW
                                     color: unassigned
                                     mail: christian.wiedemann@keytec.example
+                                  team:
+                                    kind: text
+                                    value: Platform crew
                                   role:
-                                    kind: rendered
-                                    markup: Admin
+                                    kind: text
+                                    value: Admin
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
+                                    kind: text
+                                    value: 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Remove Christian Wiedemann from the
+                                      workspace. Revokes their access.
+                                    icon: x-circle
+                                    icon_only: true
                               - cells:
                                   person:
                                     kind: person
@@ -745,18 +678,70 @@ scenes:
                                     initials: SG
                                     color: running
                                     mail: sven.gruber@keytec.example
+                                  team:
+                                    kind: text
+                                    value: Design crew
                                   role:
-                                    kind: rendered
-                                    markup: Member
+                                    kind: text
+                                    value: Member
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
+                                    kind: text
+                                    value: 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
                                       Remove Sven Gruber from the workspace.
                                       Revokes their access.
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  person:
+                                    kind: text
+                                    value: lena.fischer@keytec.example
+                                    emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: Platform crew
+                                  role:
+                                    kind: badge
+                                    label: Contributor
+                                    tone: neutral
+                                  joined:
+                                    kind: badge
+                                    label: Invited
+                                    tone: neutral
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Revoke invitation for
+                                      lena.fischer@keytec.example
+                                    icon: x-circle
+                                    icon_only: true
+                              - cells:
+                                  person:
+                                    kind: text
+                                    value: m.vandijk@northwind.example
+                                    emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: '-'
+                                    emphasis: faint
+                                  role:
+                                    kind: badge
+                                    label: Member
+                                    tone: neutral
+                                  joined:
+                                    kind: badge
+                                    label: Expired
+                                    tone: critical
+                                  controls:
+                                    kind: action
+                                    label: >-
+                                      Revoke invitation for
+                                      m.vandijk@northwind.example
+                                    icon: x-circle
+                                    icon_only: true
   - name: team
     group: Screens
     section: settings
