@@ -24,6 +24,31 @@ import { ADD_DIALOG, addMemberTrigger, openAddMemberDialog, peopleField } from '
  */
 const MEMBER_ITEM = `${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`;
 
+/** A roster row's one link: the member's page, ending in their uid. */
+function memberLink(page: import('@playwright/test').Page, value: string) {
+  return page.locator(`${MEMBERS_ISLAND} a[href$="/members/${uidOf(value)}"]`);
+}
+
+/** The uid a roster row's link names, or '' for an invitation's row. */
+function uidOfHref(href: string | null): string {
+  return /\/members\/(\d+)$/.exec(href ?? '')?.[1] ?? '';
+}
+
+/**
+ * Opens one member's page from the roster, the only place their controls are.
+ *
+ * A row is one link (BAKERS-338); a step already on that member's page stays.
+ */
+async function openMemberPage(page: import('@playwright/test').Page, value: string): Promise<void> {
+  const uid = String(uidOf(value));
+  if (uidOfHref(page.url()) === uid) {
+    return;
+  }
+  await memberLink(page, value).first().click();
+  await expect(page).toHaveURL(new RegExp(`/members/${uid}$`));
+  await expect(page.locator(MEMBER_ITEM)).toHaveCount(1);
+}
+
 /**
  * The public URL of a project, resolved by label rather than hardcoded.
  *
@@ -60,10 +85,10 @@ function projectUrl(label: string): string {
  * read it.
  */
 async function memberUids(page: import('@playwright/test').Page): Promise<string[]> {
-  const uids = await page
-    .locator(`${MEMBERS_ISLAND} [data-bakers-member-uid]`)
-    .evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-bakers-member-uid') ?? ''));
-  return uids.filter((uid) => uid !== '').sort();
+  const hrefs = await page
+    .locator(`${MEMBER_ITEM} a[href]`)
+    .evaluateAll((nodes) => nodes.map((n) => n.getAttribute('href')));
+  return hrefs.map(uidOfHref).filter((uid) => uid !== '').sort();
 }
 
 /**
@@ -85,6 +110,7 @@ async function memberUids(page: import('@playwright/test').Page): Promise<string
  */
 When('I remove the member {string}', async ({ page }, value: string) => {
   const uid = uidOf(value);
+  await openMemberPage(page, value);
   const answered = page.waitForResponse(
     (response) => response.request().method() === 'POST',
     { timeout: 15000 },
@@ -98,6 +124,40 @@ When('I remove the member {string}', async ({ page }, value: string) => {
   );
   await page.locator(`${MEMBERS_ISLAND} button[name="confirm_remove_${uid}"]`).click();
   await removed;
+  // Removed from their page: back to the roster.
+  await expect(page).toHaveURL(/\/members$/);
+});
+
+When('I open the member {string}', async ({ page }, value: string) => {
+  await openMemberPage(page, value);
+});
+
+When('I open the first member', async ({ page }) => {
+  await page.locator(`${MEMBER_ITEM} a[href*="/members/"]`).first().click();
+  await expect(page).toHaveURL(/\/members\/\d+$/);
+  await expect(page.locator(MEMBER_ITEM)).toHaveCount(1);
+});
+
+/** Back to the roster the member's page was opened from. */
+When('I return to the members list', async ({ page }) => {
+  const url = new URL(page.url());
+  url.pathname = /\/team\/[^/]+\/members\/\d+$/.test(url.pathname)
+    ? url.pathname.replace(/\/\d+$/, '')
+    : url.pathname.replace(/\/members\/\d+$/, '/settings/members');
+  await page.goto(url.toString());
+  await markDocument(page);
+});
+
+Then('the member row {string} only opens the member\'s page', async ({ page }, value: string) => {
+  const item = memberItem(page, value);
+  await expect(item.getByRole('link')).toHaveCount(1);
+  await expect(item.locator(`a[href$="/members/${uidOf(value)}"]`)).toHaveCount(1);
+  await expect(item.getByRole('button')).toHaveCount(0);
+});
+
+Then('the member page offers no controls', async ({ page }) => {
+  await expect(page.locator(MEMBER_ITEM)).toHaveCount(1);
+  await expect(page.locator(`${MEMBERS_ISLAND} [name^="remove_member_"], ${MEMBERS_ISLAND} [name^="member_role_"]`)).toHaveCount(0);
 });
 
 /**
@@ -193,9 +253,8 @@ Then('the members list is back to the members I noted', async ({ page }) => {
  * account instead of printing two lists for a reader to diff.
  */
 Then('the members list has no member {string}', async ({ page }, value: string) => {
-  await expect(
-    page.locator(`${MEMBERS_ISLAND} [data-bakers-member-uid="${uidOf(value)}"]`),
-  ).toHaveCount(0);
+  await expect(memberLink(page, value)).toHaveCount(0);
+  await expect(page.locator(MEMBER_ITEM).first()).toBeVisible();
 });
 
 /**
@@ -207,9 +266,10 @@ Then('the members list has no member {string}', async ({ page }, value: string) 
  * matches nothing there.
  */
 function memberItem(page: import('@playwright/test').Page, value: string) {
+  const uid = uidOf(value);
   return page
     .locator(MEMBER_ITEM)
-    .filter({ has: page.locator(`[data-bakers-member-uid="${uidOf(value)}"]`) })
+    .filter({ has: page.locator(`a[href$="/members/${uid}"], [data-bakers-member-uid="${uid}"]`) })
     .first();
 }
 
@@ -231,6 +291,7 @@ function memberItem(page: import('@playwright/test').Page, value: string) {
 When(
   'I pick the role {string} for the member {string}',
   async ({ page }, role: string, value: string) => {
+    await openMemberPage(page, value);
     const item = memberItem(page, value);
     await item.locator('[data-option-picker-trigger]').first().click();
     const answered = page.waitForResponse(
@@ -269,9 +330,10 @@ Then('the members are an item list without columns', async ({ page }) => {
 
 /** The roster's uids in list order, '' for an item without controls. */
 async function rosterOrder(page: import('@playwright/test').Page): Promise<string[]> {
-  return page.locator(MEMBER_ITEM).evaluateAll((items) =>
-    items.map((li) => li.querySelector('[data-bakers-member-uid]')?.getAttribute('data-bakers-member-uid') ?? ''),
+  const hrefs = await page.locator(MEMBER_ITEM).evaluateAll((items) =>
+    items.map((li) => li.querySelector('a[href]')?.getAttribute('href') ?? null),
   );
+  return hrefs.map(uidOfHref);
 }
 
 let notedOrder: string[] | null = null;
@@ -359,6 +421,7 @@ When('I type the name {string}', async ({ page }, text: string) => {
 
 /** Presses a member's remove control and waits for the confirmation. */
 When('I open the remove confirmation for the member {string}', async ({ page }, value: string) => {
+  await openMemberPage(page, value);
   const answered = page.waitForResponse((response) => response.request().method() === 'POST', { timeout: 15000 });
   await page.locator(`#members-remove-${uidOf(value)}`).click();
   await answered;
@@ -389,7 +452,7 @@ Then('the add dialog does not offer {string}', async ({ page }, value: string) =
 });
 
 Then('the members list has the member {string}', async ({ page }, value: string) => {
-  await expect(page.locator(`${MEMBERS_ISLAND} #members-role-${uidOf(value)}`)).toBeAttached({ timeout: 15000 });
+  await expect(memberLink(page, value)).toBeAttached({ timeout: 15000 });
 });
 
 Then('the members list offers no controls', async ({ page }) => {

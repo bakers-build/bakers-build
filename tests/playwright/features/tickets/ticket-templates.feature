@@ -2,10 +2,10 @@
 Feature: Projects and workspaces list their ticket templates
   The project screen has a Templates tab, a Views page listing the project's
   templates like the ticket list, with an Add template action in the page header and the
-  bakers.build empty state for a project without templates; every row offers its operations,
-  including Create ticket for an enabled template, and opens the template's
-  detail screen, whose Create ticket opens in the dialog and whose Settings tab
-  edits it as a page. A save confirms itself. The workspace Settings tab Templates lists the workspace
+  bakers.build empty state for a project without templates; every row is one link
+  to the template's detail screen, whose Create ticket (for an enabled template)
+  opens in the dialog, which offers Delete, and whose Settings tab edits it as a
+  page. A save confirms itself. The workspace Settings tab Templates lists the workspace
   templates and stays open to contributors by its address; only a lead may add one. Create ticket opens the
   ticket create dialog prefilled from the template, and the edited values reach
   the ticket; a workspace template asks for the project. Overrides over the
@@ -30,13 +30,15 @@ Feature: Projects and workspaces list their ticket templates
     And I create a ticket from the template "Web fixture template" in the dialog with the title "Edited web fixture ticket"
     Then the page shows "Edited web fixture ticket"
 
-  Scenario: An enabled template offers Create ticket
+  Scenario: An enabled template offers Create ticket and Delete on its page
     Given I am logged in as the account "north-lead"
     When I visit the project "Template fixtures"
     And I click the tab "Templates"
     And I click the tab "Overview"
     And I click the tab "Templates"
-    Then the page says "Create ticket"
+    And I open the template "Web fixture template"
+    Then the template offers the action "Create ticket"
+    And the template offers the action "Delete"
 
   Scenario: A project without templates says so
     Given I am logged in as the account "north-lead"
@@ -88,16 +90,6 @@ Feature: Projects and workspaces list their ticket templates
     When I visit the template "Web fixture template" by its address
     Then the page heading is "403 — Access denied"
     And the page does not show "Web fixture ticket"
-
-  Scenario: Saving a template's settings from the list confirms the save
-    Given I am logged in as the account "north-lead"
-    When I visit the project "Template fixtures"
-    And I click the tab "Templates"
-    And I click the tab "Overview"
-    And I click the tab "Templates"
-    And I open the settings of the template "Web fixture template" from the list and save it
-    Then the tab "Templates" is current
-    And the page confirms the template "Web fixture template" was saved
 
   Scenario: Saving a template on its Settings tab confirms the save
     Given I am logged in as the account "north-lead"

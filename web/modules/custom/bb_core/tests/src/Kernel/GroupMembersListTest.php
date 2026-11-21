@@ -137,7 +137,7 @@ final class GroupMembersListTest extends KernelTestBase {
   }
 
   /**
-   * A team item carries a role control; the pick IS the write (BB-462 D3).
+   * A team member's page carries a role control; the pick IS the write.
    *
    * THE `name`/`value` PAIR IS THE CONTRACT and that is what is read here. Each
    * option row is a named submit trigger of the enclosing form, so picking a
@@ -149,8 +149,8 @@ final class GroupMembersListTest extends KernelTestBase {
    * `owner` (BB-462 D3, team administration). The vocabulary is read from
    * config, so a rank the product does not have cannot appear either.
    */
-  public function testTeamItemOffersRoleChangesAndExplainedRemoval(): void {
-    $item = $this->itemNaming($this->itemsOf($this->renderFace('team', $this->team)), 'rosa');
+  public function testTeamMemberPageOffersRoleChangesAndExplainedRemoval(): void {
+    $item = $this->itemNaming($this->itemsOf($this->renderFace('team', $this->team, $this->rosa)), 'rosa');
     $uid = (int) $this->rosa->id();
 
     self::assertStringContainsString('data-component-id="bb_theme:option_picker"', $item);
@@ -177,6 +177,17 @@ final class GroupMembersListTest extends KernelTestBase {
       'the documented machine handle the browser suite addresses',
     );
     self::assertStringContainsString('Remove rosa from Platform Crew. Revokes their access.', $item, 'the sentence names the group itself');
+  }
+
+  /**
+   * A team roster row is one link to the member's page and holds no control.
+   */
+  public function testTeamRosterRowIsOneLinkToTheMemberPage(): void {
+    $item = new Crawler($this->itemNaming($this->itemsOf($this->renderFace('team', $this->team)), 'rosa'));
+
+    self::assertCount(1, $item->filter('a[href]'), 'one link');
+    self::assertStringEndsWith('/team/' . $this->team->id() . '/members/' . $this->rosa->id(), (string) $item->filter('a')->attr('href'));
+    self::assertCount(0, $item->filter('button, input[type="submit"]'), 'no control');
   }
 
   /**
@@ -237,7 +248,7 @@ final class GroupMembersListTest extends KernelTestBase {
     self::assertInstanceOf(UserInterface::class, $reader);
     $this->setCurrentUser($reader);
 
-    $html = $this->renderFace('team', $this->team);
+    $html = $this->renderFace('team', $this->team) . $this->renderFace('team', $this->team, $this->rosa);
 
     self::assertStringContainsString('<li data-list-item', $html, 'the roster still renders');
     self::assertStringContainsString('rosa', $html);
@@ -274,12 +285,14 @@ final class GroupMembersListTest extends KernelTestBase {
    *   The island host, which is what hands the group over.
    * @param \Drupal\Core\Entity\ContentEntityInterface $group
    *   The group whose route is entered.
+   * @param \Drupal\user\UserInterface|null $member
+   *   The member whose page is entered, or NULL for the roster.
    *
    * @return string
    *   The markup.
    */
-  private function renderFace(string $host_id, ContentEntityInterface $group): string {
-    $this->enterRoute($group);
+  private function renderFace(string $host_id, ContentEntityInterface $group, ?UserInterface $member = NULL): string {
+    $this->enterRoute($group, $member);
     $form = $this->container->get('form_builder')->getForm(
       GroupMembersForm::class,
       ['island_id' => 'members', 'host_id' => $host_id],
@@ -336,9 +349,11 @@ final class GroupMembersListTest extends KernelTestBase {
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $group
    *   The group to put on the route.
+   * @param \Drupal\user\UserInterface|null $member
+   *   The member whose page is entered, or NULL for the roster.
    */
-  private function enterRoute(ContentEntityInterface $group): void {
-    $route_name = sprintf('bb_core.%s.members', $group->getEntityTypeId());
+  private function enterRoute(ContentEntityInterface $group, ?UserInterface $member = NULL): void {
+    $route_name = sprintf('bb_core.%s.%s', $group->getEntityTypeId(), $member === NULL ? 'members' : 'member');
     $route = $this->container->get('router.route_provider')->getRouteByName($route_name);
     $request = Request::create('/group-members-list-test');
     $current = $this->container->get('request_stack')->getCurrentRequest();
@@ -349,6 +364,9 @@ final class GroupMembersListTest extends KernelTestBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
     $request->attributes->set('bb_workspace', $this->workspace);
     $request->attributes->set($group->getEntityTypeId(), $group);
+    if ($member !== NULL) {
+      $request->attributes->set('user', $member);
+    }
     $this->container->get('request_stack')->push($request);
   }
 

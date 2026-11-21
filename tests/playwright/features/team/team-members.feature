@@ -2,8 +2,9 @@
 Feature: Managing a team's members keeps focus and says what happened
   Every action on the team Members tab re-renders the members island only,
   puts focus where the action left the user and announces its result in the
-  live region. Adding opens a dialog from the page header's Add member;
-  removing asks first, in place. Each action has a keyboard-only variant. `both-bakeries` is a workspace member who is not on Design Crew;
+  live region. Adding opens a dialog from the page header's Add member. A
+  roster row only opens the member's page, which holds the role pick and
+  Remove; removing asks first, in place, and returns to the roster. Each action has a keyboard-only variant. `both-bakeries` is a workspace member who is not on Design Crew;
   every scenario removes them again, so the feature is re-runnable.
 
   Scenario: Adding a member returns focus to Add member and announces it
@@ -51,7 +52,9 @@ Feature: Managing a team's members keeps focus and says what happened
     And the team "Design Crew" has no member "both-bakeries"
     And I visit the team "Design Crew" tab "Members"
     And I add the member "both-bakeries"
-    When I pick the role "lead" for the member "both-bakeries"
+    Then the member row "both-bakeries" only opens the member's page
+    When I open the member "both-bakeries"
+    And I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
     And the role control of the member "both-bakeries" has focus
     And the screen reader hears "both-bakeries is now Lead."
@@ -65,9 +68,11 @@ Feature: Managing a team's members keeps focus and says what happened
     And I add the member "both-bakeries"
     Then the first member is "both-bakeries"
     When I note the order of the members
+    And I open the member "both-bakeries"
     And I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
-    And the members keep the noted order
+    When I return to the members list
+    Then the members keep the noted order
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
 
@@ -76,7 +81,8 @@ Feature: Managing a team's members keeps focus and says what happened
     And the team "Design Crew" has no member "both-bakeries"
     And I visit the team "Design Crew" tab "Members"
     And I add the member "both-bakeries"
-    When I move focus to the role control of the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I move focus to the role control of the member "both-bakeries"
     And I press the key "Enter"
     And I press the key "ArrowDown"
     And I press the key "Enter"
@@ -91,7 +97,8 @@ Feature: Managing a team's members keeps focus and says what happened
     And the team "Design Crew" has no member "both-bakeries"
     And I visit the team "Design Crew" tab "Members"
     And I add the member "both-bakeries"
-    When I open the remove confirmation for the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I open the remove confirmation for the member "both-bakeries"
     Then a confirmation asks "Remove both-bakeries?"
     And the confirmation Cancel has focus
     When I press the key "Escape"
@@ -106,25 +113,29 @@ Feature: Managing a team's members keeps focus and says what happened
     And the team "Design Crew" has no member "both-bakeries"
     And I visit the team "Design Crew" tab "Members"
     And I add the member "both-bakeries"
-    When I move focus to the remove control of the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I move focus to the remove control of the member "both-bakeries"
     And I press the key "Enter"
     Then the confirmation Cancel has focus
     When I press the key "Tab"
     And I press the key "Enter"
-    Then the members list has no member "both-bakeries"
-    And focus is on a member control or Add member
-    And the screen reader hears "Removed both-bakeries."
-    And the document was not reloaded
+    Then the address ends with "/members"
+    And the members list has no member "both-bakeries"
+    And the page says "Removed both-bakeries."
 
   Scenario: A team lead without the workspace rank sees the roster without controls
     Given I am signed in as "fixture-team-lead"
     When I visit the team "North Crew" tab "Members"
     Then the members list offers no controls
+    When I open the first member
+    Then the member page offers no controls
 
-  Scenario: A workspace guest sees the roster without controls
+  Scenario: A workspace guest sees the roster and a member's page without controls
     Given I am signed in as "north-guest"
     When I visit the team "Platform Crew" tab "Members"
     Then the members list offers no controls
+    When I open the first member
+    Then the member page offers no controls
 
   Scenario: On a phone every member row still shows the name
     Given I am signed in as "north-lead"

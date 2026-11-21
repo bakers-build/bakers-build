@@ -25,7 +25,7 @@ describe('the boundary is a renderable tree (BB-340 A1)', () => {
   const session = routes.createSession({ services: {}, nowSeconds: () => 0 });
   const screens = [...session.screens().values()];
 
-  it('registers twenty-six screens', () => {
+  it('registers twenty-nine screens', () => {
     // The count is `src/Routing/routes.ts`'s own list. It is pinned so that a
     // screen added without a line in this suite fails here rather than being
     // silently unchecked. BB-377 added Users + three user-level screens.
@@ -46,7 +46,8 @@ describe('the boundary is a renderable tree (BB-340 A1)', () => {
     // Ticket-Agents left, 39 → 33; the seven Teams screens left, 33 → 26.
     // The shared confirmation dialog replaced the run-edit screen, 26 → 26.
     // The Machines root tab, 26 → 27.
-    expect(screens).toHaveLength(27);
+    // The machine detail scope (Overview, Conductors), 27 → 29.
+    expect(screens).toHaveLength(29);
   });
 
   for (const screen of screens) {

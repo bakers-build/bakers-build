@@ -110,7 +110,7 @@ Then('the members list has {int} rows', async ({ page }, count: number) => {
 // The page header's Add member opens the dialog; type the person's name into
 // the chip field and take their listed match, keep the role, press Add member.
 // The dialog closes and the members island re-renders in place, so the step
-// waits for the new row.
+// waits for the new row's link.
 When('I add the member {string}', async ({ page }, value: string) => {
   const dialog = await openAddMemberDialog(page);
   await chooseInAddDialog(dialog, value);
@@ -121,7 +121,8 @@ When('I add the member {string}', async ({ page }, value: string) => {
   await dialog.getByRole('button', { name: 'Add member', exact: true }).click();
   await answered;
   await expect(page.locator(ADD_DIALOG), 'the add dialog did not close').toHaveCount(0, { timeout: 15000 });
-  await expect(page.locator(`${MEMBERS_ISLAND} #members-role-${uidOf(value)}`)).toBeAttached({ timeout: 15000 });
+  // The new row: one link to the member's page (BAKERS-338).
+  await expect(page.locator(`${MEMBERS_ISLAND} a[href$="/members/${uidOf(value)}"]`)).toBeAttached({ timeout: 15000 });
   // The flow ends when focus is back on Add member; a next step must not race it.
   await expect(addMemberTrigger(page)).toBeFocused({ timeout: 15000 });
 });

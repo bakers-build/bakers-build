@@ -1,8 +1,10 @@
 @feature:workspace-members
 Feature: The workspace Members screen keeps focus and says what happened
   Invite and cancel return focus to Invite members; a refused change is
-  announced and keeps focus on the refused control. The keyboard-only invite
-  and revoke live here; their full data checks are in `workspace-invite.feature`.
+  announced and keeps focus on the refused control. A row only opens its
+  member's or invitation's page, where Remove and Revoke are. The
+  keyboard-only invite and revoke live here; their full data checks are in
+  `workspace-invite.feature`.
 
   Scenario: Inviting returns focus to Invite members and announces the result
     Given I am signed in as a workspace lead
@@ -35,7 +37,8 @@ Feature: The workspace Members screen keeps focus and says what happened
     And Invite members has focus
     And the screen reader hears "Invited 2 people."
     And the document was not reloaded
-    When I move focus to the revoke of the first invited address
+    When I open the pending invitation of the first invited address
+    And I move focus to Revoke invitation
     And I press the key "Enter"
     Then the revoke confirmation is open
     And the revoke confirmation Cancel has focus
@@ -43,9 +46,7 @@ Feature: The workspace Members screen keeps focus and says what happened
     Then the revoke confirmation Delete has focus
     When I press the key "Enter"
     Then the first invited address is no longer listed as a pending invitation
-    And Invite members has focus
-    And the screen reader hears the revoke of the first invited address
-    And the document was not reloaded
+    And the Members screen confirms the revoke of the first invited address
 
   Scenario: Typed addresses become chips the keyboard can remove
     Given I am signed in as a workspace lead
@@ -72,14 +73,17 @@ Feature: The workspace Members screen keeps focus and says what happened
   Scenario: Removing the workspace owner is refused out loud
     Given I am signed in as a workspace lead
     When I open the workspace Members settings screen
+    And I open the member page of the workspace owner
     And I press remove for the workspace owner
     Then the screen reader hears "The owner of this workspace cannot be removed or demoted."
     And the remove control of the workspace owner has focus
     And no confirmation is open
 
-  Scenario: A workspace guest cannot open the Members screen
+  Scenario: A workspace guest cannot open the Members screen or a member's page
     Given I am signed in as "north-guest"
     When I request the workspace Members settings screen
+    Then access to the Members settings screen is denied
+    When I request the member page of the workspace owner
     Then access to the Members settings screen is denied
 
   Scenario: On a phone every member row still shows the name

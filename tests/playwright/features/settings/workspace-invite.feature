@@ -25,11 +25,12 @@ Feature: Inviting workspace members from the Members settings screen
     And members and invitations share one list
     And the document was not reloaded
     And exactly one invitation mail reaches each invited address
-    When I revoke the pending invitation of the first invited address
+    And the pending invitation of the first invited address only opens its page
+    When I open the pending invitation of the first invited address
+    Then the invitation page shows the role "Admin" and the team "Automation Crew"
+    When I revoke the invitation
     Then the first invited address is no longer listed as a pending invitation
-    And Invite members has focus
-    And the screen reader hears the revoke of the first invited address
-    And the document was not reloaded
+    And the Members screen confirms the revoke of the first invited address
 
   Scenario: A workspace member who does not lead it cannot open the Members settings screen
     Given I am signed in as a workspace member who does not lead it

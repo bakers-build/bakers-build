@@ -103,6 +103,12 @@ When('I request the workspace Members settings screen', async ({ page, apiClient
   requestStatus = response?.status() ?? 0;
 });
 
+When('I request the member page of the workspace owner', async ({ page, apiClient }) => {
+  const path = workspaceSettingsMembersPath(apiClient).replace(/\/settings\/members$/, `/members/${workspaceOwnerUid(apiClient)}`);
+  const response = await page.goto(path);
+  requestStatus = response?.status() ?? 0;
+});
+
 Then('access to the Members settings screen is denied', async () => {
   expect(requestStatus).toBe(403);
 });
@@ -313,10 +319,14 @@ Then('exactly one invitation mail reaches each invited address', async ({ page, 
   }
 });
 
-When('I revoke the pending invitation of the first invited address', async ({ page }) => {
-  // Revoking asks for confirmation in the delete dialog, which then closes in
-  // place and the list re-renders without a page load.
-  const revoke = page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` });
+/** The roster row of the first invited address. */
+function firstInvitationRow(page: Page) {
+  return page.locator(`${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`).filter({ hasText: invitedAddress }).first();
+}
+
+/** The invitation page's Revoke, once htmx owns it. */
+async function revokeAction(page: Page) {
+  const revoke = page.getByRole('link', { name: 'Revoke invitation', exact: true });
   // A click before htmx owns the anchor would follow its page href instead.
   await expect
     .poll(() => revoke.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
@@ -324,24 +334,41 @@ When('I revoke the pending invitation of the first invited address', async ({ pa
       timeout: 20000,
     })
     .toBe(true);
-  await revoke.click();
-  const dialog = page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])');
-  await expect(dialog).toBeVisible();
-  const answered = page.waitForResponse((response) => response.request().method() === 'POST', { timeout: 20000 });
-  await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
-  await answered;
-  await expect(dialog, 'the revoke dialog did not close').toHaveCount(0, { timeout: 20000 });
+  return revoke;
+}
+
+Then('the pending invitation of the first invited address only opens its page', async ({ page }) => {
+  const row = firstInvitationRow(page);
+  await expect(row.getByRole('link')).toHaveCount(1);
+  await expect(row.getByRole('link')).toHaveAttribute('href', /\/invite\/\d+$/);
+  await expect(row.getByRole('button')).toHaveCount(0);
 });
 
-When('I move focus to the revoke of the first invited address', async ({ page }) => {
-  const revoke = page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` });
+When('I open the pending invitation of the first invited address', async ({ page }) => {
+  await firstInvitationRow(page).getByRole('link').click();
+  await expect(page).toHaveURL(/\/invite\/\d+$/);
+  await expect(page.locator('body')).toContainText(invitedAddress);
+});
+
+Then('the invitation page shows the role {string} and the team {string}', async ({ page }, role: string, team: string) => {
+  const body = page.locator('body');
+  await expect(body).toContainText(role);
+  await expect(body).toContainText(team);
+  await expect(body).toContainText('Expires');
+});
+
+When('I revoke the invitation', async ({ page }) => {
+  // Revoking asks for confirmation in the delete dialog, then returns to Members.
+  await (await revokeAction(page)).click();
+  const dialog = page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page).toHaveURL(/\/settings\/members$/, { timeout: 20000 });
+});
+
+When('I move focus to Revoke invitation', async ({ page }) => {
   // Enter on it must open the dialog, not follow the page link.
-  await expect
-    .poll(() => revoke.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
-      timeout: 20000,
-    })
-    .toBe(true);
-  await revoke.focus();
+  await (await revokeAction(page)).focus();
 });
 
 Then('the revoke confirmation is open', async ({ page }) => {
@@ -360,12 +387,13 @@ Then('the revoke confirmation Cancel has focus', async ({ page }) => {
   await expect(page.locator('dialog[data-dialog][open] [data-dialog-cancel]')).toBeFocused();
 });
 
-Then('the screen reader hears the revoke of the first invited address', async ({ page }) => {
-  await expect(page.locator('#drupal-live-announce')).toContainText(`Revoked the invitation for ${invitedAddress}.`);
+Then('the Members screen confirms the revoke of the first invited address', async ({ page }) => {
+  await expect(page.locator('[data-component-id="bb_theme:toast"]').getByText(`Revoked the invitation for ${invitedAddress}.`)).toBeVisible({ timeout: 20000 });
 });
 
 Then('the first invited address is no longer listed as a pending invitation', async ({ page }) => {
-  await expect(page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/settings\/members$/);
+  await expect(firstInvitationRow(page)).toHaveCount(0);
   expect(inviteCount(invitedAddress)).toBe('0');
   expect(inviteCount(invitedAddresses[1])).toBe('1');
 });
@@ -385,7 +413,7 @@ Then('the invite dialog refuses the workspace role', async ({ page }) => {
 });
 
 Then("the existing member's address is not listed as a pending invitation", async ({ page }) => {
-  await expect(page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
+  await expect(page.locator(`${MEMBERS_ISLAND} a[href*="/invite/"]`).filter({ hasText: invitedAddress })).toHaveCount(0);
 });
 
 Then('no invitation mail reaches the existing member', async ({ page, baseURL }) => {
@@ -437,6 +465,12 @@ function workspaceOwnerUid(apiClient: { fixtureId(name: string): string }): stri
     `php:eval '$w = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_workspace", "${uuid}"); print $w ? $w->getOwnerId() : "";'`,
   ).trim();
 }
+
+When('I open the member page of the workspace owner', async ({ page, apiClient }) => {
+  const uid = workspaceOwnerUid(apiClient);
+  await page.locator(`${MEMBERS_ISLAND} a[href$="/members/${uid}"]`).first().click();
+  await expect(page).toHaveURL(new RegExp(`/members/${uid}$`));
+});
 
 When('I press remove for the workspace owner', async ({ page, apiClient }) => {
   const answered = page.waitForResponse((response) => response.request().method() === 'POST', { timeout: 15000 });

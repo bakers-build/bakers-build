@@ -343,7 +343,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   }
 
   /**
-   * An expired invitation renders as expired and stays revocable.
+   * An expired invitation renders as expired and its detail stays revocable.
    */
   public function testExpiredInvitationRendersExpiredAndStaysRevocable(): void {
     $now = \Drupal::time()->getRequestTime();
@@ -356,11 +356,12 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $tenancyInvite = $this->container->get('bb_core.workspace_invite');
     self::assertInstanceOf(WorkspaceInvite::class, $tenancyInvite);
 
-    $built = $tenancyInvite->inviteItems([$invite], TRUE);
+    $built = $tenancyInvite->inviteItems([$invite]);
 
     $state = $built['items'][0]['cells']['joined'];
     self::assertSame('Expired', $state['label']);
-    self::assertArrayHasKey('remove', $built['controls'][0], 'the revoke control is still offered');
+    self::assertSame([], $built['controls'], 'the row carries no control');
+    self::assertTrue($invite->access('delete'), 'its detail still offers Revoke');
   }
 
   /**
@@ -378,7 +379,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       'email' => 'stale@example.com',
       'created' => $now - ((WorkspaceInvite::VALIDITY_DAYS + 1) * 86400),
     ]);
-    $items = $this->container->get('bb_core.workspace_invite')->inviteItems([$fresh, $stale], FALSE)['items'];
+    $items = $this->container->get('bb_core.workspace_invite')->inviteItems([$fresh, $stale])['items'];
 
     $state = static fn (array $item): array => [$item['cells']['joined']['label'], $item['cells']['joined']['tone']];
     self::assertSame(['Invited', 'neutral'], $state($items[0]));
@@ -429,7 +430,9 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $invited = $row($page, 'waiting@example.com');
     self::assertStringStartsWith('Invited', trim($invited->filter('[data-cell="joined"]')->text()));
     self::assertNotSame('Invited', trim($invited->filter('[data-cell="joined"]')->text()), 'the invitation carries its date');
-    self::assertCount(1, $invited->filter('[aria-label="Revoke invitation for waiting@example.com"], [title="Revoke invitation for waiting@example.com"]'), 'the row carries its revoke');
+    self::assertCount(1, $invited->filter('a[href]'), 'the row is one link');
+    self::assertMatchesRegularExpression('#/invite/\d+$#', (string) $invited->filter('a')->attr('href'), 'to the invitation');
+    self::assertCount(0, $invited->filter('button'), 'Revoke is on the invitation, not its row');
   }
 
   /**
@@ -1293,7 +1296,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     self::assertInstanceOf(WorkspaceInvite::class, $tenancyInvite);
 
     // Unsaved rows: labels only, no revoke control that needs a saved id.
-    $items = $tenancyInvite->inviteItems([$ranked, $legacy, $stale], FALSE)['items'];
+    $items = $tenancyInvite->inviteItems([$ranked, $legacy, $stale])['items'];
 
     self::assertSame(['Admin', 'Platform'], [$items[0]['cells']['role']['label'], $items[0]['cells']['team']['value']]);
     self::assertSame(['Member', '-'], [$items[1]['cells']['role']['label'], $items[1]['cells']['team']['value']]);

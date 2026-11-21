@@ -18,6 +18,7 @@ describe('the conductor detail scope', () => {
   const MACHINE_UUID = 'machine-uuid-1';
   const NOW = Math.floor(Date.now() / 1000);
   const STALE_HEARTBEAT = NOW - 4000; // well past the 600s liveness window
+  const OWNER = 'user-cw';
 
   const conductorDoc = (attrs: Record<string, unknown> = {}) => ({
     id: 'c1',
@@ -48,6 +49,9 @@ describe('the conductor detail scope', () => {
       current_load: 1,
       max_parallel: 5,
       ...attrs,
+    },
+    relationships: {
+      owner_user_id: { data: { id: OWNER, type: 'user--user' } },
     },
   });
 
@@ -106,6 +110,7 @@ describe('the conductor detail scope', () => {
     rows?: ReturnType<typeof conductorDoc>[];
     runs?: ReturnType<typeof runDoc>[];
     tickets?: ReturnType<typeof assignedTicketDoc>[];
+    currentUser?: string;
   }): RendererServices {
     const docs = opts.rows ?? [conductorDoc()];
     const runs = opts.runs ?? [runDoc(), staleRunDoc()];
@@ -144,12 +149,41 @@ describe('the conductor detail scope', () => {
         if (path === 'bb_ticket/bb_ticket') {
           return { data: tickets, included: [] };
         }
+        // The run detail reads the run's ticket with its runs sideloaded.
+        if (path === 'bb_ticket/bb_ticket/t-538')
+          return {
+            data: {
+              ...ticketIncludeDoc(
+                't-538',
+                'BB-538',
+                'Conductor claims a ticket',
+              ),
+              relationships: { runs: { data: [{ id: 'r1' }] } },
+            },
+            included: [runDoc()],
+          };
+        if (path === 'user/user' && opts.currentUser)
+          return {
+            data: [
+              {
+                id: OWNER,
+                type: 'user--user',
+                attributes: { name: 'cw', display_name: 'cw' },
+              },
+            ],
+          };
         return { data: [] };
       },
       patch: async () => ({}),
       post: async () => ({}),
+      // bakers_run_list restartable: nothing on this conductor to restart.
+      callTool: async () => ({ runs: [] }),
     } as unknown as DropshClient;
-    return { client, baseUrl: 'http://web' };
+    return {
+      client,
+      baseUrl: 'http://web',
+      ...(opts.currentUser ? { currentUser: opts.currentUser } : {}),
+    };
   }
 
   async function bootConductors(
@@ -157,6 +191,7 @@ describe('the conductor detail scope', () => {
       rows?: ReturnType<typeof conductorDoc>[];
       runs?: ReturnType<typeof runDoc>[];
       tickets?: ReturnType<typeof assignedTicketDoc>[];
+      currentUser?: string;
     } = {},
   ) {
     const { mkdirSync } = await import('node:fs');
@@ -170,12 +205,14 @@ describe('the conductor detail scope', () => {
       tui: { conductorProcess: host },
     });
     // Same product order as `conductors.test.ts`: My work → Projects →
-    // Machines, and a machine opens its Conductors.
+    // Machines; a machine opens its detail, whose second tab is Conductors.
     await tui.press('\t');
     await tui.press('\t');
     await settle();
     await tui.renderOnce();
     await tui.press('\r');
+    await settle();
+    await tui.press('\t');
     await settle();
     await tui.renderOnce();
     return tui;
@@ -201,6 +238,39 @@ describe('the conductor detail scope', () => {
     await quit(tui);
   });
 
+  it('`r` on the overview of an owned conductor opens Restart runs', async () => {
+    const tui = await bootConductors({ currentUser: 'cw' });
+    await tui.press('\r');
+    await settle();
+    await tui.renderOnce();
+    expect(text(tui)).toContain('r:Restart runs');
+
+    await tui.press('r');
+    await settle();
+    await tui.renderOnce();
+    expect(text(tui)).toContain('No runs to restart on conductor cw-framework');
+
+    await tui.press('\x1b');
+    await settle();
+    await tui.renderOnce();
+    expect(text(tui)).toContain('bakers.build conductor — cw-framework');
+    await quit(tui);
+  });
+
+  it('offers no Restart runs when the operator does not own the machine', async () => {
+    const tui = await bootConductors();
+    await tui.press('\r');
+    await settle();
+    await tui.renderOnce();
+    expect(text(tui)).not.toContain('Restart runs');
+
+    await tui.press('r');
+    await settle();
+    await tui.renderOnce();
+    expect(text(tui)).not.toContain('Restart runs');
+    await quit(tui);
+  });
+
   it('opens for a conductor on another machine too', async () => {
     const tui = await bootConductors({
       rows: [conductorDoc({ label: 'elsewhere' })],
@@ -208,6 +278,19 @@ describe('the conductor detail scope', () => {
     await tui.press('\r');
     await settle();
     expect(text(tui)).toContain('bakers.build conductor —');
+    await quit(tui);
+  });
+
+  it('Enter on a held run opens that run detail', async () => {
+    const tui = await bootConductors({ runs: [runDoc()] });
+    await tui.press('\r');
+    await settle();
+    await tui.press('\t');
+    await settle();
+    await tui.press('\r');
+    await settle();
+    await tui.renderOnce();
+    expect(text(tui)).toContain('#538 · BB-538 · running');
     await quit(tui);
   });
 

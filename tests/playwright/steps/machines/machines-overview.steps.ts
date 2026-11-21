@@ -175,15 +175,13 @@ After({ tags: '@machine-connection' }, async () => {
   connectionHost = undefined; connectionMachine = undefined;
 });
 
-Then(
-  'the machine Overview lists the conductor {string} with {string}',
-  async ({ page }, label: string, action: string) => {
-    const row = page.locator('[data-list-item], tr').filter({ hasText: label });
-    await expect(row.first(), `The machine Overview lists no conductor "${label}"`).toBeVisible();
-    // The operations menu is collapsed, so its links are in the DOM but hidden.
-    await expect(row.first().locator('a[href*="/restart"]').filter({ hasText: action })).toBeAttached();
-  },
-);
+Then('the machine Overview lists the conductor {string} as one link', async ({ page }, label: string) => {
+  const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
+  await expect(row, `The machine Overview lists no conductor "${label}"`).toBeVisible();
+  // The row's one link is the conductor; Restart runs is on its page.
+  await expect(row.locator('a')).toHaveCount(1);
+  await expect(row.getByRole('link', { name: label, exact: true })).toBeVisible();
+});
 
 Then(
   'the machine Overview lists the conductor {string} in the project {string}',
@@ -197,10 +195,13 @@ When('I open {string} on the machine', async ({ page }, name: string) => {
   await page.locator('[data-component-id="bb_theme:inspector"]').getByRole('link', { name, exact: true }).click();
 });
 
-When('I open {string} on the conductor {string}', async ({ page }, name: string, label: string) => {
-  const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
-  await row.locator('[data-action-menu] summary').click();
-  await row.getByRole('menuitem', { name, exact: true }).click();
+When('I open the conductor {string} from the machine Overview', async ({ page }, label: string) => {
+  await page.locator('[data-list-item], tr').filter({ hasText: label }).first().getByRole('link', { name: label, exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 }).filter({ hasText: label })).toBeVisible();
+});
+
+When('I open {string} on the conductor page', async ({ page }, name: string) => {
+  await page.locator('[data-component-id="bb_theme:inspector"]').getByRole('link', { name, exact: true }).click();
 });
 
 When('I press Escape in the Restart runs dialog', async ({ page }) => {

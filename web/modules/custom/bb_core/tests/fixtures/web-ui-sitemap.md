@@ -129,6 +129,16 @@ profiles) keep their admin pages, reachable by URL and never from the rail.
 
 ## Entity types with no nav home of their own
 
+- A member's page (`bb_core.bb_workspace.member`, `/{ws}/members/{uid}`, and
+  `bb_core.bb_team.member`, `/{ws}/team/{id}/members/{uid}`), an invitation
+  (`entity.bb_invite.canonical`, `/{ws}/invite/{id}`) and a billing account
+  (`entity.bb_track_account.canonical`, `/{ws}/project/{id}/accounts/{id}`)
+  are opened from their Members or Billing row, under the list's own gate.
+- A term (`entity.bb_term.canonical`, `/{ws}/term/{id}`) and a ticket trigger
+  (`entity.bb_ticket_trigger.canonical`,
+  `/{ws}/ticket-template/{id}/trigger/{id}`) are opened from their Terms or
+  Triggers row, under the entity's own view access.
+
 ## User area
 
 | Place | Route name | Path | Renders | Gate | Mechanism |

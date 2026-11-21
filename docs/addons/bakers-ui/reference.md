@@ -28,15 +28,15 @@ The renderer needs the Bun runtime that `@bakers-build/addon-bakers-ui` installs
 
 The [connection selection order](/configuration/connection#which-connection-is-used) is shared with the CLI. Explicit selectors override the checkout selector and defaults.
 
-When the cockpit talks to a server you did not expect, run `bakers ui --print-config`: it prints the connection file, how it was selected (`selection`), `base_url` and the project's `.bakers` directory (`bb_dir`). Precedence in full: [Connections](/configuration/connection).
+When an unexpected server answers, `bakers ui --print-config` shows the connection file, its `selection`, `base_url` and `bb_dir`. Precedence in full: [Connections](/configuration/connection).
 
 ## Which workspace
 
 Inside a checkout the workspace comes from `project.workspace` in the project config, otherwise from the connection; `--workspace` overrides both for one run. `W` opens the workspace picker, and `Enter` restarts the cockpit with `--workspace` set to the choice. The switch lasts for that run and writes no configuration file.
 
-## Navigation - five scopes
+## Navigation - six scopes
 
-Navigation has five tab scopes. Tabbed screens show the bar for their current scope; compact ticket views, forms and run detail have no separate tab bar. `Tab`/`Shift-Tab` cycle the tabs of the current level, and a **left click on a tab** goes straight to it; tabs have no letter shortcuts.
+Navigation has six tab scopes. Tabbed screens show the bar for their current scope; compact ticket views, forms and run detail have no separate tab bar. `Tab`/`Shift-Tab` cycle the tabs of the current level, and a **left click on a tab** goes straight to it; tabs have no letter shortcuts.
 
 | Level | Tabs |
 |-------|------|
@@ -44,7 +44,10 @@ Navigation has five tab scopes. Tabbed screens show the bar for their current sc
 | Project | **Overview** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
 | Workspace member | **Overview** · **Tickets** · **Runs** |
+| Machine | **Overview** · **Conductors** |
 | Conductor | **Overview** · **Held work** · **Assigned** · **Log** |
+
+**A list only opens.** `Enter` (or a click) opens the row's own detail; no key acts on a row. The ticket **Addons** tab is the exception.
 
 Run detail has no bar; `Esc` returns to the preceding screen. An addon places a tab with `weight` or `before`/`after` anchors: see [Adding a screen as a tab](/addons/bakers-ui/tabs) and [Addons](/addons/configure).
 
@@ -74,32 +77,34 @@ Rendered: headings, `**strong**`, `*em*`, `~~struck~~` (dim), code, lists, quote
 
 ### Runs
 
-The ticket's **Runs** tab lists its runs as selectable rows, newest started first. `Enter` (or a click) opens the **run detail**: the ticket's address and its pull requests, one `* <URL>` terminal hyperlink each (a pipe prints them), state, timing, footprint (tokens, tool calls, agent turns), worktree and the full, scrollable **Log** and **Error log**. A run in state `claimed` or `running` also offers `x` to cancel it, on the run detail and on the selected row of the Runs tab.
+The ticket's **Runs** tab lists its runs as selectable rows, newest started first. `Enter` (or a click) opens the **run detail**: the ticket's address and its pull requests, one `* <URL>` terminal hyperlink each (a pipe prints them), state, timing, footprint (tokens, tool calls, agent turns), worktree and the full, scrollable **Log** and **Error log**.
 
-The project **Runs** tab lists the project's runs, newest first, 20 per page. A `running` or `claimed` run with a heartbeat older than 600 seconds, or a lapsed claim lease, shows as `stale`. Lists state `N of M ticket(s)`: rows on screen of all rows matching the filters, `M` from the server's `meta.count`, or `?` when it reports none.
+The project and member **Runs** tabs list runs, newest first, 20 per page; `Enter` opens the run detail. A `running` or `claimed` run with a heartbeat older than 600 seconds, or a lapsed claim lease, shows as `stale`. Lists state `N of M ticket(s)`: rows on screen of all rows matching the filters, `M` from the server's `meta.count`, or `?` when it reports none.
 
 ### Editing a ticket
 
-`e` opens the `✎ Edit ticket` popup: assignee, conductor, estimate, spent, **Parent** and **Labels**. **Save** (`Ctrl+S`) never writes the state. A closed ticket's popup is read-only.
+On a ticket, `e` opens the `✎ Edit ticket` popup: assignee, conductor, estimate, spent, **Parent** and **Labels**. **Save** (`Ctrl+S`) never writes the state. A closed ticket's popup is read-only.
 
 ### Cancelling and restarting
 
-Cancelling and restarting are actions of their own, next to `e` in the footer, and each asks first in the same confirmation dialog. Its buttons **Confirm** and **Close** (**OK** and **Cancel** for Restart runs) sit under the question, with the first focused. A Restart runs list starts with every ticket checked: `↑`/`↓` moves and `Space` checks or unchecks. `←`/`→` or `Tab` moves between them and `Enter` presses the focused one. `Esc` closes like Close and writes nothing. A refused write shows the server's message and keeps the dialog open.
+Each cancel or restart asks first in the same confirmation dialog. Its buttons **Confirm** and **Close** (**OK** and **Cancel** for Restart runs) sit under the question, with the first focused. A Restart runs list starts with every ticket checked: `↑`/`↓` moves and `Space` checks or unchecks. `←`/`→` or `Tab` moves between them and `Enter` presses the focused one. `Esc` closes like Close and writes nothing. A refused write shows the server's message and keeps the dialog open.
 
 | Key | Where | What confirming does |
 |---|---|---|
 | `x` cancel ticket | Overview, Planning and History of a ticket that is neither `done`, `cancelled` nor closed | Writes only `state: cancelled`. |
-| `x` cancel run | Run detail and the Runs tab, for a run in `claimed` or `running`, or the ticket's newest run when it failed | Sets that run to `cancelled`. |
+| `x` cancel run | Run detail, for a run in `claimed` or `running`, or the ticket's newest run when it failed | Sets that run to `cancelled`. |
 | `r` restart runs | Overview, Planning and History of an open ticket that is not frozen | Cancels the ticket's `claimed` or `running` runs and its newest run when that failed; the dialog names them, or says there is no run to restart. |
-| `r` restart runs | Machines and a machine's conductors, on a machine or conductor you own | Lists the tickets with such runs, all checked, frozen ones left out; OK cancels the runs of the checked tickets, noting `cancelled by <you>: Restart runs (<level> <name>)` in the error log, and each ticket gets one fresh run. Offline, cleanup and fresh runs follow its next start. |
+| `r` restart runs | Overview of a machine you own, or of its conductor | Lists the tickets with such runs, all checked, frozen ones left out; OK cancels the runs of the checked tickets, noting `cancelled by <you>: Restart runs (<level> <name>)` in the error log, and each ticket gets one fresh run. Offline, cleanup and fresh runs follow its next start. |
 
-Every cancel and restart goes through the site tools `bakers_run_list` (`restartable`) and `bakers_run_cancel`, under the same rule as the web dialogs. If the tickets changed since the dialog opened, OK cancels nothing and asks you to open it again.
+Every cancel and restart goes through the site tools `bakers_run_list` (`restartable`) and `bakers_run_cancel`. If the tickets changed since the dialog opened, OK cancels nothing and asks you to open it again.
 
 ## The conductor sections
 
-**Machines** lists your machines with status, active runs and conductor count; `Enter` opens that machine's conductors. `Enter` on any Conductors row opens that conductor, whichever machine it runs on. Four tabs share one read of it:
+**Machines** lists your machines with status, active runs and conductor count; `Enter` opens the machine: **Overview** (the same facts and host key, `r` Restart runs for the owner) and **Conductors**.
 
-- **Overview**: status, last-seen age, machine, project, workspace path, PID, and load as `<current>/<max>`, the host's budget that several conductors share.
-- **Held work**: its runs in state `claimed` or `running`; `Enter` opens the run's ticket.
+`Enter` on a Conductors row opens the conductor. Four tabs share one read of it:
+
+- **Overview**: status, last-seen age, machine, project, workspace path, PID, and load `<current>/<max>` of the shared host budget. `s` starts and `x` stops a conductor of this machine (others are view-only); `r` restarts its runs for the machine's owner.
+- **Held work**: its runs in state `claimed` or `running`; `Enter` opens the run detail.
 - **Assigned**: its open tickets.
 - **Log**: the tail of its `log.txt` when this machine owns it, else a note that it runs on another machine.

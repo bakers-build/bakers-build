@@ -94,10 +94,11 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
   }
 
   /**
-   * A role change keeps focus on that row's role trigger and says the result.
+   * A role change on a member's page keeps focus on its role trigger.
    */
   public function testRoleChangeFocusesTheSameRoleTriggerAndAnnouncesIt(): void {
     $this->actAsTeamManager();
+    $this->enterRoute($this->team, $this->crew[1]);
     $bea = (int) $this->crew[1]->id();
 
     $page = $this->submitTeam(['member_role_' . $bea => 'lead']);
@@ -240,22 +241,24 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
   }
 
   /**
-   * The acting manager's own row offers Leave rather than Remove.
+   * The acting manager's own page offers Leave rather than Remove.
    */
   public function testTheOwnRowOffersLeave(): void {
     $lead = $this->createUser(['view bb_workspace', 'update any bb_workspace'], 'lena');
     self::assertInstanceOf(UserInterface::class, $lead);
     $this->addMembership($this->workspace, $lead, ['lead']);
     $this->setCurrentUser($lead);
-    $this->enterRoute($this->workspace);
-    $form = $this->container->get('form_builder')->getForm(
-      GroupMembersForm::class,
-      ['island_id' => 'members', 'host_id' => 'workspace'],
-    );
-    $page = new Crawler((string) $this->container->get('renderer')->renderInIsolation($form));
+    $page = function (UserInterface $member): Crawler {
+      $this->enterRoute($this->workspace, $member);
+      $form = $this->container->get('form_builder')->getForm(
+        GroupMembersForm::class,
+        ['island_id' => 'members', 'host_id' => 'workspace'],
+      );
+      return new Crawler((string) $this->container->get('renderer')->renderInIsolation($form));
+    };
 
-    self::assertStringStartsWith('Leave Acme.', (string) $page->filter('#members-remove-' . $lead->id())->attr('aria-label'));
-    self::assertStringStartsWith('Remove ada from Acme.', (string) $page->filter('#members-remove-' . $this->crew[0]->id())->attr('aria-label'));
+    self::assertStringStartsWith('Leave Acme.', (string) $page($lead)->filter('#members-remove-' . $lead->id())->attr('aria-label'));
+    self::assertStringStartsWith('Remove ada from Acme.', (string) $page($this->crew[0])->filter('#members-remove-' . $this->crew[0]->id())->attr('aria-label'));
   }
 
   /**
@@ -416,8 +419,8 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
   /**
    * Makes one group's Members route the current one.
    */
-  private function enterRoute(ContentEntityInterface $group): void {
-    $route_name = sprintf('bb_core.%s.members', $group->getEntityTypeId());
+  private function enterRoute(ContentEntityInterface $group, ?UserInterface $member = NULL): void {
+    $route_name = sprintf('bb_core.%s.%s', $group->getEntityTypeId(), $member === NULL ? 'members' : 'member');
     $route = $this->container->get('router.route_provider')->getRouteByName($route_name);
     $request = Request::create('/group-members-outcome-test', 'POST');
     $current = $this->container->get('request_stack')->getCurrentRequest();
@@ -428,6 +431,9 @@ final class GroupMembersOutcomeTest extends KernelTestBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
     $request->attributes->set('bb_workspace', $this->workspace);
     $request->attributes->set($group->getEntityTypeId(), $group);
+    if ($member !== NULL) {
+      $request->attributes->set('user', $member);
+    }
     $this->container->get('request_stack')->push($request);
   }
 

@@ -142,7 +142,8 @@
       deliberately — never to reintroduce a slot, which would buy back exactly the
       freedom the container exists to remove. That rule has been exercised twice
       now. `action` is the eighth: seven kinds rendered a value the record HOLDS
-      and none of them was a control, so a row action had nowhere to go.
+      and none of them was a control. It serves the exempt time-sheet grids and
+      detail-page tables only: a list row opens its detail page and nothing else.
       `rendered` is the ninth: a Views field decides its own face through its
       formatter and hands this template finished markup rather than data. Neither
       is a slot, and the difference is not cosmetic — a slot injects a whole
@@ -315,9 +316,11 @@
         control — a whole sentence serving as an icon-only button's accessible
         name, which a `text` cell would have printed as prose on every item.
 
-        ITEM-SCOPED, not members-only. It acts on the record the cell belongs to,
-        so any listing can carry a row action; nothing here knows what a
-        membership is.
+        ITEM-SCOPED, not members-only. It acts on the record the cell belongs to;
+        nothing here knows what a membership is. It is NOT for a list row: a list
+        row only opens its entity's detail page, and the actions live there. It
+        serves the exempt time-sheet grids (Submission review, Worklog week),
+        whose rows are the actions, and tables on a detail page.
 
         ITS FIELD LIST IS `button`'S, and that is the whole contract — `label`,
         `icon`, `icon_only`, `variant`. There is no `aria_label`: `button` declares
@@ -328,11 +331,11 @@
         `action-pattern.md` asks of a single-step action with a server-side one.
 
         With `href` the control is a link that works without JavaScript; `hx`
-        adds the create-trigger htmx attributes, so a row action can open a
+        adds the create-trigger htmx attributes, so an action can open a
         dialog. Without either it stays a `<button type="button">`.
 
-        `ghost` IS THE DEFAULT WEIGHT. A row action is secondary to the row it sits
-        on; a listing where every item carries a primary-weight button emphasises
+        `ghost` IS THE DEFAULT WEIGHT. An action is secondary to the values it sits
+        beside; a grid where every row carries a primary-weight button emphasises
         nothing, which is the same argument the add surface's single `lead` makes. #}
     {%- set action_attributes = create_attribute() -%}
     {%- for key in ['get', 'target', 'select', 'swap'] -%}

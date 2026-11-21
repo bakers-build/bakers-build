@@ -247,8 +247,13 @@ props:
               breaks. A value shape the kinds cannot express is the signal to
               add a new kind DELIBERATELY, never to reintroduce a slot — and
               that rule has now been exercised twice. `action` was the eighth:
-              the first seven all render a value the record HOLDS, none of them
-              was a control, and a row action had nowhere to go. `rendered` is
+              the first seven all render a value the record HOLDS and none of
+              them was a control. It is NOT a row action for a list: a list row
+              only opens its entity's detail page (one link in the primary cell,
+              the whole row the hit area) and carries no other action. `action`
+              serves the exempt time-sheet grids (Submission review, Worklog
+              week), whose rows are the actions, and tables on a detail page;
+              everywhere else the action lives on the detail page. `rendered` is
               the ninth, and it arrived when the ticket list was bound through
               core's own `table` views style over nine real Views FIELDS, each
               rendering itself through its own formatter — so what reaches the
@@ -613,19 +618,20 @@ props:
                   title: Action weight
                   description: >-
                     An `action` cell's weight, from `button`'s own variants.
-                    Default `ghost`: a row action is secondary to the row it
-                    sits on, and a listing where every item carries a
-                    primary-weight control emphasises nothing. `danger` is the
-                    quiet outline for an intervention on the row's record —
-                    Cancel run on a running run.
+                    Default `ghost`: in an exempt time-sheet grid or a detail
+                    page's table the action is secondary to the values beside
+                    it, and a grid where every row carries a primary-weight
+                    control emphasises nothing. `danger` is the quiet outline
+                    for an intervention on the cell's record. A list row never
+                    carries an `action`; its actions live on the detail page.
                 icon_only:
                   type: boolean
                   title: Icon-only action
                   description: >-
                     An `action` renders its icon alone and `button` moves the
-                    `label` into `aria-label`. This is what lets a row action be
+                    `label` into `aria-label`. This is what lets an action carry
                     a sentence-long accessible name without printing that
-                    sentence on every item — the reason a `text` cell was the
+                    sentence in every row — the reason a `text` cell was the
                     wrong answer for it.
                 name:
                   type: string
@@ -663,7 +669,7 @@ props:
                     An `action` cell's htmx request, as the attribute set a
                     create trigger carries (`CreateActionSourceBase`): each key
                     that is set becomes a `data-hx-<key>` attribute on the
-                    control, so a row action can open a dialog — `get` the
+                    control, so an action can open a dialog — `get` the
                     wrapper-format dialog URL, `target` the overlay
                     (`#bakers-overlay`), `select` `dialog`, `swap` `innerHTML`.
                     Normally paired with `href`. An `input` cell uses the same

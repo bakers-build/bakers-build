@@ -736,6 +736,10 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   private const NO_NAV_HOME_ENTITY_TYPES = [
     'bb_environment', 'bb_comment', 'bb_run', 'bb_ticket',
     'bb_ticket_template',
+    // Opened from their Members or Billing row.
+    'bb_invite', 'bb_track_account',
+    // Opened from their Terms or Triggers row.
+    'bb_term', 'bb_ticket_trigger',
   ];
 
   /**
@@ -758,6 +762,9 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.review_transition',
     // A ticket template's own Create ticket confirmation.
     'bb_core.ticket_template_instantiate_form',
+    // A member's page, opened from its Members row.
+    'bb_core.bb_workspace.member',
+    'bb_core.bb_team.member',
   ];
 
   /**
