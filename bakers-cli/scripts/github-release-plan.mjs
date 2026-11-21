@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { TARGETS, root } from './prepare-publish.mjs';
+import { prSections } from './release-pr-notes.mjs';
 
 const [channel, head, output] = process.argv.slice(2);
 if (!['next', 'latest'].includes(channel) || !/^[0-9a-f]{40}$/.test(head ?? '') || !output)
@@ -34,5 +35,12 @@ if (channel === 'next') {
   }).trim();
 } else {
   version = execFileSync(process.execPath, [new URL('./release-version.mjs', import.meta.url).pathname, commit, '--notes', `${output}.notes.md`], { encoding: 'utf8' }).trim();
+  // The release PR (merged into `head`) carries hand-written sections for the GitHub release. A
+  // failed lookup throws before plan.json exists, so nothing is released without them.
+  if (version) {
+    const pulls = JSON.parse(execFileSync('gh', ['api', `repos/${process.env.GITHUB_REPOSITORY}/commits/${head}/pulls`], { encoding: 'utf8' }));
+    const sections = prSections(pulls.find(pull => pull.merge_commit_sha === head)?.body);
+    if (sections) appendFileSync(`${output}.notes.md`, `\n${sections}\n`);
+  }
 }
 writeFileSync(output, `${JSON.stringify({ head, commit, channel, version, snapshot }, null, 2)}\n`);
