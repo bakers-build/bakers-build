@@ -265,6 +265,9 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'core.entity_form_display.bb_group.bb_group.create',
     'core.entity_form_display.bb_group.bb_group.settings',
     'core.entity_form_display.bb_workspace.bb_workspace.settings',
+    // Machine and conductor Settings, beside the other Settings displays.
+    'core.entity_form_display.bb_machine.bb_machine.settings',
+    'core.entity_form_display.bb_conductor.bb_conductor.settings',
     // The onboarding welcome flow's completion flag (BB-432 task 1). The
     // wizard declares its Form API fields in PHP; later edits use
     // `user.user.default`.
@@ -367,6 +370,8 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'core.entity_form_mode.bb_ticket.create',
     'core.entity_form_display.bb_ticket.bb_ticket.create',
     'core.entity_form_mode.bb_workspace.settings',
+    'core.entity_form_mode.bb_machine.settings',
+    'core.entity_form_mode.bb_conductor.settings',
   ];
 
   /**

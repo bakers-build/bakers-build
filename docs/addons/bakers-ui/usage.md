@@ -20,6 +20,8 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
    | Root | My work, Projects, Members (workspace leads only), Machines |
    | Project | Overview, Tickets, Runs, Conductors |
    | Ticket | Overview, Planning, History, Runs, then addon tabs such as Artifacts; Ports is an Overview message card |
+   | Machine | Overview, Conductors |
+   | Conductor | Overview, Held work, Assigned, Log |
 
 3. **Jump straight to something.** One target at most:
 
@@ -35,9 +37,9 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
 
    **Find a ticket by its origin issue**, the issue it was created from. `#19` uses the repository of your projects when exactly one has one (quote it in the shell); `shop#19` names the repository by its last path segment or a unique prefix of it; an issue URL works in any spelling (`http` or `https`, with or without `/-/`, a trailing slash). Issue `19` never matches issue `190`. One ticket opens; several are listed with their `ticket:<uuid>`; an unknown or ambiguous repository prints a message naming the known ones, and two repositories sharing a last path segment need the issue URL. On every ticket list (Tickets, My work, a conductor's Assigned, a member's Tickets), `/` reads the same forms besides identifiers, a bare ticket number (`123`) and title words, and so does the search box of the web ticket list.
 
-4. **Read a ticket.** Overview leads with the latest `summary`, then the description. Planning holds the latest `spec`, `plan` and `test`. History lists every comment, rendered as Markdown. Runs lists the runs; `Enter` opens one. `Enter` or `Space` expands the selected entry.
+4. **Read a ticket.** Overview leads with the latest `summary`, then the description. Planning holds the latest `spec`, `plan` and `test`. History lists every comment, rendered as Markdown. Runs lists the runs; `Enter` opens one, and `x` there cancels it. `Enter` or `Space` expands the selected entry.
 
-5. **Edit.** On a ticket press `e`: assignee, conductor, estimate and spent, parent and labels. `Ctrl+S` saves. `x` cancels the ticket, or on a run the run; `r` restarts the ticket's active run. On **Machines**, `Enter` opens a machine's conductors, and `r` on your own machine or conductor restarts its runs. Each asks first in a confirmation dialog with the buttons **Confirm** and **Close**. `Esc` writes nothing.
+5. **Act on the detail, not the list.** A list only opens: `Enter` (or a click) on a row opens its own detail, and the actions live there. On a ticket press `e`: assignee, conductor, estimate and spent, parent and labels. `Ctrl+S` saves. `y` and `Y` copy its identifier and link. `x` cancels the ticket, and on a run detail the run; `r` restarts the ticket's active run. On **Machines**, `Enter` opens a machine; `r` on its Overview restarts the runs of a machine you own, and `r` on a conductor's Overview those of a conductor whose machine you own. Cancel and restart ask first in a confirmation dialog with the buttons **Confirm** and **Close**; `Esc` writes nothing. A conductor's Overview also offers `s` start and `x` stop for a conductor of this machine.
 
 6. **Reload** with `R`. Anything that can write a file can do the same with `touch .bakers/ui-refresh` inside the project.
 

@@ -1,0 +1,66 @@
+{# Entries as removable chips over the control in `field`, which stays the
+   submitted value: a textarea in `free` mode, a multiple select in `list`
+   mode. The chip box starts `hidden`, so without JavaScript only the control
+   shows; `chipField` reveals the box and hides the control. The chip and
+   option markup are templates Alpine clones per entry. #}
+{% set list = mode|default('free') == 'list' %}
+{% set chip_classes = 'inline-flex items-center gap-inline-xs h-6 max-w-full px-1.5 rounded-full border bg-surface text-meta text-text' %}
+<div{{ (attributes ?: create_attribute()).addClass(['relative', 'w-full', 'min-w-0']) }}
+  x-data="chipField"
+  data-chip-field
+  data-placeholder="{{ placeholder }}"
+  data-remove-label="{{ remove_label|default('Remove @label') }}">
+  {{ field }}
+  <div hidden x-bind:hidden="false" x-on:click.self="$refs.input.focus()"
+    class="flex flex-wrap items-center gap-inline-xs w-full min-h-[34px] px-[11px] py-inline-xs bg-app border border-control-border rounded-sm cursor-text focus-within:border-primary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-focus-ring">
+    <ul role="list" class="contents" aria-label="{{ label }}">
+      <template x-for="(chip, index) in chips" x-bind:key="index + chip.value">
+        <li class="{{ chip_classes }}"
+          x-bind:class="chip.valid ? 'border-control-border' : 'border-state-attention-mark text-state-attention-ink'"
+          x-bind:data-invalid="chip.valid ? null : ''">
+          <template x-if="!chip.valid">
+            <span class="inline-flex shrink-0">{{ include('bb_theme:icon', { name: 'alert-triangle', size: 'sm' }, with_context = false) }}<span class="sr-only">{{ invalid_label|default('Not an e-mail address') }}:</span></span>
+          </template>
+          <span data-chip-field-label class="min-w-0 truncate" x-text="chip.label" x-bind:title="chip.label"></span>
+          <button type="button"
+            class="shrink-0 inline-flex text-text-faint hover:text-text cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+            x-bind:aria-label="removeLabel(chip)"
+            x-on:click="remove(index)">
+            {{ include('bb_theme:icon', { name: 'x-circle', size: 'sm' }, with_context = false) }}
+          </button>
+        </li>
+      </template>
+    </ul>
+    <input x-ref="input" type="text" autocomplete="off"
+      class="flex-1 min-w-48 h-6 bg-transparent border-0 p-0 text-body text-text outline-none placeholder:text-text-faint"
+      aria-label="{{ label }}"
+      {% if list %}
+      role="combobox" aria-autocomplete="list"
+      x-bind:aria-controls="field.id + '-listbox'"
+      x-bind:aria-expanded="open ? 'true' : 'false'"
+      x-bind:aria-activedescendant="open ? optionId(active) : null"
+      x-on:input="typed()"
+      x-on:blur="query = ''; $el.value = ''"
+      {% else %}
+      inputmode="email"
+      x-on:paste="paste($event)"
+      x-on:blur="commit()"
+      {% endif %}
+      x-bind:placeholder="chips.length ? '' : placeholder"
+      x-on:keydown="keydown($event)">
+  </div>
+  {% if list %}
+    <ul role="listbox" hidden x-bind:hidden="!open" x-bind:id="field.id + '-listbox'" aria-label="{{ label }}"
+      class="absolute top-full left-0 right-0 z-30 mt-1.5 max-h-70 overflow-y-auto m-0 p-1.5 list-none bg-surface-2 border border-border rounded-sm shadow-shadow-2">
+      <template x-for="(option, index) in matches" x-bind:key="option.value">
+        <li role="option" x-bind:id="optionId(index)"
+          x-bind:aria-selected="index === active ? 'true' : 'false'"
+          class="px-inline py-[6px] rounded-xs text-body text-text cursor-pointer aria-selected:bg-surface-3"
+          x-text="option.label"
+          x-on:mousedown.prevent
+          x-on:mousemove="active = index"
+          x-on:click="choose(option)"></li>
+      </template>
+    </ul>
+  {% endif %}
+</div>

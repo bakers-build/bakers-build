@@ -27,11 +27,11 @@ final class RunListToolTest extends BakersToolTestBase {
   }
 
   /**
-   * The tool takes a ticket and paging, nothing else.
+   * The tool takes a ticket, machine or conductor, restartable and paging.
    */
   public function testInputAllowlist(): void {
     $tool = $this->container->get('plugin.manager.tool')->createInstance('bakers_run_list');
-    self::assertSame(['ticket', 'limit', 'offset'], array_keys($tool->getInputDefinitions()));
+    self::assertSame(['ticket', 'machine_id', 'conductor', 'restartable', 'limit', 'offset'], array_keys($tool->getInputDefinitions()));
   }
 
   /**
@@ -65,6 +65,9 @@ final class RunListToolTest extends BakersToolTestBase {
         'conductor' => $first->get('conductor_id')->entity->uuid(),
         'started_at' => 1700000000,
         'closed' => TRUE,
+        'number' => (int) $first->id(),
+        'ticket' => $ticket->getIdentifier(),
+        'ticket_title' => $ticket->getTitle(),
       ],
     ], $out['runs']);
   }

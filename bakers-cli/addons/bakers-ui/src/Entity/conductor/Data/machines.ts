@@ -8,6 +8,8 @@ import { deriveConductorStatus } from './liveness.js';
 export interface MachineRow {
   id: string;
   name: string;
+  /** The machine_id the site tools take. */
+  hostKey: string;
   /** Online when any of its conductors is. */
   online: boolean;
   /** The machine's reported `current_load`: its active runs. */
@@ -23,7 +25,7 @@ const relId = (resource: JsonApiResource, name: string): string | null => {
 
 /**
  * The machines of these conductors, grouped from one conductor read with the
- * machine sideloaded.
+ * machine sideloaded; `machineId` narrows the read to one machine's detail.
  *
  * shortcut: a machine without a conductor, or past the first 50 conductors,
  * is not listed; read `bb_machine` directly when that matters.
@@ -32,12 +34,14 @@ export const listMachineRows = async (
   client: DropshClient,
   ownerUserId: string | undefined,
   nowSeconds: number,
+  machineId?: string,
 ): Promise<Page<MachineRow>> => {
   const params = new DrupalJsonApiParams()
     .addInclude(['machine'])
     .addSort('drupal_internal__id', 'ASC')
     .addPageLimit(50);
   if (ownerUserId) params.addFilter('owner_user_id.id', ownerUserId);
+  if (machineId) params.addFilter('machine.id', machineId);
   const doc = (await client.get('bb_conductor/bb_conductor', params)) as {
     data?: JsonApiResource[];
     included?: JsonApiResource[];
@@ -49,6 +53,7 @@ export const listMachineRows = async (
     machines.set(included.id, {
       id: included.id,
       name: String(attrs.name || attrs.host_key || '(unnamed)'),
+      hostKey: String(attrs.host_key ?? ''),
       online: false,
       active: Number(attrs.current_load ?? 0),
       conductorIds: [],

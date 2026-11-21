@@ -210,6 +210,10 @@ placements:
                 source: {  }
               - source_id: bb_group_create_action
                 source: {  }
+              - source_id: bb_member_invite_action
+                source: {  }
+              - source_id: bb_team_member_add_action
+                source: {  }
               - source_id: bb_worklog_create_action
                 source: {  }
               - source_id: bb_track_billing_account_create_action

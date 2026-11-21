@@ -58,7 +58,6 @@ export const SIDEBAR = {
     ]),
     group("Machine setup", [
       ["Set up a worker server", "/provision/worker-server"],
-      ["Install Node.js", "/provision/node"],
     ]),
     group("Project environment", [
       ["Prepare a worktree environment", "/provision/guide"],

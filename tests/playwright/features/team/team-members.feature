@@ -1,0 +1,144 @@
+@feature:team-members
+Feature: Managing a team's members keeps focus and says what happened
+  Every action on the team Members tab re-renders the members island only,
+  puts focus where the action left the user and announces its result in the
+  live region. Adding opens a dialog from the page header's Add member. A
+  roster row only opens the member's page, which holds the role pick and
+  Remove; removing asks first, in place, and returns to the roster. Each action has a keyboard-only variant. `both-bakeries` is a workspace member who is not on Design Crew;
+  every scenario removes them again, so the feature is re-runnable.
+
+  Scenario: Adding a member returns focus to Add member and announces it
+    Given I am signed in as "north-lead"
+    And the team "Design Crew" has no member "both-bakeries"
+    And I visit the team "Design Crew" tab "Members"
+    When I add the member "both-bakeries"
+    Then Add member has focus
+    And the screen reader hears "Added both-bakeries as Member."
+    And the document was not reloaded
+    And the add dialog does not offer "both-bakeries"
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
+
+  # Two people in one submit: Tab takes the highlighted match as a chip and
+  # stays in the field; with nothing typed, Tab moves on to the role, Cancel
+  # and Add member. `fixture-profile` is a workspace member on no team.
+  Scenario: Adding two members with the keyboard only
+    Given I am signed in as "north-lead"
+    And the team "Design Crew" has no member "both-bakeries"
+    And the team "Design Crew" has no member "fixture-profile"
+    And I visit the team "Design Crew" tab "Members"
+    When I move focus to Add member
+    And I press the key "Enter"
+    Then the add dialog is open
+    When I type the name "both-bakeries"
+    And I press the key "Tab"
+    And I type the name "fixture-profile"
+    And I press the key "Tab"
+    And I press the key "Tab"
+    And I press the key "Tab"
+    And I press the key "Tab"
+    And I press the key "Enter"
+    Then Add member has focus
+    And the screen reader hears "Added 2 members as Member."
+    And the members list has the member "both-bakeries"
+    And the members list has the member "fixture-profile"
+    When I remove the member "both-bakeries"
+    And I remove the member "fixture-profile"
+    Then the members list has no member "both-bakeries"
+    And the members list has no member "fixture-profile"
+
+  Scenario: Changing a role keeps focus on that member's role control
+    Given I am signed in as "north-lead"
+    And the team "Design Crew" has no member "both-bakeries"
+    And I visit the team "Design Crew" tab "Members"
+    And I add the member "both-bakeries"
+    Then the member row "both-bakeries" only opens the member's page
+    When I open the member "both-bakeries"
+    And I pick the role "lead" for the member "both-bakeries"
+    Then the member "both-bakeries" shows the role "Lead"
+    And the role control of the member "both-bakeries" has focus
+    And the screen reader hears "both-bakeries is now Lead."
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
+
+  Scenario: The newest member comes first and a role change keeps the order
+    Given I am signed in as "north-lead"
+    And the team "Design Crew" has no member "both-bakeries"
+    And I visit the team "Design Crew" tab "Members"
+    And I add the member "both-bakeries"
+    Then the first member is "both-bakeries"
+    When I note the order of the members
+    And I open the member "both-bakeries"
+    And I pick the role "lead" for the member "both-bakeries"
+    Then the member "both-bakeries" shows the role "Lead"
+    When I return to the members list
+    Then the members keep the noted order
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
+
+  Scenario: Changing a role with the keyboard only
+    Given I am signed in as "north-lead"
+    And the team "Design Crew" has no member "both-bakeries"
+    And I visit the team "Design Crew" tab "Members"
+    And I add the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I move focus to the role control of the member "both-bakeries"
+    And I press the key "Enter"
+    And I press the key "ArrowDown"
+    And I press the key "Enter"
+    Then the member "both-bakeries" shows the role "Lead"
+    And the role control of the member "both-bakeries" has focus
+    And the screen reader hears "both-bakeries is now Lead."
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
+
+  Scenario: Removing asks first, and Escape cancels back to the remove control
+    Given I am signed in as "north-lead"
+    And the team "Design Crew" has no member "both-bakeries"
+    And I visit the team "Design Crew" tab "Members"
+    And I add the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I open the remove confirmation for the member "both-bakeries"
+    Then a confirmation asks "Remove both-bakeries?"
+    And the confirmation Cancel has focus
+    When I press the key "Escape"
+    Then no confirmation is open
+    And the remove control of the member "both-bakeries" has focus
+    And the member "both-bakeries" shows the role "Member"
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
+
+  Scenario: Removing a member with the keyboard only
+    Given I am signed in as "north-lead"
+    And the team "Design Crew" has no member "both-bakeries"
+    And I visit the team "Design Crew" tab "Members"
+    And I add the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I move focus to the remove control of the member "both-bakeries"
+    And I press the key "Enter"
+    Then the confirmation Cancel has focus
+    When I press the key "Tab"
+    And I press the key "Enter"
+    Then the address ends with "/members"
+    And the members list has no member "both-bakeries"
+    And the page says "Removed both-bakeries."
+
+  Scenario: A team lead without the workspace rank sees the roster without controls
+    Given I am signed in as "fixture-team-lead"
+    When I visit the team "North Crew" tab "Members"
+    Then the members list offers no controls
+    When I open the first member
+    Then the member page offers no controls
+
+  Scenario: A workspace guest sees the roster and a member's page without controls
+    Given I am signed in as "north-guest"
+    When I visit the team "Platform Crew" tab "Members"
+    Then the members list offers no controls
+    When I open the first member
+    Then the member page offers no controls
+
+  Scenario: On a phone every member row still shows the name
+    Given I am signed in as "north-lead"
+    And I visit the team "Design Crew" tab "Members"
+    When I set the viewport to 390 by 844
+    Then every member row shows the person's name beside the mark

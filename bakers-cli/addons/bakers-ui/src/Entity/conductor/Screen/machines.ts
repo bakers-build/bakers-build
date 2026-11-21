@@ -1,9 +1,8 @@
 import { actionItem } from '../../../Component/footer-actions/index.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
-import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
 import { ListScreen } from '../../../Screen/list-screen.js';
-import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
+import type { ScreenContext } from '../../../Screen/screen.js';
 import type { Page } from '../../collection.js';
 import { resolveWhoCandidate } from '../../user/Data/users.js';
 import {
@@ -12,12 +11,11 @@ import {
   type MachineRow,
 } from '../Data/machines.js';
 import { OwnerIdentity } from '../Data/own-rows.js';
-import { restartRunsRequest } from './restart-runs.js';
 
 /**
  * Machines — the root level of the conductor cockpit: the operator's
- * machines, each opening its conductors. `r` restarts the runs of an owned
- * machine behind a confirmation.
+ * machines, each opening its machine detail (Overview, Conductors), where
+ * Restart runs lives.
  */
 export class MachinesScreen extends ListScreen<MachineRow> {
   static readonly route = {
@@ -62,20 +60,9 @@ export class MachinesScreen extends ListScreen<MachineRow> {
     };
   }
 
-  /** Restart runs only on a machine the operator owns. */
-  private owned(): MachineRow | undefined {
-    const row = this.rows[this.selectedIndex];
-    return row && this.ownerId && row.ownerUserId === this.ownerId
-      ? row
-      : undefined;
-  }
-
   protected actions() {
     return [
-      ...(this.owned()
-        ? [actionItem('machines-restart', 'r', 'restart runs')]
-        : []),
-      actionItem('machines-enter', 'Enter', 'conductors'),
+      actionItem('machines-enter', 'Enter', 'open'),
       actionItem('machines-tab', 'Tab', 'tabs'),
     ];
   }
@@ -83,7 +70,7 @@ export class MachinesScreen extends ListScreen<MachineRow> {
   activate(index: number, context: ScreenContext): boolean {
     const row = this.rows[index];
     if (!row || !context.navigate) return false;
-    context.navigate('conductors', { machineId: row.id });
+    context.navigate('machine.overview', { machineId: row.id });
     return true;
   }
 
@@ -91,19 +78,6 @@ export class MachinesScreen extends ListScreen<MachineRow> {
     if (super.handleInput(input, context)) return true;
     if (input === 'enter') return this.activate(this.selectedIndex, context);
     return this.handleCursorInput(input, context);
-  }
-
-  actionForInput(input: string): ScreenAction | undefined {
-    const row = input === 'r' ? this.owned() : undefined;
-    if (!row) return undefined;
-    return confirmNavigation(
-      restartRunsRequest({
-        level: 'machine',
-        label: row.name,
-        conductorIds: row.conductorIds,
-        online: row.online,
-      }),
-    );
   }
 
   override reset(): void {

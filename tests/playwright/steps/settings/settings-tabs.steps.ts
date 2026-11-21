@@ -301,3 +301,25 @@ Then('the stranger is denied', async () => {
 Then('the rail links {string}', async ({ page }, name: string) => {
   await expect(page.locator(RAIL_ISLAND).getByRole('link', { name, exact: true })).toBeVisible();
 });
+
+// Any entity's Settings form, its fields named by label. Consumers:
+// features/entity-detail, conductors, machines.
+function settingsForm(page: Page) {
+  return page.locator('form[data-bakers-tab-body="settings"]');
+}
+
+When('I set {string} to {string} on the Settings', async ({ page }, label: string, value: string) => {
+  await settingsForm(page).getByLabel(label, { exact: true }).fill(value);
+});
+
+When('I choose {string} for {string} on the Settings', async ({ page }, values: string, label: string) => {
+  await settingsForm(page).getByLabel(label, { exact: true }).selectOption(values.split(', '));
+});
+
+Then('the Settings offer {string}', async ({ page }, label: string) => {
+  await expect(settingsForm(page).getByLabel(label, { exact: true })).toBeEditable({ timeout: 10000 });
+});
+
+Then('the Settings offer the action {string}', async ({ page }, name: string) => {
+  await expect(settingsForm(page).getByRole('link', { name, exact: true })).toBeVisible();
+});

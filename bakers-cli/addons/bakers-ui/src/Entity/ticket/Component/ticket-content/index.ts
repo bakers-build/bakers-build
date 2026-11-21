@@ -20,6 +20,7 @@ import {
   FOREGROUND_ACTIVE,
   FOREGROUND_HIGHLIGHT,
 } from '../../../../lib/theme.js';
+import { linkRuns } from '../../../../lib/ticket-links.js';
 import {
   BOLD,
   DIM,
@@ -39,8 +40,8 @@ import {
   ticketContentRowId,
 } from './model.js';
 
-// Links are NOT here: a URL cannot fit the narrow sidebar without wrapping, so
-// they render full-width in the left column (see linksSection) instead.
+// Links are NOT here: they render at the top of the left column (see
+// linksSection), above the documents, so they are visible without scrolling.
 export const SIDEBAR_TABS = [
   { id: 'details', label: 'Details' },
   { id: 'related', label: 'Related' },
@@ -319,6 +320,10 @@ const headlineContent = (
   );
 };
 
+// Nerd Font glyphs (nf-fa-link, nf-fa-file_text); without that font the terminal shows a box.
+const LINKS_ICON = '\uf0c1';
+const SUMMARY_ICON = '\uf15c';
+
 const overviewDocuments = (
   id: string,
   documents: readonly TicketContentEntry[],
@@ -331,6 +336,7 @@ const overviewDocuments = (
       HeadlineMarkdown({
         id: `${id}-${entry.key}`,
         headline: documentTabLabel(entry.title),
+        ...(entry.title === 'Latest summary' ? { marker: SUMMARY_ICON } : {}),
         headlineId: ticketContentRowId(entry.key),
         onMouseDown: () => activate(entry, props.select, props.toggle),
         paddingBottom: 1,
@@ -592,19 +598,36 @@ const addonsCard = (
 const linksSection = (
   id: string,
   links: readonly TicketProperty[],
-  activateProperty: ((item: TicketProperty) => void) | undefined,
 ): VNode | null => {
-  // Drop the `none` placeholder linkProperties emits for a linkless ticket, so
-  // the section is omitted entirely rather than painting "links : none".
-  const real = links.filter(
-    (item) => item.value !== 'none' && item.value !== '',
+  // No served URL and no links: no section at all, never "links : none".
+  if (links.length === 0) return null;
+  // AC-7: one `* <full URL>` row per link, an OSC 8 link the terminal opens
+  // and copies (AC-2). A fixed list per draw, so the ids survive a resize (AC-8).
+  const rows = links.map((item, index) =>
+    paragraphNode({
+      id: `${id}-items-${index}`,
+      runs:
+        item.href === undefined
+          ? [plainRun(`${item.key}: ${item.value}`)]
+          : linkRuns(item.href),
+      fg: FOREGROUND_HIGHLIGHT,
+      // Char wrap keeps `* ` on the URL's row; word wrap would orphan it.
+      ...(item.href === undefined ? {} : { wrapMode: 'char' as const }),
+    }),
   );
-  if (real.length === 0) return null;
   return HeadlineMarkdown({
     id,
     headline: 'links',
-    paddingBottom: 1,
-    children: [properties(`${id}-items`, real, activateProperty)],
+    marker: LINKS_ICON,
+    // The documents' marginTop spaces them; HeadlineMarkdown's default would add a row.
+    paddingBottom: 0,
+    children: [
+      h(
+        BoxRenderable,
+        { id: `${id}-items`, flexDirection: 'column', width: '100%' },
+        ...rows,
+      ),
+    ],
   });
 };
 
@@ -617,11 +640,7 @@ const overview = (id: string, props: TicketContentProps): VNode => {
   const { model } = props;
   const wide = props.terminalColumns >= WIDE_OVERVIEW_COLUMNS;
   const main = model.entries.filter((entry) => entry.key !== TECHNICAL_KEY);
-  const links = linksSection(
-    `${id}-links`,
-    model.sidebar?.links ?? [],
-    props.activateProperty,
-  );
+  const links = linksSection(`${id}-links`, model.sidebar?.links ?? []);
   const sidebar =
     model.sidebar === undefined
       ? null
@@ -654,10 +673,11 @@ const overview = (id: string, props: TicketContentProps): VNode => {
         // Side by side it yields WIDTH to the sidebar; stacked, nothing may
         // squeeze its height below the documents it holds.
         flexShrink: sideBySide ? 1 : 0,
-        gap: sideBySide ? 0 : 2,
       },
-      overviewDocuments(`${id}-documents`, main, props),
+      // Links first: directly under the header at both widths. The documents'
+      // marginTop alone spaces them, one row as between two documents.
       ...(links === null ? [] : [links]),
+      overviewDocuments(`${id}-documents`, main, props),
     ),
     ...(side === null
       ? []

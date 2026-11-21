@@ -50,6 +50,7 @@ final class ProfileGrantsNothingTest extends KernelTestBase {
     ] as $type) {
       $this->installEntitySchema($type);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['user']);
     $this->createUser([], 'uid1-dummy');
   }

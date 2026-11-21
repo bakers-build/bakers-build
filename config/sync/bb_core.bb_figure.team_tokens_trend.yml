@@ -23,6 +23,9 @@ filters:
     default: week
     options:
       -
+        value: day
+        label: Day
+      -
         value: week
         label: Week
       -

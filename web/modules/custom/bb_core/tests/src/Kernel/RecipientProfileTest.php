@@ -57,6 +57,7 @@ final class RecipientProfileTest extends KernelTestBase {
     ] as $type) {
       $this->installEntitySchema($type);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['user']);
     // UID 1 dummy so entity ownership checks never land on UID 0.
     $this->createUser([], 'uid1-dummy');

@@ -8,7 +8,6 @@ use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Core\Url;
 use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbRun;
 use Drupal\bb_core\Entity\BbRunInterface;
@@ -216,93 +215,21 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
   }
 
   /**
-   * The row's trailing cells: the stall or Retry and Re-dispatch, Cancel, Log.
+   * The row's trailing cell: why a failed run cannot be retried, if so.
    *
-   * The interventions on a run live on its row and open their confirmation
-   * in the overlay; without JavaScript the link opens the same page. A
-   * failed run that may not be retried names the ticket's stall instead.
+   * The row is one link to the run; Retry, Re-dispatch, Cancel run and the
+   * logs live on the run detail.
    *
    * @return array<string, array<string, mixed>>
-   *   The cells keyed `stall`, `retry`, `redispatch`, `cancel` and `log`.
+   *   The `stall` cell, or none.
    */
   private function actionCells(BbRunInterface $run): array {
     $ticket = $run->getTicket();
-    $cells = [];
-    if ($ticket instanceof BbTicketInterface) {
-      $stall = TicketInterventions::retryStall($run, $ticket);
-      if ($stall !== '') {
-        $cells['stall'] = ['kind' => 'badge'] + TicketStallReason::badge($stall, $ticket->getFrozenAt());
-      }
-      if (TicketInterventions::mayRetryRun($run, $ticket)) {
-        $cells['retry'] = $this->runAction($ticket, $run, TicketInterventions::RETRY, (string) $this->t('Retry'), 'neutral', 'play');
-      }
-      if (TicketInterventions::mayRedispatchRun($run, $ticket)) {
-        $cells['redispatch'] = $this->runAction($ticket, $run, TicketInterventions::REDISPATCH, (string) $this->t('Re-dispatch'), 'ghost', '');
-      }
-      if (TicketInterventions::mayCancelActiveRun($run, $ticket)) {
-        $cells['cancel'] = [
-          'kind' => 'action',
-          'label' => (string) $this->t('Cancel run'),
-          'variant' => 'danger',
-          'href' => TicketInterventions::confirmationUrl($ticket, $run, FALSE)->toString(),
-          'hx' => TicketInterventions::dialogHx($ticket, $run),
-        ];
-      }
+    if (!$ticket instanceof BbTicketInterface) {
+      return [];
     }
-    return $cells + array_filter(['log' => $this->logCell($run)]);
-  }
-
-  /**
-   * A Retry or Re-dispatch action that opens its confirmation in the overlay.
-   *
-   * @return array<string, mixed>
-   *   The `action` cell.
-   */
-  private function runAction(BbTicketInterface $ticket, BbRunInterface $run, string $action, string $label, string $variant, string $icon): array {
-    return [
-      'kind' => 'action',
-      'label' => $label,
-      'variant' => $variant,
-      'icon' => $icon,
-      'href' => TicketInterventions::runActionUrl($ticket, $run, $action, FALSE)->toString(),
-      'hx' => TicketInterventions::runActionHx($ticket, $run, $action),
-    ];
-  }
-
-  /**
-   * The row's Log action, which downloads its captured log, or NULL.
-   *
-   * 'log' is preferred over 'error_log' when both are captured, because a
-   * transcript is what an operator scanning the ticket's run history reaches
-   * for first; the error log is one click further, on the run's own detail
-   * page. NULL when neither is stored — a link to a route that answers 204
-   * is a link to nothing, and this row already states that in `Log`/`Error
-   * log` on the run's own full view mode.
-   *
-   * @return array<string, mixed>|null
-   *   An `action` cell, or NULL.
-   */
-  private function logCell(BbRunInterface $run): ?array {
-    $kind = $run->hasLog('log') ? 'log' : ($run->hasLog('error_log') ? 'error_log' : NULL);
-    // The row already varies per user, so the log gate needs no own context.
-    if ($kind === NULL || !$run->access('view_log')) {
-      return NULL;
-    }
-    // `run_log_download_api`, never the
-    // workspace-prefixed route: this row has no resolved workspace slug in
-    // hand, only the run entity, and the API route's gate —
-    // `bb_run.view_log` — is identical.
-    return [
-      'kind' => 'action',
-      'label' => (string) $this->t('Log'),
-      'icon' => 'report',
-      // A download: a boosted request would swap the file into the island.
-      'full_load' => TRUE,
-      'href' => Url::fromRoute('bb_core.run_log_download_api', [
-        'bb_run' => $run->uuid(),
-        'kind' => $kind,
-      ])->toString(),
-    ];
+    $stall = TicketInterventions::retryStall($run, $ticket);
+    return $stall === '' ? [] : ['stall' => ['kind' => 'badge'] + TicketStallReason::badge($stall, $ticket->getFrozenAt())];
   }
 
   /**

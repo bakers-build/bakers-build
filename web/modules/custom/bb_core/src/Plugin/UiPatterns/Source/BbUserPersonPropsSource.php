@@ -5,26 +5,19 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\file\FileInterface;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * The three `person` props a `user` entity carries but no field states.
+ * The `person` props of a `user` entity, for the `user.user.compact` mapping.
  *
- * `initials` and `color` are derived as `BbPersonCellFormatter` derives
- * them, so one account has one mark everywhere. `picture` needs the `avatar`
- * image style URL, which no `field_property` source can reach. All five
- * props go through this one source: mixing it with generic sources left
- * props empty at render time.
- *.
+ * Initials, colour and picture are the account's computed `person_*` fields,
+ * the one place every person mark reads. All props go through this one
+ * source: mixing it with generic sources left props empty at render time.
  */
 #[Source(
   id: 'bb_user_person_props',
@@ -45,30 +38,6 @@ final class BbUserPersonPropsSource extends SourcePluginBase {
   private const string PROP_INITIALS = 'initials';
   private const string PROP_COLOR = 'color';
   private const string PROP_PICTURE = 'picture';
-
-  /**
-   * The entity type manager, injected in `create()`.
-   *
-   * `BbRunRowSource`'s pattern: `SourcePluginBase::__construct()` already
-   * takes ten arguments, so restating them to add an eleventh here would be
-   * the copy that rots when contrib adds one of its own.
-   */
-  protected EntityTypeManagerInterface $entityTypeManager;
-
-  /**
-   * The URL generator, for the fallback path when no `avatar` style exists.
-   */
-  protected FileUrlGeneratorInterface $fileUrlGenerator;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
-    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $instance->entityTypeManager = $container->get('entity_type.manager');
-    $instance->fileUrlGenerator = $container->get('file_url_generator');
-    return $instance;
-  }
 
   /**
    * {@inheritdoc}
@@ -98,28 +67,11 @@ final class BbUserPersonPropsSource extends SourcePluginBase {
       self::PROP_VARIANT => 'compact',
       self::PROP_SIZE => 'sm',
       self::PROP_DISPLAY_NAME => $this->personDisplayName($account),
-      self::PROP_INITIALS => $this->personInitials((string) $account->label()),
-      self::PROP_COLOR => $this->personColor((int) $account->id()),
-      self::PROP_PICTURE => $this->pictureUrl($account),
+      self::PROP_INITIALS => (string) $account->get('person_initials')->value,
+      self::PROP_COLOR => (string) $account->get('person_color')->value,
+      self::PROP_PICTURE => (string) $account->get('person_picture')->value,
       default => '',
     };
-  }
-
-  /**
-   * The account's profile picture, styled through `avatar`, or empty.
-   */
-  private function pictureUrl(UserInterface $account): string {
-    if (!$account->hasField('user_picture') || $account->get('user_picture')->isEmpty()) {
-      return '';
-    }
-    $file = $account->get('user_picture')->entity;
-    if (!$file instanceof FileInterface) {
-      return '';
-    }
-    $style = $this->entityTypeManager->getStorage('image_style')->load('avatar');
-    return $style !== NULL
-      ? $style->buildUrl($file->getFileUri())
-      : $this->fileUrlGenerator->generateAbsoluteString($file->getFileUri());
   }
 
   /**

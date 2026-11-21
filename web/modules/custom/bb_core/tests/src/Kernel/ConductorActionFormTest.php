@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\Element;
 use Drupal\KernelTests\KernelTestBase;
@@ -13,11 +14,11 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Disable/Enable confirmation and the Identity card Save of a conductor.
+ * Disable/Enable confirmation and the Settings Save of a conductor.
  *
  * Opening a confirmation writes nothing; only the posted confirm button
  * writes, and only the active flag, after re-reading the conductor. The
- * Identity card Save writes only the label.
+ * Settings Save writes only the offered fields.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -129,13 +130,14 @@ final class ConductorActionFormTest extends KernelTestBase {
   }
 
   /**
-   * Identity Save writes only the offered fields onto fresh data.
+   * Settings Save writes only the offered fields onto fresh data.
    */
-  public function testIdentitySaveKeepsActivityAndTelemetry(): void {
-    $form_object = $this->container->get('entity_type.manager')->getFormObject('bb_conductor', 'identity');
-    $form = $this->container->get('entity.form_builder')->getForm($this->reload(), 'identity');
+  public function testSettingsSaveKeepsActivityAndTelemetry(): void {
+    $this->installSettingsFormDisplay();
+    $form_object = $this->container->get('entity_type.manager')->getFormObject('bb_conductor', 'settings');
+    $form = $this->container->get('entity.form_builder')->getForm($this->reload(), 'settings');
     self::assertArrayHasKey('label', $form);
-    // The card offers the states the conductor serves.
+    // Settings offer the states the conductor serves.
     self::assertArrayHasKey('states', $form);
     $protected_fields = [
       'active', 'status', 'owner_user_id', 'project_id',
@@ -145,17 +147,17 @@ final class ConductorActionFormTest extends KernelTestBase {
       self::assertArrayNotHasKey($protected, $form, $protected . ' is not editable here.');
     }
     self::assertSame('Save', (string) $form['actions']['submit']['#value']);
-    // The administrator may delete the conductor from its card.
-    self::assertArrayHasKey('delete', $form['actions']);
+    // The administrator may delete the conductor from its Settings.
+    self::assertSame('Delete conductor', (string) ($form['danger_zone']['#props']['title'] ?? ''));
 
-    // A heartbeat and a deactivation land after the box was opened.
+    // A heartbeat and a deactivation land after Settings was opened.
     $fresh = $this->reload();
     $fresh->set('reported_load', 3)->set('active', FALSE)->save();
 
     $form_object->setEntity($this->reload());
     $state = (new FormState())->setRequestMethod('POST')->setValues([
       'label' => [['value' => 'Renamed']],
-      // Forged values for fields the box does not offer.
+      // Forged values for fields Settings does not offer.
       'active' => ['value' => 1],
       'status' => 'online',
       'reported_load' => [['value' => 9]],
@@ -169,6 +171,18 @@ final class ConductorActionFormTest extends KernelTestBase {
     self::assertSame($fresh->get('status')->value, $saved->get('status')->value);
     self::assertFalse((bool) $saved->get('active')->value, 'Save does not re-activate.');
     self::assertSame(3, (int) $saved->get('reported_load')->value, 'Save keeps the heartbeat.');
+  }
+
+  /**
+   * Writes the shipped conductor `settings` form display.
+   */
+  private function installSettingsFormDisplay(): void {
+    $name = 'core.entity_form_display.bb_conductor.bb_conductor.settings';
+    $file = dirname(DRUPAL_ROOT) . '/recipes/bakers/config/' . $name . '.yml';
+    self::assertFileExists($file);
+    $data = Yaml::decode((string) file_get_contents($file));
+    $data['uuid'] = $this->container->get('uuid')->generate();
+    $this->container->get('config.storage')->write($name, $data);
   }
 
   /**

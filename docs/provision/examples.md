@@ -22,7 +22,7 @@ The [Docker Compose example](/provision/docker-compose) shows setup, readiness a
 
 A Node.js application can run directly on the machine. Install its locked dependencies in each worktree, give concurrent servers different ports and keep writable application data separate.
 
-The [Node.js project example](/provision/node-project) uses the repository's package manager and scripts. A project-specific `provision_up` command can prepare and check a running application when needed. No container runtime or Node provisioning addon is required. The Node.js installation needed by the bakers.build CLI is a separate [machine prerequisite](/provision/node).
+The [Node.js project example](/provision/node-project) uses the repository's package manager and scripts. A project-specific `provision_up` command can prepare and check a running application when needed. No container runtime or Node provisioning addon is required. The Node.js installation needed by the bakers.build CLI is a separate [machine prerequisite](/get-started/#set-up-your-computer).
 
 ## Use another environment
 

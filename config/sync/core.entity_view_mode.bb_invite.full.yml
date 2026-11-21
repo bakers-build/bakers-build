@@ -1,0 +1,11 @@
+uuid: 2aeace97-386e-4ea6-8d65-b1f12e502d79
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_invite.full
+label: Full
+description: ''
+targetEntityType: bb_invite
+cache: true

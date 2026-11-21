@@ -1,0 +1,10 @@
+{# A multiple select whose chosen options show as chips: the select stays the
+   submitted value inside bb_theme:chip_field (list mode). #}
+{% set bb_options = options|map(option => option|merge({ 'label': option.label ~ '', 'value': option.value ~ '' })) %}
+{{ include('bb_theme:chip_field', {
+  label: 'People'|t,
+  mode: 'list',
+  placeholder: 'Type a name'|t,
+  remove_label: 'Remove @label'|t,
+  field: include('bb_theme:form_select', { attributes: attributes, options: bb_options }, with_context = false),
+}, with_context = false) }}

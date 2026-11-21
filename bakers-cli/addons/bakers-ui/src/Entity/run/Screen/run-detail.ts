@@ -14,7 +14,8 @@ import {
   runDetailTree,
   runResource,
 } from '../Component/run-detail/index.js';
-import { isRunCancellable } from '../Form/edit.js';
+import { ticketRunRows } from '../Data/runs.js';
+import { offersCancelRun } from '../Form/edit.js';
 import { cancelRunRequest } from './run-actions.js';
 
 export interface RunDetailInput {
@@ -28,7 +29,7 @@ export const runDetailInputContext = defineContext<RunDetailInput>(
 
 /**
  * Run detail — normal {@link AsyncScreen}. The document arrives via navigation
- * context (or empty); refresh is the shared R / ui-refresh path, which refetches
+ * context, or is read here when a run list opens the run without one; refresh is the shared R / ui-refresh path, which refetches
  * the ticket with its runs so a new run state shows.
  */
 export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
@@ -64,7 +65,11 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
 
   protected load(context: ScreenContext): Promise<TicketDetailDocument> {
     const id = context.params?.ticketId;
-    if (this.refetch && context.services && id) {
+    const snapshot = context.contexts?.has(runDetailInputContext)
+      ? context.contexts.get(runDetailInputContext).document
+      : undefined;
+    // A run list opens the run without a snapshot (BAKERS-338): read it then.
+    if ((this.refetch || !snapshot) && context.services && id) {
       this.refetch = false;
       // Fetched here, not through the ticket slice's store: ticket imports run.
       return context.services.client.get(
@@ -72,11 +77,7 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
         new DrupalJsonApiParams().addInclude(['runs']),
       ) as Promise<TicketDetailDocument>;
     }
-    if (context.contexts?.has(runDetailInputContext))
-      return Promise.resolve(
-        context.contexts.get(runDetailInputContext).document,
-      );
-    return Promise.resolve({});
+    return Promise.resolve(snapshot ?? {});
   }
 
   protected renderLoading(): string[] {
@@ -106,7 +107,11 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
   ): void {
     const run = runResource(document, context.params?.runId);
     this.cancellable =
-      !!run && isRunCancellable(String(run.attributes?.state ?? ''));
+      !!run &&
+      offersCancelRun(
+        String(run.attributes?.state ?? ''),
+        ticketRunRows(document)[0]?.id === run.id,
+      );
   }
 
   protected actions() {

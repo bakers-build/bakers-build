@@ -137,16 +137,41 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The former Settings url leads to the Overview's cards.
+   * The former edit url still leads to View.
    */
-  public function testFormerSettingsUrlIsRetired(): void {
+  public function testFormerEditUrlIsRetired(): void {
     $retired = $this->container->get('router.route_provider')
-      ->getRouteByName('bb_core.bb_machine.settings');
+      ->getRouteByName('bb_core.bb_machine.edit_retired');
     self::assertSame('/user/{user}/machine/{bb_machine}/edit', $retired->getPath());
     self::assertSame(RetiredEditSurfaceController::class . '::redirect', $retired->getDefault('_controller'));
     self::assertSame('bb_machine.view', $retired->getRequirement('_entity_access'));
     self::assertSame('TRUE', $retired->getRequirement('_bb_machine_owner_match'));
     self::assertFalse($retired->getOption('_admin_route'));
+  }
+
+  /**
+   * Settings is the owner's edit form in the user area.
+   */
+  public function testSettingsIsTheOwnersEditForm(): void {
+    $settings = $this->container->get('router.route_provider')
+      ->getRouteByName('bb_core.bb_machine.settings');
+    self::assertSame('/user/{user}/machine/{bb_machine}/settings', $settings->getPath());
+    self::assertSame('bb_machine.settings', $settings->getDefault('_entity_form'));
+    self::assertSame('bb_machine.update', $settings->getRequirement('_entity_access'));
+    self::assertSame('TRUE', $settings->getRequirement('_bb_machine_owner_match'));
+    self::assertFalse($settings->getOption('_admin_route'));
+  }
+
+  /**
+   * Settings offer Delete in a danger zone to who may delete, not the owner.
+   */
+  public function testSettingsOfferDeleteOnlyToWhoMayDelete(): void {
+    $builder = $this->container->get('entity.form_builder');
+    $this->actAs($this->accounts['lead']);
+    self::assertArrayNotHasKey('danger_zone', $builder->getForm($this->labelled, 'settings'));
+    $this->actAs($this->createAccount('machine-admin', ['administer bakers']));
+    $form = $builder->getForm($this->labelled, 'settings');
+    self::assertSame('Delete machine', (string) ($form['danger_zone']['#props']['title'] ?? ''));
   }
 
   /**
@@ -163,7 +188,7 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * View is the only product tab; there are no admin routes.
+   * View and Settings are the product tabs; there are no admin routes.
    */
   public function testViewIsTheProductTabAndNoAdminRoutes(): void {
     self::assertSame([], $this->container->get('router.route_provider')->getRoutesByNames([
@@ -173,12 +198,24 @@ final class MachineOverviewTest extends KernelTestBase {
     ]));
 
     self::assertSame(
-      ['entity.bb_machine.canonical'],
+      ['entity.bb_machine.canonical', 'bb_core.bb_machine.settings'],
       $this->tabRoutesOn('entity.bb_machine.canonical', $this->accounts['lead']),
     );
     self::assertSame(
-      ['View'],
+      ['View', 'Settings'],
       $this->tabTitlesOn('entity.bb_machine.canonical', $this->accounts['lead']),
+    );
+  }
+
+  /**
+   * Another account sees no Settings tab.
+   *
+   * Its own test: the tab manager caches one route's tabs per instance.
+   */
+  public function testOthersSeeNoSettingsTab(): void {
+    self::assertNotContains(
+      'bb_core.bb_machine.settings',
+      $this->tabRoutesOn('entity.bb_machine.canonical', $this->accounts['contributor']),
     );
   }
 
@@ -227,9 +264,9 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The Overview lists the machine's conductors, Restart runs for the owner.
+   * The Overview lists the machine's conductors, each row one link.
    */
-  public function testOverviewListsConductorsWithRestartRunsForTheOwner(): void {
+  public function testOverviewListsConductorsAsLinks(): void {
     $shipped = (string) file_get_contents(dirname(DRUPAL_ROOT) . '/recipes/bakers/config/core.entity_view_display.bb_machine.bb_machine.full.yml');
     self::assertStringContainsString("plugin_id: 'views_block:conductors-machine_conductors'", $shipped);
     self::assertStringContainsString('source_id: bb_machine_actions', $shipped);
@@ -242,7 +279,7 @@ final class MachineOverviewTest extends KernelTestBase {
       'owner_user_id' => $this->accounts['lead']->id(),
       'status' => 'online',
     ];
-    $this->create('bb_conductor', $conductor + [
+    $north = $this->create('bb_conductor', $conductor + [
       'conductor_id' => 'c-north',
       'label' => 'North conductor',
       'machine' => $this->labelled->id(),
@@ -253,16 +290,33 @@ final class MachineOverviewTest extends KernelTestBase {
     $html = $this->renderMachineConductors();
     self::assertStringContainsString('North conductor', $html);
     self::assertStringNotContainsString('South conductor', $html);
-    self::assertStringContainsString('Restart runs', $html);
-    // The row action opens its confirmation in the overlay, like the buttons.
-    self::assertStringContainsString('hx-target="#bakers-overlay"', $html);
-    self::assertStringContainsString('_wrapper_format=island_dialog', $html);
-
-    $admin = $this->createAccount('admin', ['administer bakers']);
-    $this->container->get('account_switcher')->switchTo($admin);
-    $html = $this->renderMachineConductors();
-    self::assertStringContainsString('North conductor', $html);
+    self::assertStringContainsString('>Platform<', $html, 'Each conductor row names its project.');
+    // A row is one link, to the conductor; Restart runs is on its detail.
     self::assertStringNotContainsString('Restart runs', $html);
+    preg_match_all('/<a\s[^>]*href="([^"]*)"/', $html, $links);
+    self::assertSame([$north->toUrl()->toString()], array_map('html_entity_decode', $links[1]));
+  }
+
+  /**
+   * The conductor overview names each conductor's project.
+   */
+  public function testConductorOverviewNamesTheProject(): void {
+    $this->installShippedView('views.view.conductors');
+    $group = $this->create('bb_group', ['name' => 'Core', 'workspace_id' => $this->home->id()]);
+    $project = $this->create('bb_project', ['name' => 'Platform', 'group_id' => $group->id()]);
+    $this->create('bb_conductor', [
+      'conductor_id' => 'c-north',
+      'label' => 'North conductor',
+      'project_id' => $project->id(),
+      'owner_user_id' => $this->accounts['lead']->id(),
+      'status' => 'online',
+    ]);
+
+    $this->container->get('account_switcher')->switchTo($this->accounts['lead']);
+    $build = Views::getView('conductors')->executeDisplay('user_list', [(string) $this->accounts['lead']->id()]);
+    $html = (string) $this->container->get('renderer')->renderInIsolation($build);
+    self::assertStringContainsString('North conductor', $html);
+    self::assertStringContainsString('>Platform<', $html);
   }
 
   /**
@@ -280,23 +334,29 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The owner reaches Overview and is sent there from Edit; others are refused.
+   * The owner reaches View and Settings and is sent to View from Edit.
+   *
+   * Others are refused.
    */
-  public function testLeadReachesOverviewAndEditAndGuestIsForbidden(): void {
+  public function testLeadReachesOverviewAndSettingsAndGuestIsForbidden(): void {
     $overview = '/user/' . $this->accounts['lead']->id() . '/machine/' . $this->labelled->id();
     $edit = $overview . '/edit';
+    $settings = $overview . '/settings';
 
     $this->actAs($this->accounts['lead']);
     self::assertSame(200, $this->statusOf($overview));
     self::assertSame(302, $this->statusOf($edit));
+    self::assertSame(200, $this->statusOf($settings));
 
     $this->actAs($this->accounts['contributor']);
     self::assertSame(403, $this->statusOf($overview));
     self::assertSame(403, $this->statusOf($edit));
+    self::assertSame(403, $this->statusOf($settings));
 
     $this->actAs($this->accounts['guest']);
     self::assertSame(403, $this->statusOf($overview));
     self::assertSame(403, $this->statusOf($edit));
+    self::assertSame(403, $this->statusOf($settings));
   }
 
   /**
@@ -311,6 +371,8 @@ final class MachineOverviewTest extends KernelTestBase {
     self::assertSame(302, $this->statusOf($owner . '/edit'));
     self::assertSame(404, $this->statusOf($foreign));
     self::assertSame(404, $this->statusOf($foreign . '/edit'));
+    self::assertSame(200, $this->statusOf($owner . '/settings'));
+    self::assertSame(404, $this->statusOf($foreign . '/settings'));
   }
 
   /**
@@ -365,7 +427,8 @@ final class MachineOverviewTest extends KernelTestBase {
     $manager->clearCachedDefinitions();
     $tabs = $manager->getLocalTasks($route_name, 0)['tabs'];
     $this->container->get('request_stack')->pop();
-    return $tabs;
+    // The manager marks a tab the account may not open; it never renders.
+    return array_filter($tabs, static fn (array $tab): bool => $tab['#access']->isAllowed());
   }
 
   /**

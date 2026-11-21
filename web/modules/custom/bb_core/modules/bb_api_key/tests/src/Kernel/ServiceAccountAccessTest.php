@@ -85,6 +85,7 @@ final class ServiceAccountAccessTest extends KernelTestBase {
     $this->installEntitySchema('bb_group');
     $this->installEntitySchema('bb_project');
     $this->installEntitySchema('bb_profile');
+    $this->installSchema('user', ['users_data']);
     $this->installEntitySchema('consumer');
     $this->installEntitySchema('oauth2_token');
     $this->installConfig(['system', 'user', 'og', 'bb_core', 'bb_api_key', 'simple_oauth']);

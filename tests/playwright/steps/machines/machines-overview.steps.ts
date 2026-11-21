@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 const { After } = createBdd(test);
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
-import { cardField, cardRow } from '../../support/detail-cards';
+import { cardRow } from '../../support/detail-cards';
 import { php } from '../../support/drush';
 import { SEARCH_TOOLBAR, safe } from '../../support/listing';
 import { CONTENT_ISLAND, markDocument } from '../../support/shell';
@@ -121,7 +121,7 @@ When('I visit the former edit address of the machine {string}', async ({ page },
 
 Then('the machine Overview shows its host key, max parallel and current load', async ({ page }) => {
   await expect(cardRow(page, 'Identity', 'Host key')).toContainText('e2e-host', { timeout: 10000 });
-  await expect(cardField(page, 'Identity', 'Max parallel')).toBeVisible();
+  await expect(cardRow(page, 'Identity', 'Max parallel')).toBeVisible();
   await expect(cardRow(page, 'Identity', 'Current load')).toBeVisible();
 });
 
@@ -175,13 +175,19 @@ After({ tags: '@machine-connection' }, async () => {
   connectionHost = undefined; connectionMachine = undefined;
 });
 
+Then('the machine Overview lists the conductor {string} as one link', async ({ page }, label: string) => {
+  const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
+  await expect(row, `The machine Overview lists no conductor "${label}"`).toBeVisible();
+  // The row's one link is the conductor; Restart runs is on its page.
+  await expect(row.locator('a')).toHaveCount(1);
+  await expect(row.getByRole('link', { name: label, exact: true })).toBeVisible();
+});
+
 Then(
-  'the machine Overview lists the conductor {string} with {string}',
-  async ({ page }, label: string, action: string) => {
-    const row = page.locator('[data-list-item], tr').filter({ hasText: label });
-    await expect(row.first(), `The machine Overview lists no conductor "${label}"`).toBeVisible();
-    // The operations menu is collapsed, so its links are in the DOM but hidden.
-    await expect(row.first().locator('a[href*="/restart"]').filter({ hasText: action })).toBeAttached();
+  'the machine Overview lists the conductor {string} in the project {string}',
+  async ({ page }, label: string, project: string) => {
+    const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
+    await expect(row, `The conductor "${label}" names no project "${project}"`).toContainText(project);
   },
 );
 
@@ -189,10 +195,13 @@ When('I open {string} on the machine', async ({ page }, name: string) => {
   await page.locator('[data-component-id="bb_theme:inspector"]').getByRole('link', { name, exact: true }).click();
 });
 
-When('I open {string} on the conductor {string}', async ({ page }, name: string, label: string) => {
-  const row = page.locator('[data-list-item], tr').filter({ hasText: label }).first();
-  await row.locator('[data-action-menu] summary').click();
-  await row.getByRole('menuitem', { name, exact: true }).click();
+When('I open the conductor {string} from the machine Overview', async ({ page }, label: string) => {
+  await page.locator('[data-list-item], tr').filter({ hasText: label }).first().getByRole('link', { name: label, exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 }).filter({ hasText: label })).toBeVisible();
+});
+
+When('I open {string} on the conductor page', async ({ page }, name: string) => {
+  await page.locator('[data-component-id="bb_theme:inspector"]').getByRole('link', { name, exact: true }).click();
 });
 
 When('I press Escape in the Restart runs dialog', async ({ page }) => {

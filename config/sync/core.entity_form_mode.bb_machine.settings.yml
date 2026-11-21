@@ -1,0 +1,11 @@
+uuid: e2242cf9-2b81-4adc-82d9-0893ea5153fc
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_machine.settings
+label: Settings
+description: null
+targetEntityType: bb_machine
+cache: true

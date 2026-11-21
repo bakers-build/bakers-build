@@ -1,0 +1,11 @@
+uuid: 188eb55b-ca7f-4531-ba3f-679c9c4ef3b7
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_conductor.settings
+label: Settings
+description: null
+targetEntityType: bb_conductor
+cache: true

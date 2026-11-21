@@ -1,7 +1,11 @@
 import { ConductorLogScreen } from '../Entity/conductor/Screen/conductor-log.js';
 import { ConductorOverviewScreen } from '../Entity/conductor/Screen/conductor-overview.js';
 import { ConductorRunsScreen } from '../Entity/conductor/Screen/conductor-runs.js';
-import { ConductorsScreen } from '../Entity/conductor/Screen/conductors.js';
+import {
+  ConductorsScreen,
+  MachineConductorsScreen,
+} from '../Entity/conductor/Screen/conductors.js';
+import { MachineOverviewScreen } from '../Entity/conductor/Screen/machine-overview.js';
 import { MachinesScreen } from '../Entity/conductor/Screen/machines.js';
 import { ProjectConductorsScreen } from '../Entity/conductor/Screen/project-conductors.js';
 import { ProjectOverviewScreen } from '../Entity/project/Screen/project-overview.js';
@@ -69,6 +73,8 @@ export const bootLocationFor = (route?: ResolvedRoute): RouteLocation => {
 const BUILT_IN: readonly ScreenClass[] = [
   MyWorkScreen,
   MachinesScreen,
+  MachineOverviewScreen,
+  MachineConductorsScreen,
   ConductorsScreen,
   ConductorOverviewScreen,
   ConductorRunsScreen,

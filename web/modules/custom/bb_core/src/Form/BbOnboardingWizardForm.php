@@ -539,14 +539,16 @@ final class BbOnboardingWizardForm extends FormBase {
   /**
    * About-you fields: optional position and prior knowledge.
    *
-   * Prefilled from the profile of the account's first workspace.
+   * Prefilled from the profile of the account's first workspace, else from
+   * its default profile.
    */
   private function buildAboutFields(array &$form, UserInterface $user): void {
     $profile = $this->aboutProfiles($user)[0] ?? NULL;
+    $default = $this->profiles->defaultProfile((int) $user->id());
     $form['fields']['position'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Position'),
-      '#default_value' => $profile?->position() ?? '',
+      '#default_value' => $profile?->position() ?? $default['position'],
       '#required' => FALSE,
       '#maxlength' => 255,
       '#placeholder' => $this->t('e.g. Product Lead'),
@@ -554,7 +556,7 @@ final class BbOnboardingWizardForm extends FormBase {
     $form['fields']['background'] = [
       '#type' => 'textarea',
       '#title' => $this->t('What should bakers.build know about your background?'),
-      '#default_value' => $profile?->background() ?? '',
+      '#default_value' => $profile?->background() ?? $default['background'],
       '#required' => FALSE,
       '#rows' => 3,
     ];
@@ -563,8 +565,7 @@ final class BbOnboardingWizardForm extends FormBase {
   /**
    * The account's profile in each of its workspaces, unsaved where new.
    *
-   * The wizard has no workspace in context, so About you applies to all;
-   * without a workspace there is nowhere to keep it.
+   * The wizard has no workspace in context, so About you applies to all.
    *
    * @return list<\Drupal\bb_core\Entity\BbProfileInterface>
    *   The profiles, by workspace id.
@@ -797,13 +798,15 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
-   * Saves About-you fields from step 2 into each workspace's profile.
+   * Saves About-you fields as the default profile and in each workspace.
    */
   private function saveAbout(FormStateInterface $form_state): void {
-    foreach ($this->aboutProfiles($this->currentUserEntity()) as $profile) {
-      $profile->setPosition($this->optionalString($form_state, 'position') ?? '')
-        ->setBackground($this->optionalString($form_state, 'background') ?? '')
-        ->save();
+    $user = $this->currentUserEntity();
+    $position = $this->optionalString($form_state, 'position') ?? '';
+    $background = $this->optionalString($form_state, 'background') ?? '';
+    $this->profiles->setDefaultProfile((int) $user->id(), $position, $background);
+    foreach ($this->aboutProfiles($user) as $profile) {
+      $profile->setPosition($position)->setBackground($background)->save();
     }
   }
 

@@ -1,6 +1,6 @@
 # Machine
 
-`machine.config.js` is the private file that identifies one execution host and owns its preview-tunnel policy, agent harnesses and agent routes. The web UI lists this account's machines at `/user/{user}/machines`; a row opens View (UUID, max parallel, current load) and, for the owner holding `update own bb_machine`, Settings. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`. The Overview lists its conductors. **Restart runs** (owner only, on the machine or a conductor) cancels their active runs and each open ticket's newest failed run; each ticket gets one fresh run. `bakers ui` offers it on **Machines**.
+`machine.config.js` is the private file that identifies one execution host and owns its preview-tunnel policy, agent harnesses and agent routes. The web UI lists this account's machines at `/user/{user}/machines`; a row opens View (UUID, max parallel, current load) and, for the owner holding `update own bb_machine`, **Settings** (name, max parallel, assignment). The heartbeat creates a machine; **Delete** on Settings opens `/user/{user}/machine/{id}/delete`. The Overview lists its conductors. **Restart runs** (owner only) lists the covered tickets, all checked; **OK** cancels their runs and each gets one fresh run. `bakers ui`: `r` on a machine or conductor Overview.
 
 ## Location
 
@@ -65,7 +65,7 @@ Assigning means setting a conductor on a ticket or template. The machine's **Ass
 | `allow` | The owner and anyone who can view the conductor. |
 | `forbid` | The owner only; nobody else, administrators included. |
 
-A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`. Only the owner changes it, on the machine's Identity card in the web UI; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
+A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`. Only the owner changes it, on the machine's web UI **Settings**; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
 
 ## Preview-link tunnels
 

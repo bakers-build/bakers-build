@@ -211,13 +211,15 @@ describe('the project-scoped Conductors tab', () => {
     await quit(tui);
   });
 
-  it('`s` starts the selected conductor and reports the outcome (BB-450 review B6)', async () => {
+  it('Enter then `s` starts the conductor from its overview and reports the outcome (BB-450 review B6)', async () => {
     const host = fakeHost();
     const tui = await openProjectConductors({
       host,
       rows: [conductorDoc({ status: 'offline' })],
     });
 
+    await tui.press('\r');
+    await settle();
     await tui.press('s');
     await settle();
     await tui.renderOnce();
@@ -229,10 +231,12 @@ describe('the project-scoped Conductors tab', () => {
     await quit(tui);
   });
 
-  it('`x` stops the selected conductor, passing its pid (BB-450 review B6)', async () => {
+  it('Enter then `x` stops the conductor from its overview, passing its pid (BB-450 review B6)', async () => {
     const host = fakeHost();
     const tui = await openProjectConductors({ host });
 
+    await tui.press('\r');
+    await settle();
     await tui.press('x');
     await settle();
     await tui.renderOnce();
@@ -315,7 +319,26 @@ describe('the project-scoped Conductors tab', () => {
     await quit(tui);
   });
 
-  it('marks a conductor whose host_key is not this machine view-only, before any key is pressed, and hides Start/Stop (BB-450 review B9/B10)', async () => {
+  it('the list acts on no row: no Start/Stop, s/x do nothing', async () => {
+    const host = fakeHost();
+    const tui = await openProjectConductors({
+      host,
+      rows: [conductorDoc({ status: 'offline' })],
+    });
+
+    expect(text(tui)).toContain('Enter:Open');
+    expect(text(tui)).not.toContain('Start');
+    expect(text(tui)).not.toContain('Stop');
+    await tui.press('s');
+    await tui.press('x');
+    await settle();
+    expect(host.starts.length).toBe(0);
+    expect(host.stops.length).toBe(0);
+
+    await quit(tui);
+  });
+
+  it('marks a conductor overview whose host_key is not this machine view-only, before any key is pressed, and hides Start/Stop (BB-450 review B9/B10)', async () => {
     const host = fakeHost({ thisHostKey: 'cw-framework' });
     const tui = await openProjectConductors({
       host,
@@ -326,6 +349,8 @@ describe('the project-scoped Conductors tab', () => {
       machines: [machineDoc({ host_key: 'some-other-machine' })],
     });
 
+    await tui.press('\r');
+    await settle();
     expect(text(tui)).toContain('view-only');
     expect(text(tui)).not.toContain('Start');
     expect(text(tui)).not.toContain('Stop');
@@ -354,6 +379,8 @@ describe('the project-scoped Conductors tab', () => {
       ],
     });
 
+    await tui.press('\r');
+    await settle();
     await tui.press('s');
 
     expect(host.starts.length).toBe(0);

@@ -1,5 +1,5 @@
 // The Members settings screen's invite dialog, exercised end to end: open it
-// through the Members zone's "Invite members" action, fill the e-mail textarea,
+// through the page header's "Invite members" action, fill the e-mail textarea,
 // pick in the role and team pills, submit, and read the mails Mailpit actually
 // received. `invitation.feature` seeds its invitation through the service; this
 // feature is the other half, proving the dialog is what creates one.
@@ -8,9 +8,10 @@ import { Drush } from '../../support/drush';
 import { test, expect } from '../../bdd.fixtures';
 import { messagesFor, clearMailboxFor } from '../../support/login-flow';
 import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
+import { MEMBERS_ISLAND, markDocument } from '../../support/shell';
 import type { Page } from '@playwright/test';
 
-const { Given, When, Then } = createBdd(test);
+const { Given, When, Then, After } = createBdd(test);
 
 /** The addresses entered in this scenario, unique per run for the same reason
  * `invitation.steps.ts`'s `invitedAddress` is: a fixed address is skipped as
@@ -51,11 +52,13 @@ function workspaceSettingsMembersPath(apiClient: { fixtureId(name: string): stri
 When('I open the workspace Members settings screen', async ({ page, apiClient }) => {
   const response = await page.goto(workspaceSettingsMembersPath(apiClient));
   expect(response?.status() ?? 0, 'the Members settings screen did not render').toBeLessThan(400);
+  await markDocument(page);
 });
 
 When('I open the workspace Members settings screen again', async ({ page, apiClient }) => {
   const response = await page.goto(workspaceSettingsMembersPath(apiClient));
   expect(response?.status() ?? 0, 'the Members settings screen did not render on the second visit').toBeLessThan(400);
+  await markDocument(page);
 });
 
 /**
@@ -100,8 +103,24 @@ When('I request the workspace Members settings screen', async ({ page, apiClient
   requestStatus = response?.status() ?? 0;
 });
 
+When('I request the member page of the workspace owner', async ({ page, apiClient }) => {
+  const path = workspaceSettingsMembersPath(apiClient).replace(/\/settings\/members$/, `/members/${workspaceOwnerUid(apiClient)}`);
+  const response = await page.goto(path);
+  requestStatus = response?.status() ?? 0;
+});
+
 Then('access to the Members settings screen is denied', async () => {
   expect(requestStatus).toBe(403);
+});
+
+// The fresh addresses a scenario invited, so the shared Members list does not grow per run.
+After(async () => {
+  const fresh = invitedAddresses.filter((address) => address.startsWith('bakers-members-invite-'));
+  invitedAddresses = [];
+  if (fresh.length === 0) return;
+  Drush.exec(
+    `php:eval '$s = \\Drupal::entityTypeManager()->getStorage("bb_invite"); $s->delete($s->loadByProperties(["email" => ${JSON.stringify(fresh)}]));'`,
+  );
 });
 
 /** A fresh address, unique per run. */
@@ -110,7 +129,7 @@ function freshAddress(n: number): string {
 }
 
 /**
- * Opens the dialog through the Members zone's action, waiting for htmx to own
+ * Opens the dialog through the page header's action, waiting for htmx to own
  * the trigger first: the anchor carries a real `href`, so an early click would
  * navigate to the standalone form instead (see project-create.steps.ts).
  */
@@ -158,11 +177,63 @@ async function enterAddresses(page: Page, baseURL: string, addresses: string[], 
     await clearMailboxFor(page, baseURL, address);
   }
   typedText = [...addresses, ...(extra ? [extra] : [])].join('\n');
-  await page.locator(DIALOG).getByRole('textbox', { name: 'Email addresses' }).fill(typedText);
+  // The chips input commits on Enter; the hidden textarea is what the form submits.
+  const input = addressInput(page);
+  await input.fill(typedText.replaceAll('\n', ', '));
+  await input.press('Enter');
 }
+
+/** The invite dialog's address input: the chips field's text input. */
+function addressInput(page: Page) {
+  return page.locator(DIALOG).getByRole('textbox', { name: 'Email addresses' });
+}
+
+/** The chips the invite dialog shows, one list item per entered address. */
+function addressChips(page: Page) {
+  return page.locator(`${DIALOG} [data-chip-field]`).getByRole('listitem');
+}
+
+When('I type {string} into the invite addresses', async ({ page }, text: string) => {
+  await addressInput(page).focus();
+  await page.keyboard.type(text);
+});
+
+Then('the invite addresses show the chips {string}', async ({ page }, list: string) => {
+  const addresses = list.split(',').map((address) => address.trim());
+  await expect(addressChips(page).locator('[data-chip-field-label]')).toHaveText(addresses);
+  await expect(page.locator(`${DIALOG} textarea[name="emails"]`)).toHaveValue(addresses.join('\n'));
+});
+
+Then('the invite addresses show no chips', async ({ page }) => {
+  await expect(addressChips(page)).toHaveCount(0);
+  await expect(page.locator(`${DIALOG} textarea[name="emails"]`)).toHaveValue('');
+});
+
+Then('the chip {string} is marked as not an e-mail address', async ({ page }, address: string) => {
+  const chip = addressChips(page).filter({ hasText: address });
+  await expect(chip).toContainText('Not an e-mail address');
+  await expect(chip).toHaveAttribute('data-invalid', '');
+});
+
+When('I remove the chip {string}', async ({ page }, address: string) => {
+  const remove = addressChips(page).getByRole('button', { name: `Remove ${address}`, exact: true });
+  await remove.focus();
+  await page.keyboard.press('Enter');
+});
+
+Then('the invite addresses field has focus', async ({ page }) => {
+  await expect(addressInput(page)).toBeFocused();
+});
 
 When('I enter two fresh, never-used e-mail addresses', async ({ page, baseURL }) => {
   await enterAddresses(page, baseURL!, [freshAddress(1), freshAddress(2)]);
+});
+
+/** Keyboard only: types into whatever has focus, as a user would. */
+When('I type two fresh, never-used e-mail addresses', async ({ page }) => {
+  invitedAddresses = [freshAddress(1), freshAddress(2)];
+  invitedAddress = invitedAddresses[0];
+  await page.keyboard.type(invitedAddresses.join(', '));
 });
 
 When('I enter one fresh, never-used e-mail address', async ({ page, baseURL }) => {
@@ -213,19 +284,27 @@ Then('the invite dialog is closed', async ({ page }) => {
   await expect(page.locator(DIALOG)).toHaveCount(0, { timeout: 20000 });
 });
 
+/** The result toast: fixed, so the list underneath does not move. */
 Then('the Members screen confirms {string}', async ({ page }, text: string) => {
-  await expect(page.getByRole('main').getByText(text)).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('[data-component-id="bb_theme:toast"]').getByText(text)).toBeVisible({ timeout: 20000 });
+});
+
+Then('members and invitations share one list', async ({ page }) => {
+  await expect(page.getByRole('heading', { name: 'Pending invitations' })).toHaveCount(0);
+  const roster = page.locator(`${MEMBERS_ISLAND} ul[role="list"]:has(> li[data-list-item])`);
+  await expect(roster).toHaveCount(1);
+  await expect(roster.locator('> li').filter({ hasText: invitedAddress })).toBeVisible();
 });
 
 Then('the Members screen still lists its members', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: 'Members', level: 2 })).toBeVisible();
+  await expect(page.locator(`${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`).first()).toBeVisible();
 });
 
 Then(
   'each invited address is listed as pending with the role {string} and the team {string}',
   async ({ page }, role: string, team: string) => {
     for (const address of invitedAddresses) {
-      const row = page.getByRole('row').filter({ hasText: address }).first();
+      const row = page.locator(`${MEMBERS_ISLAND} li[data-list-item]`).filter({ hasText: address }).first();
       await expect(row, `${address} is not listed as pending`).toBeVisible();
       await expect(row).toContainText(role);
       await expect(row).toContainText(team);
@@ -240,9 +319,14 @@ Then('exactly one invitation mail reaches each invited address', async ({ page, 
   }
 });
 
-When('I revoke the pending invitation of the first invited address', async ({ page }) => {
-  // Revoking asks for confirmation in the delete dialog, then returns to Members.
-  const revoke = page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` });
+/** The roster row of the first invited address. */
+function firstInvitationRow(page: Page) {
+  return page.locator(`${MEMBERS_ISLAND} ul[role="list"] > li[data-list-item]`).filter({ hasText: invitedAddress }).first();
+}
+
+/** The invitation page's Revoke, once htmx owns it. */
+async function revokeAction(page: Page) {
+  const revoke = page.getByRole('link', { name: 'Revoke invitation', exact: true });
   // A click before htmx owns the anchor would follow its page href instead.
   await expect
     .poll(() => revoke.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
@@ -250,25 +334,74 @@ When('I revoke the pending invitation of the first invited address', async ({ pa
       timeout: 20000,
     })
     .toBe(true);
-  await revoke.click();
+  return revoke;
+}
+
+Then('the pending invitation of the first invited address only opens its page', async ({ page }) => {
+  const row = firstInvitationRow(page);
+  await expect(row.getByRole('link')).toHaveCount(1);
+  await expect(row.getByRole('link')).toHaveAttribute('href', /\/invite\/\d+$/);
+  await expect(row.getByRole('button')).toHaveCount(0);
+});
+
+When('I open the pending invitation of the first invited address', async ({ page }) => {
+  await firstInvitationRow(page).getByRole('link').click();
+  await expect(page).toHaveURL(/\/invite\/\d+$/);
+  await expect(page.locator('body')).toContainText(invitedAddress);
+});
+
+Then('the invitation page shows the role {string} and the team {string}', async ({ page }, role: string, team: string) => {
+  const body = page.locator('body');
+  await expect(body).toContainText(role);
+  await expect(body).toContainText(team);
+  await expect(body).toContainText('Expires');
+});
+
+When('I revoke the invitation', async ({ page }) => {
+  // Revoking asks for confirmation in the delete dialog, then returns to Members.
+  await (await revokeAction(page)).click();
   const dialog = page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])');
   await expect(dialog).toBeVisible();
-  await Promise.all([
-    page.waitForURL(/\/settings\/members$/),
-    dialog.getByRole('button', { name: 'Delete', exact: true }).click(),
-  ]);
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page).toHaveURL(/\/settings\/members$/, { timeout: 20000 });
+});
+
+When('I move focus to Revoke invitation', async ({ page }) => {
+  // Enter on it must open the dialog, not follow the page link.
+  await (await revokeAction(page)).focus();
+});
+
+Then('the revoke confirmation is open', async ({ page }) => {
+  await expect(page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])')).toBeVisible({ timeout: 20000 });
+});
+
+Then('the invite dialog Invite has focus', async ({ page }) => {
+  await expect(page.locator(DIALOG).getByRole('button', { name: 'Invite', exact: true })).toBeFocused();
+});
+
+Then('the revoke confirmation Delete has focus', async ({ page }) => {
+  await expect(page.locator('dialog[data-dialog][open]').getByRole('button', { name: 'Delete', exact: true })).toBeFocused();
+});
+
+Then('the revoke confirmation Cancel has focus', async ({ page }) => {
+  await expect(page.locator('dialog[data-dialog][open] [data-dialog-cancel]')).toBeFocused();
+});
+
+Then('the Members screen confirms the revoke of the first invited address', async ({ page }) => {
+  await expect(page.locator('[data-component-id="bb_theme:toast"]').getByText(`Revoked the invitation for ${invitedAddress}.`)).toBeVisible({ timeout: 20000 });
 });
 
 Then('the first invited address is no longer listed as a pending invitation', async ({ page }) => {
-  await expect(page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/settings\/members$/);
+  await expect(firstInvitationRow(page)).toHaveCount(0);
   expect(inviteCount(invitedAddress)).toBe('0');
   expect(inviteCount(invitedAddresses[1])).toBe('1');
 });
 
 Then('the invite dialog marks the addresses as refused and keeps them', async ({ page }) => {
-  const field = page.locator(DIALOG).getByRole('textbox', { name: 'Email addresses' });
-  await expect(field).toHaveAttribute('aria-invalid', 'true');
-  await expect(field).toHaveValue(typedText);
+  await expect(addressInput(page)).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.locator(`${DIALOG} textarea[name="emails"]`)).toHaveValue(typedText);
+  await expect(addressChips(page)).toHaveCount(typedText.split('\n').length);
 });
 
 Then('the invite dialog names {string} as not an e-mail address', async ({ page }, entry: string) => {
@@ -280,7 +413,7 @@ Then('the invite dialog refuses the workspace role', async ({ page }) => {
 });
 
 Then("the existing member's address is not listed as a pending invitation", async ({ page }) => {
-  await expect(page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` })).toHaveCount(0);
+  await expect(page.locator(`${MEMBERS_ISLAND} a[href*="/invite/"]`).filter({ hasText: invitedAddress })).toHaveCount(0);
 });
 
 Then('no invitation mail reaches the existing member', async ({ page, baseURL }) => {
@@ -304,3 +437,47 @@ function inviteCount(address: string): string {
     `php:eval 'print count(\\Drupal::entityTypeManager()->getStorage("bb_invite")->loadByProperties(["email" => "${address}"]));'`,
   ).trim();
 }
+
+When('I move focus to Invite members', async ({ page }) => {
+  const trigger = page.locator('#members-invite');
+  // Enter on it must open the dialog, not follow the page link.
+  await expect
+    .poll(() => trigger.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
+      timeout: 20000,
+    })
+    .toBe(true);
+  await trigger.focus();
+});
+
+Then('the invite dialog is open', async ({ page }) => {
+  await expect(page.locator(DIALOG)).toBeVisible({ timeout: 20000 });
+});
+
+/** The `Invite members` trigger, where focus returns after its dialog. */
+Then('Invite members has focus', async ({ page }) => {
+  await expect(page.locator('#members-invite')).toBeFocused();
+});
+
+/** The fixture workspace's owner, whose removal the face refuses. */
+function workspaceOwnerUid(apiClient: { fixtureId(name: string): string }): string {
+  const uuid = apiClient.fixtureId('workspace.home');
+  return Drush.exec(
+    `php:eval '$w = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_workspace", "${uuid}"); print $w ? $w->getOwnerId() : "";'`,
+  ).trim();
+}
+
+When('I open the member page of the workspace owner', async ({ page, apiClient }) => {
+  const uid = workspaceOwnerUid(apiClient);
+  await page.locator(`${MEMBERS_ISLAND} a[href$="/members/${uid}"]`).first().click();
+  await expect(page).toHaveURL(new RegExp(`/members/${uid}$`));
+});
+
+When('I press remove for the workspace owner', async ({ page, apiClient }) => {
+  const answered = page.waitForResponse((response) => response.request().method() === 'POST', { timeout: 15000 });
+  await page.locator(`#members-remove-${workspaceOwnerUid(apiClient)}`).click();
+  await answered;
+});
+
+Then('the remove control of the workspace owner has focus', async ({ page, apiClient }) => {
+  await expect(page.locator(`#members-remove-${workspaceOwnerUid(apiClient)}`)).toBeFocused();
+});
