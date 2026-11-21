@@ -31,7 +31,7 @@ The ticket's `environments` entry is the target (`branch`, `base_url`), `base_br
 3. Compute the ticket batch between target and frozen SHA; report unresolved identifiers.
 4. Read the SHA's pipeline (`forge_checks`, `ref` the SHA).
 5. Release environment: `pnpm --dir bakers-cli run release:version <SHA> --notes -` is the dry
-   run: next version and notes since the last reachable `v*` tag. Empty output: stop.
+   run: next version and notes. Empty output: stop.
    Block when a breaking
    (`!`) server commit is in the batch and none raises `min_client_version`: raise it in a merge
    request on `develop`, then freeze again.
@@ -54,18 +54,17 @@ own; `main` merges the frozen commit.
 
 1. Open one merge request with `forge_pr_upsert`, titled
    `chore(release): x.y.z` with the approved version (other targets: `chore(deploy): <target
-   branch>`), into `target_branch`.
-   Call `forge_checks` until `overall` is `success`, then `forge_merge` (target's merge rule; `main`: merge commit, source kept).
+   branch>`), into `target_branch`. Call `forge_checks` until `overall` is
+   `success`, then `forge_merge` (target's merge rule; `main`: merge commit, source kept).
    GitLab's manual gate runs first. The frame's merge never runs here; nothing merges back into
    `develop`.
 2. Pending, failed or refused: publish an honest `summary`; STOP.
 3. Watch the deploy of the merged SHA (`forge_checks`, `ref` that SHA), then expect HTTP 200
    from `<base_url>/user/login` (the frame's deployed login smoke check). Then
-   `bakers_ticket_update` this ticket only with `referenced_tickets_add` (the batch); with the
-   plan's environment it records where the batch is deployed.
-4. Release environment: the `release` job tags `vx.y.z` on the frozen SHA and copies the merge
-   request body's `### Upgrade notes` and `### Known open issues` into its release, never by hand.
-   Link that release in `links` once the frame's release-read operation verifies it.
+   `bakers_ticket_update` this ticket only with `referenced_tickets_add` (the batch).
+4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA (its release
+   carries the merge request's `### Upgrade notes` and `### Known open issues`), link its GitLab
+   release in `links` once the frame's release-read operation verifies it.
 
 ### bb-phase-transition
 
