@@ -23,9 +23,11 @@ it('keeps both sections verbatim and drops the others', () => {
 });
 
 it('returns one section when the other is missing', () => {
-  expect(prSections('## Summary\nx\n### Known open issues\n- slow list\n### Batch\nb')).toBe(
-    '### Known open issues\n- slow list',
-  );
+  expect(
+    prSections(
+      '## Summary\nx\n### Known open issues\n- slow list\n### Batch\nb',
+    ),
+  ).toBe('### Known open issues\n- slow list');
 });
 
 it('returns empty string for no sections and for null', () => {
@@ -39,7 +41,9 @@ it('finds sections in a CRLF body', () => {
 
 it('keeps headings inside a code fence within the section', () => {
   expect(
-    prSections('### Upgrade notes\n```md\n## not a heading\n### Batch\n```\nafter\n### Batch\nb'),
+    prSections(
+      '### Upgrade notes\n```md\n## not a heading\n### Batch\n```\nafter\n### Batch\nb',
+    ),
   ).toBe('### Upgrade notes\n```md\n## not a heading\n### Batch\n```\nafter');
 });
 

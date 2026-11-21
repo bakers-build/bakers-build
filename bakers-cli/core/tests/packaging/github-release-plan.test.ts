@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { expect, it } from 'vitest';
 
 // Runs the real plan script in a fixture repo tagged v0.1.0 with `npm` stubbed by the given shell body.
-// `latest` plans a --no-ff merge of a `feat:` commit; `gh` answers the commit→PR lookup for the
+// `latest` plans a --no-ff merge of a `feat:` commit; `gh` answers the closed-PRs-into-main lookup for the
 // merge with `pulls(head)` as JSON, or fails when `pulls` is absent.
 function plan(
   npm: string,
@@ -37,7 +37,12 @@ function plan(
     );
     git('tag', 'v0.1.0');
     if (channel === 'latest') {
-      const id = ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test'];
+      const id = [
+        '-c',
+        'user.name=Fixture',
+        '-c',
+        'user.email=fixture@example.test',
+      ];
       git('checkout', '-qb', 'next');
       git(...id, 'commit', '--allow-empty', '-qm', 'feat: shiny');
       git('checkout', '-q', '-');
@@ -45,10 +50,11 @@ function plan(
     }
     const sha = git('rev-parse', 'HEAD');
     writeFileSync(join(dir, 'npm'), `#!/bin/sh\n${npm}\n`, { mode: 0o755 });
-    if (pulls) writeFileSync(join(dir, 'pulls.json'), JSON.stringify(pulls(sha)));
+    if (pulls)
+      writeFileSync(join(dir, 'pulls.json'), JSON.stringify(pulls(sha)));
     writeFileSync(
       join(dir, 'gh'),
-      `#!/bin/sh\n[ "$*" = "api repos/o/r/commits/${sha}/pulls" ] && [ -f "${dir}/pulls.json" ] || exit 1\ncat "${dir}/pulls.json"\n`,
+      `#!/bin/sh\n[ "$*" = "api repos/o/r/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=100" ] && [ -f "${dir}/pulls.json" ] || exit 1\ncat "${dir}/pulls.json"\n`,
       { mode: 0o755 },
     );
     const result = spawnSync(
@@ -145,7 +151,8 @@ it("appends the release PR's sections after the generated notes", () => {
 });
 
 // Exactly the generated notes: they end with the `feat: shiny` line.
-const generatedOnly = /^## \[0\.2\.0\][^#]*### Features\n\n\* shiny [^\n]*\)\n$/;
+const generatedOnly =
+  /^## \[0\.2\.0\][^#]*### Features\n\n\* shiny [^\n]*\)\n$/;
 
 it('keeps the generated notes when no PR matches', () => {
   for (const pulls of [

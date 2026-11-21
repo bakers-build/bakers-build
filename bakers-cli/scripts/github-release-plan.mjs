@@ -35,10 +35,12 @@ if (channel === 'next') {
   }).trim();
 } else {
   version = execFileSync(process.execPath, [new URL('./release-version.mjs', import.meta.url).pathname, commit, '--notes', `${output}.notes.md`], { encoding: 'utf8' }).trim();
-  // The release PR (merged into `head`) carries hand-written sections for the GitHub release. A
+  // The release PR (merged as `head`) carries hand-written sections for the GitHub release. A
   // failed lookup throws before plan.json exists, so nothing is released without them.
+  // commits/{sha}/pulls returns only open PRs for commits off the default branch (`next`); the
+  // just-merged PR is among the most recently updated closed PRs into main.
   if (version) {
-    const pulls = JSON.parse(execFileSync('gh', ['api', `repos/${process.env.GITHUB_REPOSITORY}/commits/${head}/pulls`], { encoding: 'utf8' }));
+    const pulls = JSON.parse(execFileSync('gh', ['api', `repos/${process.env.GITHUB_REPOSITORY}/pulls?state=closed&base=main&sort=updated&direction=desc&per_page=100`], { encoding: 'utf8' }));
     const sections = prSections(pulls.find(pull => pull.merge_commit_sha === head)?.body);
     if (sections) appendFileSync(`${output}.notes.md`, `\n${sections}\n`);
   }
