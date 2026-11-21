@@ -7,12 +7,9 @@ Feature: The navigation rail keeps the disclosure state the user chose
   Background:
     Given I am logged in as the account "north-lead"
 
-  Scenario: A team the user opened stays open after navigating
+  Scenario: A team row is a plain link without a sub-navigation
     When I open a themed workspace screen
-    And I toggle the rail disclosure "Automation Crew sub-navigation"
-    Then the rail disclosure "Automation Crew sub-navigation" is expanded
-    When I click the rail entry "My work"
-    Then the rail disclosure "Automation Crew sub-navigation" is expanded
+    Then the rail team "Automation Crew" links to the team and has no sub-navigation
 
   Scenario: The Teams heading the user collapsed stays collapsed after navigating
     When I open a themed workspace screen
