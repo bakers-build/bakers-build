@@ -6,14 +6,15 @@ namespace Drupal\bb_core\Storage;
 
 use Drupal\Core\Entity\ContentEntityStorageInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Field\Plugin\Field\FieldType\EntityReferenceItem;
-use Drupal\bb_core\Entity\BbContentEntityInterface;
 use Drupal\ui_patterns\Entity\SampleEntityGenerator;
 
 /**
  * Generates previews without recursively expanding entity references.
+ *
+ * Applies to every content entity type: a display import runs as the anonymous
+ * CLI user, for whom core expands each reference into a further sample.
  */
 final class PreviewSampleEntityGenerator extends SampleEntityGenerator {
 
@@ -21,11 +22,6 @@ final class PreviewSampleEntityGenerator extends SampleEntityGenerator {
    * {@inheritdoc}
    */
   public function get(string $entity_type_id, string $bundle_id): EntityInterface {
-    $definition = $this->entityTypeManager->getDefinition($entity_type_id);
-    if (!self::isBbType($definition)) {
-      return parent::get($entity_type_id, $bundle_id);
-    }
-
     $tempstore = $this->tempStoreFactory->get('ui_patterns.sample_entity');
     $key = "$entity_type_id.$bundle_id";
     $sample = $tempstore->get($key);
@@ -37,7 +33,7 @@ final class PreviewSampleEntityGenerator extends SampleEntityGenerator {
     if (!$storage instanceof ContentEntityStorageInterface) {
       return parent::get($entity_type_id, $bundle_id);
     }
-    $bundle_key = $definition->getKey('bundle');
+    $bundle_key = $storage->getEntityType()->getKey('bundle');
     $empty = $storage->create($bundle_key ? [$bundle_key => $bundle_id] : []);
     assert($empty instanceof FieldableEntityInterface);
     $values = [];
@@ -59,14 +55,6 @@ final class PreviewSampleEntityGenerator extends SampleEntityGenerator {
     }
     $tempstore->set($key, $sample);
     return $sample;
-  }
-
-  /**
-   * Whether a type is bb_core's own, or one extending its entity base.
-   */
-  private static function isBbType(EntityTypeInterface $definition): bool {
-    return $definition->getProvider() === 'bb_core'
-      || $definition->entityClassImplements(BbContentEntityInterface::class);
   }
 
 }
