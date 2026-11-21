@@ -54,7 +54,8 @@ own; `main` merges the frozen commit.
 
 1. Open one merge request with `forge_pr_upsert`, titled
    `chore(release): x.y.z` with the approved version (other targets: `chore(deploy): <target
-   branch>`), into `target_branch`. Call `forge_checks` until `overall` is
+   branch>`), into `target_branch`. Put the ticket's `### Upgrade notes` and `### Known open issues` in
+   its body: the `release` job copies both into the GitHub release, so nobody adds them by hand. Call `forge_checks` until `overall` is
    `success`, then `forge_merge` (target's merge rule; `main`: merge commit, source kept).
    GitLab's manual gate runs first. The frame's merge never runs here; nothing merges back into
    `develop`.
