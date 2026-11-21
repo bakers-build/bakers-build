@@ -179,6 +179,7 @@ describe('GitHub migration checks', () => {
       'web_ui',
       'image_gate',
       'release_rehearsal',
+      'update_from_release',
     ];
     expect(workflow.jobs.required.needs.sort()).toEqual(required.sort());
     for (const [name, job] of Object.entries<Record<string, unknown>>(
