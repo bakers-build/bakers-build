@@ -194,8 +194,10 @@ Given('its credentials have issued an access token', async ({ request, baseURL }
 
 When('I revoke that key through the user area', async ({ page }) => {
   await page.goto(`/user/${ownerUid()}/api-keys`);
-  const row = page.locator('li', { hasText: issuedKey!.clientId });
-  await row.getByRole('link', { name: 'Revoke' }).click();
+  // The row's one link opens the key's page, which carries Revoke.
+  await page.locator('li[data-list-item]', { hasText: issuedKey!.clientId }).getByRole('link').click();
+  await expect(page).toHaveURL(/\/user\/\d+\/api-keys\/\d+$/);
+  await page.getByRole('link', { name: 'Revoke', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm' }).click();
   // Revoked here, through the UI — the afterEach cleanup no longer needs to
   // (and by then cannot) delete this one.
@@ -253,6 +255,17 @@ When('another authenticated user visits my API keys page', async ({ page, authPr
   const otherPage = await page.context().browser()!.newContext().then((context) => context.newPage());
   await authProvider.login(otherPage, uidOf('south-contributor'));
   const response = await otherPage.goto(`/user/${ownerUid()}/api-keys`);
+  otherResponseStatus = response?.status();
+  await otherPage.close();
+});
+
+When("another authenticated user visits my key's page", async ({ page, authProvider }) => {
+  const id = php(
+    `print current(\\Drupal::entityTypeManager()->getStorage("consumer")->loadByProperties(["client_id" => "${issuedKey!.clientId}"]))->id();`,
+  ).trim();
+  const otherPage = await page.context().browser()!.newContext().then((context) => context.newPage());
+  await authProvider.login(otherPage, uidOf('south-contributor'));
+  const response = await otherPage.goto(`/user/${ownerUid()}/api-keys/${id}`);
   otherResponseStatus = response?.status();
   await otherPage.close();
 });

@@ -137,7 +137,7 @@ final class GroupMembersListTest extends KernelTestBase {
   }
 
   /**
-   * A team item carries a role control; the pick IS the write (BB-462 D3).
+   * A team member's page carries a role control; the pick IS the write.
    *
    * THE `name`/`value` PAIR IS THE CONTRACT and that is what is read here. Each
    * option row is a named submit trigger of the enclosing form, so picking a
@@ -149,8 +149,8 @@ final class GroupMembersListTest extends KernelTestBase {
    * `owner` (BB-462 D3, team administration). The vocabulary is read from
    * config, so a rank the product does not have cannot appear either.
    */
-  public function testTeamItemOffersRoleChangesAndExplainedRemoval(): void {
-    $item = $this->itemNaming($this->itemsOf($this->renderFace('team', $this->team)), 'rosa');
+  public function testTeamMemberPageOffersRoleChangesAndExplainedRemoval(): void {
+    $item = $this->itemNaming($this->itemsOf($this->renderFace('team', $this->team, $this->rosa)), 'rosa');
     $uid = (int) $this->rosa->id();
 
     self::assertStringContainsString('data-component-id="bb_theme:option_picker"', $item);
@@ -176,26 +176,64 @@ final class GroupMembersListTest extends KernelTestBase {
       $item,
       'the documented machine handle the browser suite addresses',
     );
-    self::assertStringContainsString('Revokes their access.', $item);
+    self::assertStringContainsString('Remove rosa from Platform Crew. Revokes their access.', $item, 'the sentence names the group itself');
   }
 
   /**
-   * The team tab's roster is a table without a Team column.
+   * A team roster row is one link to the member's page and holds no control.
+   */
+  public function testTeamRosterRowIsOneLinkToTheMemberPage(): void {
+    $item = new Crawler($this->itemNaming($this->itemsOf($this->renderFace('team', $this->team)), 'rosa'));
+
+    self::assertCount(1, $item->filter('a[href]'), 'one link');
+    self::assertStringEndsWith('/team/' . $this->team->id() . '/members/' . $this->rosa->id(), (string) $item->filter('a')->attr('href'));
+    self::assertCount(0, $item->filter('button, input[type="submit"]'), 'no control');
+  }
+
+  /**
+   * The team tab's roster is an item list whose rows name no team.
    *
-   * Every row is that team, so the column would repeat one value.
+   * Every row is that team, so a team value would repeat one value.
    */
   public function testTeamMembersHaveNoTeamColumn(): void {
     $page = new Crawler($this->renderFace('team', $this->team));
 
-    self::assertSame(
-      ['Name', 'Role', 'Joined', ''],
-      $page->filter('table thead th')->each(static fn (Crawler $th): string => trim($th->text())),
-    );
+    self::assertCount(0, $page->filter('table'), 'no table remains');
+    self::assertCount(0, $page->filter('[data-cell="team"]'));
     self::assertCount(
       count($this->container->get('bb_core.membership_writer')->memberships($this->team)),
-      $page->filter('table tbody tr'),
-      'one row per member',
+      $page->filter('ul[role="list"] > li[data-list-item]'),
+      'one item per member',
     );
+  }
+
+  /**
+   * A row reads like a project row: the mark leads, the name heads the text.
+   *
+   * With the whole person cell in the headline, the meta line wrapped under
+   * the circle and a phone showed the circle without the name.
+   */
+  public function testRowPutsTheMarkInAvatarAndTheNameInTheHeadline(): void {
+    $page = new Crawler($this->renderFace('team', $this->team));
+    $row = $page->filter('li[data-list-item]')->first();
+
+    self::assertCount(1, $row->filter('[data-list-region="avatar"] [data-cell="mark"]'), 'the mark leads the row');
+    self::assertSame('rosa', trim($row->filter('[data-list-region="headline"] [data-cell="name"]')->text()));
+    self::assertCount(1, $row->filter('[data-list-region="meta"] [data-cell="joined"]'), 'the status sits beside the mark');
+  }
+
+  /**
+   * The list stands alone at the content width, like the project list.
+   *
+   * The tab already names the screen, so a "Members" heading only repeated
+   * it, and the narrow measure left an empty band beside the list.
+   */
+  public function testListHasNoHeadingAndFillsTheWidth(): void {
+    $page = new Crawler($this->renderFace('team', $this->team));
+
+    self::assertCount(1, $page->filter('ul[role="list"]'), 'the roster still renders');
+    self::assertCount(0, $page->filter('h2'), 'no zone heading above the list');
+    self::assertCount(0, $page->filter('.max-w-narrow'), 'the list is not capped');
   }
 
   /**
@@ -210,9 +248,9 @@ final class GroupMembersListTest extends KernelTestBase {
     self::assertInstanceOf(UserInterface::class, $reader);
     $this->setCurrentUser($reader);
 
-    $html = $this->renderFace('team', $this->team);
+    $html = $this->renderFace('team', $this->team) . $this->renderFace('team', $this->team, $this->rosa);
 
-    self::assertStringContainsString('<table', $html, 'the roster still renders');
+    self::assertStringContainsString('<li data-list-item', $html, 'the roster still renders');
     self::assertStringContainsString('rosa', $html);
     self::assertStringNotContainsString('remove_member_', $html, 'no removal is offered');
     self::assertStringNotContainsString('member_role_', $html, 'no role pick is offered');
@@ -247,12 +285,14 @@ final class GroupMembersListTest extends KernelTestBase {
    *   The island host, which is what hands the group over.
    * @param \Drupal\Core\Entity\ContentEntityInterface $group
    *   The group whose route is entered.
+   * @param \Drupal\user\UserInterface|null $member
+   *   The member whose page is entered, or NULL for the roster.
    *
    * @return string
    *   The markup.
    */
-  private function renderFace(string $host_id, ContentEntityInterface $group): string {
-    $this->enterRoute($group);
+  private function renderFace(string $host_id, ContentEntityInterface $group, ?UserInterface $member = NULL): string {
+    $this->enterRoute($group, $member);
     $form = $this->container->get('form_builder')->getForm(
       GroupMembersForm::class,
       ['island_id' => 'members', 'host_id' => $host_id],
@@ -261,7 +301,7 @@ final class GroupMembersListTest extends KernelTestBase {
   }
 
   /**
-   * The body rows of the rendered roster table.
+   * The items of the rendered roster list.
    *
    * Split on the row marker rather than matched as a tag pair: a row's role
    * control nests its own markup, so a non-greedy tag match would stop early.
@@ -273,10 +313,10 @@ final class GroupMembersListTest extends KernelTestBase {
    *   The rows, each from its own `<tr>` up to the next one.
    */
   private function itemsOf(string $html): array {
-    $chunks = preg_split('#(?=<tr data-table-row)#', $html) ?: [];
+    $chunks = preg_split('#(?=<li data-list-item)#', $html) ?: [];
     return array_values(array_filter(
       $chunks,
-      static fn (string $chunk): bool => str_starts_with($chunk, '<tr data-table-row'),
+      static fn (string $chunk): bool => str_starts_with($chunk, '<li data-list-item'),
     ));
   }
 
@@ -309,9 +349,11 @@ final class GroupMembersListTest extends KernelTestBase {
    *
    * @param \Drupal\Core\Entity\ContentEntityInterface $group
    *   The group to put on the route.
+   * @param \Drupal\user\UserInterface|null $member
+   *   The member whose page is entered, or NULL for the roster.
    */
-  private function enterRoute(ContentEntityInterface $group): void {
-    $route_name = sprintf('bb_core.%s.members', $group->getEntityTypeId());
+  private function enterRoute(ContentEntityInterface $group, ?UserInterface $member = NULL): void {
+    $route_name = sprintf('bb_core.%s.%s', $group->getEntityTypeId(), $member === NULL ? 'members' : 'member');
     $route = $this->container->get('router.route_provider')->getRouteByName($route_name);
     $request = Request::create('/group-members-list-test');
     $current = $this->container->get('request_stack')->getCurrentRequest();
@@ -322,6 +364,9 @@ final class GroupMembersListTest extends KernelTestBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
     $request->attributes->set('bb_workspace', $this->workspace);
     $request->attributes->set($group->getEntityTypeId(), $group);
+    if ($member !== NULL) {
+      $request->attributes->set('user', $member);
+    }
     $this->container->get('request_stack')->push($request);
   }
 

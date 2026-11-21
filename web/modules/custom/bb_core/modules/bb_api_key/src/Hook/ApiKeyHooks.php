@@ -106,11 +106,6 @@ final class ApiKeyHooks {
       'help' => new TranslatableMarkup('Disabled, Expired or Active.'),
       'field' => ['id' => 'bb_api_key_status'],
     ];
-    $data['consumer_field_data']['bb_api_key_revoke_link'] = [
-      'title' => new TranslatableMarkup('Revoke link'),
-      'help' => new TranslatableMarkup('Link to the owner-only revoke confirmation form.'),
-      'field' => ['id' => 'bb_api_key_revoke_link'],
-    ];
   }
 
 }

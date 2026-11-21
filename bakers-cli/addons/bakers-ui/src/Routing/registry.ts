@@ -34,6 +34,7 @@ const SCOPED_TAB_LEVELS: readonly string[] = [
   'user',
   'ticket',
   'conductor',
+  'machine',
 ];
 
 export function defineRoutes<const T extends readonly ScreenClass[]>(

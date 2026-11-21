@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\Field\FieldFormatter;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\user\UserInterface;
 
 /**
@@ -48,6 +49,38 @@ trait PersonIdentityTrait {
       $parts,
     );
     return implode('', array_slice($letters, 0, 2));
+  }
+
+  /**
+   * An account's `person` cell identity, from its computed person fields.
+   *
+   * The picture is only set when the account has one the reader may see, so
+   * the cell falls back to the initials.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The account.
+   * @param \Drupal\Core\Cache\CacheableMetadata|null $cache
+   *   Collects the account and the picture access, for callers that cache.
+   *
+   * @return array<string, string>
+   *   `display_name`, `initials`, `color` and, with a picture, `picture`.
+   */
+  protected function personMark(UserInterface $account, ?CacheableMetadata $cache = NULL): array {
+    $cache?->addCacheableDependency($account);
+    $mark = [
+      'display_name' => $this->personDisplayName($account),
+      'initials' => (string) $account->get('person_initials')->value,
+      'color' => (string) $account->get('person_color')->value,
+    ];
+    $picture = (string) $account->get('person_picture')->value;
+    $access = $account->hasField('user_picture') ? $account->get('user_picture')->access('view', NULL, TRUE) : NULL;
+    if ($access !== NULL) {
+      $cache?->addCacheableDependency($access);
+    }
+    if ($picture !== '' && $access?->isAllowed()) {
+      $mark['picture'] = $picture;
+    }
+    return $mark;
   }
 
   /**

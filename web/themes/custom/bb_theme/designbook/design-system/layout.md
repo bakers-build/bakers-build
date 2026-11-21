@@ -219,15 +219,25 @@ more kind, deliberately** — never to reintroduce a slot. A slot here buys back
 the freedom this section exists to remove.
 
 **`action` is that rule already applied once, and it is the one kind that is not
-a value.** The seven before it render something a record holds; a listing whose
-items can be acted on had nowhere to put the control, and the shape that asked
-for it was a membership's remove button, whose accessible name is a whole
-sentence — which a `text` cell would have printed as prose on every item. It is
-item-scoped, so any listing may carry a row action, and its fields are
+a value.** The seven before it render something a record holds; none of them
+could carry a control, and the shape that first asked for one was a
+membership's remove button, whose accessible name is a whole sentence — which a
+`text` cell would have printed as prose on every item. Its fields are
 `button`'s own so the cell invents no vocabulary: `label`, `icon`, `icon_only`,
 `variant`. There is no separate accessible-name field, because `button` moves
 `label` into `aria-label` when the control is icon-only and a second name field
 is a second copy of one name that can disagree with the first.
+
+**A list row only opens its entity's detail page.** In every list, web and TUI,
+a row has one link, in its primary cell, and the whole row is the hit area. It
+offers no other action: no row buttons, no ⋯ action menus, no row submits, no
+inline controls. The actions live on the detail page. So the `action` cell and
+the `action_menu` component belong to two places only: the **exempt time-sheet
+grids** — Submission review and Worklog week — whose rows are the actions, and
+**detail pages** (a detail page's own tables and blocks, its page header's
+overflow). Drupal core's `/admin/*` views are exempt too. List-level controls
+that are not tied to a row — filters, search, create new — stay, outside the
+rows.
 
 **A `picker` cell carries what the picker needs** — `clearable`, `clear_label`,
 `creatable`, `create_label` and `icon` alongside the value and the options — or

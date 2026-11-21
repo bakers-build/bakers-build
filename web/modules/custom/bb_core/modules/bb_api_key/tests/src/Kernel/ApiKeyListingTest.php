@@ -43,6 +43,8 @@ final class ApiKeyListingTest extends KernelTestBase {
     $this->installEntitySchema('user');
     $this->installEntitySchema('consumer');
     $this->installEntitySchema('path_alias');
+    // The row link's path passes the workspace path processor.
+    $this->installEntitySchema('bb_workspace');
     $this->installConfig(['user', 'simple_oauth']);
     $this->container->get('entity_type.manager')->getStorage('oauth2_scope')->create([
       'id' => 'bb_session',
@@ -94,9 +96,9 @@ final class ApiKeyListingTest extends KernelTestBase {
   }
 
   /**
-   * Revoke opens the confirm dialog over the list; the href is the page.
+   * A row is one link, its label to the key's detail; Revoke is not in it.
    */
-  public function testRevokeOpensTheDialogOverTheList(): void {
+  public function testRowLinksOnlyToTheKeyDetail(): void {
     $this->createUser();
     $owner = $this->createUser();
     self::assertInstanceOf(User::class, $owner);
@@ -109,18 +111,19 @@ final class ApiKeyListingTest extends KernelTestBase {
     $view->setDisplay('page');
     $view->setArguments([(string) $owner->id()]);
     $view->execute();
-    $link = $view->field['bb_api_key_revoke_link']->render($view->result[0]);
+    // The row's date cells are the theme's components.
+    $this->container->get('theme_installer')->install(['bb_theme']);
+    $this->config('system.theme')->set('default', 'bb_theme')->save();
+    $view->style_plugin->render();
+    $row = '';
+    foreach (array_keys($view->field) as $field) {
+      $row .= (string) $view->style_plugin->getField(0, $field);
+    }
     $this->container->get('request_stack')->pop();
 
-    self::assertIsArray($link, 'a link render array for the owner\'s own key');
-    $url = $link['#url'];
-    $delete = $list . '/' . $key->id() . '/delete';
-    self::assertSame($delete, $url->toString());
-    $attributes = $url->getOption('attributes');
-    self::assertStringStartsWith($delete . '?', $attributes['data-hx-get']);
-    parse_str((string) parse_url($attributes['data-hx-get'], PHP_URL_QUERY), $query);
-    self::assertSame(['destination' => $list, '_wrapper_format' => 'island_dialog'], $query);
-    self::assertSame('#bakers-overlay', $attributes['data-hx-target']);
+    preg_match_all('/<a\s[^>]*href="([^"]*)"/', $row, $links);
+    self::assertSame([$list . '/' . $key->id()], $links[1], 'The label is the row\'s one link.');
+    self::assertStringNotContainsString('Revoke', $row);
   }
 
 }

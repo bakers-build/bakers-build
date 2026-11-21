@@ -26,6 +26,7 @@ use Drupal\bb_core\Field\NodeStatesLabelItemList;
 use Drupal\bb_core\Field\NodeStatusItemList;
 use Drupal\bb_core\Field\OwnerInitialsItemList;
 use Drupal\bb_core\Field\OwnerNameItemList;
+use Drupal\bb_core\Field\PersonMarkItemList;
 use Drupal\bb_core\Field\RecipientProfileItemList;
 use Drupal\bb_core\Field\RunDurationItemList;
 use Drupal\bb_core\Field\SinceLabelItemList;
@@ -582,6 +583,21 @@ final class EntitySchemaHooks {
         ->setComputed(TRUE)
         ->setClass(CommentAuthorColorItemList::class)
         ->setDisplayConfigurable('view', TRUE);
+    }
+
+    if ($entity_type->id() === 'user') {
+      // The person mark, derived in one place for the view mode and every cell.
+      foreach ([
+        'person_initials' => new TranslatableMarkup('Person initials'),
+        'person_color' => new TranslatableMarkup('Person colour'),
+        'person_picture' => new TranslatableMarkup('Person picture'),
+      ] as $name => $label) {
+        $fields[$name] = BaseFieldDefinition::create('string')
+          ->setLabel($label)
+          ->setComputed(TRUE)
+          ->setReadOnly(TRUE)
+          ->setClass(PersonMarkItemList::class);
+      }
     }
 
     if ($entity_type->id() === 'bb_run') {

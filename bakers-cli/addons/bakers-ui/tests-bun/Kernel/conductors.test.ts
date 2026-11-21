@@ -53,23 +53,24 @@ describe('the Conductors screen', () => {
   it('paints the header row bold, and the rows under it plain', async () => {
     const tui = await openConductors();
 
-    // A machine's Conductors has no tab bar: row 4 frame top, rows 5-7 the
-    // `mine`/`c clear` badge strip (BB-460 D6), row 8 list header.
+    // A machine's Conductors tab: row 5 the tab bar, row 6 frame top, rows
+    // 7-9 the `mine`/`c clear` badge strip (BB-460 D6), row 10 list header.
     const spans = tui.captureSpans().lines;
     const bold = (line: { spans: { attributes: number }[] } | undefined) =>
       (line?.spans ?? []).some((span) => (span.attributes & BOLD) !== 0);
-    expect(tui.rows()[4], 'row 4 is the frame top').toMatch(/╭/);
-    expect(tui.rows()[8], 'row 8 is the list header').toContain('WORKSPACE');
-    expect(bold(spans[8]), 'the header row is bold').toBe(true);
-    expect(bold(spans[9]), 'the conductor row under it is not').toBe(false);
+    expect(tui.rows()[6], 'row 6 is the frame top').toMatch(/╭/);
+    expect(tui.rows()[10], 'row 10 is the list header').toContain('WORKSPACE');
+    expect(bold(spans[10]), 'the header row is bold').toBe(true);
+    expect(bold(spans[11]), 'the conductor row under it is not').toBe(false);
 
     await quit(tui);
   });
 
-  it('`s` starts the selected conductor exactly once, and reports the outcome (BB-450 review B6)', async () => {
+  it('`s` on the conductor overview starts it exactly once, and reports the outcome (BB-450 review B6)', async () => {
     const host = fakeHost();
     // A stopped conductor: a running one is refused, which its own test covers.
     const tui = await openConductors({
+      detail: true,
       host,
       rows: [conductorDoc({ status: 'offline' })],
     });
@@ -88,9 +89,10 @@ describe('the Conductors screen', () => {
     await quit(tui);
   });
 
-  it('start reloads the list in place and keeps the outcome in the footer', async () => {
+  it('start reloads the overview in place and keeps the outcome in the footer', async () => {
     const host = fakeHost();
     const tui = await openConductors({
+      detail: true,
       host,
       rows: [conductorDoc({ status: 'offline' })],
     });
@@ -118,6 +120,7 @@ describe('the Conductors screen', () => {
     // settles it — deterministically, regardless of how long `settle()` takes.
     let clockMs = 1000;
     const tui = await openConductors({
+      detail: true,
       host,
       rows: [conductorDoc({ status: 'offline' })],
       now: () => clockMs,
@@ -140,9 +143,12 @@ describe('the Conductors screen', () => {
     await quit(tui);
   });
 
-  it('`x` stops the selected conductor, passing its pid, and reports the outcome (BB-450 review B6)', async () => {
+  it('`x` on the conductor overview stops it, passing its pid, and reports the outcome (BB-450 review B6)', async () => {
     const host = fakeHost();
-    const tui = await openConductors({ host });
+    const tui = await openConductors({
+      detail: true,
+      host,
+    });
 
     await tui.press('x');
     await settle();
@@ -160,6 +166,7 @@ describe('the Conductors screen', () => {
       result: { ok: false, message: 'refused: foreign host_key' },
     });
     const tui = await openConductors({
+      detail: true,
       host,
       rows: [conductorDoc({ status: 'offline' })],
     });
@@ -188,6 +195,7 @@ describe('the Conductors screen', () => {
     // it is.
     const host = fakeHost({ neverResolves: true });
     const tui = await openConductors({
+      detail: true,
       host,
       rows: [conductorDoc({ status: 'offline' })],
     });
@@ -208,6 +216,7 @@ describe('the Conductors screen', () => {
   it('a second press while an action is in flight does not act twice', async () => {
     const host = fakeHost({ neverResolves: true });
     const tui = await openConductors({
+      detail: true,
       host,
       rows: [conductorDoc({ status: 'offline' })],
     });
@@ -221,9 +230,10 @@ describe('the Conductors screen', () => {
     await quit(tui);
   });
 
-  it('marks a conductor whose host_key is not this machine view-only, before any key is pressed (BB-450 review B6/B10)', async () => {
+  it('marks a conductor overview whose host_key is not this machine view-only, before any key is pressed (BB-450 review B6/B10)', async () => {
     const host = fakeHost({ thisHostKey: 'cw-framework' });
     const tui = await openConductors({
+      detail: true,
       host,
       // SAME workspace_root as the default fixture — deliberately, per
       // BB-281 Finding 2: two `bb_conductor` records can name one
@@ -292,8 +302,9 @@ describe('the Conductors screen', () => {
     await quit(tui);
   });
 
-  it('advertises Start/Stop in the footer for a row this machine owns (BB-450 review B9)', async () => {
+  it('advertises Start/Stop in the overview footer for a conductor this machine owns (BB-450 review B9)', async () => {
     const tui = await openConductors({
+      detail: true,
       rows: [conductorDoc({ status: 'offline' })],
     });
 
@@ -307,6 +318,7 @@ describe('the Conductors screen', () => {
     const host = fakeHost();
     const nowS = Math.floor(Date.now() / 1000);
     const tui = await openConductors({
+      detail: true,
       host,
       rows: [
         conductorDoc({
@@ -331,6 +343,7 @@ describe('the Conductors screen', () => {
     const host = fakeHost();
     const nowS = Math.floor(Date.now() / 1000);
     const tui = await openConductors({
+      detail: true,
       host,
       rows: [
         conductorDoc({
@@ -344,6 +357,30 @@ describe('the Conductors screen', () => {
     await tui.press('s');
 
     expect(host.starts.length).toBe(1);
+
+    await quit(tui);
+  });
+
+  it('the list advertises no row action, and s/x/r on a row do nothing', async () => {
+    const host = fakeHost();
+    const tui = await openConductors({
+      host,
+      rows: [conductorDoc({ status: 'offline' })],
+    });
+
+    expect(text(tui)).toContain('Enter:Open');
+    expect(text(tui)).not.toContain('Start');
+    expect(text(tui)).not.toContain('Stop');
+    expect(text(tui)).not.toContain('Restart runs');
+
+    await tui.press('s');
+    await tui.press('x');
+    await tui.press('r');
+    await settle();
+
+    expect(host.starts.length).toBe(0);
+    expect(host.stops.length).toBe(0);
+    expect(text(tui)).not.toContain('Restart runs');
 
     await quit(tui);
   });
@@ -474,6 +511,8 @@ describe('the Conductors screen', () => {
       rows?: ReturnType<typeof conductorDoc>[];
       machines?: ReturnType<typeof machineDoc>[];
       now?: () => number;
+      /** Open the first row's conductor overview, where the actions live. */
+      detail?: boolean;
     } = {},
   ) {
     // The screen marks a row local by whether its workspace exists, so the
@@ -505,14 +544,21 @@ describe('the Conductors screen', () => {
       tui: { conductorProcess: host },
     });
     // Boot lands on My work. From there the product order is Projects →
-    // Machines, and a machine opens its Conductors.
+    // Machines; a machine opens its detail, whose second tab is Conductors.
     await tui.press('\t');
     await tui.press('\t');
     await settle();
     await tui.renderOnce();
     await tui.press('\r');
     await settle();
+    await tui.press('\t');
+    await settle();
     await tui.renderOnce();
+    if (opts.detail) {
+      await tui.press('\r');
+      await settle();
+      await tui.renderOnce();
+    }
     return { ...tui, reads: () => conductorReads };
   }
 
@@ -560,6 +606,7 @@ describe('the Conductors screen', () => {
             .slice('bb_conductor/bb_conductor/'.length)
             .split('?')[0];
           const doc = docs.find((d) => d.id === id) ?? docs[0];
+          onConductorRead();
           return { data: doc, included: machines };
         }
         if (path !== 'bb_conductor/bb_conductor') return { data: [] };

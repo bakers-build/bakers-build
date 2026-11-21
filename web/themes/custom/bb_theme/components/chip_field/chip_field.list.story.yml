@@ -1,0 +1,22 @@
+# List mode, the team Add member dialog: the chips pick from the multiple
+# select's options, and the select stays the submitted value.
+name: List
+variant: list
+props:
+  label: People
+  mode: list
+  placeholder: Type a name
+  remove_label: Remove @label
+slots:
+  field:
+    - type: component
+      component: bb_theme:form_select
+      props:
+        name: account[]
+        id: edit-account
+        multiple: true
+        options:
+          - { value: '3', label: Ada Lovelace, selected: true }
+          - { value: '4', label: Alan Turing, selected: false }
+          - { value: '5', label: Grace Hopper, selected: false }
+          - { value: '6', label: Katherine Johnson, selected: false }

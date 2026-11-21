@@ -34,8 +34,8 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
  *
  * Each bundle is a target plugin (`template`: create a ticket from a
  * template). Every trigger is anchored on its own `workspace_id`, which must
- * be its target's. Internal: managed on the template's Triggers tab only, not
- * through JSON:API. Several triggers per target are allowed.
+ * be its target's. Internal: listed on the template's Triggers tab, each with
+ * its own page, not through JSON:API. Several triggers per target are allowed.
  */
 #[ContentEntityType(
   id: 'bb_ticket_trigger',
@@ -62,6 +62,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
     'route_provider' => ['html' => BbTicketTriggerRouteProvider::class],
   ],
   links: [
+    'canonical' => '/_workspace/{bb_workspace}/ticket-template/{bb_ticket_template}/trigger/{bb_ticket_trigger}',
     'add-form' => '/_workspace/{bb_workspace}/ticket-template/{bb_ticket_template}/trigger/add',
     'edit-form' => '/_workspace/{bb_workspace}/ticket-template/{bb_ticket_template}/trigger/{bb_ticket_trigger}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/ticket-template/{bb_ticket_template}/trigger/{bb_ticket_trigger}/delete',

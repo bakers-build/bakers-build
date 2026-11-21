@@ -13,6 +13,7 @@ use Drupal\views\ResultRow;
  * A trigger's type label or summary, read from its type plugin.
  *
  * A type without a plugin renders "Unavailable trigger type: <id>" in both.
+ * The summary links to the trigger's page: it is the row's primary cell.
  */
 #[ViewsField('bb_ticket_trigger_type')]
 final class BbTicketTriggerType extends FieldPluginBase {
@@ -25,15 +26,18 @@ final class BbTicketTriggerType extends FieldPluginBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @return array<string, mixed>|string
+   *   The summary as a link to the trigger, or the type label.
    */
-  public function render(ResultRow $values): string {
+  public function render(ResultRow $values): array|string {
     $trigger = $this->getEntity($values);
     if (!$trigger instanceof BbTicketTriggerInterface) {
       return '';
     }
     $plugin = $trigger->getTypePlugin();
     if (($this->definition['part'] ?? 'summary') === 'summary') {
-      return $plugin->summary();
+      return ['#type' => 'link', '#title' => $plugin->summary(), '#url' => $trigger->toUrl()];
     }
     $definition = $plugin->getPluginDefinition();
     return (string) (is_array($definition) ? ($definition['label'] ?? $trigger->getType()) : $trigger->getType());

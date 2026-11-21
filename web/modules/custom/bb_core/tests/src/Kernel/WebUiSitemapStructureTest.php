@@ -736,6 +736,10 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   private const NO_NAV_HOME_ENTITY_TYPES = [
     'bb_environment', 'bb_comment', 'bb_run', 'bb_ticket',
     'bb_ticket_template',
+    // Opened from their Members or Billing row.
+    'bb_invite', 'bb_track_account',
+    // Opened from their Terms or Triggers row.
+    'bb_term', 'bb_ticket_trigger',
   ];
 
   /**
@@ -758,6 +762,9 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.review_transition',
     // A ticket template's own Create ticket confirmation.
     'bb_core.ticket_template_instantiate_form',
+    // A member's page, opened from its Members row.
+    'bb_core.bb_workspace.member',
+    'bb_core.bb_team.member',
   ];
 
   /**
@@ -978,6 +985,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'entity.bb_team.canonical' => 403,
     'bb_core.bb_team.stats' => 403,
     'bb_core.bb_team.members' => 403,
+    'bb_core.bb_team.member_add' => 403,
     'bb_core.bb_team.settings' => 403,
     'view.tickets.team_tickets' => 403,
     'view.runs.team_runs' => 403,
@@ -1057,6 +1065,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.bb_team.members' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     // Like group Settings: `update any bb_team` is the lead's alone.
     'bb_core.bb_team.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
+    'bb_core.bb_team.member_add' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'view.project_board.project_board' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.projects.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.groups.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],

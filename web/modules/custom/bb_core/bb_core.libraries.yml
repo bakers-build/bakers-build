@@ -5,3 +5,9 @@ form_save:
     - core/drupal
     - core/drupal.htmx
     - core/once
+members:
+  js:
+    js/members.js: {}
+  dependencies:
+    - core/drupal
+    - core/drupal.announce

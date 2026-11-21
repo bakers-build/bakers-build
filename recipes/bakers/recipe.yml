@@ -537,6 +537,9 @@ config:
       # The conductor detail's Overview body (BB-619); its display ships in
       # `recipes/bakers/config/`, so it needs no entry here.
       - core.entity_view_mode.bb_conductor.full
+      # The pending invitation's detail; its display ships in
+      # `recipes/bakers/config/`.
+      - core.entity_view_mode.bb_invite.full
       # The machine detail's Overview body (BB-619); its display ships in
       # `recipes/bakers/config/`, so it needs no entry here.
       - core.entity_view_mode.bb_machine.full
@@ -718,6 +721,9 @@ config:
     # The activity row view mode; its display ships in `recipes/bakers/config/`.
     bb_activity:
       - core.entity_view_mode.bb_activity.full
+    # The billing account's detail; its display ships in `recipes/bakers/config/`.
+    bb_track:
+      - core.entity_view_mode.bb_track_account.full
     bb_api_key:
       # The team "Reporter" rank: lets a team member — human or a
       # workspace service account — create tickets in that team's projects,

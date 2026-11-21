@@ -86,17 +86,18 @@ export class ConductorRunsScreen extends ListScreen<RunRow, number> {
   protected actions() {
     return [
       ...(this.rows.length > 0
-        ? [actionItem('conductor-runs-enter', 'Enter', 'ticket')]
+        ? [actionItem('conductor-runs-enter', 'Enter', 'run')]
         : []),
       actionItem('conductor-runs-tab', 'Tab', 'tabs'),
       ...this.pagingActionItems(),
     ];
   }
 
+  /** A run row opens the run's own detail (BAKERS-338). */
   activate(index: number, context: ScreenContext): boolean {
-    const ticketId = this.rows[index]?.ticketId;
-    if (!ticketId || !context.navigate) return false;
-    context.navigate('ticket.runs', { ticketId });
+    const row = this.rows[index];
+    if (!row?.ticketId || !context.navigate) return false;
+    context.navigate('run.detail', { ticketId: row.ticketId, runId: row.id });
     return true;
   }
 

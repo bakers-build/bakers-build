@@ -16,6 +16,7 @@ use Drupal\og\OgMembershipInterface;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -69,11 +70,11 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  * press it. This is the same shape as the defect BB-396's review found in the
  * add form, and it is asserted the same way so it cannot come back.
  *
- * IT IS NOT CONFIRMED, and that is a decision rather than an omission. A
- * confirm step is a second page, and the whole reason this face is an island is
- * that a mutation re-renders exactly the thing it changed. What stands in for
- * the confirmation is the control NAMING its effect — which is the one place
- * AC 6 exempts a per-group-type difference.
+ * IT IS CONFIRMED IN PLACE. Pressing remove rebuilds the face with a dialog
+ * whose Remove (`confirm_remove_<uid>`) is the write and whose Cancel
+ * (`cancel_remove_<uid>`) writes nothing; no second page, and it still works
+ * without JavaScript because both are submits. The delete cases below
+ * therefore submit the confirming key.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -319,13 +320,63 @@ final class GroupMemberRemoveTest extends KernelTestBase {
       pressed: $stranger,
     );
 
-    self::assertSame([], $errors);
+    self::assertNotSame([], $errors, 'a uid this group does not hold is refused, not silently ignored');
     self::assertSame($before, $this->crewUids(), 'this team kept every member it had');
     self::assertSame(
       $other_before,
       $this->crewUids($this->otherTeam),
       "the other team's membership was not reachable from this form",
     );
+  }
+
+  /**
+   * The first press only asks: nothing is removed and the dialog names the act.
+   */
+  public function testPressingRemoveAsksFirstAndRemovesNothing(): void {
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $uid = (int) $this->crewMember->id();
+    $before = $this->crewUids();
+
+    $page = $this->submitKey('remove_member_' . $uid, (string) $uid);
+
+    self::assertSame($before, $this->crewUids(), 'the first press removes nobody');
+    $dialog = $page->filter('dialog[data-members-confirm][open]');
+    self::assertCount(1, $dialog, 'the confirmation is open in the rebuilt face');
+    self::assertSame('Remove ' . $this->crewMember->getDisplayName() . '?', trim($dialog->filter('h2')->text()));
+    self::assertCount(1, $dialog->filter('button[name="confirm_remove_' . $uid . '"]'), 'Remove confirms this member');
+    self::assertCount(1, $dialog->filter('button[name="cancel_remove_' . $uid . '"][autofocus]'), 'Cancel takes focus');
+  }
+
+  /**
+   * Cancel removes nobody, closes the dialog and returns to the remove control.
+   */
+  public function testCancelRemovesNothingAndReturnsToTheRemoveControl(): void {
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $uid = (int) $this->crewMember->id();
+    $before = $this->crewUids();
+
+    $page = $this->submitKey('cancel_remove_' . $uid, (string) $uid);
+
+    self::assertSame($before, $this->crewUids(), 'cancel removes nobody');
+    self::assertCount(0, $page->filter('dialog[data-members-confirm]'), 'the dialog is gone');
+    self::assertSame('members-remove-' . $uid, $page->filter('form')->attr('data-members-focus'));
+  }
+
+  /**
+   * Submits one raw key, as a pressed control does, and returns the response.
+   */
+  private function submitKey(string $key, string $value): Crawler {
+    $form_state = new FormState();
+    $form_state->setValues([$key => $value]);
+    $this->container->get('form_builder')->submitForm(
+      GroupMembersForm::class,
+      $form_state,
+      ['island_id' => 'members', 'host_id' => 'team'],
+    );
+    self::assertSame([], array_map('strval', $form_state->getErrors()));
+    $response = $form_state->getResponse();
+    self::assertNotNull($response, 'the submit answered with the island fragment');
+    return new Crawler((string) $response->getContent());
   }
 
   /**
@@ -380,7 +431,7 @@ final class GroupMemberRemoveTest extends KernelTestBase {
       // IS the selection. `FormBuilder::submitForm()` calls
       // `setUserInput($form_state->getValues())` before retrieving the form, so
       // a value set here arrives as the input the form reads.
-      'remove_member_' . $pressed => (string) $pressed,
+      'confirm_remove_' . $pressed => (string) $pressed,
     ];
     if ($account_text !== NULL) {
       $values['account'] = $account_text;

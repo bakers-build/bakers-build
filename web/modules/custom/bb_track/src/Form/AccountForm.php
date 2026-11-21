@@ -17,11 +17,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * The project's billing face: its accounts as rows, one of them the default.
  *
- * Make default and Archive are this form's submits, rendered into their
- * row; Edit opens AccountEditForm, and so does the page header's New
- * (BillingAccountCreateActionSource). Tickets are linked on the ticket,
- * so a row only names them. The default and ticket links exclude each
- * other: the default offers no Archive, a linked account no Make default.
+ * Each row is one link to its account's detail, which hosts Edit, Make
+ * default and Archive (AccountActionsForm); the page header's New opens
+ * AccountEditForm (BillingAccountCreateActionSource). Tickets are linked on
+ * the ticket, so a row only names them.
  *
  * @SuppressWarnings("PHPMD.UnusedFormalParameter")
  */
@@ -61,7 +60,6 @@ final class AccountForm extends FormBase implements TrustedCallbackInterface {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, ?BbProjectInterface $bb_project = NULL): array {
-    $form_state->set('project', $bb_project);
     $form['#attributes']['data-hx-boost'] = 'false';
     $form['#cache']['max-age'] = 0;
     $form['messages'] = ['#type' => 'status_messages'];
@@ -74,16 +72,10 @@ final class AccountForm extends FormBase implements TrustedCallbackInterface {
     });
 
     $items = [];
-    $form['controls'] = ['#tree' => FALSE];
-    foreach ($active as $id => $billing_account) {
+    foreach ($active as $billing_account) {
       $default = (bool) $billing_account->get('is_default')->value;
-      $tickets = WorkAssignments::linkedTickets($billing_account);
       $cells = [
-        'name' => [
-          'kind' => 'text',
-          'value' => (string) $billing_account->label(),
-          'emphasis' => 'strong',
-        ],
+        'name' => $this->nameCell($billing_account),
         'type' => [
           'kind' => 'text',
           'value' => (string) $billing_account->get('external_id')->value,
@@ -94,10 +86,6 @@ final class AccountForm extends FormBase implements TrustedCallbackInterface {
           'value' => (string) $this->ticketsLine($billing_account, $default),
           'emphasis' => 'faint',
         ],
-        'edit' => ['kind' => 'rendered'],
-      ];
-      $controls = [
-        'edit' => AccountEditForm::trigger($bb_project, $billing_account, (string) $this->t('Edit'), 'ghost', FALSE),
       ];
       if ($default) {
         $cells['default'] = [
@@ -107,22 +95,13 @@ final class AccountForm extends FormBase implements TrustedCallbackInterface {
           'dot' => TRUE,
         ];
       }
-      if (!$default && $tickets === []) {
-        $cells['make_default'] = ['kind' => 'rendered'];
-        $controls['make_default'] = $this->rowSubmit('make_default', $id, $this->t('Make default'), '::makeDefault');
-      }
-      if (!$default) {
-        $cells['archive'] = ['kind' => 'rendered'];
-        $controls['archive'] = $this->rowSubmit('archive', $id, $this->t('Archive'), '::archive');
-      }
       $items[] = ['cells' => $cells];
-      $form['controls'][$id] = $controls;
     }
     $archived_items = [];
     foreach ($archived as $billing_account) {
       $archived_items[] = [
         'cells' => [
-          'name' => ['kind' => 'text', 'value' => (string) $billing_account->label()],
+          'name' => $this->nameCell($billing_account),
           'type' => [
             'kind' => 'text',
             'value' => (string) $billing_account->get('external_id')->value,
@@ -144,31 +123,21 @@ final class AccountForm extends FormBase implements TrustedCallbackInterface {
   }
 
   /**
-   * One row's submit, rendered into its row by renderZone().
+   * The row's one link: the account's name, to its detail.
    *
    * @return array<string, mixed>
-   *   A Form API submit.
+   *   A `link` cell.
    */
-  private function rowSubmit(string $action, int $id, TranslatableMarkup $label, string $handler): array {
+  private function nameCell(Account $billing_account): array {
     return [
-      '#type' => 'submit',
-      '#name' => $action . '_' . $id,
-      // Own parents, so every row's control gets its own id and value.
-      '#parents' => [$action . '_' . $id],
-      '#value' => $label,
-      '#bb_account_id' => $id,
-      '#bb_variant' => 'ghost',
-      '#theme_wrappers' => ['input__submit__bb_button'],
-      '#limit_validation_errors' => [],
-      '#submit' => [$handler],
+      'kind' => 'link',
+      'value' => (string) $billing_account->label(),
+      'url' => $billing_account->toUrl()->toString(),
     ];
   }
 
   /**
-   * Moves the row controls into their rows and wraps everything in the zone.
-   *
-   * Runs after Form API processed the controls, so they render with their
-   * names; their markup becomes the `rendered` cells of their row.
+   * Wraps the rows in the zone.
    *
    * @param array<string, mixed> $form
    *   The built form.
@@ -177,22 +146,8 @@ final class AccountForm extends FormBase implements TrustedCallbackInterface {
    *   The form with the zone.
    */
   public static function renderZone(array $form): array {
-    $renderer = \Drupal::service('renderer');
     $zone = $form['#bb_zone'];
     $items = $zone['items'];
-    $index = 0;
-    foreach (array_keys($form['controls']) as $id) {
-      if (!is_int($id)) {
-        continue;
-      }
-      foreach ($form['controls'][$id] as $key => $control) {
-        if (is_string($key) && $key[0] !== '#') {
-          $items[$index]['cells'][$key]['markup'] = $renderer->render($control);
-        }
-      }
-      $index++;
-    }
-    unset($form['controls']);
     $content = [
       'list' => [
         '#type' => 'component',
@@ -203,7 +158,7 @@ final class AccountForm extends FormBase implements TrustedCallbackInterface {
           'pattern' => [
             'headline' => ['name'],
             'meta' => ['type', 'tickets'],
-            'right' => ['default', 'make_default', 'edit', 'archive'],
+            'right' => ['default'],
           ],
           'items' => $items,
         ],
@@ -265,79 +220,7 @@ final class AccountForm extends FormBase implements TrustedCallbackInterface {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state): void {
-    // Unreachable: every row submit declares its own #submit callback.
-  }
-
-  /**
-   * Makes the pressed row's account the project default.
-   */
-  public function makeDefault(array &$form, FormStateInterface $form_state): void {
-    $id = self::pressedId($form_state);
-    if ($id === NULL) {
-      $this->messenger()->addError($this->t('This billing account changed elsewhere. Reload the page and try again.'));
-      return;
-    }
-    $this->persist($form_state, fn () => $this->assignments->makeDefault($this->projectId($form_state), $id), $this->t('Default billing account changed. Existing bookings keep their account.'));
-  }
-
-  /**
-   * Archives the pressed row's account; old bookings keep their id.
-   */
-  public function archive(array &$form, FormStateInterface $form_state): void {
-    $id = self::pressedId($form_state);
-    $project_id = $this->projectId($form_state);
-    $billing_account = $id === NULL ? NULL : $this->assignments->activeAccounts($project_id)[$id] ?? NULL;
-    if (!$billing_account instanceof Account) {
-      $this->messenger()->addError($this->t('This billing account changed elsewhere. Reload the page and try again.'));
-      return;
-    }
-    $this->persist($form_state, fn () => $this->assignments->saveAccount($project_id, [
-      'name' => (string) $billing_account->label(),
-      'external_id' => (string) $billing_account->get('external_id')->value,
-      'active' => FALSE,
-    ], $id), $this->t('Billing account archived. Existing bookings keep their account; its tickets use the inherited account.'));
-  }
-
-  /**
-   * The pressed row's account id, or NULL when its control was not posted.
-   *
-   * A control gone since the page loaded matches nothing, and Form API then
-   * takes the first remaining button: another row's.
-   */
-  private static function pressedId(FormStateInterface $form_state): ?int {
-    $trigger = $form_state->getTriggeringElement();
-    return array_key_exists($trigger['#name'], $form_state->getUserInput())
-      ? (int) $trigger['#bb_account_id']
-      : NULL;
-  }
-
-  /**
-   * Runs a billing-account write, mapping its domain errors to a message.
-   */
-  private function persist(FormStateInterface $form_state, callable $write, TranslatableMarkup $success): void {
-    try {
-      $write();
-      $this->messenger()->addStatus($success);
-    }
-    catch (\InvalidArgumentException | \DomainException $error) {
-      $this->messenger()->addError($error->getMessage());
-    }
-    catch (\Throwable $error) {
-      $this->logger('bb_track')->error('Billing account write failed: @message', ['@message' => $error->getMessage()]);
-      $this->messenger()->addError($this->t('The billing account could not be saved. Refresh and retry.'));
-    }
-    $project = $form_state->get('project');
-    assert($project instanceof BbProjectInterface);
-    $form_state->setRedirect('bb_track.account', ['bb_project' => $project->uuid()]);
-  }
-
-  /**
-   * The route's project id, as stored by the build step.
-   */
-  private function projectId(FormStateInterface $form_state): int {
-    $project = $form_state->get('project');
-    assert($project instanceof BbProjectInterface);
-    return (int) $project->id();
+    // Nothing to submit: the actions are on each account's detail.
   }
 
 }

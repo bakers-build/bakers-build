@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Island;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\island\IslandContextProviderInterface;
+use Drupal\island\IslandViewAccessInterface;
 
 /**
  * Host seam for the team screen's islands.
@@ -17,9 +18,14 @@ use Drupal\island\IslandContextProviderInterface;
  * a rebuild uses the request it serves. Off a team route the data is empty:
  * listing every team's membership would be a tenancy leak.
  */
-final class BbTeamIslandHost implements IslandContextProviderInterface {
+final class BbTeamIslandHost implements IslandContextProviderInterface, IslandViewAccessInterface {
 
   use MembersIslandPlacementTrait;
+
+  /**
+   * The team Members tab's own gate.
+   */
+  private const string MEMBERS_ACCESS = 'view';
 
   public function __construct(
     private readonly RouteMatchInterface $routeMatch,
@@ -42,7 +48,7 @@ final class BbTeamIslandHost implements IslandContextProviderInterface {
     }
     // The key is `group`, not `team`: the shared island and form stay
     // type-blind so the workspace member surface can reuse them.
-    return ['group' => $team];
+    return ['group' => $team] + $this->memberData('bb_team', ['bb_team' => (int) $team->id()]);
   }
 
 }

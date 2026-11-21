@@ -2648,8 +2648,10 @@ scenes:
       transition buttons and no tab row — and the INTERVENTIONS put where they
       act. The page header carries no buttons at all. Freeze ticket (bordered)
       and Cancel ticket sit in the inspector's intervention footer, below a
-      divider, as GitHub's issue sidebar ends, and the running run in Run
-      history carries its own Cancel run.
+      divider, as GitHub's issue sidebar ends. A Run history row only opens
+      its run (BAKERS-338): the state badge is the link and the whole row the
+      hit area, and Cancel run, Retry, Re-dispatch and the log live on the run
+      detail.
 
 
       This scene shows the ticket frozen. The operator's hold stops it from
@@ -2664,15 +2666,12 @@ scenes:
 
 
       The main region is composed here rather than taken from the `full` view
-      mode, because the running run's row needs a trailing action and the
-      `bb_run.teaser` row is a one-item `list` of cells with no slot for one.
-      So Run history is one composed `list` whose five items carry exactly the
-      cells the teaser emits, the running one ending in an `action` cell, and
-      the handoffs are the two `event` nodes the comment mapping emits. Entity
-      references side by side in a scene slot are what contract B5 forbids — a
-      listing is a View or is rendered by its parent entity — so moving the
-      action into a mapping, which restores the `bb_ticket` route-bearer here,
-      is the follow-up.
+      mode: Run history is one composed `list` whose five items carry exactly
+      the cells the teaser emits, each row linking to its run with no trailing
+      action, and the handoffs are the two `event` nodes the comment mapping
+      emits. Entity references side by side in a scene slot are what contract
+      B5 forbids — a listing is a View or is rendered by its parent entity — so
+      restoring the `bb_ticket` route-bearer here is the follow-up.
 
 
       The inspector is one lifted panel (`surface`) of four blocks separated by
@@ -2819,6 +2818,7 @@ scenes:
                           layout: lines
                           items:
                             - accent: idle
+                              url: /_workspace/1/ticket/1/run/1
                               cells:
                                 state:
                                   kind: badge
@@ -2826,6 +2826,7 @@ scenes:
                                   tone: idle
                                   icon: check
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/1
                                 from_label:
                                   kind: text
                                   value: from
@@ -2854,6 +2855,7 @@ scenes:
                                   kind: mono
                                   value: 4210s
                             - accent: attention
+                              url: /_workspace/1/ticket/1/run/2
                               cells:
                                 state:
                                   kind: badge
@@ -2861,6 +2863,7 @@ scenes:
                                   tone: attention
                                   icon: alert-triangle
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/2
                                 from_label:
                                   kind: text
                                   value: from
@@ -2889,6 +2892,7 @@ scenes:
                                   kind: mono
                                   value: 2160s
                             - accent: running
+                              url: /_workspace/1/ticket/1/run/3
                               cells:
                                 state:
                                   kind: badge
@@ -2896,6 +2900,7 @@ scenes:
                                   tone: running
                                   icon: run
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/3
                                 from_label:
                                   kind: text
                                   value: from
@@ -2916,11 +2921,8 @@ scenes:
                                 started:
                                   kind: mono
                                   value: 2026-06-30 15:50
-                                cancel:
-                                  kind: action
-                                  label: Cancel run
-                                  variant: danger
                             - accent: wait
+                              url: /_workspace/1/ticket/1/run/4
                               cells:
                                 state:
                                   kind: badge
@@ -2928,6 +2930,7 @@ scenes:
                                   tone: wait
                                   icon: lock
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/4
                                 from_label:
                                   kind: text
                                   value: from
@@ -2948,6 +2951,7 @@ scenes:
                                 started:
                                   kind: mono
                             - accent: idle
+                              url: /_workspace/1/ticket/1/run/5
                               cells:
                                 state:
                                   kind: badge
@@ -2955,6 +2959,7 @@ scenes:
                                   tone: stale
                                   icon: clock
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/5
                                 from_label:
                                   kind: text
                                   value: from
@@ -3517,6 +3522,7 @@ scenes:
                           layout: lines
                           items:
                             - accent: idle
+                              url: /_workspace/1/ticket/1/run/1
                               cells:
                                 state:
                                   kind: badge
@@ -3524,6 +3530,7 @@ scenes:
                                   tone: idle
                                   icon: check
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/1
                                 from_label:
                                   kind: text
                                   value: from
@@ -3552,6 +3559,7 @@ scenes:
                                   kind: mono
                                   value: 4210s
                             - accent: attention
+                              url: /_workspace/1/ticket/1/run/2
                               cells:
                                 state:
                                   kind: badge
@@ -3559,6 +3567,7 @@ scenes:
                                   tone: attention
                                   icon: alert-triangle
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/2
                                 from_label:
                                   kind: text
                                   value: from
@@ -3587,6 +3596,7 @@ scenes:
                                   kind: mono
                                   value: 2160s
                             - accent: running
+                              url: /_workspace/1/ticket/1/run/3
                               cells:
                                 state:
                                   kind: badge
@@ -3594,6 +3604,7 @@ scenes:
                                   tone: running
                                   icon: run
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/3
                                 from_label:
                                   kind: text
                                   value: from
@@ -3614,11 +3625,8 @@ scenes:
                                 started:
                                   kind: mono
                                   value: 2026-06-30 15:50
-                                cancel:
-                                  kind: action
-                                  label: Cancel run
-                                  variant: danger
                             - accent: wait
+                              url: /_workspace/1/ticket/1/run/4
                               cells:
                                 state:
                                   kind: badge
@@ -3626,6 +3634,7 @@ scenes:
                                   tone: wait
                                   icon: lock
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/4
                                 from_label:
                                   kind: text
                                   value: from
@@ -3646,6 +3655,7 @@ scenes:
                                 started:
                                   kind: mono
                             - accent: idle
+                              url: /_workspace/1/ticket/1/run/5
                               cells:
                                 state:
                                   kind: badge
@@ -3653,6 +3663,7 @@ scenes:
                                   tone: stale
                                   icon: clock
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/5
                                 from_label:
                                   kind: text
                                   value: from

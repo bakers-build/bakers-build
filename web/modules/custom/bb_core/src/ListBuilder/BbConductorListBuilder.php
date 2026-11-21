@@ -4,15 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\ListBuilder;
 
-use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
-use Drupal\Core\Entity\EntityTypeInterface;
-use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
-use Drupal\bb_core\Form\BbRestartRunsForm;
-use Drupal\bb_core\Ticket\TicketInterventions;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides the admin listing table for bakers.build conductor entities.
@@ -20,20 +14,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Displays each conductor's registration key and current operational status.
  */
 final class BbConductorListBuilder extends EntityListBuilder {
-
-  /**
-   * The current-session account, for the Restart runs operation.
-   */
-  protected AccountInterface $currentUser;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type): static {
-    $instance = parent::createInstance($container, $entity_type);
-    $instance->currentUser = $container->get('current_user');
-    return $instance;
-  }
 
   /**
    * {@inheritdoc}
@@ -54,25 +34,6 @@ final class BbConductorListBuilder extends EntityListBuilder {
       'label' => $entity->label(),
       'status' => $entity->getStatus(),
     ] + parent::buildRow($entity);
-  }
-
-  /**
-   * {@inheritdoc}
-   *
-   * Adds Restart runs for the owner of the conductor's machine.
-   */
-  protected function getDefaultOperations(EntityInterface $entity, ?CacheableMetadata $cacheability = NULL): array {
-    $operations = parent::getDefaultOperations($entity, $cacheability);
-    if ($entity instanceof BbConductorInterface && TicketInterventions::mayRestartRuns($entity, $this->currentUser)) {
-      $operations['restart'] = [
-        'title' => $this->t('Restart runs'),
-        'weight' => 50,
-        // The href is the page; htmx opens the dialog over this listing.
-        'url' => BbRestartRunsForm::confirmationUrl($entity, FALSE, $this->getRedirectDestination()->get())
-          ->setOption('attributes', BbRestartRunsForm::dialogAttributes($entity, $this->getRedirectDestination()->get())->toArray()),
-      ];
-    }
-    return $operations;
   }
 
 }

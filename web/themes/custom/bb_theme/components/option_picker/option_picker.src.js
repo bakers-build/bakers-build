@@ -677,8 +677,9 @@ export default function optionPicker() {
         return;
       }
       event.preventDefault();
-      // The row's own control keeps each row kind's pick semantics.
-      (row.querySelector('label, a') ?? row).click();
+      // The row's own control keeps each row kind's pick semantics; a
+      // submit row (the pick is the write) submits like a click on it does.
+      (row.querySelector('label, a, button[type="submit"]') ?? row).click();
       if (!this.open) {
         this.$refs.trigger?.focus();
       }
