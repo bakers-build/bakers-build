@@ -59,11 +59,22 @@ $member->save();
 \Drupal\og\Og::createMembership($workspace, $member)->save();
 \Drupal\user\Entity\User::create(["name" => "update-homeless", "mail" => "update-homeless@example.test", "status" => 1,
   "field_developer_title" => "Designer"])->save();
+// Content the new displays preview: a project with a billing account where the release has one.
+$types = \Drupal::entityTypeManager();
+$group = $types->getStorage("bb_group")->create(["name" => "Update customer", "workspace_id" => $workspace->id(), "owner_user_id" => $member->id()]);
+$group->save();
+$project = $types->getStorage("bb_project")->create(["name" => "Update project", "key" => "UPD", "group_id" => $group->id(), "owner_user_id" => $member->id()]);
+$project->save();
+if ($types->hasDefinition("bb_track_account")) {
+  $types->getStorage("bb_track_account")->create(["name" => "Update account", "project_id" => $project->id()])->save();
+}
 echo "seeded\n";'
 
 export REGISTRY_IMAGE_PHP=$branch_image
 # The deploy service as production runs it: drush deploy (updb, cim), entity updates, cim.
-docker compose run --rm deploy
+docker compose run --rm deploy 2>&1 | tee "$out/deploy.log"
+# A display import that exhausts memory can still leave drush exiting 0 on some paths.
+if grep -q 'Allowed memory size' "$out/deploy.log"; then echo "deploy ran out of memory" >&2; exit 1; fi
 drush php:eval '
 $member = user_load_by_name("update-member") ?: throw new \RuntimeException("member lost");
 $profiles = \Drupal::service(\Drupal\bb_core\Profile\Profiles::class)->ofAccount((int) $member->id());
