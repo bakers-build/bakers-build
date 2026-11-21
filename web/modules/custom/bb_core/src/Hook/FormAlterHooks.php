@@ -54,8 +54,8 @@ final class FormAlterHooks {
    * Implements hook_form_FORM_ID_alter() for views_exposed_form.
    *
    * Puts BEF's combined "Sort by" select ahead of the filter controls (Views
-   * adds sorts after filters and neither Views nor BEF exposes a weight), and
-   * makes a `title` search a search field.
+   * adds sorts after filters and neither Views nor BEF exposes a weight),
+   * makes a `title` search a search field, and lets the newest submit win.
    *
    * @param array<string, mixed> $form
    *   The exposed form.
@@ -66,6 +66,9 @@ final class FormAlterHooks {
    */
   #[Hook('form_views_exposed_form_alter')]
   public function formViewsExposedFormAlter(array &$form, FormStateInterface $form_state): void {
+    // A submit queued on a form the previous answer swapped out is dropped;
+    // replace aborts the older request and sends the newer form state.
+    $form['#attributes']['data-hx-sync'] ??= 'this:replace';
     if (isset($form['sort_bef_combine'])) {
       $form['sort_bef_combine']['#weight'] = -100;
     }

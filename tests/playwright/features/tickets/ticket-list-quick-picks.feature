@@ -13,3 +13,15 @@ Feature: A facet pick made while the previous one is still loading is kept
     And the address carries "state[]=review"
     And the active filters read "State is either of Working, Review"
 
+
+  Scenario: A sort change made while a facet pick loads keeps both after a reload
+    Given I am signed in as a member of the "bakers" workspace
+    And list requests answer slowly
+    When I visit the tickets tab of project "bakers.build Platform"
+    And I click "Working" in the "State" facet and then sort by "identifier_ASC" without waiting
+    Then the address carries "state[]=working"
+    And the address carries "sort_bef_combine=identifier_ASC"
+    And no facet says "Not saved."
+    When I reload the ticket list
+    Then the "State" facet shows "Working" as chosen
+    And the sort dropdown still reads "identifier_ASC"
