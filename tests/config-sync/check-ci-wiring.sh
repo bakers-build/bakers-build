@@ -24,3 +24,11 @@ if grep -q 'tests/contract/' <<<"$JOB"; then
 fi
 
 printf 'OK: config_sync is an independent, required pull-request job.\n'
+
+# The update path (release site with content → this branch's deploy) must gate pull requests too.
+UPDATE="$(job update_from_release)"
+[ -n "$UPDATE" ] || fail 'update_from_release job is missing'
+grep -q '^    if: \*checks$' <<<"$UPDATE" || fail 'update_from_release does not run for pull requests'
+grep -q 'bash scripts/ci/update-from-release.sh' <<<"$UPDATE" || fail 'update_from_release does not run the update script'
+grep -q '^      - update_from_release$' <<<"$REQUIRED" || fail 'update_from_release is not required'
+printf 'OK: update_from_release is a required pull-request job.\n'

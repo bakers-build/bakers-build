@@ -539,6 +539,25 @@ jobs:
           name: release-rehearsal
           path: release-notes.md
           if-no-files-found: ignore
+  # Release site with content, then this branch's deploy: config imports must not break existing sites.
+  update_from_release:
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - run: bash scripts/ci/update-from-release.sh
+        env:
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: update-from-release
+          path: assets-ai/update-from-release/
+          retention-days: 7
   required:
     runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
     container: node:22
@@ -561,6 +580,7 @@ jobs:
       - mr_title
       - image_gate
       - release_rehearsal
+      - update_from_release
     steps:
       - env:
           RESULTS: ${{ toJSON(needs) }}
