@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Proves update hooks on a real old site: installs the latest release image, seeds accounts,
-# swaps in this checkout's php image and deploys (updb + cim), then checks the data.
+# Proves the update path on a real old site: installs the latest release image, seeds content,
+# swaps in this checkout's php image and deploys (updb + cim), then checks the data survived.
 # Only for disposable Docker hosts. `--self-check` tests the version lookup without Docker.
 # Env: RELEASE_VERSION (default: newest vX.Y.Z tag), BRANCH_IMAGE_PHP (default: built here),
 # UPDATE_REPORT_DIR (default: assets-ai/update-from-release), COMPOSER_AUTH (optional build secret).
@@ -49,28 +49,31 @@ drush() { docker compose run --rm --no-deps --entrypoint /var/www/html/vendor/bi
 export REGISTRY_IMAGE_PHP=$release_image
 docker compose up -d --wait db
 docker compose run --rm install
-# Accounts as the release stores them: one member with values, one in no workspace.
+# Content as the release stores it: a member, a customer, a project and a billing account.
 drush php:eval '
 $workspaces = \Drupal::entityTypeManager()->getStorage("bb_workspace")->loadMultiple();
 $workspace = reset($workspaces) ?: throw new \RuntimeException("no workspace to join");
-$member = \Drupal\user\Entity\User::create(["name" => "update-member", "mail" => "update-member@example.test", "status" => 1,
-  "field_developer_title" => "Backend engineer", "field_bb_background" => "PHP and Drupal."]);
+$member = \Drupal\user\Entity\User::create(["name" => "update-member", "mail" => "update-member@example.test", "status" => 1]);
 $member->save();
 \Drupal\og\Og::createMembership($workspace, $member)->save();
-\Drupal\user\Entity\User::create(["name" => "update-homeless", "mail" => "update-homeless@example.test", "status" => 1,
-  "field_developer_title" => "Designer"])->save();
+$types = \Drupal::entityTypeManager();
+$group = $types->getStorage("bb_group")->create(["name" => "Update customer", "workspace_id" => $workspace->id(), "owner_user_id" => $member->id()]);
+$group->save();
+$project = $types->getStorage("bb_project")->create(["name" => "Update project", "key" => "UPD", "group_id" => $group->id(), "owner_user_id" => $member->id()]);
+$project->save();
+$types->getStorage("bb_track_account")->create(["name" => "Update account", "project_id" => $project->id()])->save();
 echo "seeded\n";'
 
 export REGISTRY_IMAGE_PHP=$branch_image
 # The deploy service as production runs it: drush deploy (updb, cim), entity updates, cim.
-docker compose run --rm deploy
+docker compose run --rm deploy 2>&1 | tee "$out/deploy.log"
+# A display import that exhausts memory can still leave drush exiting 0 on some paths.
+if grep -q 'Allowed memory size' "$out/deploy.log"; then echo "deploy ran out of memory" >&2; exit 1; fi
 drush php:eval '
-$member = user_load_by_name("update-member") ?: throw new \RuntimeException("member lost");
-$profiles = \Drupal::service(\Drupal\bb_core\Profile\Profiles::class)->ofAccount((int) $member->id());
-$values = array_values(array_map(fn ($p) => [$p->position(), $p->background()], $profiles));
-$values === [["Backend engineer", "PHP and Drupal."]] || throw new \RuntimeException("profile values: " . json_encode($values));
-foreach (["field_developer_title", "field_bb_background"] as $field) {
-  \Drupal\field\Entity\FieldStorageConfig::loadByName("user", $field) === NULL || throw new \RuntimeException("$field storage remains");
-  \Drupal::database()->schema()->tableExists("user__$field") && throw new \RuntimeException("user__$field table remains");
-}
+$types = \Drupal::entityTypeManager();
+user_load_by_name("update-member") ?: throw new \RuntimeException("member lost");
+$types->getStorage("bb_project")->loadByProperties(["key" => "UPD"]) ?: throw new \RuntimeException("project lost");
+$types->getStorage("bb_track_account")->loadByProperties(["name" => "Update account"]) ?: throw new \RuntimeException("account lost");
+// The import that ran out of memory on the account display must have landed.
+\Drupal\Core\Entity\Entity\EntityViewDisplay::load("bb_track_account.bb_track_account.full") ?: throw new \RuntimeException("account display not imported");
 echo "update checks passed\n";'
