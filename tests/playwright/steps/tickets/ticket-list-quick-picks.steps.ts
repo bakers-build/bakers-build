@@ -38,12 +38,31 @@ When(
   },
 );
 
+When(
+  'I click {string} in the {string} facet without waiting',
+  async ({ page }, label: string, facet: string) => {
+    await (await facetRow(page, facet, label)).click();
+    await active(page).waitForSelector('.htmx-request', { state: 'attached', timeout: 5000 });
+  },
+);
+
+// Watches the whole loading window: a status shown and then swapped away still fails.
+Then('no facet says {string} while the list loads', async ({ page }, text: string) => {
+  const outcome = await active(page).waitForFunction(
+    (said) => [...document.querySelectorAll('[data-picker-part=status]')].some((status) => status.textContent?.includes(said))
+      ? 'said'
+      : !document.querySelector('.htmx-request') && 'settled',
+    text,
+    { timeout: 20000 },
+  );
+  expect(await outcome.jsonValue(), `A facet said "${text}" while the list loaded`).toBe('settled');
+});
+
 Then('no facet says {string}', async ({ page }, text: string) => {
   await expect(active(page).locator('[data-picker-part=status]', { hasText: text })).toHaveCount(0);
 });
 
-// Every answer (1.5 s each) has arrived and nothing is in flight.
+// Every answer has arrived and nothing is in flight.
 async function settle(target: Page): Promise<void> {
-  await target.waitForTimeout(4000);
   await target.waitForFunction(() => !document.querySelector('.htmx-request'), null, { timeout: 20000 });
 }
