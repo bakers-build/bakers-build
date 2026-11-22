@@ -474,6 +474,18 @@ Feature: The ticket list is the nav home
     And I see the closed ticket
     And I do not see the open ticket
 
+  # The closed control is links, not a form field, so a facet pick must carry
+  # its position or the list falls back to open rows.
+  Scenario: A facet pick keeps the chosen closed position
+    Given I am signed in as a member of the "bakers" workspace
+    And the workspace has an open ticket and a closed ticket assigned to me
+    When I visit the ticket list of the "bakers" workspace
+    And I choose the "All" closed position
+    And I choose "Done" in the "State" facet
+    Then the address carries "closed=all"
+    And the closed control marks "All" as the current position
+    And I see the closed ticket
+
   # THE FINAL REVIEW'S CRITICAL #2, and the reason this scenario exists at all.
   # `project_tickets` renders the same segmented control `my_work` does — Task 5
   # placed the source in both displays' canvas — but only `my_work` was ever
