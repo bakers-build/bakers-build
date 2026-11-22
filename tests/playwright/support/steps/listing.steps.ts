@@ -1,11 +1,12 @@
 // Shared steps of the faceted list screens: signing in as a workspace member,
-// picking facets and chips, reading the address, the closed-rows control.
-// Consumers: features/tickets, runs, projects.
+// picking facets and chips, reading the address, the closed-rows control,
+// the sort dropdown.
+// Consumers: features/tickets, runs, projects, workspace.
 import { Given, When, Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { php } from '../drush';
-import { active, closedControl, facetRow, facetTrigger, listing, safe } from '../listing';
+import { active, closedControl, facetRow, facetTrigger, listing, safe, sortSelect } from '../listing';
 
 /**
  * Uses the recipe's ordinary reader for each workspace. Selecting the first
@@ -322,4 +323,9 @@ Then('the closed control marks {string} as the current position', async ({ page 
         .not.toHaveAttribute('aria-current', 'page');
     }
   }
+});
+
+Then('the sort dropdown still reads {string}', async ({ page }, value: string) => {
+  await expect(sortSelect(page)).toHaveValue(value, { timeout: 20000 });
+  expect(new URL(page.url()).searchParams.get('sort_bef_combine')).toBe(value);
 });

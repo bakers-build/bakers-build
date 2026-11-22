@@ -1,11 +1,12 @@
 // The four workspace listings as `bb_theme:list` rows with one sort dropdown.
 // Consumer: features/workspace/listing-rows.feature. `I am signed in as a
-// member of the {string} workspace` comes from support/steps/listing.steps.ts.
+// member of the {string} workspace` and `the sort dropdown still reads
+// {string}` come from support/steps/listing.steps.ts.
 import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../../support/drush';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php } from '../../support/drush';
-import { closedControl, expectToolbarAbove, resetOverridePage, SEARCH_TOOLBAR } from '../../support/listing';
+import { closedControl, expectToolbarAbove, resetOverridePage, SEARCH_TOOLBAR, sortSelect } from '../../support/listing';
 import { CONTENT_ISLAND } from '../../support/shell';
 
 type RowListing = 'Projects' | 'Groups' | 'Tickets' | 'Runs';
@@ -60,10 +61,6 @@ function listingPath(listing: RowListing): string {
       return `${url}/runs`;
     }
   }
-}
-
-function sortSelect(page: Page): Locator {
-  return page.locator(`${CONTENT_ISLAND} ${SEARCH_TOOLBAR} select[name="sort_bef_combine"]`);
 }
 
 function searchField(page: Page): Locator {
@@ -186,11 +183,6 @@ Then('the search toolbar sits directly above the rows', async ({ page }) => {
 
 When('I sort the listing by {string}', async ({ page }, value: string) => {
   await chooseSort(page, value);
-});
-
-Then('the sort dropdown still reads {string}', async ({ page }, value: string) => {
-  await expect(sortSelect(page)).toHaveValue(value, { timeout: 20000 });
-  expect(new URL(page.url()).searchParams.get('sort_bef_combine')).toBe(value);
 });
 
 Then(
