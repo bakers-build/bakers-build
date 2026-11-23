@@ -44,7 +44,7 @@ const en = {
       ['Plan', 'You describe what you need: in the browser, in a chat with Claude or in the terminal. The agent sorts it, asks what’s unclear and proposes a plan with acceptance criteria you can check.', 'Nothing gets built until you approve the scope.'],
       ['Build', 'The agent works on its own branch, in its own environment on your machines. Automated tests run before the ticket moves on.', 'You confirm the result.'],
       ['Review', 'A second agent reviews independently and gives a verdict. When it needs an expert eye, a developer joins.', 'Confirm it, or send it back with a clear expectation.'],
-      ['Ship', 'After the merge, a deployment ticket can roll a batch of merged tickets out to an environment and tag the release.', 'A person authorizes the merge: you or someone on your team.'],
+      ['Ship', 'After the merge, a ship ticket can bring a batch of merged tickets out to an environment and tag the release.', 'A person authorizes the merge: you or someone on your team.'],
     ],
   },
   run: {

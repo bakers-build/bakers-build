@@ -11,7 +11,7 @@ Qualification reads the installed recipes, chooses one that fits the request and
 | Clarify the problem, agree a spec, implement test-first and review | `matt` |
 | Brainstorm, plan and implement using the Superpowers method | `superpowers` |
 | Verify an existing result | `verify` |
-| Deploy and release a batch | `deploy-and-release` |
+| Ship a batch to a target branch | `ship` |
 
 The **type** selects the recipe's variant: for example, a bug needs a diagnosis rather than a feature specification. A recipe declares the types it supports.
 
@@ -27,7 +27,7 @@ A shipped recipe names original skills from an external plugin. Add the recipe's
 |---|---|---|---|---|
 | `bb-recipe-matt` | `mattpocock-skills` | `https://github.com/mattpocock/skills.git` | `v1.3.2` | `{ url: 'https://github.com/mattpocock/skills.git', ref: 'v1.3.2', plugins: ['mattpocock-skills'] }` |
 | `bb-recipe-superpowers` | `superpowers` | `https://github.com/obra/superpowers.git` | `v7.0.0` | `{ url: 'https://github.com/obra/superpowers.git', ref: 'v7.0.0', plugins: ['superpowers'] }` |
-| `bb-recipe-deploy-and-release`, `bb-recipe-verify` | none | — | — | — |
+| `bb-recipe-ship`, `bb-recipe-verify` | none | — | — | — |
 
 ## Add your own recipe
 
