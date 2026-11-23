@@ -59,9 +59,9 @@ commit.
    nothing merges back into the source.
 2. Pending, failed or refused: publish an honest `summary`; STOP.
 3. Deploy steps: watch the merged SHA's deploy (`forge_checks`, `ref` that SHA), then expect
-   HTTP 200 from `<base_url>/user/login`. Then `bakers_ticket_update` this ticket only with
-   `referenced_tickets_add` (the batch).
-4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA (its release
+   HTTP 200 from `<base_url>/user/login`.
+4. Record the batch, always: `bakers_ticket_update` this ticket only with `referenced_tickets_add`.
+5. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA (its release
    carries the merge request's `### Upgrade notes` and `### Known open issues`), link the forge's
    release, named GitHub or GitLab, in `links` once the frame's release-read operation verifies
    it; with an npm package, verify `x.y.z` is published.

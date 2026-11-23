@@ -62,7 +62,8 @@
         "v0.2.0",
         "GitLab",
         "@acme/widgets",
-        "base_url"
+        "base_url",
+        "referenced_tickets"
       ]
     }
   },
@@ -163,7 +164,7 @@
     },
     {
       "id": "release-record",
-      "criterion": "The summary names the frozen SHA, the tag v0.2.0 with its GitLab release named as such, the npm package @acme/widgets at 0.2.0 and the ticket field writes still to make."
+      "criterion": "The summary names the frozen SHA, the tag v0.2.0 with its GitLab release named as such, the npm package @acme/widgets at 0.2.0 and the ticket field writes still to make, including referenced_tickets_add for EVAL-41 and EVAL-42."
     }
   ]
 }

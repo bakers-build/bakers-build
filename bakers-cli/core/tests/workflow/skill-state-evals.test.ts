@@ -1180,7 +1180,7 @@ describe('recipe run profile', () => {
   it('ships to main without a base_url: no deploy steps, release and npm package named', async () => {
     const summary = comment(
       'summary',
-      'chore(release): 0.2.0 tagged v0.2.0, GitLab release linked; @acme/widgets 0.2.0 on npm; no base_url: deploy steps skipped',
+      'chore(release): 0.2.0 tagged v0.2.0, GitLab release linked; @acme/widgets 0.2.0 on npm; no base_url: deploy steps skipped; still to write: referenced_tickets_add EVAL-41, EVAL-42',
     );
     expect(
       await judge('ship-working-npm-only', 'Released.', [
@@ -1194,6 +1194,17 @@ describe('recipe run profile', () => {
         readTicket(),
         merge('51'),
         comment('summary', 'chore(release): 0.2.0 tagged v0.2.0'),
+      ]),
+    ).toEqual(['summary-content']);
+    // The batch is recorded even when the deploy steps are skipped.
+    expect(
+      await judge('ship-working-npm-only', 'Released.', [
+        readTicket(),
+        merge('51'),
+        comment(
+          'summary',
+          'chore(release): 0.2.0 tagged v0.2.0, GitLab release linked; @acme/widgets 0.2.0 on npm; no base_url: deploy steps skipped',
+        ),
       ]),
     ).toEqual(['summary-content']);
   });
