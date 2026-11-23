@@ -28,6 +28,7 @@ Feature: Deleting an entity where it is managed
       | ticket      | This also deletes              |
       | comment     | This action cannot be undone   |
       | invite      | This action cannot be undone   |
+      | project     | This action cannot be undone   |
 
   Scenario Outline: Its creator deletes a <kind> after confirming
     Given a disposable "<kind>" created by "north-lead" exists in the Northside workspace
@@ -62,6 +63,12 @@ Feature: Deleting an entity where it is managed
     And the disposable entity no longer exists
     And the entities the disposable entity needed no longer exist
 
+  Scenario: A contributor who did not create a project gets neither its Settings nor its Delete
+    Given a disposable "project" created by "north-lead" exists in the Northside workspace
+    And I am logged in as the account "north-contributor"
+    Then the page where the disposable entity is managed answers 403
+    And the delete page of the disposable entity answers 403
+
   Scenario Outline: <account> is refused the delete page of a <kind>
     Given a disposable "<kind>" exists in the Northside workspace
     And I am logged in as the account "<account>"
@@ -77,7 +84,6 @@ Feature: Deleting an entity where it is managed
       | north-guest  | template    |
       | north-guest  | trigger     |
       | north-guest  | ticket      |
-      | north-lead   | project     |
       | north-lead   | group       |
       | north-member | project     |
       | north-member | group       |
