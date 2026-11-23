@@ -270,26 +270,34 @@ function bb_core_post_update_rename_deployment_to_ship(): string {
   $etm = \Drupal::entityTypeManager();
   $terms = $etm->getStorage('bb_term');
   $tickets = $etm->getStorage('bb_ticket');
+  $renames = [
+    'type' => ['deployment', 'ticket_type'],
+    'recipe' => ['deploy-and-release', 'recipe'],
+  ];
   $count = 0;
-  foreach (['type' => ['deployment', 'ticket_type'], 'recipe' => ['deploy-and-release', 'recipe']] as $vid => [$old, $field]) {
+  foreach ($renames as $vid => [$old, $field]) {
     foreach ($terms->loadByProperties(['vid' => $vid, 'name' => $old]) as $term) {
       assert($term instanceof BbTermInterface);
-      $ship = $terms->loadByProperties(['vid' => $vid, 'name' => 'ship', 'workspace_id' => $term->get('workspace_id')->target_id]);
-      if ($ship) {
-        $ids = $tickets->getQuery()->accessCheck(FALSE)->condition($field, $term->id())->execute();
-        foreach ($tickets->loadMultiple($ids) as $ticket) {
-          $ticket->set($field, reset($ship)->id())->save();
-        }
-        $term->delete();
-      }
-      else {
+      $count++;
+      $ship = $terms->loadByProperties([
+        'vid' => $vid,
+        'name' => 'ship',
+        'workspace_id' => $term->get('workspace_id')->target_id,
+      ]);
+      if (!$ship) {
         $term->set('name', 'ship');
         if (!$term->get('key')->isEmpty()) {
           $term->set('key', 'ship');
         }
         $term->save();
+        continue;
       }
-      $count++;
+      $ids = $tickets->getQuery()->accessCheck(FALSE)->condition($field, $term->id())->execute();
+      foreach ($tickets->loadMultiple($ids) as $ticket) {
+        assert($ticket instanceof BbTicketInterface);
+        $ticket->set($field, reset($ship)->id())->save();
+      }
+      $term->delete();
     }
   }
   return (string) t('Renamed @count terms to ship.', ['@count' => $count]);
