@@ -55,7 +55,8 @@ final class FormAlterHooks {
    *
    * Puts BEF's combined "Sort by" select ahead of the filter controls (Views
    * adds sorts after filters and neither Views nor BEF exposes a weight),
-   * makes a `title` search a search field, and lets the newest submit win.
+   * makes a `title` search a search field, lets the newest submit win, and
+   * keeps the list out of the htmx history cache.
    *
    * @param array<string, mixed> $form
    *   The exposed form.
@@ -69,6 +70,9 @@ final class FormAlterHooks {
     // A submit queued on a form the previous answer swapped out is dropped;
     // replace aborts the older request and sends the newer form state.
     $form['#attributes']['data-hx-sync'] ??= 'this:replace';
+    // No htmx history snapshot: Back refetches the list rather than restoring
+    // markup Alpine has already processed, whose pickers send nothing.
+    $form['#attributes']['data-hx-history'] = 'false';
     if (isset($form['sort_bef_combine'])) {
       $form['sort_bef_combine']['#weight'] = -100;
     }
