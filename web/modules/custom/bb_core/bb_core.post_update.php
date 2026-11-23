@@ -282,11 +282,11 @@ function bb_core_post_update_rename_deployment_to_ship(): string {
     foreach ($terms->loadByProperties(['vid' => $vid, 'name' => $old]) as $term) {
       assert($term instanceof BbTermInterface);
       $count++;
-      $ship = $terms->loadByProperties([
-        'vid' => $vid,
-        'name' => 'ship',
-        'workspace_id' => $term->get('workspace_id')->target_id,
-      ]);
+      $query = $terms->getQuery()->accessCheck(FALSE)
+        ->condition('vid', $vid)
+        ->condition('workspace_id', $term->get('workspace_id')->target_id);
+      $query->condition($query->orConditionGroup()->condition('name', 'ship')->condition('key', 'ship'));
+      $ship = $terms->loadMultiple($query->execute());
       if (!$ship) {
         $term->set('name', 'ship');
         if (!$term->get('key')->isEmpty()) {

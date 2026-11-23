@@ -70,6 +70,29 @@ final class ShipRenameUpdateTest extends BakersToolTestBase {
   }
 
   /**
+   * An existing term keyed ship under another name absorbs the old term.
+   */
+  public function testMergesIntoTermKeyedShip(): void {
+    $this->installEntitySchema('bb_ticket_template');
+    $keyed = $this->entity('bb_term', [
+      'vid' => 'type',
+      'name' => 'Shipping',
+      'key' => 'ship',
+      'workspace_id' => $this->workspace->id(),
+    ]);
+    $old = $this->term('type', 'deployment');
+    $ticket = $this->ticket('SR-K', ['ticket_type' => $old->id()]);
+
+    $this->container->get('module_handler')->loadInclude('bb_core', 'php', 'bb_core.post_update');
+    bb_core_post_update_rename_deployment_to_ship();
+
+    $terms = $this->container->get('entity_type.manager')->getStorage('bb_term');
+    $keyedShip = $terms->loadByProperties(['vid' => 'type', 'key' => 'ship', 'workspace_id' => $this->workspace->id()]);
+    self::assertCount(1, $keyedShip);
+    self::assertSame((int) $keyed->id(), (int) $this->reload($ticket)->get('ticket_type')->target_id);
+  }
+
+  /**
    * The stored ticket's reference ids, in order.
    *
    * @return array<int>
