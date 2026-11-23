@@ -160,6 +160,14 @@ describe('conductor addons per scope', () => {
     expect(cfg.executor.id).toBe('herdr-core');
   });
 
+  it('a machine selects the Rex executor by its package', async () => {
+    writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex'], executor: { use: '@bakers-build/addon-rex' } };`,
+    );
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+    expect(cfg.executor.id).toBe('rex');
+  });
+
   it('agents.addons is an unknown key', async () => {
     writeMachine(
       `export default { agents: { addons: ['@bakers-build/addon-codex'] } };`,

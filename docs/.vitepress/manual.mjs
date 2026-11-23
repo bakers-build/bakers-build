@@ -130,6 +130,7 @@ export const SIDEBAR = {
       ["herdr", "/addons/herdr"],
       ["herdr-core", "/addons/herdr-core"],
       ["Orca", "/addons/orca"],
+      ["Rex", "/addons/rex"],
       ["Git workspace", "/addons/workspace-git"],
       ["Conductor slots", "/addons/slots"],
       ["Tailscale", "/addons/tailscale"],
