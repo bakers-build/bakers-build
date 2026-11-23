@@ -23,6 +23,7 @@ Choose an integration for your task, then follow its setup guide. [Configure add
 | [herdr](/addons/herdr) | Runs agents in herdr-cli sessions and worktrees |
 | [herdr-core](/addons/herdr-core) | Hosts herdr-app's agent terminals independently of the app |
 | [Orca](/addons/orca) | Local worktree UI and agent terminals |
+| [Rex](/addons/rex) | Runs agents in Rex terminal sessions |
 | [Git workspace](/addons/workspace-git) | Plain Git worktree per ticket |
 
 ## Sharing previews and ports

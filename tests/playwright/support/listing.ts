@@ -2,7 +2,8 @@
 // One Playwright worker runs its feature files one after another in one Node
 // process, so this state is per worker and every Background resets it.
 import { expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
+import { CONTENT_ISLAND } from './shell';
 
 /**
  * The page later steps read, when it is not the fixture's own.
@@ -94,6 +95,11 @@ export function closedControl(target: Page) {
  * attribute, so they submit together with the facets.
  */
 export const SEARCH_TOOLBAR = '[role="search"][aria-label="Search and sort"]';
+
+/** The toolbar's "Sort by" select. */
+export function sortSelect(page: Page): Locator {
+  return page.locator(`${CONTENT_ISLAND} ${SEARCH_TOOLBAR} select[name="sort_bef_combine"]`);
+}
 
 /**
  * Asserts the toolbar holds search then sort, both bound to the exposed form

@@ -104,6 +104,11 @@ const PERMITTED_SIBLINGS = {
     '@bakers-build/addon-herdr',
     '@bakers-build/addon-workspace-git',
   ],
+  // Rex reuses the same launch wrapper and nests the same Git workspace.
+  '@bakers-build/addon-rex': [
+    '@bakers-build/addon-herdr',
+    '@bakers-build/addon-workspace-git',
+  ],
   // BB-403 added `addon-name-refs` on the same footing `addon-workspace`
   // used to carry: an essentials child, so the single non-auth `plugins[]`
   // entry every committed config already carries stays exactly as it is.

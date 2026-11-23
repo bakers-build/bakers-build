@@ -189,6 +189,7 @@
   "/addons/herdr/options": "/addons/herdr#options",
   "/addons/herdr-core/options": "/addons/herdr-core#options",
   "/addons/orca/options": "/addons/orca#options",
+  "/addons/rex/options": "/addons/rex#options",
   "/addons/remote-drupal": "/configuration/connection",
   "/addons/fake": "/addons/catalog",
   "/addons/info": "/cli/tools",

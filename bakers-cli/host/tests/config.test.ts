@@ -1310,7 +1310,10 @@ it('offline check validates declared addon scopes without evaluating config', as
   ).toBe(false);
 });
 
-it('initializes herdr-core with its nested Git worktree using real preset declarations', async () => {
+it.each([
+  '@bakers-build/addon-herdr-core',
+  '@bakers-build/addon-rex',
+])('initializes %s with its nested Git worktree using real preset declarations', async (executor) => {
   seed();
   const report = await run([
     'init',
@@ -1319,13 +1322,13 @@ it('initializes herdr-core with its nested Git worktree using real preset declar
     '--project',
     'demo',
     '--executor',
-    '@bakers-build/addon-herdr-core',
+    executor,
     '--format',
     'json',
     '--yes',
   ]);
   const source = readFileSync(join(cwd, '.bakers/project.config.js'), 'utf8');
-  expect(source).toContain('@bakers-build/addon-herdr-core');
+  expect(source).toContain(executor);
   expect(source).not.toContain("use: '@bakers-build/addon-herdr'");
   expect(
     report.findings.filter((f: { key: string }) => f.key === 'worktree'),
@@ -1338,7 +1341,7 @@ it('initializes herdr-core with its nested Git worktree using real preset declar
     'text',
   ]);
   expect(checked).toContain(
-    'Worktree: @bakers-build/addon-workspace-git (via @bakers-build/addon-herdr-core)',
+    `Worktree: @bakers-build/addon-workspace-git (via ${executor})`,
   );
 });
 

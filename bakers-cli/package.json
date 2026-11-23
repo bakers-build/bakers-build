@@ -43,6 +43,7 @@
     "@bakers-build/addon-orca": "workspace:^",
     "@bakers-build/addon-pi": "workspace:^",
     "@bakers-build/addon-remote-drupal": "workspace:^",
+    "@bakers-build/addon-rex": "workspace:^",
     "@bakers-build/addon-workspace": "workspace:^",
     "@bakers-build/addon-workspace-git": "workspace:^",
     "@types/node": "^20.19.0",
