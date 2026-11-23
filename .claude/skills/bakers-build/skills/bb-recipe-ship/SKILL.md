@@ -5,7 +5,7 @@ description: Recipe for tickets of type ship — bring a frozen batch to one tar
 
 # Ship
 
-Writes follow `ticket-writes.md`; tool operations follow the frame's tool discovery and fallback.
+Writes follow `ticket-writes.md`; tools follow the frame's tool discovery and fallback.
 
 The ticket's `environments` entry is the target (`branch`, `base_url`), `base_branch` the source.
 `main` is the **release environment**. The **deploy steps** (deploy watch, login check) run only
@@ -58,13 +58,13 @@ commit.
    merge commit, source kept). The frame's merge never runs here;
    nothing merges back into the source.
 2. Pending, failed or refused: publish an honest `summary`; STOP.
-3. Deploy steps: watch the deploy of the merged SHA (`forge_checks`, `ref` that SHA), then expect
+3. Deploy steps: watch the merged SHA's deploy (`forge_checks`, `ref` that SHA), then expect
    HTTP 200 from `<base_url>/user/login`. Then `bakers_ticket_update` this ticket only with
    `referenced_tickets_add` (the batch).
 4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA (its release
    carries the merge request's `### Upgrade notes` and `### Known open issues`), link the forge's
    release, named GitHub or GitLab, in `links` once the frame's release-read operation verifies
-   it; verify npm package `x.y.z` is published.
+   it; with an npm package, verify `x.y.z` is published.
 
 ### bb-phase-transition
 
@@ -75,8 +75,8 @@ Review is mandatory.
 ### bb-phase-work
 
 Verdict: pipeline green on the merged SHA, batch complete and recorded here,
-target responding after the deploy steps. Release environment additionally: tag `vx.y.z` on the
-frozen SHA, forge release linked, npm package `x.y.z` published (verified).
+target responding after deploy steps. Release environment additionally, unless skipped: tag
+`vx.y.z` on the frozen SHA, forge release linked, npm package `x.y.z` published.
 
 ### bb-phase-transition
 

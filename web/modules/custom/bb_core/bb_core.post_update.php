@@ -7,6 +7,7 @@
 
 declare(strict_types=1);
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Profile\Profiles;
 use Drupal\bb_core\Entity\BbTerm;
@@ -264,12 +265,14 @@ function _bb_core_move_user_profile(UserInterface $user, array $fields): ?string
  * Renames the ticket type deployment and the recipe deploy-and-release to ship.
  *
  * Per workspace vocabulary: the old term is renamed, or, when that vocabulary
- * already holds ship, its tickets move to ship and the old term is deleted.
+ * already holds ship, its tickets and ticket templates move to ship and the
+ * old term is deleted.
  */
 function bb_core_post_update_rename_deployment_to_ship(): string {
   $etm = \Drupal::entityTypeManager();
   $terms = $etm->getStorage('bb_term');
   $tickets = $etm->getStorage('bb_ticket');
+  $templates = $etm->getStorage('bb_ticket_template');
   $renames = [
     'type' => ['deployment', 'ticket_type'],
     'recipe' => ['deploy-and-release', 'recipe'],
@@ -292,10 +295,13 @@ function bb_core_post_update_rename_deployment_to_ship(): string {
         $term->save();
         continue;
       }
-      $ids = $tickets->getQuery()->accessCheck(FALSE)->condition($field, $term->id())->execute();
-      foreach ($tickets->loadMultiple($ids) as $ticket) {
-        assert($ticket instanceof BbTicketInterface);
-        $ticket->set($field, reset($ship)->id())->save();
+      // Tickets and ticket templates reference these terms; both move first.
+      foreach ([$tickets, $templates] as $storage) {
+        $ids = $storage->getQuery()->accessCheck(FALSE)->condition($field, $term->id())->execute();
+        foreach ($storage->loadMultiple($ids) as $entity) {
+          assert($entity instanceof ContentEntityInterface);
+          $entity->set($field, reset($ship)->id())->save();
+        }
       }
       $term->delete();
     }

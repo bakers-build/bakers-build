@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\Tests\bb_core\Kernel\Tool\BakersToolTestBase;
 use Drupal\Tests\bb_core\Kernel\Tool\ForeignWorkspaceTrait;
@@ -24,6 +25,7 @@ final class ShipRenameUpdateTest extends BakersToolTestBase {
    */
   public function testRenamesTypeAndRecipeToShip(): void {
     $this->installEntitySchema('bb_environment');
+    $this->installEntitySchema('bb_ticket_template');
     $production = (int) $this->entity('bb_environment', ['name' => 'production', 'project_id' => $this->project->id()])->id();
     $carried = $this->ticket('SR-C');
     $type = $this->term('type', 'deployment');
@@ -40,6 +42,12 @@ final class ShipRenameUpdateTest extends BakersToolTestBase {
     $old = $this->entity('bb_term', ['vid' => 'type', 'name' => 'deployment', 'workspace_id' => $other->id()]);
     $ship = $this->entity('bb_term', ['vid' => 'type', 'name' => 'ship', 'workspace_id' => $other->id()]);
     $merged = $this->ticket('SR-2', ['ticket_type' => $old->id()]);
+    $template = $this->entity('bb_ticket_template', [
+      'title' => 'Weekly release',
+      'workflow' => 'bb_work',
+      'project_id' => $this->project->id(),
+      'ticket_type' => $old->id(),
+    ]);
 
     $this->container->get('module_handler')->loadInclude('bb_core', 'php', 'bb_core.post_update');
     bb_core_post_update_rename_deployment_to_ship();
@@ -56,6 +64,9 @@ final class ShipRenameUpdateTest extends BakersToolTestBase {
     self::assertSame([$production], $this->ids($renamed, 'environments'));
     self::assertSame([(int) $carried->id()], $this->ids($renamed, 'referenced_tickets'));
     self::assertSame((int) $ship->id(), (int) $this->reload($merged)->get('ticket_type')->target_id);
+    $template = $this->container->get('entity_type.manager')->getStorage('bb_ticket_template')->load($template->id());
+    self::assertInstanceOf(ContentEntityInterface::class, $template);
+    self::assertSame((int) $ship->id(), (int) $template->get('ticket_type')->target_id);
   }
 
   /**
