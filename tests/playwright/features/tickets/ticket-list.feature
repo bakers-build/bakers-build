@@ -315,6 +315,17 @@ Feature: The ticket list is the nav home
     Then the active filters read "State is Working"
     And the "State" facet shows "Working" as chosen
 
+  # Back to the list must give live facets: a restored htmx snapshot carries
+  # markup Alpine already processed, so its pickers sent nothing.
+  Scenario: A facet pick works after going back from a ticket
+    Given I am signed in as a member of the "bakers" workspace
+    When I visit the full ticket list of the "bakers" workspace
+    And I open the first listed ticket
+    And I go back
+    And I click "Working" in the "State" facet with a pointer
+    Then the address carries "state[]=working"
+    And the active filters read "State is Working"
+
   # AC 7, and exactly AC 7. The `filters` aside composes `collapsible`, which is
   # a native `<details>` over a real `<summary>`: no behaviour, no CSS class, no
   # `Drupal.attachBehaviors`. The two facet steps this scenario used to carry
@@ -473,6 +484,18 @@ Feature: The ticket list is the nav home
     Then the closed control marks "Closed" as the current position
     And I see the closed ticket
     And I do not see the open ticket
+
+  # The closed control is links, not a form field, so a facet pick must carry
+  # its position or the list falls back to open rows.
+  Scenario: A facet pick keeps the chosen closed position
+    Given I am signed in as a member of the "bakers" workspace
+    And the workspace has an open ticket and a closed ticket assigned to me
+    When I visit the ticket list of the "bakers" workspace
+    And I choose the "All" closed position
+    And I choose "Done" in the "State" facet
+    Then the address carries "closed=all"
+    And the closed control marks "All" as the current position
+    And I see the closed ticket
 
   # THE FINAL REVIEW'S CRITICAL #2, and the reason this scenario exists at all.
   # `project_tickets` renders the same segmented control `my_work` does — Task 5

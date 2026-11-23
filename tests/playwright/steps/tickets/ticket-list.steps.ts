@@ -1613,3 +1613,12 @@ Then(
 Then('the ticket {string} shows its assignee', async ({ page }, title: string) => {
   await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="assignee"] [role="img"]')).toBeVisible();
 });
+
+// A boosted click on a row's ticket link, as a reader leaves the list.
+When('I open the first listed ticket', async ({ page }) => {
+  const target = active(page);
+  const link = target.locator(`${CONTENT_ISLAND} a[href*="/ticket/"]:not([href*="/ticket/create"])`).first();
+  const href = await link.getAttribute('href');
+  await link.click();
+  await target.waitForURL((url) => url.pathname === href, { timeout: 20000 });
+});
