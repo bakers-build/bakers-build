@@ -589,6 +589,25 @@ importers:
         specifier: ^4.1.0
         version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
 
+  addons/rex:
+    dependencies:
+      '@bakers-build/addon-herdr':
+        specifier: workspace:^
+        version: link:../herdr
+      '@bakers-build/addon-workspace-git':
+        specifier: workspace:^
+        version: link:../workspace-git
+    devDependencies:
+      '@bakers-build/conductor':
+        specifier: workspace:^
+        version: link:../../conductor
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
   addons/runtime-bwrap:
     devDependencies:
       '@bakers-build/conductor':
