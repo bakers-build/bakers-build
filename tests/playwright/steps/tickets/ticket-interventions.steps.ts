@@ -46,13 +46,6 @@ When('I open {string}', async ({ page }, name: string) => {
   await page.getByRole('link', { name, exact: true }).first().click();
 });
 
-When('I open {string} on the disposable run\'s own row', async ({ page }, name: string) => {
-  const { run } = subject(page);
-  // The action on the run's own row, and the link names this run.
-  await page.locator('[data-list-item]').getByRole('link', { name, exact: true })
-    .and(page.locator(`[href*="run=${run}"]`)).click();
-});
-
 /** The disposable run's row, found by its canonical link, which every reader gets. */
 function disposableRunRow(page: Page) {
   const { runId } = subject(page);
@@ -63,10 +56,6 @@ Then('the disposable run\'s row says why it failed: {string}', async ({ page }, 
   const row = disposableRunRow(page);
   await expect(row.locator('[data-cell="state"]')).toContainText('failed');
   await expect(row.locator('[data-list-detail]')).toHaveText(reason);
-});
-
-Then('the disposable run\'s row offers {string}', async ({ page }, name: string) => {
-  await expect(disposableRunRow(page).getByRole('link', { name, exact: true })).toBeVisible();
 });
 
 Then('the disposable run\'s row does not offer {string}', async ({ page }, name: string) => {

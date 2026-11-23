@@ -1,6 +1,7 @@
 # Position and background, the context bakers.build hands to its AI assistants,
-# have their own Profile tab; the notice that says so is the page's description.
-# These scenarios save the account's profile, so they run as a fixture account.
+# have their own Profile tab, one profile per workspace; the notice that says so
+# is the page's description. These scenarios save the account's profiles, so
+# they run as a fixture account, a member of both bakeries.
 
 Feature: The Profile tab edits position and background
 
@@ -14,7 +15,7 @@ Feature: The Profile tab edits position and background
     When I fill in the position "Backend engineer"
     And I save the profile form
     And I reload the page
-    Then the developer title field holds "Backend engineer"
+    Then the position field holds "Backend engineer"
     When I click the tab "Edit"
     Then the edit form has no position or background field
 
@@ -31,3 +32,14 @@ Feature: The Profile tab edits position and background
     And I reload the page
     Then the context questions hold:
       | What should bakers.build know about your background? | Drupal developer |
+
+  Scenario: Each workspace keeps its own profile
+    When I visit the profile page of "fixture-profile" in the workspace "bakers"
+    And I fill in the position "North baker"
+    And I save the profile form
+    And I visit the profile page of "fixture-profile" in the workspace "other"
+    Then the page heading is "Profile in Southside Bakery"
+    When I fill in the position "South baker"
+    And I save the profile form
+    And I visit the profile page of "fixture-profile" in the workspace "bakers"
+    Then the position field holds "North baker"

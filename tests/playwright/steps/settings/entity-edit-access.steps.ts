@@ -38,8 +38,8 @@ function formPath(entityType: string, uuid: string): string {
   const card: Record<string, string> = {
     bb_project: '/settings',
     bb_group: '/settings',
-    bb_machine: '/card/identity',
-    bb_conductor: '/card/identity',
+    bb_machine: '/settings',
+    bb_conductor: '/settings',
   };
   if (!card[entityType]) {
     throw new Error(`No browser form for ${entityType}`);

@@ -41,18 +41,6 @@ props:
         took:
           kind: text
           value: 36 min
-        retry:
-          kind: action
-          label: Retry
-          variant: neutral
-          icon: play
-        redispatch:
-          kind: action
-          label: Re-dispatch
-        log:
-          kind: action
-          label: Log
-          icon: report
     - accent: attention
       detail: >-
         Claimed by srv01-bakers 40 minutes ago, not started yet. The claim
@@ -78,10 +66,6 @@ props:
           tone: neutral
           icon: conductor
           mono: true
-        cancel:
-          kind: action
-          label: Cancel run
-          variant: danger
     - accent: running
       cells:
         state:
@@ -112,14 +96,6 @@ props:
           label: 12 minutes ago
           datetime: '2026-06-30T15:50:00+00:00'
           title: Tue, 30 Jun 2026, 15:50 UTC
-        cancel:
-          kind: action
-          label: Cancel run
-          variant: danger
-        log:
-          kind: action
-          label: Log
-          icon: report
     - accent: idle
       detail: >-
         The claim lapsed before the run started. The ticket can be claimed
@@ -181,7 +157,3 @@ props:
         took:
           kind: text
           value: 1h 10m
-        log:
-          kind: action
-          label: Log
-          icon: report

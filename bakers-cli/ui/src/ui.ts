@@ -9,7 +9,6 @@ import {
   type BbConnectionConfig,
   CommandRunner,
   type ConductorLogger,
-  createBbConnectionClient,
   createBbConnectionContext,
   createLogger,
   exec,
@@ -19,6 +18,7 @@ import {
   setDefaultCommandRunner,
   type WorkspaceRecoveryOptions,
 } from '@bakers-build/core';
+import { createToolClient, type ToolClient } from '@dropsh/plugin-tool';
 import type { Command } from 'commander';
 import { buildProgram as buildDropshProgram } from 'dropsh';
 import {
@@ -116,13 +116,64 @@ export interface BuildWriteClientOptions {
 async function buildWriteClientDefault(
   o: BuildWriteClientOptions,
 ): Promise<unknown> {
-  return createBbConnectionClient(
+  const context = await createBbConnectionContext(
     {
       site: { base_url: o.baseUrl, jsonapi_prefix: o.jsonapiPrefix },
       plugins: o.plugins,
     },
     o.stateDir ? { stateDir: o.stateDir } : {},
   );
+  const tools = createToolClient({
+    auth: context.auth,
+    baseUrl: context.baseUrl,
+    endpoint: '/mcp',
+  });
+  return {
+    ...context.client,
+    runLog: runLogReader(context),
+    callTool: siteToolCaller(tools),
+  };
+}
+
+/**
+ * Calls a site tool (`tool_api__<name>` on `/mcp`) signed in like the client
+ * and returns its structured result; a refusal throws with the site's text.
+ */
+export function siteToolCaller(tools: Pick<ToolClient, 'call'>) {
+  return async (
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> =>
+    ((await tools.call(`tool_api__${name}`, args)).structuredContent ??
+      {}) as Record<string, unknown>;
+}
+
+/**
+ * Reads a run's stored log from the download route, signed in like the client
+ * ('' for 204, no log). JSON:API returns `log`/`error_log` empty, so a
+ * read-modify-write of either needs this; any other answer throws rather than
+ * read as empty and let the write replace the log.
+ */
+export function runLogReader(
+  context: Pick<
+    Awaited<ReturnType<typeof createBbConnectionContext>>,
+    'http' | 'auth' | 'baseUrl'
+  >,
+) {
+  return async (runId: string, kind: 'log' | 'error_log'): Promise<string> => {
+    const base = context.baseUrl.replace(/\/+$/, '');
+    const response = await context.http.send(
+      await context.auth.apply({
+        method: 'GET',
+        url: `${base}/_bakers-api/run/${runId}/log/${kind}`,
+        headers: { 'Accept-Encoding': 'gzip' },
+      }),
+    );
+    if (response.status === 204) return '';
+    if (response.status !== 200)
+      throw new Error(`Run ${runId} ${kind}: HTTP ${response.status}`);
+    return response.body;
+  };
 }
 
 /** The dynamically-imported `@bakers-build/addon-bakers-ui` module shape. */

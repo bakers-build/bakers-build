@@ -177,7 +177,7 @@ describe('the ticket screen holds and moves the page', () => {
     expect(frame.meta ?? '').not.toMatch(/next|prev/);
   });
 
-  // Count/page live in header meta (BB-375); a save message must not hide them.
+  // Count/page live in header meta (BB-375); a status message must not hide them.
   it('the paging segment survives a set status message', async () => {
     const context = makeContext({
       get: async () => ({
@@ -190,14 +190,12 @@ describe('the ticket screen holds and moves the page', () => {
     await tick();
     screen.handleInput(RIGHT, context);
     await tick();
-    screen.receiveResult(
-      { type: 'ticket-assignment-updated', ticketId: 'a' },
-      context,
-    );
+    // No current user: `m` states why it cannot filter to mine.
+    screen.handleInput('m', context);
     const shown = screen.present(context);
     const status = shown.status;
     const body = bodyText(screen, context);
-    expect(status).toMatch(/saved/);
+    expect(status).toMatch(/mine: no current user/);
     expect(status).not.toMatch(/page/);
     expect(body).toMatch(/page 2/);
     expect(formatActionLadder(shown.actions)).toMatch(/→ next/);
@@ -667,7 +665,8 @@ describe('the ticket screen holds and moves the page', () => {
     const shown = screen.present(context);
     expect(shown.meta ?? '').not.toMatch(/ticket\(s\)/);
     // BB-375 — filter keys in badge strip; short actions in footer.
-    expect(formatActionLadder(shown.actions)).toMatch(/^e edit/);
+    // BAKERS-338: no row action (`e edit`) — a row only opens its detail.
+    expect(formatActionLadder(shown.actions)).not.toMatch(/\be edit/);
     expect(formatActionLadder(shown.actions)).not.toMatch(/\bnew\b/);
     // Tickets are not created in bakers ui: `n` opens nothing.
     expect(

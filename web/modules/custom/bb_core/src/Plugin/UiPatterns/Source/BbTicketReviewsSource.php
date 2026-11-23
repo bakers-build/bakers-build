@@ -40,22 +40,22 @@ final class BbTicketReviewsSource extends SourcePluginBase implements ContainerF
   /**
    * The current account.
    */
-  private AccountInterface $currentUser;
+  protected AccountInterface $currentUser;
 
   /**
    * Loads the viewer's own reviews.
    */
-  private EntityStorageInterface $storage;
+  protected EntityStorageInterface $storage;
 
   /**
    * Builds each review's state widget.
    */
-  private FormBuilderInterface $formBuilder;
+  protected FormBuilderInterface $formBuilder;
 
   /**
    * Formats each review's time.
    */
-  private BbDate $date;
+  protected BbDate $date;
 
   /**
    * {@inheritdoc}

@@ -57,6 +57,21 @@ export interface DropshClient {
    * that are not an entity create (the addon inbox send).
    */
   post(path: string, body: unknown): Promise<unknown>;
+  /**
+   * A run's stored log text from `_bakers-api/run/{uuid}/log/{kind}` ('' when
+   * none). Only the write client built by `bakers ui` carries it: JSON:API
+   * returns `log` and `error_log` empty.
+   */
+  runLog?(runId: string, kind: 'log' | 'error_log'): Promise<string>;
+  /**
+   * Calls a site tool on `/mcp` by its plain name (`bakers_run_cancel`) and
+   * returns its structured result; a refusal throws with the site's text.
+   * Only the write client built by `bakers ui` carries it.
+   */
+  callTool?(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>;
 }
 
 /** A JSON:API relationship linkage. */

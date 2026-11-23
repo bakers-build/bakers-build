@@ -601,34 +601,34 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   }
 
   /**
-   * The conductor tab row is Overview alone.
+   * The conductor tab row is Overview, then Settings.
    */
   public function testConductorTabRowMatchesTheAgreedOrder(): void {
     self::assertCount(
-      1,
+      2,
       $this->tabOrder['Conductor detail'],
-      'The sitemap file must parse exactly one Conductor detail tab row.',
+      'The sitemap file must parse exactly two Conductor detail tab rows.',
     );
     self::assertSame(
       $this->tabOrder['Conductor detail'],
       $this->tabRoutesOn('entity.bb_conductor.canonical', $this->accounts['lead']),
-      'The conductor tab row is exactly Overview.',
+      'The conductor tab row is exactly Overview, Settings.',
     );
   }
 
   /**
-   * The machine tab row is View alone.
+   * The machine tab row is View, then Settings.
    */
   public function testMachineTabRowMatchesTheAgreedOrder(): void {
     self::assertCount(
-      1,
+      2,
       $this->tabOrder['Machine detail'],
-      'The sitemap file must parse exactly one Machine detail tab row.',
+      'The sitemap file must parse exactly two Machine detail tab rows.',
     );
     self::assertSame(
       $this->tabOrder['Machine detail'],
       $this->tabRoutesOn('entity.bb_machine.canonical', $this->accounts['lead']),
-      'The machine tab row is exactly View.',
+      'The machine tab row is exactly View, Settings.',
     );
   }
 
@@ -736,6 +736,10 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   private const NO_NAV_HOME_ENTITY_TYPES = [
     'bb_environment', 'bb_comment', 'bb_run', 'bb_ticket',
     'bb_ticket_template',
+    // Opened from their Members or Billing row.
+    'bb_invite', 'bb_track_account',
+    // Opened from their Terms or Triggers row.
+    'bb_term', 'bb_ticket_trigger',
   ];
 
   /**
@@ -758,6 +762,9 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.review_transition',
     // A ticket template's own Create ticket confirmation.
     'bb_core.ticket_template_instantiate_form',
+    // A member's page, opened from its Members row.
+    'bb_core.bb_workspace.member',
+    'bb_core.bb_team.member',
   ];
 
   /**
@@ -881,8 +888,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
         'Team detail — five tabs, Overview default' => 'Team detail',
         'Workspace settings — seven tabs, Settings default' => 'Workspace settings',
         'Group detail — two tabs, Overview default' => 'Group detail',
-        'Conductor detail — one tab, Overview default' => 'Conductor detail',
-        'Machine detail — one tab, View default' => 'Machine detail',
+        'Conductor detail — two tabs, Overview default' => 'Conductor detail',
+        'Machine detail — two tabs, View default' => 'Machine detail',
       ];
       if (isset($tab_tables[$table])) {
         $order[$tab_tables[$table]][] = $route_name;
@@ -899,8 +906,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     self::assertCount(6, $order['Team detail'] ?? [], 'The sitemap file must declare exactly six Team detail tabs.');
     self::assertCount(7, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly seven Workspace settings tabs.');
     self::assertCount(2, $order['Group detail'] ?? [], 'The sitemap file must declare exactly two Group detail tabs.');
-    self::assertCount(1, $order['Conductor detail'] ?? [], 'The sitemap file must declare exactly one Conductor detail tab.');
-    self::assertCount(1, $order['Machine detail'] ?? [], 'The sitemap file must declare exactly one Machine detail tab.');
+    self::assertCount(2, $order['Conductor detail'] ?? [], 'The sitemap file must declare exactly two Conductor detail tabs.');
+    self::assertCount(2, $order['Machine detail'] ?? [], 'The sitemap file must declare exactly two Machine detail tabs.');
     return [$rows, $order];
   }
 
@@ -978,13 +985,16 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'entity.bb_team.canonical' => 403,
     'bb_core.bb_team.stats' => 403,
     'bb_core.bb_team.members' => 403,
+    'bb_core.bb_team.member_add' => 403,
     'bb_core.bb_team.settings' => 403,
     'view.tickets.team_tickets' => 403,
     'view.runs.team_runs' => 403,
     'entity.bb_group.canonical' => 403,
     'bb_core.bb_group.settings' => 403,
     'entity.bb_conductor.canonical' => 403,
+    'bb_core.bb_conductor.settings' => 403,
     'entity.bb_machine.canonical' => 403,
+    'bb_core.bb_machine.settings' => 403,
     // Own-account View is 200; this request is the lead's uid, and no
     // bakers.build rank holds `access user profiles`, so a stranger is 403.
     'entity.user.canonical' => 403,
@@ -1055,6 +1065,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.bb_team.members' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     // Like group Settings: `update any bb_team` is the lead's alone.
     'bb_core.bb_team.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
+    'bb_core.bb_team.member_add' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'view.project_board.project_board' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.projects.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.groups.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
@@ -1070,7 +1081,11 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'view.bb_ticket_templates.project_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
     'view.bb_ticket_templates.workspace_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
     'entity.bb_conductor.canonical' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
+    // Owner only, and the fixture conductor has none: no rank updates it.
+    'bb_core.bb_conductor.settings' => ['lead' => 403, 'contributor' => 403, 'guest' => 403],
     'entity.bb_machine.canonical' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
+    // The fixture machine is the lead's own.
+    'bb_core.bb_machine.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     // The fixture path is the lead's account. Lead is viewing self (200);
     // other ranks have no `access user profiles` (403).
     'entity.user.canonical' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],

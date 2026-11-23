@@ -4,11 +4,9 @@
 # has always rendered it, but no story anywhere in this theme exercised it and `list`'s own schema
 # omitted it — so a `rendered` cell handed to `list` was an invalid prop, and nothing said so until a
 # caller tried. This story is the first subject the kind has ever had, and it is the members list
-# because that is the surface that asked for it: BOTH interactive cells — the role control and the
-# remove control — are form elements another layer already turned into markup, addressed by their
-# key, each emitting exactly one cell. The remove control here used to stay `action`, this story's
-# own kind before BB-435; corrected to `rendered` once a review caught it disagreeing with
-# `MemberItemBuilder`, which emits `rendered` for both.
+# because that is the surface that asked for it. It no longer carries a remove control: a list row
+# only opens its detail page (BAKERS-338), so Remove lives on the member's page. The role cell stays
+# as the story's subject — markup another layer already produced, addressed by its key.
 #
 # WHAT THIS STORY CAN PROVE, AND WHAT IT CANNOT. It proves the shape: that `list` accepts the kind,
 # that the value lands in the cell its key names, and that the item still carries its other three
@@ -45,7 +43,6 @@ props:
           mail: christian.wiedemann@keytec.de
         role: { kind: rendered, markup: 'Lead' }
         joined: { kind: mono, value: joined 2026-03-04 }
-        remove: { kind: rendered, markup: 'Remove' }
     - cells:
         person:
           kind: person
@@ -55,7 +52,6 @@ props:
           mail: sven.gruber@keytec.example
         role: { kind: rendered, markup: 'Member' }
         joined: { kind: mono, value: joined 2026-05-19 }
-        remove: { kind: rendered, markup: 'Remove' }
     - cells:
         person:
           kind: person
@@ -64,4 +60,3 @@ props:
           color: offline
         state: { kind: badge, label: active, tone: neutral }
         joined: { kind: mono, value: joined 2026-01-08 }
-        remove: { kind: rendered, markup: 'Remove' }

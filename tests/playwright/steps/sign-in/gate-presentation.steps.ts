@@ -30,6 +30,10 @@ When('I open the device verification page for that code', async ({ page }) => {
   await markDocument(page);
 });
 
+When("I open the consent's {string} details", async ({ page }, label: string) => {
+  await page.locator(GATE_CONTENT).locator('summary', { hasText: label }).click();
+});
+
 When('I confirm the device sign-in', async ({ page }) => {
   // The link filled in the code; the person compares it and only decides.
   await page.getByRole('button', { name: 'Confirm sign-in' }).click();
@@ -61,9 +65,19 @@ Then('the device code field shows that code', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
 });
 
-Then('the consent lists the membership {string}', async ({ page }, membership: string) => {
-  const memberships = page.locator(GATE_CONTENT).getByText(/^Acts within your memberships:/);
-  await expect(memberships).toContainText(membership);
+Then('the consent lists the membership {string} below its workspace', async ({ page }, membership: string) => {
+  // Each membership is its own line; the nearest non-team line above heads it.
+  const line = page.locator(GATE_CONTENT).getByText(membership, { exact: true });
+  await expect(line).toBeVisible();
+  await expect(line.locator("xpath=preceding-sibling::p[not(starts-with(normalize-space(.), 'Team '))][1]")).toHaveText(/^Workspace /);
+});
+
+Then('the consent says in plain words what confirming grants', async ({ page }) => {
+  await expect(page.locator(GATE_CONTENT).getByText(/^If you confirm, the device can do everything you can do/)).toBeVisible();
+  // The raw scope stays behind the collapsed technical details.
+  const details = page.locator(GATE_CONTENT).locator('details:not([open])', { hasText: 'Technical details' });
+  await expect(details).toContainText('bb:session');
+  await expect(details.getByText('bb:session')).toBeHidden();
 });
 
 Then('the page does not overflow horizontally', async ({ page }) => {
@@ -72,6 +86,10 @@ Then('the page does not overflow horizontally', async ({ page }) => {
     clientWidth: document.documentElement.clientWidth,
   }));
   expect(scrollWidth - clientWidth).toBeLessThanOrEqual(1);
+});
+
+Then('the device result says {string}', async ({ page }, text: string) => {
+  await expect(page.locator(RESULT_BODY)).toContainText(text);
 });
 
 Then('the device result message is visible', async ({ page }) => {

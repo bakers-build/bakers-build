@@ -8,14 +8,11 @@ import { ListCursor } from '../../../lib/cursor.js';
 import { columnNode } from '../../../lib/vnode.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import { AsyncScreen } from '../../../Screen/async-screen.js';
-import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
-import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
+import type { ScreenContext } from '../../../Screen/screen.js';
 import type { TicketDetailDocument } from '../../../types.js';
 import { listRowIds, listTableRows, listTableTree } from '../../collection.js';
 import { TICKET_RUN_TABLE, ticketRunRows } from '../../run/Data/runs.js';
-import { isRunCancellable } from '../../run/Form/edit.js';
-import { cancelRunRequest } from '../../run/Screen/run-actions.js';
 import {
   handleTicketCopy,
   ticketCopyActions,
@@ -171,23 +168,7 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
       return this.select(view.selectable - 1, context);
     return false;
   }
-  /** The selected run, when it can still be cancelled (claimed or running). */
-  private cancellableRun(): { id: string } | undefined {
-    if (!this.document) return undefined;
-    const run = ticketRunRows(this.document)[this.cursor.index];
-    return run?.id && isRunCancellable(run.state) ? { id: run.id } : undefined;
-  }
-  commandForInput(input: string): string | undefined {
-    return this.state === 'ready' && input === 'x' && this.cancellableRun()
-      ? 'cancel-run'
-      : undefined;
-  }
-  actionForInput(input: string): ScreenAction | undefined {
-    const run = this.cancellableRun();
-    if (this.commandForInput(input) !== 'cancel-run' || !run || !this.document)
-      return undefined;
-    return confirmNavigation(cancelRunRequest(this.document, run.id));
-  }
+  /** A run cancelled on its detail repaints here too (BB-536). */
   receiveResult(result: unknown, context: ScreenContext): void {
     if (
       result &&
@@ -226,9 +207,6 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
     const view = this.currentView(context);
     return [
       actionItem('detail-tab', 'Tab', 'section'),
-      ...(this.cancellableRun()
-        ? [actionItem('run-cancel', 'x', 'cancel run')]
-        : []),
       ...ticketCopyActions(),
       actionItem(
         'detail-arrows',

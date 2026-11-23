@@ -99,7 +99,7 @@ final class WorklogList extends ToolBase {
   /**
    * Loads worklogs and their references.
    */
-  private EntityTypeManagerInterface $entities;
+  protected EntityTypeManagerInterface $entities;
 
   /**
    * {@inheritdoc}

@@ -539,7 +539,7 @@ describe('DrupalBbRemote', () => {
     // labels + environments for agent selection (BB-144), and BB-495's
     // project_id.group_id.workspace_id chain for the dispatch env.
     expect(get).toHaveBeenCalledWith(
-      'bb_ticket/bb_ticket/tic-1?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id,conductor_id.owner_user_id',
+      'bb_ticket/bb_ticket/tic-1?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id,conductor_id.owner_user_id,reviewers',
     );
     expect(ticket).toEqual({
       uuid: 'tic-1',
@@ -646,6 +646,41 @@ describe('DrupalBbRemote', () => {
     expect(String((get.mock.calls[0] as unknown[])[0])).toContain(
       'conductor_id.owner_user_id',
     );
+  });
+
+  it('getTicket sideloads reviewers as name plus mail, mail absent when hidden', async () => {
+    const get = vi.fn(async () => ({
+      data: {
+        id: 'tic-10',
+        attributes: {
+          identifier: 'GL-10',
+          title: 'Reviewed',
+          state: 'working',
+        },
+        relationships: {
+          reviewers: {
+            data: [
+              { type: 'user--user', id: 'u-1' },
+              { type: 'user--user', id: 'u-2' },
+            ],
+          },
+        },
+      },
+      included: [
+        {
+          type: 'user--user',
+          id: 'u-1',
+          attributes: { display_name: 'Ada', mail: 'ada@example.com' },
+        },
+        { type: 'user--user', id: 'u-2', attributes: { display_name: 'Bob' } },
+      ],
+    }));
+    const remote = new DrupalBbRemote(fakeClient({ get }));
+    expect((await remote.getTicket('tic-10')).reviewers).toEqual([
+      { name: 'Ada', mail: 'ada@example.com' },
+      { name: 'Bob' },
+    ]);
+    expect(String((get.mock.calls[0] as unknown[])[0])).toContain(',reviewers');
   });
 
   // BB-495: the dotted include resolves project AND workspace in one request

@@ -19,6 +19,7 @@ jobs:
       contents: write
       packages: write
       actions: read
+      pull-requests: read
     env:
       RELEASE_HEAD: ${{ github.event.workflow_run.head_sha }}
       RELEASE_BRANCH: ${{ github.event.workflow_run.head_branch }}

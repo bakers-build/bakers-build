@@ -1,35 +1,82 @@
 # Get started
 
-bakers.build is a ticket-driven AI software factory. Coding agents work every ticket on your development machine or on remote workers, and a person decides at [every station](#how-it-works). Open source, self-hosted or hosted, both free.
+bakers.build is a ticket-driven AI software factory. Coding agents work every ticket on your development machine or on remote workers, and a person decides at [every station](/get-started/first-ticket#how-it-works). Open source, self-hosted or hosted, both free.
 
-**You need:** a bakers.build account (hosted at [app.bakers.build](https://app.bakers.build/) or [self-hosted](/self-hosting/)), [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in, and a local Git checkout.
+**You need:** a bakers.build account (hosted at [app.bakers.build](https://app.bakers.build/) or [self-hosted](/self-hosting/)), [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in, a Git checkout and a computer where you may install packages.
 
 <span id="before-you-start"></span>
 
-## Choose where to start
+## 1. Set up your computer (once) {#set-up-your-computer}
 
-<DocTiles :tiles="[
-  { title: 'Your team already runs tickets', text: 'The project is prepared and agents already work its tickets. Run a small ticket and read its result.', link: '/get-started/first-ticket', icon: 'ticket', meta: 'Run the first ticket →' },
-  { title: 'Try it on your own repository', text: 'You are evaluating bakers.build alone, or setting it up for your team. Connect a repository on your computer, check its tools and workflow, then run the first ticket.', link: '/get-started/connect-a-project', icon: 'code', meta: 'Prepare your project →' }
-]" />
+Web-only ticket writers skip this.
 
-<span id="run-agents-for-a-project"></span>
+1. **Linux only, before you start the agent:** install the sandbox tools; the agent has no `sudo`. Other distributions: same packages.
 
-<span id="from-ticket-to-result"></span>
+   ```sh
+   sudo apt install bubblewrap socat
+   ```
 
-## How it works
+2. **CLI** ([Node.js ≥20.19 with npm](https://nodejs.org/en/download)):
 
-The path of one ticket:
+   ```sh
+   npm install -g @bakers-build/bakers
+   ```
 
-1. You write a **ticket**, a request with checkable acceptance criteria, in a **project** of your **workspace**. Workspace and project live on the bakers.build server, hosted or self-hosted; the workspace holds your team's projects and access.
-2. A **conductor**, bound to your project checkout on a **worker machine** (your computer or a remote worker), claims an eligible ticket: in a state it serves, not frozen or blocked, with machine capacity free. See [which tickets it takes](/configuration/project/conductors#which-tickets-it-takes) and [where agents run](/provision/machine).
-3. The conductor starts a coding **agent**, Claude Code or Codex under your own sign-in ([Agents](/agents/)).
-4. The agent writes a spec and plan into the ticket and waits for your approval before implementing ([Workflows and states](/skills-and-workflows/states)).
-5. Each attempt is a **run** in its own **worktree**, a separate Git checkout. The agent implements and checks the change within the permissions set in [Agent permissions and isolation](/agents/security).
-6. An agent reviews the change, then you review the result: a summary in the ticket and a merge request ([Accept results](/skills-and-workflows/accept-results)).
-7. You authorize the merge.
+3. **Skills**, one command at a time:
 
-Environments and tools for your stack are prepared under [Provision](/provision/).
+   ::: code-group
+
+   ```text [Claude Code]
+   /plugin marketplace add https://bakers.build/marketplace.json
+   ```
+
+   ```sh [Codex]
+   codex plugin marketplace add https://github.com/bakers-build/bakers-build.git --ref main
+   ```
+
+   :::
+
+   ::: code-group
+
+   ```text [Claude Code]
+   /plugin install bakers@bakers
+   ```
+
+   ```sh [Codex]
+   codex plugin add bakers@bakers
+   ```
+
+   :::
+
+4. **Reload the plugins:** `/reload-plugins` in Claude Code; in Codex, start a new session.
+
+5. **Sign in.** Ask your agent:
+
+   ::: code-group
+
+   ```text [Claude Code]
+   /bakers:bb-init
+   ```
+
+   ```text [Codex]
+   Use bakers:bb-init to set up this computer.
+   ```
+
+   :::
+
+**Done when:** `bakers conductor check` prints `sandbox ok`. Remote or manual setup: [Choose where agents run](/provision/machine).
+
+## 2. Set up your project (once) {#set-up-your-project}
+
+Connect your repository with one skill call: [Prepare your project](/get-started/connect-a-project).
+
+## 3. Create a ticket {#create-a-ticket}
+
+Describe a small change with its expected result: [Create a ticket](/get-started/daily-work/create-a-ticket).
+
+## 4. Run a ticket {#run-a-ticket}
+
+Start your agents and read the first result: [Run the first ticket](/get-started/first-ticket).
 
 <span id="after-your-first-ticket"></span>
 

@@ -33,6 +33,10 @@ use Drupal\bb_track\Storage\AccountStorage;
     'access' => AccountAccess::class,
     'query_access' => AccountQueryAccessHandler::class,
   ],
+  links: [
+    // The detail under its project; the route is bb_track's own.
+    'canonical' => '/_workspace/{bb_workspace}/project/{bb_project}/accounts/{bb_track_account}',
+  ],
   base_table: 'bb_track_account',
   constraints: ['BillingAccount' => []],
   // Few rows, read under the account lock: a cached copy a racing render
@@ -80,6 +84,14 @@ final class Account extends ContentEntityBase {
    */
   private static function amount(TranslatableMarkup $label): BaseFieldDefinition {
     return BaseFieldDefinition::create('decimal')->setLabel($label)->setSetting('precision', 12)->setSetting('scale', 2);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function urlRouteParameters($rel): array {
+    $project = $this->get('project_id')->entity;
+    return parent::urlRouteParameters($rel) + ($project === NULL ? [] : ['bb_project' => $project->uuid()]);
   }
 
   /**

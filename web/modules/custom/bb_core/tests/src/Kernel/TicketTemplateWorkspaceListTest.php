@@ -7,7 +7,6 @@ namespace Drupal\Tests\bb_core\Kernel;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\og\Entity\OgRole;
-use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -20,6 +19,8 @@ final class TicketTemplateWorkspaceListTest extends KernelTestBase {
 
   use WorkspaceReadScopeTestTrait;
   use ProjectsViewTestTrait;
+  use ListRowLinkTestTrait;
+  use DetailActionsTestTrait;
 
   /**
    * {@inheritdoc}
@@ -83,35 +84,34 @@ final class TicketTemplateWorkspaceListTest extends KernelTestBase {
   }
 
   /**
-   * A row's operations render as one action menu; Create ticket opens a dialog.
+   * A row is one link to the template; its actions are on the detail.
    */
-  public function testRowActionsAreAnActionMenu(): void {
+  public function testRowIsOneLinkToTheTemplate(): void {
     $template = $this->workspaceTemplate('a');
-    $view = Views::getView('bb_ticket_templates');
-    self::assertNotNull($view);
-    $view->setDisplay('workspace_list');
-    $view->setArguments(['space-a']);
-    $view->execute();
-    $row = NULL;
-    foreach ($view->result as $result) {
-      if ((string) $result->_entity->id() === (string) $template->id()) {
-        $row = $result;
-      }
-    }
-    self::assertNotNull($row, 'The template is listed.');
 
-    // The operations element is the theme's: bb_theme renders it.
-    $this->container->get('theme_installer')->install(['bb_theme']);
-    $this->config('system.theme')->set('default', 'bb_theme')->save();
-    $build = $view->field['operations']->render($row);
-    self::assertIsArray($build);
-    self::assertSame('operations', $build['#type'] ?? NULL, 'The row keeps core entity operations.');
-    $html = (string) $this->container->get('renderer')->renderInIsolation($build);
+    $html = $this->renderListDisplay('bb_ticket_templates', 'workspace_list', ['space-a']);
 
-    self::assertStringContainsString('data-action-menu', $html, 'The operations render as the action menu.');
-    self::assertStringContainsString('aria-label="Actions for workspace-template-a"', $html, 'Each row menu names its row.');
-    self::assertSame(4, substr_count($html, 'role="menuitem"'), 'Create ticket, Settings, Delete and View.');
-    self::assertMatchesRegularExpression('#<a[^>]*data-hx-get="[^"]*_wrapper_format=island_dialog[^"]*"[^>]*role="menuitem"[^>]*>\s*Create ticket#', $html);
+    $this->assertRowsLinkOnlyToTheirDetail($html, [$template->toUrl()->toString()]);
+  }
+
+  /**
+   * Delete moved from the row to the detail; a guest gets no action there.
+   */
+  public function testDetailOffersDeleteOnlyToWhoMayDelete(): void {
+    $template = $this->workspaceTemplate('a');
+    $delete = $template->toUrl('delete-form')->toString();
+
+    self::assertSame($delete, $this->detailActions('bb_ticket_template_actions', $template)['delete']['#props']['href'] ?? NULL);
+
+    $role = OgRole::load('bb_workspace-bb_workspace-guest');
+    self::assertNotNull($role);
+    $role->grantPermission('view bb_ticket_template')->save();
+    $guest = $this->createAccount('north-guest', []);
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $guest, ['guest']);
+    $this->container->get('current_user')->setAccount($guest);
+    self::assertTrue($template->access('view', $guest), 'The guest reads the detail.');
+    self::assertSame([], $this->detailActions('bb_ticket_template_actions', $template));
+    self::assertFalse($template->toUrl('delete-form')->access($guest), 'The delete route stays denied.');
   }
 
   /**

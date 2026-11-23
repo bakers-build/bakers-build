@@ -6,15 +6,22 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteObjectInterface;
+use Drupal\Core\Url;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Form\GroupMembersForm;
+use Drupal\bb_core\Form\TeamMemberAddForm;
+use Drupal\bb_core\Form\WorkspaceInviteForm;
+use Drupal\island\IslandViewAccessInterface;
+use Drupal\og\Entity\OgMembership;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\Og;
 use Drupal\og\OgMembershipInterface;
+use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -102,6 +109,9 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
     $this->installEntitySchema('og_membership');
     $this->installEntitySchema('bb_workspace');
     $this->installEntitySchema('bb_team');
+    // A workspace member's read scope walks projects and groups.
+    $this->installEntitySchema('bb_group');
+    $this->installEntitySchema('bb_project');
     $this->installConfig(['system', 'user', 'og']);
     // A recipe registers this in `actions:`, which run AFTER `config:` — the
     // measurement behind the withdrawn D10 generators. A kernel test has no
@@ -257,32 +267,22 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
 
   /**
    * An account that may only view the team is offered no add affordance.
+   *
+   * Neither the dialog's route nor the header trigger that opens it.
    */
   public function testAnAccountThatMayOnlyViewTheTeamGetsNoAffordance(): void {
-    $this->actAs(['view bb_team']);
+    // In the workspace, so the refusal is the missing write and not the scope.
+    $this->joinWorkspace($this->actAs(['view bb_team']));
 
-    $form = $this->buildAddForm();
-
-    self::assertArrayNotHasKey(
-      'account',
-      $form,
-      'No account field is rendered for an account that may not change the crew.',
-    );
-    self::assertArrayNotHasKey(
-      'actions',
-      $form,
-      'And no submit button either — a disabled-looking form is still a form.',
-    );
+    self::assertFalse($this->addUrl()->access(), 'The add dialog route refuses an account that may not change the crew.');
+    self::assertArrayNotHasKey('#type', $this->headerTrigger(), 'No header trigger renders for it.');
   }
 
   /**
    * THE SECURITY PROPERTY: the submit itself is refused, not just the field.
    *
-   * The POST is reachable without ever rendering the form, so this is the
-   * assertion that measures the gate. Remove the check from
-   * `submitIslandForm()` and leave the one in `buildIslandForm()` in place, and
-   * test 1 above stays green while this one goes red — which is precisely the
-   * shape the defect had.
+   * The POST is reachable without ever rendering the dialog, so this is the
+   * assertion that measures the gate: the form re-checks `update` itself.
    */
   public function testTheSubmitIsRefusedForAnAccountThatMayOnlyViewTheTeam(): void {
     $account = $this->actAs(['view bb_team']);
@@ -309,17 +309,17 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
    */
   public function testAnAccountThatMayUpdateTheTeamCanAddSomeone(): void {
     $account = $this->actAs(['view bb_team', 'update any bb_team']);
-
-    $form = $this->buildAddForm();
-    self::assertArrayHasKey('invite', $form, 'The affordance is rendered for a lead.');
-    self::assertArrayHasKey('account', $form['invite']);
-    self::assertSame(
-      'bb_workspace_members',
-      $form['invite']['account']['#selection_handler'] ?? NULL,
-      'The add field offers only the parent workspace\'s members.',
-    );
-
     $this->joinWorkspace($account);
+
+    self::assertTrue($this->addUrl()->access(), 'The add dialog route admits a lead.');
+    $trigger = $this->headerTrigger();
+    self::assertSame('Add member', (string) $trigger['#props']['label']);
+    self::assertSame('members-add', (string) $trigger['#props']['attributes']['id']);
+    $form = $this->buildAddForm();
+    self::assertSame('select', $form['account']['#type'] ?? NULL, 'The add field is a select the chip field reads.');
+    self::assertTrue($form['account']['#multiple'] ?? FALSE, 'Several people are added in one submit.');
+    self::assertSame('bb_picker_value', $form['role']['#type'] ?? NULL, 'The role is picked in the same dialog.');
+
     $errors = $this->submitAddForm($account);
 
     self::assertSame([], $errors, 'The submit reached the write without a validation error.');
@@ -328,6 +328,110 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
       $this->membershipCountFor($account),
       'Exactly one membership row is created for the added account.',
     );
+  }
+
+  /**
+   * The dialog writes the chosen role, closes and refreshes the list in place.
+   */
+  public function testTheDialogAddsWithTheChosenRoleAndClosesInPlace(): void {
+    $this->createTeamRole('lead', 'Lead');
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $candidate = $this->createUser([], 'candidate');
+    self::assertInstanceOf(UserInterface::class, $candidate);
+    $this->joinWorkspace($candidate);
+    $this->container->get('request_stack')->getCurrentRequest()->query->set('_wrapper_format', 'island_dialog');
+
+    $form_state = $this->submitAddState($candidate, 'lead');
+
+    self::assertSame([], array_map('strval', $form_state->getErrors()));
+    $ids = $this->container->get('entity_type.manager')->getStorage('og_membership')->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('entity_type', 'bb_team')
+      ->condition('entity_id', (string) $this->team->id())
+      ->condition('uid', (string) $candidate->id())
+      ->execute();
+    self::assertCount(1, $ids, 'the candidate joined the team');
+    $membership = OgMembership::load(reset($ids));
+    self::assertInstanceOf(OgMembershipInterface::class, $membership);
+    self::assertContains('bb_team-bb_team-lead', $membership->getRolesIds());
+    $response = $form_state->getResponse();
+    self::assertNotNull($response);
+    self::assertSame('delete', $response->headers->get('HX-Reswap'));
+    self::assertStringContainsString('bakers.members.changed', (string) $response->headers->get('HX-Trigger'));
+    self::assertSame(
+      ['Added candidate as Lead.'],
+      array_map('strval', $this->container->get('messenger')->messagesByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE)),
+    );
+  }
+
+  /**
+   * Someone already in the team is refused by name, nothing is written twice.
+   */
+  public function testSomeoneAlreadyInTheTeamIsRefused(): void {
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $crew = $this->createUser([], 'crew');
+    self::assertInstanceOf(UserInterface::class, $crew);
+    $this->joinWorkspace($crew);
+    Og::createMembership($this->team, $crew)->setState(OgMembershipInterface::STATE_ACTIVE)->save();
+
+    $errors = $this->submitAddForm($crew);
+
+    self::assertNotSame([], $errors);
+    self::assertSame(1, $this->membershipCountFor($crew));
+  }
+
+  /**
+   * The Members face has no inline add any more: the header opens the dialog.
+   */
+  public function testTheMembersFaceHasNoInlineAdd(): void {
+    $this->actAs(['view bb_team', 'update any bb_team']);
+
+    $face = $this->container->get('form_builder')->getForm(
+      GroupMembersForm::class,
+      ['island_id' => 'members', 'host_id' => 'team'],
+    );
+
+    self::assertArrayNotHasKey('invite', $face);
+    self::assertArrayNotHasKey('account', $face);
+    self::assertArrayHasKey('roster', $face);
+  }
+
+  /**
+   * The members island answers a refresh to whoever may view the team.
+   *
+   * The same gate as the team's Members tab; a finished dialog asks for the
+   * island alone, and that request is resolved from a client-sent id.
+   */
+  public function testTheMembersIslandRefreshFollowsTheTabGate(): void {
+    $host = $this->container->get('island.host_resolver')->resolve('team');
+    self::assertInstanceOf(IslandViewAccessInterface::class, $host);
+
+    $viewer = $this->actAs(['view bb_team']);
+    self::assertTrue($host->accessIsland('members', $viewer)->isAllowed(), 'a team viewer gets the roster');
+    $stranger = $this->actAs([]);
+    self::assertFalse($host->accessIsland('members', $stranger)->isAllowed(), 'an account that may not view the team does not');
+  }
+
+  /**
+   * The picker offers the workspace's people who are not in the team yet.
+   */
+  public function testTheAddPickerOffersOnlyWorkspaceMembersNotInTheTeam(): void {
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $candidate = $this->createUser([], 'candidate');
+    $crew = $this->createUser([], 'crew');
+    $outsider = $this->createUser([], 'outsider');
+    self::assertInstanceOf(UserInterface::class, $candidate);
+    self::assertInstanceOf(UserInterface::class, $crew);
+    self::assertInstanceOf(UserInterface::class, $outsider);
+    $this->joinWorkspace($candidate);
+    $this->joinWorkspace($crew);
+    Og::createMembership($this->team, $crew)->setState(OgMembershipInterface::STATE_ACTIVE)->save();
+
+    $options = $this->buildAddForm()['account']['#options'] ?? [];
+
+    self::assertArrayHasKey((int) $candidate->id(), $options, 'a workspace member is offered');
+    self::assertArrayNotHasKey((int) $crew->id(), $options, 'someone already in the team is not');
+    self::assertArrayNotHasKey((int) $outsider->id(), $options, 'someone outside the workspace is not');
   }
 
   /**
@@ -349,6 +453,61 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
   }
 
   /**
+   * One submit adds every chosen person with the one chosen role.
+   */
+  public function testOneSubmitAddsSeveralPeopleWithTheChosenRole(): void {
+    $this->createTeamRole('lead', 'Lead');
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $ada = $this->createUser([], 'ada');
+    $alan = $this->createUser([], 'alan');
+    self::assertInstanceOf(UserInterface::class, $ada);
+    self::assertInstanceOf(UserInterface::class, $alan);
+    $this->joinWorkspace($ada);
+    $this->joinWorkspace($alan);
+
+    $form_state = $this->submitAddState([$ada, $alan], 'lead');
+
+    self::assertSame([], array_map('strval', $form_state->getErrors()));
+    foreach ([$ada, $alan] as $account) {
+      // Queried, not Og::getMembership(): OG caches the account's memberships
+      // from before the write.
+      $ids = $this->container->get('entity_type.manager')->getStorage('og_membership')->getQuery()
+        ->accessCheck(FALSE)
+        ->condition('entity_type', 'bb_team')
+        ->condition('entity_id', (string) $this->team->id())
+        ->condition('uid', (string) $account->id())
+        ->execute();
+      $membership = OgMembership::load((int) reset($ids));
+      self::assertInstanceOf(OgMembershipInterface::class, $membership, sprintf('%s joined the team', $account->getAccountName()));
+      self::assertContains('bb_team-bb_team-lead', $membership->getRolesIds());
+    }
+    self::assertSame(
+      ['Added 2 members as Lead.'],
+      array_map('strval', $this->container->get('messenger')->messagesByType(WorkspaceInviteForm::RESULT_MESSAGE_TYPE)),
+    );
+  }
+
+  /**
+   * A chosen person already in the team is refused by name; nobody is added.
+   */
+  public function testSomeoneAlreadyInTheTeamIsRefusedByNameAndNobodyIsAdded(): void {
+    $this->actAs(['view bb_team', 'update any bb_team']);
+    $ada = $this->createUser([], 'ada');
+    $crew = $this->createUser([], 'crew');
+    self::assertInstanceOf(UserInterface::class, $ada);
+    self::assertInstanceOf(UserInterface::class, $crew);
+    $this->joinWorkspace($ada);
+    $this->joinWorkspace($crew);
+    Og::createMembership($this->team, $crew)->setState(OgMembershipInterface::STATE_ACTIVE)->save();
+
+    $errors = array_map('strval', $this->submitAddState([$ada, $crew])->getErrors());
+
+    self::assertSame(['account' => 'crew is already a member of this team.'], $errors);
+    self::assertSame(0, $this->membershipCountFor($ada), 'the valid pick is not added either');
+    self::assertSame(1, $this->membershipCountFor($crew));
+  }
+
+  /**
    * Becomes the current user, holding exactly the named permissions.
    *
    * @param array<string> $permissions
@@ -363,54 +522,89 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
   }
 
   /**
-   * The built add form, as the Members island renders it.
+   * The add dialog's address for this team.
+   */
+  private function addUrl(): Url {
+    return Url::fromRoute('bb_core.bb_team.member_add', ['bb_workspace' => 'acme', 'bb_team' => $this->team->id()]);
+  }
+
+  /**
+   * The team Members page header's add trigger, as the shell renders it.
+   *
+   * @return array<string, mixed>
+   *   The trigger, or cache metadata alone when it is withheld.
+   */
+  private function headerTrigger(): array {
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_team_member_add_action', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $value = $source->getPropValue();
+    self::assertIsArray($value);
+    return $value;
+  }
+
+  /**
+   * The built add dialog.
    *
    * @return array<string, mixed>
    *   The form array.
    */
   private function buildAddForm(): array {
-    return $this->container->get('form_builder')->getForm(
-      GroupMembersForm::class,
-      ['island_id' => 'members', 'host_id' => 'team'],
-    );
+    $this->enterAddRoute();
+    return $this->container->get('form_builder')->getForm(TeamMemberAddForm::class);
   }
 
   /**
-   * Submits the add form for one account, the way the island's POST does.
-   *
-   * The value is the `Label (id)` string an `entity_autocomplete` element
-   * actually receives from a browser. `EntityAutocomplete` parses the id out
-   * of that suffix in its own element validation, and a bare uid takes the
-   * match-by-title path instead. Passing the browser's own form is what makes
-   * this driver exercise the element rather than route around it.
+   * Submits the add dialog for one account.
    *
    * @return array<string, string>
    *   The validation errors, so a silent validation failure cannot pass for a
    *   refused write.
    */
   private function submitAddForm(UserInterface $account): array {
-    $form_state = new FormState();
-    $form_state->setValues([
-      'account' => sprintf('%s (%d)', $account->getAccountName(), (int) $account->id()),
-      // THE TRIGGER TRAVELS WITH THE REQUEST (BB-435). One form owns three
-      // writes and decides which one ran by reading the pressed control out of
-      // the user input, because the per-item controls are drawn by components
-      // and are therefore not Form API elements core could identify. In a
-      // programmatic submit that input IS the values:
-      // `FormBuilder::submitForm()` calls `setUserInput()` with the values
-      // before retrieving the form, so a value set here arrives as input —
-      // is what lets this driver press the add and nothing else.
-      'add_member' => 'Add member',
-    ]);
-    $this->container->get('form_builder')->submitForm(
-      GroupMembersForm::class,
-      $form_state,
-      ['island_id' => 'members', 'host_id' => 'team'],
-    );
     return array_map(
       static fn ($message): string => (string) $message,
-      $form_state->getErrors(),
+      $this->submitAddState($account)->getErrors(),
     );
+  }
+
+  /**
+   * Submits the add dialog and returns its state.
+   *
+   * @param \Drupal\user\UserInterface|array<\Drupal\user\UserInterface> $accounts
+   *   The person or people chosen.
+   * @param string|null $role
+   *   The chosen role, or none for the default.
+   */
+  private function submitAddState(UserInterface|array $accounts, ?string $role = NULL): FormStateInterface {
+    $this->enterAddRoute();
+    $form_state = new FormState();
+    $form_state->setValues(array_filter([
+      'account' => array_map(static fn (UserInterface $account): string => (string) $account->id(), is_array($accounts) ? $accounts : [$accounts]),
+      'role' => $role,
+      'op' => 'Add member',
+    ], static fn ($value): bool => $value !== NULL));
+    $this->container->get('form_builder')->submitForm(TeamMemberAddForm::class, $form_state);
+    return $form_state;
+  }
+
+  /**
+   * A standard role of the team group type.
+   */
+  private function createTeamRole(string $name, string $label): void {
+    OgRole::create([
+      'group_type' => 'bb_team',
+      'group_bundle' => 'bb_team',
+      'name' => $name,
+      'label' => $label,
+    ])->save();
+  }
+
+  /**
+   * Makes the team's add dialog route the current one, keeping the query.
+   */
+  private function enterAddRoute(): void {
+    $current = $this->container->get('request_stack')->getCurrentRequest();
+    $this->enterRoute('bb_core.bb_team.member_add', $current?->query->all() ?? []);
   }
 
   /**
@@ -454,9 +648,20 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
    * carrying a real route object.
    */
   private function enterTeamRoute(): void {
-    $route_name = 'bb_core.bb_team.members';
+    $this->enterRoute('bb_core.bb_team.members');
+  }
+
+  /**
+   * Makes one team route the current one.
+   *
+   * @param string $route_name
+   *   The route.
+   * @param array<string, mixed> $query
+   *   The request query.
+   */
+  private function enterRoute(string $route_name, array $query = []): void {
     $route = $this->container->get('router.route_provider')->getRouteByName($route_name);
-    $request = Request::create('/team-member-add-access-test');
+    $request = Request::create('/team-member-add-access-test', 'GET', $query);
     $current = $this->container->get('request_stack')->getCurrentRequest();
     if ($current !== NULL && $current->hasSession()) {
       $request->setSession($current->getSession());

@@ -49,6 +49,8 @@ export interface TicketRow {
   frozen: boolean;
   /** Why the ticket is standing still: frozen|blocked|no conductor|failing, else ''. */
   stallReason: string;
+  /** The ticket's web URL as the server serves it; the client never builds it. */
+  url?: string | undefined;
 }
 
 /** A `(id) → resource` lookup over a document's sideloaded `included` entries.
@@ -64,7 +66,9 @@ function indexIncluded(included: JsonApiResource[] | undefined): IncludedIndex {
 
 /** Read the id of a single-valued relationship linkage (`data` object), or
  *  null when the linkage is absent, null, or an (unexpected) array. */
-function singleRelId(rel: JsonApiRelationship | undefined): string | null {
+export function singleRelId(
+  rel: JsonApiRelationship | undefined,
+): string | null {
   const data = rel?.data;
   if (!data || Array.isArray(data)) return null;
   return data.id ?? null;
@@ -99,15 +103,20 @@ type TicketListRelationship = (typeof TICKET_LIST_RELATIONSHIPS)[number];
 
 /**
  * Requested but rendered by NO column: `workflow` feeds `TicketRow.type` (the
- * row's workflow mapping, kept after BB-299 dropped the type filter) and
- * `closed` the closed predicate, so they are required and cannot be derived
- * from the column set.
+ * row's workflow mapping, kept after BB-299 dropped the type filter),
+ * `closed` the closed predicate and `url` the `Y` copy, so they are required
+ * and cannot be derived from the column set.
  *
  * This is the declared half of BB-294's fieldset rule: the fieldset is the
  * columns' union PLUS this list, and this list is an explicit declaration rather
  * than an unstated remainder.
  */
-const TICKET_PREDICATE_ATTRIBUTES = ['workflow', 'closed', 'frozen'] as const;
+const TICKET_PREDICATE_ATTRIBUTES = [
+  'workflow',
+  'closed',
+  'frozen',
+  'url',
+] as const;
 
 /**
  * The ticket list's columns — the header, the width, the cell value AND the
@@ -287,6 +296,7 @@ export const TICKET_LIST_ATTRIBUTES = [
   'workflow',
   'closed',
   'frozen',
+  'url',
 ] as const satisfies readonly TicketListAttribute[];
 
 /**
@@ -375,6 +385,7 @@ export function mapTicketData(
       typeof raw('closed') === 'boolean' ? (raw('closed') as boolean) : false,
     frozen:
       typeof raw('frozen') === 'boolean' ? (raw('frozen') as boolean) : false,
+    url: str('url'),
   };
 }
 

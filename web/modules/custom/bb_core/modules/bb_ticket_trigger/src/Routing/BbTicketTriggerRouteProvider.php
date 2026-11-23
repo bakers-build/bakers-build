@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_ticket_trigger\Routing;
 
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\bb_ticket_trigger\Entity\BbTicketTriggerInterface;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Symfony\Component\Routing\Route;
 
@@ -32,6 +33,25 @@ final class BbTicketTriggerRouteProvider extends AdminHtmlRouteProvider {
       $route->setOption('parameters', $parameters);
     }
     return $collection;
+  }
+
+  /**
+   * Titles the trigger's page with its summary.
+   */
+  public static function title(BbTicketTriggerInterface $bb_ticket_trigger): string {
+    return (string) $bb_ticket_trigger->label();
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Core's title callback would title the first entity parameter, the
+   * workspace.
+   */
+  protected function getCanonicalRoute(EntityTypeInterface $entity_type): ?Route {
+    $route = parent::getCanonicalRoute($entity_type);
+    $route?->setDefault('_title_callback', static::class . '::title');
+    return $route;
   }
 
   /**

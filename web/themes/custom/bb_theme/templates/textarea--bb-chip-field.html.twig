@@ -1,0 +1,10 @@
+{# A textarea of e-mail addresses entered as chips: the textarea stays the
+   submitted value inside bb_theme:chip_field (free mode). #}
+<div{{ wrapper_attributes.addClass(['w-full', 'min-w-0']) }}>
+  {{ include('bb_theme:chip_field', {
+    label: 'Email addresses'|t,
+    invalid_label: 'Not an e-mail address'|t,
+    remove_label: 'Remove @label'|t,
+    field: include('bb_theme:form_textarea', { attributes: attributes, value: value }, with_context = false),
+  }, with_context = false) }}
+</div>

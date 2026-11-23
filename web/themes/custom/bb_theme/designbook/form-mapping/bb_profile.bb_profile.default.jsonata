@@ -1,0 +1,55 @@
+(
+  /* Profile form (`bb_profile.bb_profile.default`) on `/user/{user}/profile`: the per-workspace
+     profile of the user for the workspace in context, titled "Profile in <workspace>".
+     Position and Background only; the AI-use notice is the page header's description, not part
+     of the form, and favorite_projects has no widget. Names and ids are Drupal's base-field
+     widget names. */
+  $p := $;
+  [
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form",
+      "slots": {
+        "lines": [
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-position-0-value" },
+            "slots": { "title": "Position" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input",
+            "props": {
+              "name": "position[0][value]",
+              "id": "edit-position-0-value",
+              "placeholder": "e.g. Product Lead",
+              "value": $p.position
+            }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_label",
+            "props": { "for": "edit-background-0-value" },
+            "slots": { "title": "What should bakers.build know about your background?" }
+          },
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_textarea",
+            "props": {
+              "name": "background[0][value]",
+              "id": "edit-background-0-value",
+              "rows": 3,
+              "value": $p.background
+            }
+          }
+        ],
+        "actions": [
+          {
+            "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:button",
+            "props": {
+              "variant": "primary",
+              "type": "submit",
+              "label": "Save"
+            }
+          }
+        ]
+      }
+    }
+  ]
+)

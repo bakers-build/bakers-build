@@ -33,18 +33,13 @@ final class BbTicketTriggerViewsData extends EntityViewsData {
     ];
     $data['bb_ticket_trigger']['summary'] = [
       'title' => new TranslatableMarkup('Trigger summary'),
-      'help' => new TranslatableMarkup('One line describing the configuration.'),
+      'help' => new TranslatableMarkup("One line describing the configuration, linking to the trigger's page."),
       'field' => ['id' => 'bb_ticket_trigger_type', 'part' => 'summary'],
     ];
     $data['bb_ticket_trigger']['next_run_local'] = [
       'title' => new TranslatableMarkup('Next run (local)'),
       'help' => new TranslatableMarkup("The next due occurrence in the trigger's own time zone."),
       'field' => ['id' => 'bb_ticket_trigger_next_run'],
-    ];
-    $data['bb_ticket_trigger']['actions'] = [
-      'title' => new TranslatableMarkup('Trigger actions'),
-      'help' => new TranslatableMarkup('Edit, Pause/Resume and Delete as an action menu.'),
-      'field' => ['id' => 'bb_ticket_trigger_actions'],
     ];
     return $data;
   }

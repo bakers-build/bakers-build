@@ -12,8 +12,6 @@ props:
       label: Role
     - key: joined
       label: Joined
-    - key: actions
-      label: ''
   rows:
     - cells:
         person:
@@ -50,6 +48,3 @@ props:
           kind: text
           value: 6 Jan 2026
           emphasis: faint
-        actions:
-          kind: action
-          label: Remove

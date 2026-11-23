@@ -10,7 +10,10 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\consumers\Entity\Consumer;
-use Drupal\entity_test\Entity\EntityTest;
+use Drupal\entity_test\Entity\EntityTestBundle;
+use Drupal\entity_test\Entity\EntityTestWithBundle;
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\Og;
 use Drupal\bb_oauth_device\Form\DeviceVerificationForm;
@@ -368,7 +371,7 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $request = Request::create('/oauth/device', 'GET', ['user_code' => $body['user_code']]);
     $content = (string) $this->httpKernel->handle($request)->getContent();
     $this->assertStringContainsString('Device functional client', $content);
-    $this->assertStringContainsString('Signs in as ' . $user->getDisplayName(), $content);
+    $this->assertStringContainsString(' as ' . $user->getDisplayName() . '.', $content);
 
     $fields = (new \DOMXPath(Html::load($content)))->query('//input[@name="user_code"]');
     $this->assertInstanceOf(\DOMNodeList::class, $fields);
@@ -384,43 +387,164 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   }
 
   /**
-   * The consent names each group the account acts in, with its rank.
-   *
-   * The account holds no site-wide permission beyond the route's own: what a
-   * token reaches comes from its memberships' ranks.
+   * A link whose code no longer waits says so instead of a blank field.
    */
-  public function testConsentListsTheAccountsMemberships(): void {
-    $this->enableModules(['og']);
-    $this->installEntitySchema('og_membership');
-    $this->installEntitySchema('entity_test');
-    $this->installConfig(['og']);
-    // enableModules() rebuilt the container; the kernel from setUp() is stale.
-    $this->httpKernel = $this->container->get('http_kernel');
-    Og::addGroup('entity_test', 'entity_test');
-    $lead = OgRole::create(['name' => 'lead', 'label' => 'Lead']);
-    $lead->setGroupType('entity_test')->setGroupBundle('entity_test')->save();
-    $north = EntityTest::create(['name' => 'Team North']);
-    $north->save();
-    $south = EntityTest::create(['name' => 'Team South']);
-    $south->save();
-    $elsewhere = EntityTest::create(['name' => 'Team Elsewhere']);
-    $elsewhere->save();
+  public function testUnresolvedLinkCodeSaysItIsNotValid(): void {
+    $decided = $this->requestDeviceAuthorization();
+    $user = $this->createConsentingUser();
+    $this->submitVerificationForm($decided['user_code'], 'deny');
 
-    $body = $this->requestDeviceAuthorization();
-    // Uid 1 bypasses every check; the consenting account must not be it.
-    $this->drupalCreateUser([]);
-    $user = $this->drupalCreateUser(['grant simple_oauth codes']);
-    $this->assertInstanceOf(User::class, $user);
-    Og::createMembership($north, $user)->addRole($lead)->save();
-    Og::createMembership($south, $user)->save();
-    $this->setCurrentUser($user);
+    foreach (['UNKNOWN1', $decided['user_code']] as $code) {
+      $content = (string) $this->httpKernel->handle(Request::create('/oauth/device', 'GET', ['user_code' => $code]))->getContent();
+      $text = $this->textOf($content);
+      $this->assertStringContainsString('That code is not valid. It may have expired — start the sign-in again in your terminal.', $text, $code);
+      $this->assertStringNotContainsString('wants to sign in', $text, $code);
+      $this->assertStringNotContainsString('Technical details', $text, $code);
+      $this->assertStringNotContainsString(' as ' . $user->getDisplayName() . '.', $text, $code);
+      $fields = (new \DOMXPath(Html::load($content)))->query('//input[@name="user_code"][@value!=""]');
+      $this->assertInstanceOf(\DOMNodeList::class, $fields);
+      $this->assertSame(0, $fields->length, 'The field stays empty for ' . $code);
+    }
 
-    $request = Request::create('/oauth/device', 'GET', ['user_code' => $body['user_code']]);
-    $content = (string) $this->httpKernel->handle($request)->getContent();
-    $this->assertStringContainsString('Acts within your memberships:', $content);
-    $this->assertStringContainsString('Team North — Lead', $content);
-    $this->assertStringContainsString('Team South — Member', $content);
-    $this->assertStringNotContainsString('Team Elsewhere', $content);
+    $this->assertStringContainsString('wants to sign in', $this->consentText(), 'A fresh code still shows the consent.');
+  }
+
+  /**
+   * Memberships are grouped by workspace, typed and listed once each.
+   *
+   * The account leads two workspaces and a team in one of them, is a plain
+   * member of a team in the other, and of a team whose workspace it holds no
+   * membership in: that workspace still heads its team, without a rank.
+   */
+  public function testConsentGroupsMembershipsByWorkspace(): void {
+    $this->installGroupFixture();
+    $bakers = $this->createGroup('workspace', 'bakers');
+    $keytec = $this->createGroup('workspace', 'keytec');
+    $solo = $this->createGroup('workspace', 'solo');
+    $bakers_team = $this->createGroup('team', 'bakers', $bakers);
+    $north = $this->createGroup('team', 'North', $keytec);
+    $orphan = $this->createGroup('team', 'Orphan', $solo);
+    $this->createGroup('team', 'Elsewhere', $keytec);
+
+    $user = $this->createConsentingUser();
+    $admin = OgRole::loadByGroupAndName($bakers, 'lead');
+    $lead = OgRole::loadByGroupAndName($bakers_team, 'lead');
+    $this->assertInstanceOf(OgRole::class, $admin);
+    $this->assertInstanceOf(OgRole::class, $lead);
+    Og::createMembership($bakers, $user)->addRole($admin)->save();
+    Og::createMembership($keytec, $user)->addRole($admin)->save();
+    Og::createMembership($bakers_team, $user)->addRole($lead)->save();
+    Og::createMembership($north, $user)->save();
+    Og::createMembership($orphan, $user)->save();
+
+    $content = $this->consentPage();
+    $lines = array_values(array_filter($this->linesOf($content), static fn (string $line): bool => preg_match('/^(Workspace|Team) /', $line) === 1));
+    $this->assertSame([
+      'Workspace bakers — Admin',
+      'Team bakers — Lead',
+      'Workspace keytec — Admin',
+      'Team North — Member',
+      'Workspace solo',
+      'Team Orphan — Member',
+    ], $lines, 'Each group once, teams below their workspace, workspaces sorted.');
+    $hidden = (new \DOMXPath(Html::load($content)))->query('//details[not(@open)][summary[contains(., "Your workspaces and roles")]]//p');
+    $this->assertInstanceOf(\DOMNodeList::class, $hidden);
+    $inside = [];
+    foreach ($hidden as $paragraph) {
+      $inside[] = trim($paragraph->nodeValue ?? '');
+    }
+    $this->assertSame($lines, $inside, 'The group lines sit only in the closed memberships element.');
+    $text = $this->textOf($content);
+    $this->assertStringNotContainsString('Elsewhere', $text);
+    $this->assertStringNotContainsString('Lead, Lead', $text);
+    $this->assertStringNotContainsString('Acts within your memberships', $text);
+  }
+
+  /**
+   * Group names show as typed, escaped once; a lost workspace leaves a team.
+   *
+   * A team whose workspace was deleted stays a team, at the top level.
+   */
+  public function testConsentShowsGroupNamesAsTyped(): void {
+    $this->installGroupFixture();
+    $workspace = $this->createGroup('workspace', 'R&D\'s <lab>');
+    $gone = $this->createGroup('workspace', 'Gone');
+    $team = $this->createGroup('team', 'Left "behind"', $gone);
+    $user = $this->createConsentingUser();
+    Og::createMembership($workspace, $user)->save();
+    Og::createMembership($team, $user)->save();
+    $gone->delete();
+
+    $lines = $this->linesOf($this->consentPage());
+    $this->assertContains('Workspace R&D\'s <lab> — Member', $lines);
+    $this->assertContains('Team Left "behind" — Member', $lines);
+    $this->assertNotContains('Workspace Left "behind" — Member', $lines);
+    $this->assertEmpty(preg_grep('/&(amp|quot|lt|#0?39);/', $lines), 'No entity shows as text.');
+  }
+
+  /**
+   * The consent says who signs in where and what confirming grants.
+   */
+  public function testConsentExplainsAccessPlainly(): void {
+    $this->installGroupFixture();
+    $workspace = $this->createGroup('workspace', 'keytec');
+    $this->config('system.site')->set('name', 'bakers.build')->save();
+    $user = $this->createConsentingUser();
+    Og::createMembership($workspace, $user)->save();
+
+    $content = $this->consentPage();
+    $text = $this->textOf($content);
+    $this->assertStringContainsString('Device functional client wants to sign in to bakers.build (localhost) as ' . $user->getDisplayName() . '.', $text);
+    $this->assertStringContainsString('If you confirm, the device can do everything you can do on bakers.build, in your workspaces and teams, with your roles there.', $text);
+    $this->assertStringNotContainsString('teams below', $text);
+    $this->assertStringNotContainsString('Requested access:', $text);
+
+    $xpath = new \DOMXPath(Html::load($content));
+    $details = $xpath->query('//details[not(@open)][contains(., "Technical details")][contains(., "test:device")]');
+    $this->assertInstanceOf(\DOMNodeList::class, $details);
+    $this->assertSame(1, $details->length, 'The scopes sit in one collapsed element.');
+    $this->assertSame(1, substr_count($text, 'test:device'), 'No scope appears outside it.');
+
+    $links = $xpath->query('//details[not(@open)][summary[contains(., "Your workspaces and roles")]][following::details[contains(., "Technical details")]]//a[@href="https://bakers.build/docs/provision/security/access-and-data#roles-and-permissions"][contains(., "What do these roles mean?")]');
+    $this->assertInstanceOf(\DOMNodeList::class, $links);
+    $this->assertSame(1, $links->length, 'The docs link sits in the closed memberships element, above the technical details.');
+  }
+
+  /**
+   * The consent says a confirmed device cannot be signed out by its owner yet.
+   */
+  public function testConsentStatesRevokeGap(): void {
+    $this->createConsentingUser();
+    $this->assertStringContainsString("You can't sign this device out yourself yet. Ask a site administrator to revoke it.", $this->consentText());
+  }
+
+  /**
+   * Without any membership the consent says the device reaches no workspace.
+   */
+  public function testConsentWithoutMemberships(): void {
+    $this->installGroupFixture();
+    $this->createGroup('workspace', 'keytec');
+    $this->createConsentingUser();
+
+    $text = $this->consentText();
+    $this->assertStringContainsString("You aren't in any workspace yet, so the device can't reach any workspace content.", $text);
+    $this->assertStringNotContainsString('Workspace keytec', $text);
+    $this->assertStringNotContainsString('What do these roles mean?', $text);
+    $this->assertStringNotContainsString('Your workspaces and roles', $text);
+  }
+
+  /**
+   * The denial says the device got nothing.
+   *
+   * The confirmed screen links to bb_core's home route, which this module's
+   * kernel tests do not install; gate-presentation.feature covers its copy.
+   */
+  public function testDenialResultExplainsOutcome(): void {
+    $this->createConsentingUser();
+
+    $denied = $this->textOf((string) $this->httpKernel->handle(Request::create('/oauth/device', 'GET', ['done' => 'denied']))->getContent());
+    $this->assertStringContainsString('Sign-in denied', $denied);
+    $this->assertStringContainsString('The device was not signed in and got no access. You can close this page.', $denied);
   }
 
   /**
@@ -527,6 +651,8 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   public function testVerificationFormFloodRefusesFurtherAttempts(): void {
     $this->enableModules(['dblog']);
     $this->installSchema('dblog', ['watchdog']);
+    // enableModules() rebuilt the container; the kernel from setUp() is stale.
+    $this->httpKernel = $this->container->get('http_kernel');
     $account = $this->drupalCreateUser(['grant simple_oauth codes']);
     $this->assertInstanceOf(User::class, $account);
     $this->setCurrentUser($account);
@@ -549,6 +675,11 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $this->assertSame('Device code attempts blocked for account %uid.', end($rows)->message);
     $this->assertSame(RfcLogLevel::NOTICE, (int) end($rows)->severity);
 
+    // An opened link says why it shows no consent, not that the code is bad.
+    $blocked = $this->textOf((string) $this->httpKernel->handle(Request::create('/oauth/device', 'GET', ['user_code' => 'WRONG-CODE']))->getContent());
+    $this->assertStringContainsString('Too many attempts. Wait a few minutes and try again.', $blocked);
+    $this->assertStringNotContainsString('That code is not valid.', $blocked);
+
     // A different, unaffected account can still attempt a lookup.
     $body = $this->requestDeviceAuthorization();
     $other = $this->drupalCreateUser(['grant simple_oauth codes']);
@@ -557,6 +688,100 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
     $request = Request::create('/oauth/device', 'GET', ['user_code' => $body['user_code']]);
     $response = $this->httpKernel->handle($request);
     $this->assertStringNotContainsString('Too many attempts.', (string) $response->getContent());
+  }
+
+  /**
+   * Registers workspace and team bundles as OG groups, as bb_core ships them.
+   *
+   * A team references its workspace through `workspace_id`; each group type
+   * has a `lead` rank, labelled the way the shipped config labels it.
+   */
+  protected function installGroupFixture(): void {
+    $this->enableModules(['og']);
+    $this->installEntitySchema('og_membership');
+    $this->installEntitySchema('entity_test_with_bundle');
+    $this->installConfig(['og']);
+    // enableModules() rebuilt the container; the kernel from setUp() is stale.
+    $this->httpKernel = $this->container->get('http_kernel');
+    foreach (['workspace' => 'Admin', 'team' => 'Lead'] as $bundle => $lead) {
+      EntityTestBundle::create(['id' => $bundle, 'label' => ucfirst($bundle)])->save();
+      Og::addGroup('entity_test_with_bundle', $bundle);
+      OgRole::create(['name' => 'lead', 'label' => $lead])
+        ->setGroupType('entity_test_with_bundle')
+        ->setGroupBundle($bundle)
+        ->save();
+    }
+    FieldStorageConfig::create([
+      'field_name' => 'workspace_id',
+      'entity_type' => 'entity_test_with_bundle',
+      'type' => 'entity_reference',
+      'settings' => ['target_type' => 'entity_test_with_bundle'],
+    ])->save();
+    FieldConfig::create([
+      'field_name' => 'workspace_id',
+      'entity_type' => 'entity_test_with_bundle',
+      'bundle' => 'team',
+    ])->save();
+  }
+
+  /**
+   * Creates a workspace, or a team in the given workspace.
+   */
+  protected function createGroup(string $bundle, string $name, ?EntityTestWithBundle $workspace = NULL): EntityTestWithBundle {
+    $group = EntityTestWithBundle::create(['type' => $bundle, 'name' => $name] + ($workspace ? ['workspace_id' => $workspace->id()] : []));
+    $group->save();
+    return $group;
+  }
+
+  /**
+   * Signs in an account that may confirm devices, never uid 1.
+   */
+  protected function createConsentingUser(): User {
+    // Uid 1 bypasses every check; the consenting account must not be it.
+    $this->drupalCreateUser([]);
+    $user = $this->drupalCreateUser(['grant simple_oauth codes']);
+    $this->assertInstanceOf(User::class, $user);
+    $this->setCurrentUser($user);
+    return $user;
+  }
+
+  /**
+   * Opens the consent for a fresh device code and returns the page HTML.
+   */
+  protected function consentPage(): string {
+    $body = $this->requestDeviceAuthorization();
+    $request = Request::create('/oauth/device', 'GET', ['user_code' => $body['user_code']]);
+    return (string) $this->httpKernel->handle($request)->getContent();
+  }
+
+  /**
+   * The consent page's visible text, entities decoded.
+   */
+  protected function consentText(): string {
+    return $this->textOf($this->consentPage());
+  }
+
+  /**
+   * A page's text with HTML entities decoded, tags kept for line context.
+   */
+  protected function textOf(string $html): string {
+    return html_entity_decode($html, ENT_QUOTES | ENT_HTML5);
+  }
+
+  /**
+   * A page's paragraphs as the reader sees them, trimmed, in document order.
+   *
+   * @return string[]
+   *   One entry per `p` element's text content.
+   */
+  protected function linesOf(string $html): array {
+    $paragraphs = (new \DOMXPath(Html::load($html)))->query('//p');
+    $this->assertInstanceOf(\DOMNodeList::class, $paragraphs);
+    $lines = [];
+    foreach ($paragraphs as $paragraph) {
+      $lines[] = trim($paragraph->nodeValue ?? '');
+    }
+    return $lines;
   }
 
   /**

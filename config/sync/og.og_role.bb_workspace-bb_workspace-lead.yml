@@ -28,6 +28,7 @@ permissions:
   - 'delete any bb_comment'
   - 'delete any bb_environment'
   - 'delete any bb_invite'
+  - 'delete any bb_project'
   - 'delete any bb_team'
   - 'delete any bb_term'
   - 'delete any bb_ticket'

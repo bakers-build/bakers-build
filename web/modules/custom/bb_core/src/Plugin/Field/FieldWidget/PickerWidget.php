@@ -36,7 +36,7 @@ final class PickerWidget extends WidgetBase implements PickerWidgetInterface, Co
   /**
    * The submitted field's entity context supplied by Drupal's extraction pass.
    */
-  private ?FieldItemListInterface $submittedItems = NULL;
+  protected ?FieldItemListInterface $submittedItems = NULL;
 
   /**
    * Reads the access-checked candidates of an entity-reference field.

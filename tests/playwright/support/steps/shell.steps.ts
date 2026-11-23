@@ -235,7 +235,8 @@ When('I activate the tab {string} with the keyboard', async ({ page }, tab: stri
 });
 
 Then('the address ends with {string}', async ({ page }, suffix: string) => {
-  expect(new URL(page.url()).pathname.endsWith(suffix)).toBe(true);
+  // Polled: a mutation that navigates (HX-Location) moves the address after its response.
+  await expect.poll(() => new URL(page.url()).pathname.endsWith(suffix)).toBe(true);
 });
 
 Then('the document was not reloaded', async ({ page }) => {

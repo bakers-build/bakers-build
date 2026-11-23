@@ -3,7 +3,7 @@ Feather (https://github.com/feathericons/feather) and Lucide (https://github.com
 Shapes identical to feather-icons 4.29.2 or lucide-static 0.460.0:
 
 - Feather (MIT): branch (git-branch), code, command, italic, machine (server),
-  more-horizontal, project (folder)
+  more-horizontal, project (folder), star
 - Lucide (ISC): bold, dashboard (layout-dashboard), heading, list, list-ordered,
   panel-left, team (users)
 

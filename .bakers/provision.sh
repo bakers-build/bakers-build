@@ -2,8 +2,8 @@
 # Fixed host entry point for the project's provision_up profiles and provision_exec keys.
 #   .bakers/provision.sh <profile>
 #   .bakers/provision.sh exec <key> [-- <argv…>]
-# Each key runs one fixed command in the DDEV web container; keys with `args: true` pass only
-# arguments that match the safe pattern below, never one starting with `-`.
+# Each key runs one fixed command in the DDEV web container, except `down` on the host; keys with
+# `args: true` pass only arguments that match the safe pattern below, never one starting with `-`.
 set -euo pipefail
 
 usage() { echo 'Usage: .bakers/provision.sh <profile> | exec <key> [-- <argv…>]' >&2; exit 1; }
@@ -110,6 +110,13 @@ if [ "${1:-}" = exec ]; then
       safe "$1" ${3:+"$3"}
       [[ "$2" != -* ]] || usage
       web drush php:script scripts/e2e/playground-ticket.php -- "$@"
+      ;;
+    down)
+      # The marker goes first, so a failed stop still makes the next provision_up reinstall.
+      [ "$#" = 0 ] || usage
+      bash .bakers/scripts/ddev-own-project.sh
+      rm -f .ddev/.bakers-test/profile
+      exec ddev stop
       ;;
     *) echo "Unsupported provision_exec key: $key" >&2; exit 1 ;;
   esac

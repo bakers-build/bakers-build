@@ -25,6 +25,7 @@
   "dependencies": {
     "@bakers-build/core": "workspace:^",
     "@bakers-build/addon-workspace": "workspace:^",
+    "@dropsh/plugin-tool": "^0.8.2",
     "commander": "^12.1.0",
     "dropsh": "^0.8.2"
   },

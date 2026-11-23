@@ -385,9 +385,13 @@ final class FigureRenderer {
         $running = $category['label'];
       }
     }
-    // Monthly buckets are keyed `Y-m`, daily ones `Y-m-d`.
-    $monthly = preg_match('/^\d{4}-\d{2}$/', (string) ($figure['categories'][0]['key'] ?? '')) === 1;
-    $caption = $monthly ? (string) $this->t('Per month, UTC') : (string) $this->t('Per day, UTC');
+    // Buckets are keyed `Y-m` (month), `Y-m-d` (day) or `Y-m-dTH` (hour).
+    $first = (string) ($figure['categories'][0]['key'] ?? '');
+    $caption = match (TRUE) {
+      preg_match('/^\d{4}-\d{2}$/', $first) === 1 => (string) $this->t('Per month, UTC'),
+      preg_match('/T\d{2}$/', $first) === 1 => (string) $this->t('Per hour, UTC'),
+      default => (string) $this->t('Per day, UTC'),
+    };
     if ($running !== NULL) {
       $caption .= ' · ' . $this->t('@section is still running', ['@section' => $running]);
     }

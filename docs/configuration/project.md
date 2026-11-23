@@ -24,7 +24,7 @@ export default {
 
 herdr's preset fills the executor and the worktree. The generator also writes a `hooks` block when you answered its questions. `--server`, `--executor` and `--worktree` write an explicit choice instead of the defaults ([Conductor slots](/addons/slots)).
 
-The file carries no identity and is identical for everyone. bakers derives the conductor id `<machine_id>-<project>-<variant>` at runtime from the [machine file](/configuration/machine)'s `machine_id`, `project.name` and the variant (`conductor` for `project.config.js`, `review` for `project.review.config.js`); it is never written to a config, and `bakers conductor ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its Identity card. When this machine, project and variant already have a conductor under an older id, the first `bakers conductor start` offers to take it over ([bakers conductor](/cli/conductor)).
+The file carries no identity and is identical for everyone. bakers derives the conductor id `<machine_id>-<project>-<variant>` at runtime from the [machine file](/configuration/machine)'s `machine_id`, `project.name` and the variant (`conductor` for `project.config.js`, `review` for `project.review.config.js`); it is never written to a config, and `bakers conductor ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its **Settings** tab. When this machine, project and variant already have a conductor under an older id, the first `bakers conductor start` offers to take it over ([bakers conductor](/cli/conductor)).
 
 ## Fields
 
@@ -40,7 +40,7 @@ The file carries no identity and is identical for everyone. bakers derives the c
 | `server.use`, `server.export`, `server.with`, `executor.use`, `executor.export`, `executor.with`, `worktree.use`, `worktree.export`, `worktree.with` | A slot's package, its named factory and the factory's options; see [Slot descriptors](#slot-descriptors). |
 | `addons` | Packages that contribute slots and tools: a name, or `{ use, alias?, with? }`. A direct slot beats an addon; otherwise the last contributor wins with a warning. `with` is checked against the addon's options schema. Agent harnesses belong in the machine file. |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
-| `states` | Optional array of non-empty state strings; omitted or empty seeds all claimable states on first registration. Later edits belong on the conductor Identity card or API; changing this file does not update an existing registration. |
+| `states` | Optional array of non-empty state strings; omitted or empty seeds all claimable states on first registration. Later edits belong on the conductor **Settings** tab or API; changing this file does not update an existing registration. |
 | `prompt` | Agent prompt template with `{identifier}`, `{state}`, `{run_uuid}` and `{ticket_uuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
 | `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |

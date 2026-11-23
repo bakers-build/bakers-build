@@ -3,7 +3,7 @@
 Run the application directly in each ticket worktree using the repository's existing tools. Each worktree needs its own dependencies, ports and writable data.
 
 ::: info Part of project preparation
-Use this example for an existing Node.js application. Installing [Node.js for the bakers.build CLI](/provision/node) is a separate machine prerequisite.
+Use this example for an existing Node.js application. Installing Node.js for the bakers.build CLI is a separate [machine prerequisite](/get-started/#set-up-your-computer).
 :::
 
 ## Keep the project's setup

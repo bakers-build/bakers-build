@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Security\TrustedCallbackInterface;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Template\Attribute;
-use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Members\MemberItemBuilder;
+use Drupal\bb_core\Members\MembersDialogResponse;
 use Drupal\bb_core\Members\WorkspaceInvite;
 use Drupal\island\Form\WrappedDialogFormBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -32,6 +28,11 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
    * The messenger type the Members face renders as its confirmation.
    */
   public const string RESULT_MESSAGE_TYPE = 'bb_invite';
+
+  /**
+   * The header's Invite members trigger id, a focus target of the members face.
+   */
+  public const string TRIGGER_ID = 'members-invite';
 
   /**
    * The role name the role picker opens on, where the workspace offers it.
@@ -56,37 +57,6 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
     $form->tenancyInvite = $container->get('bb_core.workspace_invite');
     $form->entityTypeManager = $container->get('entity_type.manager');
     return $form;
-  }
-
-  /**
-   * The Members face's "Invite members" button, which opens this dialog.
-   *
-   * The create-dialog trigger's attributes: `hx-get` through the dialog
-   * format into the shell overlay, `href` for a browser without JavaScript.
-   *
-   * @return array<string, mixed>
-   *   The button.
-   */
-  public static function trigger(ContentEntityInterface $workspace): array {
-    $slug = $workspace instanceof BbWorkspaceInterface ? $workspace->getSlug() : (string) $workspace->id();
-    $destination = Url::fromRoute('bb_core.bb_workspace.members', ['bb_workspace' => $slug])->toString();
-    $url = static fn (array $query): Url => Url::fromRoute('bb_core.workspace_invite', ['bb_workspace' => $slug], ['query' => $query]);
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:button',
-      '#attached' => ['library' => ['core/drupal.htmx', 'core/components.bb_theme--option_picker']],
-      '#props' => [
-        'label' => new TranslatableMarkup('Invite members'),
-        'href' => $url(['destination' => $destination])->toString(),
-        'variant' => 'primary',
-        'attributes' => (new Htmx())
-          ->get($url(['destination' => $destination, static::WRAPPER_FORMAT_PARAMETER => static::DIALOG_FORMAT]))
-          ->target('#bakers-overlay')
-          ->select('dialog')
-          ->swap('innerHTML')
-          ->getAttributes(),
-      ],
-    ];
   }
 
   /**
@@ -122,6 +92,8 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
     // says what it takes, the invisible title names it for assistive tech.
     $form['emails'] = [
       '#type' => 'textarea',
+      // Each address shows as a removable chip; the textarea stays the value.
+      '#theme' => 'textarea__bb_chip_field',
       '#title' => $this->t('Email addresses'),
       '#title_display' => 'invisible',
       '#placeholder' => $this->t('Email addresses, one per line or separated by commas'),
@@ -320,10 +292,7 @@ final class WorkspaceInviteForm extends WrappedDialogFormBase implements Trusted
       $form_state->setRedirectUrl($this->returnUrl());
       return;
     }
-    // A whole-document load, not the create dialogs' `HX-Location`: the
-    // Members face is an island form, and one swapped in by `HX-Location`
-    // posts its next write to the fragment address instead of its own.
-    $form_state->setResponse(new Response('', 200, ['HX-Redirect' => $this->returnUrl()->toString()]));
+    $form_state->setResponse(MembersDialogResponse::close());
   }
 
   /**

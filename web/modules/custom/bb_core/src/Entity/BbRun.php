@@ -320,12 +320,12 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
    *
    * @var array<string, int>
    */
-  private array $supersededLogFiles = [];
+  protected array $supersededLogFiles = [];
 
   /**
    * The failure line of this render, read once; cleared on save.
    */
-  private ?string $failureLineMemo = NULL;
+  protected ?string $failureLineMemo = NULL;
 
   /**
    * {@inheritdoc}

@@ -34,7 +34,7 @@ final class TicketParentLabelProcessor extends ProcessorPluginBase implements Bu
   /**
    * The entity type manager the parents are read through.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}

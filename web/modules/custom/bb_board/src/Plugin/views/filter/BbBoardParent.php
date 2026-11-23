@@ -35,19 +35,19 @@ final class BbBoardParent extends InOperator {
   /**
    * The subtree resolver.
    */
-  private ParentTicketScope $scope;
+  protected ParentTicketScope $scope;
 
   /**
    * Resolves the board's project from an id or a key.
    */
-  private ParamConverterInterface $projectConverter;
+  protected ParamConverterInterface $projectConverter;
 
   /**
    * The resolved scope of the last query() call, NULL before it.
    *
    * @var array{mode: string, parent: ?\Drupal\bb_core\Entity\BbTicketInterface, ticket_ids: list<string>, message: ?\Drupal\Core\StringTranslation\TranslatableMarkup}|null
    */
-  private ?array $resolved = NULL;
+  protected ?array $resolved = NULL;
 
   /**
    * {@inheritdoc}

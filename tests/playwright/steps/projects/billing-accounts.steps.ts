@@ -1,4 +1,5 @@
-// The project's Billing tab: account rows, the New dialog, Make default, Archive.
+// The project's Billing tab: account rows that open the account's page, the
+// New dialog, and the page's Edit, Make default and Archive.
 // Project/tab navigation and the absent-tab assertion come from shell.steps.ts,
 // project-overview.steps.ts and group-detail.steps.ts; this file adds only the
 // fixture project, the face's rows and actions and the route's status.
@@ -10,6 +11,24 @@ import { openInDialog } from '../../support/dialog';
 import { CONTENT_ISLAND, PAGE_HEADER_ISLAND, markDocument } from '../../support/shell';
 
 const routeStatus = new WeakMap<object, { status: number; location: string }>();
+
+/** The page of the newest billing account so named. */
+function accountPageRoute(name: string): string {
+  const url = php(
+    [
+      '$etm = \\Drupal::entityTypeManager();',
+      `$ids = $etm->getStorage("bb_track_account")->getQuery()->accessCheck(FALSE)->condition("name", "${safe(name)}")->sort("id", "DESC")->execute();`,
+      '$a = $ids ? $etm->getStorage("bb_track_account")->load(reset($ids)) : NULL;',
+      '$p = $a ? $a->get("project_id")->entity : NULL;',
+      'print $p ? \\Drupal::service("url_generator")->generateFromRoute("entity.bb_track_account.canonical",',
+      '["bb_project" => $p->uuid(), "bb_track_account" => $a->id(), "bb_workspace" => "bakers"]) : "";',
+    ].join(' '),
+  );
+  if (!url) {
+    throw new Error(`No billing account named "${name}" with a project exists.`);
+  }
+  return url;
+}
 
 function projectAccountRoute(name: string): string {
   const url = php(
@@ -76,6 +95,11 @@ When('I request the billing route for the project {string}', async ({ page }, na
   routeStatus.set(page, { status: response.status(), location: response.headers().location ?? '' });
 });
 
+When('I request the page of the billing account {string}', async ({ page }, name: string) => {
+  const response = await page.request.get(accountPageRoute(name), { maxRedirects: 0 });
+  routeStatus.set(page, { status: response.status(), location: response.headers().location ?? '' });
+});
+
 Then('the billing route answers {int}', async ({ page }, status: number) => {
   expect(routeStatus.get(page)?.status).toBe(status);
 });
@@ -99,17 +123,68 @@ function accountRow(page: Page, name: string): Locator {
     .first();
 }
 
-Then('the billing account {string} is the default without Archive', async ({ page }, name: string) => {
-  const row = accountRow(page, name);
-  await expect(row).toContainText('Default');
-  await expect(row.getByRole('button', { name: 'Archive', exact: true })).toHaveCount(0);
-  await expect(row.getByRole('button', { name: 'Make default', exact: true })).toHaveCount(0);
+Then('the billing account {string} is listed as the default', async ({ page }, name: string) => {
+  await expect(accountRow(page, name)).toContainText('Default');
 });
 
-Then('the billing account {string} offers Make default and Archive', async ({ page }, name: string) => {
+Then('the billing account row {string} only opens its page', async ({ page }, name: string) => {
   const row = accountRow(page, name);
-  await expect(row.getByRole('button', { name: 'Make default', exact: true })).toBeVisible();
-  await expect(row.getByRole('button', { name: 'Archive', exact: true })).toBeVisible();
+  await expect(row.getByRole('link')).toHaveCount(1);
+  await expect(row.getByRole('link')).toHaveAttribute('href', /\/accounts\/\d+$/);
+  await expect(row.getByRole('button')).toHaveCount(0);
+});
+
+When('I open the billing account {string}', async ({ page }, name: string) => {
+  // Active rows, then the archived collapsible's; the row's one link.
+  await page.locator(CONTENT_ISLAND).locator('[data-list-item]').getByRole('link', { name, exact: true }).first().click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(name);
+  await markDocument(page);
+});
+
+const ACCOUNT_ACTIONS = ['Edit', 'Make default', 'Archive'];
+
+/** One action of the account page, a link or a submit. */
+function accountAction(page: Page, name: string): Locator {
+  const content = page.locator(CONTENT_ISLAND);
+  return content.getByRole('link', { name, exact: true }).or(content.getByRole('button', { name, exact: true }));
+}
+
+Then('the billing account page offers {string}', async ({ page }, list: string) => {
+  const offered = labels(list);
+  for (const action of ACCOUNT_ACTIONS) {
+    await expect(accountAction(page, action)).toHaveCount(offered.includes(action) ? 1 : 0);
+  }
+});
+
+Then('the billing account page shows external ID {string} as text', async ({ page }, externalId: string) => {
+  const content = page.locator(CONTENT_ISLAND);
+  await expect(content).toContainText(externalId);
+  await expect(content.locator('b')).toHaveCount(0);
+});
+
+Then('the billing account page no longer shows external ID {string}', async ({ page }, externalId: string) => {
+  await expect(page.locator(CONTENT_ISLAND)).not.toContainText(externalId);
+});
+
+When('I edit the billing account to external ID {string}', async ({ page }, externalId: string) => {
+  await openInDialog(page, accountAction(page, 'Edit'));
+  const dialog = page.locator('dialog[open]');
+  await dialog.getByRole('textbox', { name: 'External ID', exact: true }).fill(externalId);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByText('Billing account saved.')).toBeVisible();
+  await markDocument(page);
+});
+
+When('I make the billing account the default', async ({ page }) => {
+  await accountAction(page, 'Make default').click();
+  await expect(page.getByText('Default billing account changed.')).toBeVisible();
+  await markDocument(page);
+});
+
+When('I archive the billing account', async ({ page }) => {
+  await accountAction(page, 'Archive').click();
+  await expect(page.getByText('Billing account archived.')).toBeVisible();
+  await markDocument(page);
 });
 
 When('I create the billing account {string} in the dialog', async ({ page }, name: string) => {
@@ -132,25 +207,6 @@ When('I create the billing account {string} with external ID {string} in the dia
   await markDocument(page);
 });
 
-When('I edit the billing account {string} to external ID {string}', async ({ page }, name: string, externalId: string) => {
-  await openInDialog(page, accountRow(page, name).getByRole('link', { name: 'Edit', exact: true }));
-  const dialog = page.locator('dialog[open]');
-  await dialog.getByRole('textbox', { name: 'External ID', exact: true }).fill(externalId);
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByText('Billing account saved.')).toBeVisible();
-  await markDocument(page);
-});
-
-Then('the billing account {string} shows external ID {string} as text', async ({ page }, name: string, externalId: string) => {
-  const row = accountRow(page, name);
-  await expect(row).toContainText(externalId);
-  await expect(row.locator('script, b, i, strong, em')).toHaveCount(0);
-});
-
-Then('the billing account {string} no longer shows external ID {string}', async ({ page }, name: string, externalId: string) => {
-  await expect(accountRow(page, name)).not.toContainText(externalId);
-});
-
 const DIALOG = 'dialog[open]';
 
 /** A comma-separated step parameter as a list of labels. */
@@ -164,7 +220,10 @@ When('I open the new billing account dialog', async ({ page }) => {
 });
 
 When('I open the edit dialog of the billing account {string}', async ({ page }, name: string) => {
-  await openInDialog(page, accountRow(page, name).getByRole('link', { name: 'Edit', exact: true }));
+  // Edit is on the account's page; its row only opens that page.
+  await page.goto(accountPageRoute(name));
+  await markDocument(page);
+  await openInDialog(page, accountAction(page, 'Edit'));
   await expect(page.locator(DIALOG)).toBeVisible();
 });
 
@@ -228,18 +287,6 @@ When('I create the billing account {string} on its own page', async ({ page }, n
   await page.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
   await page.getByRole('button', { name: 'Create billing account', exact: true }).click();
   await expect(page.getByText('Billing account created.')).toBeVisible();
-  await markDocument(page);
-});
-
-When('I make {string} the default billing account', async ({ page }, name: string) => {
-  await accountRow(page, name).getByRole('button', { name: 'Make default', exact: true }).click();
-  await expect(page.getByText('Default billing account changed.')).toBeVisible();
-  await markDocument(page);
-});
-
-When('I archive the billing account {string}', async ({ page }, name: string) => {
-  await accountRow(page, name).getByRole('button', { name: 'Archive', exact: true }).click();
-  await expect(page.getByText('Billing account archived.')).toBeVisible();
   await markDocument(page);
 });
 

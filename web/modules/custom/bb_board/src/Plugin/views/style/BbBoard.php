@@ -64,7 +64,7 @@ final class BbBoard extends StylePluginBase {
   /**
    * Maps ticket entities to board-card props.
    */
-  private ProjectBoard $board;
+  protected ProjectBoard $board;
 
   /**
    * {@inheritdoc}

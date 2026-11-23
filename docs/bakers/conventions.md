@@ -40,6 +40,18 @@ check `config/sync` last at the same revision, and always name the `ddev init` p
 explicit `ddev init` reinstalls the selected database. Reuse/bootstrap preserves existing data.
 Project-owned QA wrappers require Composer dependencies, not addon installation or repair.
 
+## Lists only open, details act
+
+In the web UI and in `bakers ui`, a list row only opens its entity's detail: one link in the
+primary cell (the whole row is the hit area), or Enter and a click in `bakers ui`. A row carries no
+other action: no row button, ⋯ menu, row submit, inline control or row key. Every action on an
+entity lives on its detail page or screen. List-level controls not tied to a row stay: filters,
+search, reload, workspace switch and create new. `ListRowActionsConfigTest` (bb_core) keeps the
+Views free of row operations.
+
+Exempt: the time-sheet grids (Submission review, Worklog week) and the `bakers ui` ticket Addons
+tab, whose rows are the actions; Drupal core admin views under `/admin/*`; the global keys `R` and `W`.
+
 ## Designbook owns the theme's artifacts
 
 Components, stories, scenes, entity mappings and design tokens go through the Designbook skills
