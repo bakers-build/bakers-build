@@ -315,6 +315,17 @@ Feature: The ticket list is the nav home
     Then the active filters read "State is Working"
     And the "State" facet shows "Working" as chosen
 
+  # Back to the list must give live facets: a restored htmx snapshot carries
+  # markup Alpine already processed, so its pickers sent nothing.
+  Scenario: A facet pick works after going back from a ticket
+    Given I am signed in as a member of the "bakers" workspace
+    When I visit the full ticket list of the "bakers" workspace
+    And I open the first listed ticket
+    And I go back
+    And I click "Working" in the "State" facet with a pointer
+    Then the address carries "state[]=working"
+    And the active filters read "State is Working"
+
   # AC 7, and exactly AC 7. The `filters` aside composes `collapsible`, which is
   # a native `<details>` over a real `<summary>`: no behaviour, no CSS class, no
   # `Drupal.attachBehaviors`. The two facet steps this scenario used to carry
