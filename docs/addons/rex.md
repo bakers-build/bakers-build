@@ -58,7 +58,7 @@ The executor calls `rex` from the conductor, outside any agent sandbox.
 
 ## Run lifecycle
 
-`startRun` creates one Rex session per run in the worktree (`rex new --cwd <worktree> --shell none`), labelled `<identifier>-<run id> <branch>`. The run's environment travels in a private launch script, never in the command line. `stopRun` does nothing. Cleanup kills (`rex session kill`) only this run's sessions, found by the end of their label and addressed by their session id, so a session with the same label elsewhere is never hit. Run state reaches bakers.build through the agent and the server, as with herdr.
+`startRun` creates one Rex session per run in the worktree (`rex new --cwd <worktree> --shell none`), labelled `<identifier>-<run id> <branch>`. The run's environment travels in a private launch script, never in the command line. `stopRun` does nothing. Cleanup kills (`rex session kill`), by session id, every session whose label ends in `-<run id> <branch>`; other sessions are untouched. Run state reaches bakers.build through the agent and the server, as with herdr.
 
 Rex has no workspace of its own and opens no layout. Remote Rex servers (`rex -S`) are not used.
 
