@@ -635,11 +635,13 @@ export default function optionPicker() {
       this.open = !this.open;
       this.reposition();
       // A keyboard user lands in the panel: on its search, else its first row.
+      // Synchronously, not on `$nextTick`: that is a `setTimeout`, and keys
+      // typed before it fires reach the trigger and are lost. Unhiding here
+      // writes the same value the `:hidden` binding applies, so focus can land.
       if (this.open) {
-        this.$nextTick(() => {
-          const search = this.$refs.panel.querySelector('[data-option-picker-search]');
-          search ? search.focus() : this.focusRow(this.rows()[0]);
-        });
+        this.$refs.panel.hidden = false;
+        const search = this.$refs.panel.querySelector('[data-option-picker-search]');
+        search ? search.focus() : this.focusRow(this.rows()[0]);
       }
     },
 
