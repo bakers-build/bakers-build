@@ -56,6 +56,9 @@ importers:
       '@bakers-build/addon-remote-drupal':
         specifier: workspace:^
         version: link:addons/remote-drupal
+      '@bakers-build/addon-rex':
+        specifier: workspace:^
+        version: link:addons/rex
       '@bakers-build/addon-workspace':
         specifier: workspace:^
         version: link:addons/workspace
@@ -845,6 +848,9 @@ importers:
       '@bakers-build/addon-remote-drupal':
         specifier: workspace:^
         version: link:../addons/remote-drupal
+      '@bakers-build/addon-rex':
+        specifier: workspace:^
+        version: link:../addons/rex
       '@bakers-build/addon-runtime-bwrap':
         specifier: workspace:^
         version: link:../addons/runtime-bwrap

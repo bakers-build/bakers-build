@@ -96,7 +96,9 @@ describe('BB-326 runtime packaging', () => {
     // 38 since `@bakers-build/addon-runtime-docker` (the Docker runtime); it
     // sets no `engines`.
     // External Bubblewrap runtime adds one independently published addon.
-    expect(dirs).toHaveLength(39);
+    // 40 since `@bakers-build/addon-rex` (the Rex executor); it sets no
+    // `engines`.
+    expect(dirs).toHaveLength(40);
     for (const dir of dirs) {
       const engines = manifestOf(dir).engines?.node;
       if (engines !== undefined)
