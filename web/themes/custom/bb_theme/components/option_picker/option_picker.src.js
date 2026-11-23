@@ -26,13 +26,13 @@
  * rendering. The template still renders `aria-expanded` and the panel's
  * `hidden` from its `open` prop, so every state the acceptance criteria name
  * still holds with JavaScript disabled entirely; Alpine binds those exact two
- * attributes and nothing else.
+ * attributes. `toggle()` is the one deliberate second writer of `hidden`: on
+ * open it unhides the panel itself, with the same value the binding applies.
  *
- * POSITIONING RUNS ON `$nextTick`, and that is load-bearing rather than
- * stylistic. `positionPanel` returns early while the panel is still `hidden`,
- * and Alpine flushes attribute bindings on its own scheduler — so positioning
- * in the same statement that sets `open` would measure a panel that is still
- * closed and silently skip the whole placement.
+ * PLACEMENT NEEDS AN UNHIDDEN PANEL. `positionPanel` returns early while the
+ * panel is still `hidden`, and Alpine flushes attribute bindings on its own
+ * scheduler. So `toggle()` unhides, places and only then focuses the panel, all
+ * synchronously; re-placement after resize, scroll or filtering runs on `$nextTick`.
  *
  * It also FILTERS and RELABELS THE CREATE ROW. `searchable` used to be a pure
  * boundary — an input that filtered nothing — and half of it is now real: typing
@@ -633,13 +633,16 @@ export default function optionPicker() {
 
     toggle() {
       this.open = !this.open;
-      this.reposition();
       // A keyboard user lands in the panel: on its search, else its first row.
+      // Synchronously, not on `$nextTick`: that is a `setTimeout`, and keys
+      // typed before it fires reach the trigger and are lost. Unhiding here
+      // writes the same value the `:hidden` binding applies, so the panel can
+      // be placed first and focus then lands without scrolling the page.
       if (this.open) {
-        this.$nextTick(() => {
-          const search = this.$refs.panel.querySelector('[data-option-picker-search]');
-          search ? search.focus() : this.focusRow(this.rows()[0]);
-        });
+        this.$refs.panel.hidden = false;
+        positionPanel(this.$root);
+        const search = this.$refs.panel.querySelector('[data-option-picker-search]');
+        search ? search.focus() : this.focusRow(this.rows()[0]);
       }
     },
 
@@ -753,9 +756,8 @@ export default function optionPicker() {
     /**
      * Places the panel inside the viewport.
      *
-     * Deferred to `$nextTick` because `positionPanel` bails out while the
-     * panel is still `hidden`, and Alpine flushes that binding on its own
-     * scheduler rather than in the statement that changed `open`.
+     * After resize, scroll or filtering; deferred to `$nextTick` so a pending `hidden`
+     * binding has flushed before `positionPanel` measures.
      */
     reposition() {
       if (!this.open) {
