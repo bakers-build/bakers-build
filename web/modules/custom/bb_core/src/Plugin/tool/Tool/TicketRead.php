@@ -289,15 +289,15 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
     'deployments' => new ListOutputDefinition(
       label: new TranslatableMarkup('Deployments'),
-      description: new TranslatableMarkup('The viewable deployment tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
+      description: new TranslatableMarkup('The viewable ship tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
       item_definition: new MapOutputDefinition(
         label: new TranslatableMarkup('Deployment'),
-        description: new TranslatableMarkup('One deployment ticket.'),
+        description: new TranslatableMarkup('One ship ticket.'),
         property_definitions: [
           'identifier' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('Identifier'),
-            description: new TranslatableMarkup('The deployment ticket identifier.'),
+            description: new TranslatableMarkup('The ship ticket identifier.'),
           ),
           'environments' => new ListOutputDefinition(
             label: new TranslatableMarkup('Environments'),

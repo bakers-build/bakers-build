@@ -157,6 +157,11 @@ trait TicketInputTrait {
    * @throws \InvalidArgumentException
    */
   protected function term(?BbWorkspaceInterface $workspace, string $vid, string $name): ContentEntityInterface {
+    // Renamed to ship; refused so first use cannot recreate the old term.
+    $retired = ['type' => 'deployment', 'recipe' => 'deploy-and-release'][$vid] ?? NULL;
+    if ($retired !== NULL && BbTerm::keyOf($name) === BbTerm::keyOf($retired)) {
+      throw new \InvalidArgumentException(sprintf('The %s %s is now ship.', $vid, $retired));
+    }
     $storage = $this->entities()->getStorage('bb_term');
     $ids = $this->termIds($workspace, $vid, [$name]);
     if (!$ids && $vid === 'label' && $workspace !== NULL) {

@@ -205,6 +205,20 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * The retired names are refused, naming ship; ship and ship are saved.
+   */
+  public function testRetiredDeploymentNamesPointToShip(): void {
+    $values = ['title' => 'Release', 'workflow' => 'bb_work', 'project' => $this->project->uuid()];
+    $this->assertFailure($this->runTool('bakers_ticket_create', $values + ['type' => 'deployment']), 'The type deployment is now ship.');
+    $this->assertFailure($this->runTool('bakers_ticket_create', $values + ['recipe' => 'deploy-and-release']), 'The recipe deploy-and-release is now ship.');
+    $out = $this->outputs($this->runTool('bakers_ticket_create', $values + ['type' => 'ship', 'recipe' => 'ship']));
+    $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $stored);
+    self::assertSame('ship', $stored->get('ticket_type')->entity?->label());
+    self::assertSame('ship', $stored->get('recipe')->entity?->label());
+  }
+
+  /**
    * The workspace member with that UUID becomes the assignee.
    */
   public function testAssigneeOfWorkspaceMemberIsAssigned(): void {
