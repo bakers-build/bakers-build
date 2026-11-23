@@ -47,6 +47,10 @@ Apply all matching rows.
 | Scenes or screens built from a design reference | `designbook:design-verify` last, `designbook:repair` for its findings |
 | Skills, frontmatter or plugin manifests | `mattpocock-skills:writing-for-agents`, `ponytail:ponytail` |
 
+*Ship*: version command `pnpm --dir bakers-cli run release:version <SHA> --notes -`; npm package
+`@bakers-build/bakers`. Block when a breaking (`!`) server commit is in the batch and none raises
+`min_client_version`: raise it in a merge request on the source branch, then freeze again.
+
 ## bb-phase-validate
 
 Apply all matching rows to the plan and final diff. Run each distinct command once per revision and

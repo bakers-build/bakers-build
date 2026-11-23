@@ -22,7 +22,7 @@ person, in the session or, under `ticket-question`, through the ticket.
 |---|---|
 | feature, chore | qualification, prior-art, agent-choice, plan, coding, criterion, verdict, merge |
 | bug | the same, `diagnosis` for `plan` |
-| deployment | qualification, plan (release and version), coding, merge |
+| ship | qualification, plan (release and version), coding, merge |
 | verification | qualification, plan (the verified set), coding |
 
 A recipe's `## bb-gates` holds one `| <type> | <gates> |` row per declared type. For a type above
@@ -36,7 +36,7 @@ Apply them before label skills:
 
 - `auto` beside one `human-*` label: follow that `human-*` skill alone.
 - `human-review` beside `human-accept`: stop with a question asking which applies.
-- Type `deployment` or `verification` with a `human-*` label: stop with a question asking for
+- Type `ship` or `verification` with a `human-*` label: stop with a question asking for
   `auto` or no label.
 - Under a `human-*` label the **confirming person** decides `criterion`, `verdict` and `merge`:
   any reviewer, or the assignee unless `service_account`. Name them; the first answer passes.

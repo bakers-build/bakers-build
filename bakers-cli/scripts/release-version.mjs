@@ -3,7 +3,7 @@
 // Conventional Commits between the last v<semver> tag reachable from <ref> and <ref>. Prints the
 // version, or nothing (exit 0) when <ref> is already in a v<semver> tag or the range holds no feat,
 // fix or breaking commit. `--notes -` prints the notes after the version on stdout. The `release`
-// CI job tags <ref> with it; the deploy-and-release recipe runs it as the plan's dry run. Writes
+// CI job tags <ref> with it; the ship recipe runs it as the plan's dry run. Writes
 // nothing to the repository.
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';

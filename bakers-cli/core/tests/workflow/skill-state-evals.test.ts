@@ -1118,7 +1118,7 @@ describe('recipe run profile', () => {
   it('accepts a plan comment with SHA, batch, version and release notes, stopping uncut', async () => {
     const plan = `Frozen ${sha}; batch EVAL-41, EVAL-42; version 0.2.0\n### Features\n### Bug Fixes`;
     expect(
-      await judge('deploy-plan', 'Approve?', [
+      await judge('ship-plan', 'Approve?', [
         readTicket(),
         cmd(['git', 'rev-parse', 'origin/develop'], sha),
         comment('plan', plan),
@@ -1126,7 +1126,7 @@ describe('recipe run profile', () => {
       ]),
     ).toEqual([]);
     expect(
-      await judge('deploy-plan', 'Done.', [
+      await judge('ship-plan', 'Done.', [
         readTicket(),
         cmd(['git', 'checkout', '-b', 'release/x']),
         comment('plan', 'Batch EVAL-41'),
@@ -1141,13 +1141,10 @@ describe('recipe run profile', () => {
       'MR 51: gate not played; nothing merged.',
     );
     expect(
-      await judge('deploy-working-gate-red', 'Blocked.', [
-        readTicket(),
-        summary,
-      ]),
+      await judge('ship-working-gate-red', 'Blocked.', [readTicket(), summary]),
     ).toEqual([]);
     expect(
-      await judge('deploy-working-gate-red', 'Merged.', [
+      await judge('ship-working-gate-red', 'Merged.', [
         readTicket(),
         merge('51'),
         summary,
@@ -1157,14 +1154,14 @@ describe('recipe run profile', () => {
   it('merges once into main by merge commit, nothing back into develop', async () => {
     const summary = comment('summary', 'chore(release): 0.2.0 tagged v0.2.0');
     expect(
-      await judge('deploy-working-release', 'Released.', [
+      await judge('ship-working-release', 'Released.', [
         readTicket(),
         merge('51'),
         summary,
       ]),
     ).toEqual([]);
     expect(
-      await judge('deploy-working-release', 'Released.', [
+      await judge('ship-working-release', 'Released.', [
         readTicket(),
         merge('51'),
         merge('52'),
@@ -1172,13 +1169,50 @@ describe('recipe run profile', () => {
       ]),
     ).toEqual(['merges']);
     expect(
-      await judge('deploy-working-release', 'Released.', [
+      await judge('ship-working-release', 'Released.', [
         readTicket(),
         file('skills/bb-workflow/references/merge.md'),
         merge('51', 'true'),
         summary,
       ]),
     ).toEqual(['merges', 'frame-merge-unused']);
+  });
+  it('ships to main without a base_url: no deploy steps, release and npm package named', async () => {
+    const summary = comment(
+      'summary',
+      'chore(release): 0.2.0 tagged v0.2.0, GitLab release linked; @acme/widgets 0.2.0 on npm; no base_url: deploy steps skipped',
+    );
+    expect(
+      await judge('ship-working-npm-only', 'Released.', [
+        readTicket(),
+        merge('51'),
+        summary,
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('ship-working-npm-only', 'Released.', [
+        readTicket(),
+        merge('51'),
+        comment('summary', 'chore(release): 0.2.0 tagged v0.2.0'),
+      ]),
+    ).toEqual(['summary-content']);
+  });
+  it('plans without a Ship hint: names the batch and the skipped steps', async () => {
+    const plan = `Frozen ${sha}; batch EVAL-41, EVAL-42; no base_url: deploy steps skipped; no version command`;
+    expect(
+      await judge('ship-plan-no-hint', 'Approve?', [
+        readTicket(),
+        comment('plan', plan),
+        comment('summary'),
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('ship-plan-no-hint', 'Approve?', [
+        readTicket(),
+        comment('plan', `Frozen ${sha}; batch EVAL-41, EVAL-42`),
+        comment('summary'),
+      ]),
+    ).toEqual(['plan-content']);
   });
   it('wants one result per ticket, one searched regression and the missing persona', async () => {
     const search = (query: string) =>
