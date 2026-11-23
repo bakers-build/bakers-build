@@ -3,7 +3,7 @@
 # The four columns are fixed: Intake, Prepare, Work, Accept. Every active state of the ticket
 # workflow maps into exactly one of them, so the column set never changes and a type filter
 # reduces cards like any other filter instead of swapping the board's structure. That is why a
-# deployment card and a feature card stand side by side here.
+# ship card and a feature card stand side by side here.
 #
 # The column carries the phase; the CARD carries its exact state as the LABEL of a dotted badge, so
 # `qualification` and `plan` would both be legible in the same column. The accent edge
@@ -28,7 +28,7 @@ props:
     # needs one column that shows its `empty` slot, and an untriaged backlog is the honest case.
     - name: Intake
       count: 0
-    # Prepare — plan, whatever the type (feature, bug, deployment). One state, three types, one
+    # Prepare — plan, whatever the type (feature, bug, ship). One state, three types, one
     # phase.
     - name: Prepare
       count: 3
@@ -57,7 +57,7 @@ props:
           title: Release 2.4 to production
           status: wait
           priority: p1
-          type: deployment
+          type: ship
           state: plan
     # Work — working, for a feature and a verification alike.
     - name: Work
@@ -80,7 +80,7 @@ props:
           type: verification
           state: working
           lease: srv03
-    # Accept — review, for a feature and a deployment alike.
+    # Accept — review, for a feature and a ship ticket alike.
     - name: Accept
       count: 2
       cards:
@@ -98,7 +98,7 @@ props:
           title: Release 2.3 to production
           status: idle
           priority: p3
-          type: deployment
+          type: ship
           state: review
           assignee_initials: CW
           assignee_color: running
