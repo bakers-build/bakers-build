@@ -125,7 +125,7 @@ Feature: Project Overview shows whether the project is running
       And Needs attention reads "Showing 3 of 3 unhealthy tickets"
 
   @deployment-presentation
-  Scenario: A project deployment drills down to its carried tickets
+  Scenario: A project shipment drills down to its carried tickets
     Given a project world with these tickets:
       | ticket      | state         | closed |
       | First work  | qualification |        |
