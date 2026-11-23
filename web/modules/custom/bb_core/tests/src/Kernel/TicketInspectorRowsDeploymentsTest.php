@@ -27,7 +27,7 @@ final class TicketInspectorRowsDeploymentsTest extends BakersToolTestBase {
       'project_id' => $this->project->id(),
     ]);
     $production->save();
-    $type = $this->term('type', 'deployment')->id();
+    $type = $this->term('type', 'ship')->id();
     $ticket = $this->ticket('IR-T');
     $unreferenced = $this->ticket('IR-U');
     $deployment = $this->ticket('IR-D1', [

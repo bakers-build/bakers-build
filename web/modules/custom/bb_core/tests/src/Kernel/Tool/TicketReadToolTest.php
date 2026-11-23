@@ -318,7 +318,7 @@ final class TicketReadToolTest extends BakersToolTestBase {
     $this->installEntitySchema('bb_environment');
     user_role_grant_permissions('skill_user', ['view bb_environment']);
     $production = $this->entity('bb_environment', ['name' => 'production', 'project_id' => $this->project->id()]);
-    $type = $this->term('type', 'deployment')->id();
+    $type = $this->term('type', 'ship')->id();
     $ticket = $this->ticket('TR-T');
     $unreferenced = $this->ticket('TR-U');
     $first = $this->ticket('TR-D1', [

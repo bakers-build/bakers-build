@@ -13,7 +13,7 @@ _meta:
 default:
   name:
     -
-      value: "deployment"
+      value: "ship"
   weight:
     -
       value: 4

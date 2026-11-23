@@ -131,12 +131,12 @@ Feature: Project Overview shows whether the project is running
       | First work  | qualification |        |
       | Second work | done          | 1      |
       | Other work  | qualification |        |
-    And the world has an open deployment to "develop" carrying "First work, Second work"
+    And the world has an open shipment to "develop" carrying "First work, Second work"
     And the account "north-lead" is seated in the world as a lead
     And I am signed in as "north-lead"
     When I open the world project Overview
-    Then the Overview deployment shows "develop" and "2 tickets"
-    When I follow the deployment ticket count "2 tickets"
-    Then the deployment ticket list shows only "First work, Second work"
+    Then the Overview shipment shows "develop" and "2 tickets"
+    When I follow the shipment ticket count "2 tickets"
+    Then the shipment ticket list shows only "First work, Second work"
     When I clear the deployment filter
     Then the deployment filter is cleared
