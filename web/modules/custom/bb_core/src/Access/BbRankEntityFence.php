@@ -214,7 +214,8 @@ final class BbRankEntityFence {
    * The workspace whose owner deletes this project or group, if it is theirs.
    *
    * The one grant of the fence: a workspace owner deletes any project or group
-   * of their workspace, which no rank permission can express.
+   * of their workspace, which no rank permission can express. A lead's
+   * project delete is the rank's `delete any bb_project`, not this grant.
    *
    * @param array<\Drupal\Core\Entity\EntityInterface> $groups
    *   The entity's chain.
