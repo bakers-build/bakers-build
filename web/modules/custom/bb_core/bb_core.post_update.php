@@ -7,6 +7,7 @@
 
 declare(strict_types=1);
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Profile\Profiles;
 use Drupal\bb_core\Entity\BbTerm;
@@ -258,4 +259,53 @@ function _bb_core_move_user_profile(UserInterface $user, array $fields): ?string
   $line = sprintf('uid %d: position "%s", background "%s"', $user->id(), $values['position'], $values['background']);
   \Drupal::logger('bb_core')->notice('Profile not moved, the account is in no workspace: @line', ['@line' => $line]);
   return 'Not moved, in no workspace: ' . $line . '.';
+}
+
+/**
+ * Renames the ticket type deployment and the recipe deploy-and-release to ship.
+ *
+ * Per workspace vocabulary: the old term is renamed, or, when that vocabulary
+ * already holds ship, its tickets and ticket templates move to ship and the
+ * old term is deleted.
+ */
+function bb_core_post_update_rename_deployment_to_ship(): string {
+  $etm = \Drupal::entityTypeManager();
+  $terms = $etm->getStorage('bb_term');
+  $tickets = $etm->getStorage('bb_ticket');
+  $templates = $etm->getStorage('bb_ticket_template');
+  $renames = [
+    'type' => ['deployment', 'ticket_type'],
+    'recipe' => ['deploy-and-release', 'recipe'],
+  ];
+  $count = 0;
+  foreach ($renames as $vid => [$old, $field]) {
+    foreach ($terms->loadByProperties(['vid' => $vid, 'name' => $old]) as $term) {
+      assert($term instanceof BbTermInterface);
+      $count++;
+      $query = $terms->getQuery()->accessCheck(FALSE)
+        ->condition('vid', $vid)
+        ->condition('workspace_id', $term->get('workspace_id')->target_id)
+        ->condition('id', $term->id(), '<>');
+      $query->condition($query->orConditionGroup()->condition('name', 'ship')->condition('key', 'ship'));
+      $ship = $terms->loadMultiple($query->execute());
+      if (!$ship) {
+        $term->set('name', 'ship');
+        if (!$term->get('key')->isEmpty()) {
+          $term->set('key', 'ship');
+        }
+        $term->save();
+        continue;
+      }
+      // Tickets and ticket templates reference these terms; both move first.
+      foreach ([$tickets, $templates] as $storage) {
+        $ids = $storage->getQuery()->accessCheck(FALSE)->condition($field, $term->id())->execute();
+        foreach ($storage->loadMultiple($ids) as $entity) {
+          assert($entity instanceof ContentEntityInterface);
+          $entity->set($field, reset($ship)->id())->save();
+        }
+      }
+      $term->delete();
+    }
+  }
+  return (string) t('Renamed @count terms to ship.', ['@count' => $count]);
 }

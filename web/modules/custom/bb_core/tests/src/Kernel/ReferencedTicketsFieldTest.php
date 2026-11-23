@@ -11,7 +11,7 @@ use PHPUnit\Framework\Attributes\Group;
 /**
  * Verifies the referenced_tickets base field on bb_ticket (BB-140).
  *
- * A deployment ticket (type `deployment`) stores its release batch here. The
+ * A ship ticket (type `ship`) stores its release batch here. The
  * getter returns the referenced BbTicket entities; an empty field yields an
  * empty array.
  */

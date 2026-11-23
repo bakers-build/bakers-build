@@ -84,10 +84,10 @@ final class BranchNameTest extends KernelTestBase {
   }
 
   /**
-   * A deployment ticket runs on release/<identifier>, title ignored.
+   * A ship ticket runs on release/<identifier>, title ignored.
    */
-  public function testDeploymentTicketGetsReleaseBranch(): void {
-    $ticket = $this->createTicket('BB-12', 'Deploy to stage', 'Deployment');
+  public function testShipTicketGetsReleaseBranch(): void {
+    $ticket = $this->createTicket('BB-12', 'Deploy to stage', 'Ship');
     $this->assertSame('release/bb-12', $ticket->get('branch_name')->value);
   }
 

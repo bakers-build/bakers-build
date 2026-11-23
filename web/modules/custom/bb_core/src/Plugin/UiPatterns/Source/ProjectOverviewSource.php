@@ -115,7 +115,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
         'metrics' => $this->t('Metrics'),
         'attention' => $this->t('Needs attention'),
         'epics' => $this->t('Epics'),
-        'deployments' => $this->t('Deployments'),
+        'deployments' => $this->t('Shipments'),
         'empty' => $this->t('Empty state'),
         'description' => $this->t('About'),
         'edit' => $this->t('Edit link'),
@@ -359,7 +359,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
     $content = $items === [] ? [
       '#type' => 'component',
       '#component' => 'bb_theme:empty-state',
-      '#props' => ['message' => (string) $this->t('No deployments in this project.')],
+      '#props' => ['message' => (string) $this->t('No shipments in this project.')],
     ] : [
       '#type' => 'component',
       '#component' => 'bb_theme:list',
@@ -374,7 +374,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
         'items' => $items,
       ],
     ];
-    return $this->zone((string) $this->t('Deployments'), '', [$content]);
+    return $this->zone((string) $this->t('Shipments'), '', [$content]);
   }
 
   /**

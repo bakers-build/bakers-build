@@ -35,7 +35,7 @@ final class BbTicketDetailHeaderSourceTest extends KernelTestBase {
     self::assertInstanceOf(UserInterface::class, $viewer);
     $this->container->get('current_user')->setAccount($viewer);
     $etm = $this->container->get('entity_type.manager');
-    $type = $etm->getStorage('bb_term')->create(['vid' => 'type', 'name' => 'deployment']);
+    $type = $etm->getStorage('bb_term')->create(['vid' => 'type', 'name' => 'ship']);
     $type->save();
     $environment = $etm->getStorage('bb_environment')->create(['name' => 'develop', 'project_id' => $this->projectId]);
     $environment->save();

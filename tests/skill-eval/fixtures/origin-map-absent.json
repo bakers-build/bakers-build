@@ -28,8 +28,8 @@
       "base_branch": "develop",
       "changed": "fixture-revision-1",
       "origin": "https://git.example.invalid/acme/shop/-/issues/7",
-      "type": "deployment",
-      "recipe": "deploy-and-release"
+      "type": "ship",
+      "recipe": "ship"
     },
     "files": {
       "WORKFLOW.md": "# Fixture project — WORKFLOW\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n\n## bb-phase-transition\n\nOrigin labels: none configured.\n"

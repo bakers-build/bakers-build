@@ -1,6 +1,6 @@
 # Terminal retrospective
 
-Before done/cancelled state writes, except deployment/verification, collect the optional answer
+Before done/cancelled state writes, except ship/verification, collect the optional answer
 at the caller's existing decision. Order: **ask → metric → comment → state write**; transition can
 retire write access. Rating never grants merge authorization or replaces required confirmation.
 

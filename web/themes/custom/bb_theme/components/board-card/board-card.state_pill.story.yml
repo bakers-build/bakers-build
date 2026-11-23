@@ -6,7 +6,7 @@
 #
 # This is the footer composition the two pre-existing card stories do not cover — both used to end in
 # a bare dot, which showed the run status in colour alone and never named it. The card here is a
-# deployment ticket: its type says what kind of work it is, the badge names its state.
+# ship ticket: its type says what kind of work it is, the badge names its state.
 component: bb_theme:board-card
 name: State pill
 props:
@@ -14,7 +14,7 @@ props:
   title: Release 2.4 to production
   status: running
   priority: p1
-  type: deployment
+  type: ship
   state: working
 slots:
   footer:

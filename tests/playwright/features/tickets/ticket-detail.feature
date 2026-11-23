@@ -244,7 +244,7 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     Given a project world with these tickets:
       | ticket     | state         |
       | First work | qualification |
-    And the world has an open deployment to "develop" carrying "First work"
+    And the world has an open shipment to "develop" carrying "First work"
     And the account "north-lead" is seated in the world as a lead
     And I am signed in as "north-lead"
     When I open the world ticket "First work"
