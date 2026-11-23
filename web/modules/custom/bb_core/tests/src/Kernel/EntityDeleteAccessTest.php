@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\og\OgMembershipInterface;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -16,6 +19,9 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[RunTestsInSeparateProcesses]
 final class EntityDeleteAccessTest extends KernelTestBase {
 
+  use UserCreationTrait {
+    createUser as private;
+  }
   use WorkspaceReadScopeTestTrait;
 
   /**
@@ -25,11 +31,6 @@ final class EntityDeleteAccessTest extends KernelTestBase {
     'bb_ticket', 'bb_team', 'bb_environment',
     'bb_comment', 'bb_ticket_template', 'bb_term', 'bb_invite',
   ];
-
-  /**
-   * The types only their creator, the workspace owner or an admin deletes.
-   */
-  private const array CREATOR_TYPES = ['bb_project', 'bb_group'];
 
   /**
    * The types only a site administrator deletes; runs only outside the UI.
@@ -127,9 +128,9 @@ final class EntityDeleteAccessTest extends KernelTestBase {
   }
 
   /**
-   * Only the creator, the workspace owner or an admin delete a project/group.
+   * The creator, the workspace owner, an admin and, for projects, any lead.
    */
-  public function testProjectAndGroupDeleteIsTheCreatorsOrWorkspaceOwners(): void {
+  public function testProjectAndGroupDeleteIsTheCreatorsOwnersOrLeads(): void {
     // As shipped: OG's default would let any owner pass on ownership alone.
     $this->config('og.settings')->set('group_manager_full_access', FALSE)->save();
     $workspace = $this->fixture('a', 'bb_workspace');
@@ -144,35 +145,89 @@ final class EntityDeleteAccessTest extends KernelTestBase {
     foreach ([$creator, $contributor] as $account) {
       $this->addMembership($this->fixture('a', 'bb_team'), $account, ['member']);
     }
+    // In none of the project's teams: the lead rank alone decides.
     $lead = $this->createAccount('other-lead-a');
     $this->addMembership($workspace, $lead, ['lead']);
     $team_lead = $this->createAccount('team-lead-a');
     $this->addMembership($this->fixture('a', 'bb_team'), $team_lead, ['lead']);
     $member = $this->createAccount('plain-member-a');
     $this->addMembership($workspace, $member, ['member']);
+    $foreign = $this->member('b');
+    $this->addMembership($this->fixture('b', 'bb_workspace'), $foreign, ['lead']);
+    $blocked = $this->createAccount('blocked-lead-a');
+    $this->addMembership($workspace, $blocked, ['lead'])->setState(OgMembershipInterface::STATE_BLOCKED)->save();
+    $this->container->get('cache.static')->deleteAll();
     $admin = $this->createAccount('site-admin', ['administer bakers']);
 
     $this->container->get('router.builder')->rebuild();
-    $access_manager = $this->container->get('access_manager');
     $cases = [
-      'creator contributor' => [$creator, TRUE],
-      'other contributor' => [$contributor, FALSE],
-      'non-owner workspace lead' => [$lead, FALSE],
-      'team lead' => [$team_lead, FALSE],
-      'workspace owner' => [$owner, TRUE],
-      'member' => [$member, FALSE],
-      'site admin' => [$admin, TRUE],
+      'creator contributor' => [$creator, TRUE, TRUE],
+      'other contributor' => [$contributor, FALSE, FALSE],
+      'non-owner workspace lead' => [$lead, TRUE, FALSE],
+      'foreign workspace lead' => [$foreign, FALSE, FALSE],
+      'blocked workspace lead' => [$blocked, FALSE, FALSE],
+      'team lead' => [$team_lead, FALSE, FALSE],
+      'workspace owner' => [$owner, TRUE, TRUE],
+      'member' => [$member, FALSE, FALSE],
+      'site admin' => [$admin, TRUE, TRUE],
     ];
-    foreach (self::CREATOR_TYPES as $type) {
+    foreach (['bb_project' => 1, 'bb_group' => 2] as $type => $column) {
       $entity = $this->fixture('a', $type);
       $entity->set('owner_user_id', $creator->id())->save();
-      $url = $entity->toUrl('delete-form');
-      foreach ($cases as $who => [$account, $expected]) {
-        $this->container->get('entity_type.manager')->getAccessControlHandler($type)->resetCache();
-        self::assertSame($expected, $entity->access('delete', $account), "$who: $type entity access");
-        self::assertSame($expected, $access_manager->checkNamedRoute($url->getRouteName(), $url->getRouteParameters(), $account), "$who: $type route access");
+      foreach ($cases as $who => $case) {
+        $this->assertDeleteAccess($case[$column], $entity, $case[0], $who);
       }
     }
+
+    // A lead rank in a counts nothing on b, where the account is a contributor.
+    $this->addMembership($this->fixture('b', 'bb_workspace'), $lead, ['contributor']);
+    $this->addMembership($this->fixture('b', 'bb_team'), $lead, ['member']);
+    $this->container->get('cache.static')->deleteAll();
+    $foreign_project = $this->fixture('b', 'bb_project');
+    $foreign_project->set('owner_user_id', $this->member('b')->id())->save();
+    $this->assertDeleteAccess(FALSE, $foreign_project, $lead, 'lead of a, contributor of b');
+  }
+
+  /**
+   * A lead's project delete keeps the blocking rules and the cascades.
+   */
+  public function testLeadProjectDeleteKeepsTheDeleteRules(): void {
+    $workspace = $this->fixture('a', 'bb_workspace');
+    $lead = $this->createAccount('other-lead-a');
+    $this->addMembership($workspace, $lead, ['lead']);
+    $project = $this->fixture('a', 'bb_project');
+    $project->set('owner_user_id', $this->member('a')->id())->save();
+    $this->container->get('router.builder')->rebuild();
+    $this->setCurrentUser($lead);
+    self::assertTrue($project->access('delete', $lead), 'the lead may delete');
+
+    // The world's project-a holds ticket-a.
+    $form = $this->container->get('entity.form_builder')->getForm($project, 'delete');
+    $sentence = (string) $form['consequences']['blocked']['#slots']['body']['sentence']['#markup'];
+    self::assertStringContainsString("can't be deleted: 1 bakers.build ticket still uses it. Remove or reassign it first.", strip_tags($sentence));
+    self::assertFalse($form['actions']['submit']['#access'], 'a blocked delete offers no confirm');
+
+    $this->fixture('a', 'bb_ticket')->delete();
+    $conductor = $this->createEntity('bb_conductor', ['label' => 'C', 'project_id' => $project->id()]);
+    $project->delete();
+    foreach (['bb_project' => $project, 'bb_conductor' => $conductor] as $type => $entity) {
+      $storage = $this->container->get('entity_type.manager')->getStorage($type);
+      $storage->resetCache();
+      self::assertNull($storage->load($entity->id()), "$type is gone");
+    }
+  }
+
+  /**
+   * Asserts entity and delete-route access of an account on an entity.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
+   */
+  private function assertDeleteAccess(bool $expected, ContentEntityInterface $entity, AccountInterface $account, string $who): void {
+    $type = $entity->getEntityTypeId();
+    $url = $entity->toUrl('delete-form');
+    $this->container->get('entity_type.manager')->getAccessControlHandler($type)->resetCache();
+    self::assertSame($expected, $entity->access('delete', $account), "$who: $type entity access");
+    self::assertSame($expected, $this->container->get('access_manager')->checkNamedRoute($url->getRouteName(), $url->getRouteParameters(), $account), "$who: $type route access");
   }
 
   /**

@@ -101,8 +101,8 @@ final class BbRankAccessPolicyTest extends KernelTestBase {
    *
    * Edit moved here from `bb_workspace-bb_workspace-contributor` (BB-454
    * round 4 review): a project's edit rights belong to the team that
-   * carries visibility over it. Delete is the creator's or the workspace
-   * owner's.
+   * carries visibility over it. Delete is the creator's or a workspace
+   * lead's.
    */
   public function testTeamLeadRankGrantsEditNotDeleteBbProject(): void {
     $workspace = $this->createEntity('bb_workspace', [
@@ -168,6 +168,7 @@ final class BbRankAccessPolicyTest extends KernelTestBase {
 
     self::assertTrue($account->hasPermission('edit bb_project'));
     self::assertTrue($account->hasPermission('create bb_project'));
+    self::assertTrue($account->hasPermission('delete any bb_project'));
     self::assertFalse($account->hasPermission('assign bakers conductor'));
     self::assertFalse(
       $account->hasPermission('administer bakers'),
