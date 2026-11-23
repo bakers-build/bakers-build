@@ -259,3 +259,38 @@ function _bb_core_move_user_profile(UserInterface $user, array $fields): ?string
   \Drupal::logger('bb_core')->notice('Profile not moved, the account is in no workspace: @line', ['@line' => $line]);
   return 'Not moved, in no workspace: ' . $line . '.';
 }
+
+/**
+ * Renames the ticket type deployment and the recipe deploy-and-release to ship.
+ *
+ * Per workspace vocabulary: the old term is renamed, or, when that vocabulary
+ * already holds ship, its tickets move to ship and the old term is deleted.
+ */
+function bb_core_post_update_rename_deployment_to_ship(): string {
+  $etm = \Drupal::entityTypeManager();
+  $terms = $etm->getStorage('bb_term');
+  $tickets = $etm->getStorage('bb_ticket');
+  $count = 0;
+  foreach (['type' => ['deployment', 'ticket_type'], 'recipe' => ['deploy-and-release', 'recipe']] as $vid => [$old, $field]) {
+    foreach ($terms->loadByProperties(['vid' => $vid, 'name' => $old]) as $term) {
+      assert($term instanceof BbTermInterface);
+      $ship = $terms->loadByProperties(['vid' => $vid, 'name' => 'ship', 'workspace_id' => $term->get('workspace_id')->target_id]);
+      if ($ship) {
+        $ids = $tickets->getQuery()->accessCheck(FALSE)->condition($field, $term->id())->execute();
+        foreach ($tickets->loadMultiple($ids) as $ticket) {
+          $ticket->set($field, reset($ship)->id())->save();
+        }
+        $term->delete();
+      }
+      else {
+        $term->set('name', 'ship');
+        if (!$term->get('key')->isEmpty()) {
+          $term->set('key', 'ship');
+        }
+        $term->save();
+      }
+      $count++;
+    }
+  }
+  return (string) t('Renamed @count terms to ship.', ['@count' => $count]);
+}
