@@ -36,7 +36,7 @@ No `~/.ssh`, `~/.bakers` or Docker socket. Secrets use `-e KEY`, never values in
 Hook scripts are not copied; unreachable ones fail open. Grant them via `mounts`; automatic mounts
 expose host files.
 
-Permissions stay unchanged. Each image's first run checks that the mounts leave its agent visible.
+Permissions stay unchanged. Each image's first run checks that mounts leave its agent visible.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
 See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes container and home.
 
@@ -44,17 +44,17 @@ See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes
 
 Commit inside the run: on Linux and macOS, only checked commits come back, as
 [isolated Git delivery](/provision/security/shared-settings#isolated-git-delivery) describes.
-Install dependencies and build inside the run.
+Install and build inside the run.
 
 The DDEV web container is as untrusted as the run. bakers checks only a host command's entry
-point, not what that script calls. See [residual risks](/provision/security/shared-settings#isolated-git-delivery).
+point, not what it calls. See [residual risks](/provision/security/shared-settings#isolated-git-delivery).
 
 ## Allowlist mode
 
 With `network: 'allowlist'`, runs join the internal network `bb-runtime-<conductorKey>`.
 Each conductor’s proxy is its runs’ only way out: HTTPS to `allow` hosts (others get `403`), the agent's model API with the
-real credential added by the proxy, and the conductor tool server. The run holds a placeholder key.
+real credential the proxy adds, and the conductor tool server. The run holds a placeholder key.
 Each conductor's proxy serves one model API. The host's `127.0.0.1` is not
 reachable; use the conductor tools for DDEV and ports.
 
-On macOS use allowlist mode; host networking cannot reach the host.
+On macOS use allowlist mode; host networking cannot reach the host. No live run yet.
