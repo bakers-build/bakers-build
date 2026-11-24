@@ -21,6 +21,7 @@ import {
 import type {
   ConductorFileConfig,
   ConductorRegistration,
+  ConductorStatus,
 } from '@bakers-build/conductor/contract';
 import { resolveCliVersion } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,6 +30,7 @@ import {
   buildConductorProgram,
 } from '../../src/commands/conductor.js';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
+import { watchForRestart } from '../../src/core/self-restart.js';
 
 vi.mock('dropsh', async (orig) => {
   const actual = await orig<typeof import('dropsh')>();
@@ -65,6 +67,7 @@ describe('bakers conductor start --foreground self-restart', () => {
 
   afterEach(() => {
     rmSync(home, { recursive: true, force: true });
+    delete process.env.BAKERS_RESTART_SINCE;
     if (originalHome === undefined) delete process.env.BAKERS_HOME;
     else process.env.BAKERS_HOME = originalHome;
     if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
@@ -184,6 +187,69 @@ describe('bakers conductor start --foreground self-restart', () => {
     expect(
       log().match(/restart_on_change needs process\.execve/g),
     ).toHaveLength(1);
+  });
+
+  it('restarts on a machine-config write made while it was starting up, before it watched', async () => {
+    const machine = join(home, '.bakers', 'machine.config.js');
+    writeFileSync(machine, 'export default { plugins: false };');
+    const remote = new TickRemote();
+    // The write lands in the start-up window: after the config was read.
+    remote.onList = () =>
+      writeFileSync(machine, 'export default { plugins: true };');
+    remote.onTick = (n) => {
+      if (n === 200) process.emit('SIGTERM'); // never restarted: end the test
+    };
+    const h = harness(
+      remote,
+      async () => undefined,
+      { watch_paths: { files: [machine], dirs: [] } },
+      true,
+      {
+        watchForRestart: (paths, onChange, _debounce, since) =>
+          watchForRestart(paths, onChange, 20, since),
+      },
+    );
+
+    await h.run();
+
+    expect(log()).toContain('config check passed; restarting conductor');
+    expect(h.execve).toHaveBeenCalledTimes(1);
+  });
+
+  it('the restarted process picks up a machine-config write made while the old one restarted', async () => {
+    const machine = join(home, '.bakers', 'machine.config.js');
+    writeFileSync(machine, 'export default { plugins: false };');
+    // Old process: the write lands after its change batch, before its re-exec.
+    const old = new TickRemote();
+    const first = harness(old, async () => {
+      writeFileSync(machine, 'export default { plugins: true };');
+      return undefined;
+    });
+    old.onTick = (n) => {
+      if (n === 1) void first.change();
+    };
+    await first.run();
+    expect(first.execve).toHaveBeenCalledTimes(1);
+
+    // New process: same env (execve passes process.env), started later.
+    await new Promise((r) => setTimeout(r, 200)); // a drain, beyond the mtime slack
+    const next = new TickRemote();
+    next.onTick = (n) => {
+      if (n === 200) process.emit('SIGTERM'); // never restarted: end the test
+    };
+    const second = harness(
+      next,
+      async () => undefined,
+      { watch_paths: { files: [machine], dirs: [] } },
+      true,
+      {
+        watchForRestart: (paths, onChange, _debounce, since) =>
+          watchForRestart(paths, onChange, 20, since),
+      },
+    );
+    await second.run();
+
+    expect(second.execve).toHaveBeenCalledTimes(1);
   });
 
   describe('when the secrets file changes', () => {
@@ -573,6 +639,12 @@ class TickRemote extends FakeBbRemote {
   ticks = 0;
   statusWrites: Array<[string, string]> = [];
   onTick: (n: number) => void = () => {};
+  onList: () => void = () => {};
+
+  override async listConductors(owner?: 'me'): Promise<ConductorStatus[]> {
+    this.onList();
+    return super.listConductors(owner);
+  }
 
   override async heartbeat(
     reg: ConductorRegistration,

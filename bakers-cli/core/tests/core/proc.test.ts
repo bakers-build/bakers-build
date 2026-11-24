@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  defaultProcProbe,
+  defaultRunProcessProbe,
   killRunProcesses,
   type ProcProbe,
   type RunProcessProbe,
@@ -444,4 +446,102 @@ describe('killRunProcesses', () => {
       }
     },
   );
+});
+
+describe('defaultProcProbe on macOS', () => {
+  const HOST = 'mac-box';
+  const uid = process.getuid?.() ?? 501;
+  const CONDUCTOR =
+    'node /Users/me/bakers/bin/bakers conductor start --foreground --no-update-check';
+  /** A fake `ps -ww -o uid= -o command= -p <pid>`: exits 1 for an unknown pid. */
+  function fakePs(procs: Record<number, string>) {
+    const calls: string[][] = [];
+    const run = (file: string, args: string[]) => {
+      calls.push([file, ...args]);
+      const line = procs[Number(args.at(-1))];
+      if (line === undefined) throw new Error('ps exited 1');
+      return `${line}\n`;
+    };
+    return { run, calls };
+  }
+  const verify = (probe: ProcProbe) =>
+    verifyConductorProcess({
+      pid: 2547,
+      hostKey: HOST,
+      thisHostKey: HOST,
+      probe,
+    });
+
+  it("verifies the checkout's live conductor by its ps line and uid", () => {
+    const { run, calls } = fakePs({ 2547: `  ${uid} ${CONDUCTOR}` });
+    expect(verify(defaultProcProbe('darwin', run))).toEqual({
+      ok: true,
+      pid: 2547,
+    });
+    expect(calls[0]).toEqual([
+      'ps',
+      '-ww',
+      '-o',
+      'uid=',
+      '-o',
+      'command=',
+      '-p',
+      '2547',
+    ]);
+  });
+
+  it('signals the verified conductor', () => {
+    const { run } = fakePs({ 2547: `${uid} ${CONDUCTOR}` });
+    const sent: unknown[] = [];
+    const probe = {
+      ...defaultProcProbe('darwin', run),
+      send: (pid: number, signal: NodeJS.Signals) => sent.push([pid, signal]),
+    };
+    expect(
+      signalVerifiedProcess({
+        pid: 2547,
+        hostKey: HOST,
+        thisHostKey: HOST,
+        signal: 'SIGTERM',
+        probe,
+      }).ok,
+    ).toBe(true);
+    expect(sent).toEqual([[2547, 'SIGTERM']]);
+  });
+
+  it.each([
+    ['a non-conductor command', `${uid} /Applications/Editor.app/editor`],
+    ["another user's conductor", `${uid + 1} ${CONDUCTOR}`],
+    ['an unparsable line', 'garbage'],
+  ])('refuses %s as stale-pid', (_name, line) => {
+    const { run } = fakePs({ 2547: line });
+    expect(verify(defaultProcProbe('darwin', run))).toMatchObject({
+      ok: false,
+      reason: 'stale-pid',
+    });
+  });
+
+  it('refuses a pid ps cannot find', () => {
+    const { run } = fakePs({});
+    expect(verify(defaultProcProbe('darwin', run))).toMatchObject({
+      ok: false,
+      reason: 'stale-pid',
+    });
+  });
+
+  it('keeps refusing every pid on other platforms with the same message', () => {
+    const { run, calls } = fakePs({ 2547: `${uid} ${CONDUCTOR}` });
+    expect(verify(defaultProcProbe('win32', run))).toEqual({
+      ok: false,
+      reason: 'unverifiable-platform',
+      message:
+        'cannot verify on this platform that pid 2547 is a bakers conductor; refusing to signal an unverified pid',
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it('keeps run-process cleanup Linux-only: it reads /proc', () => {
+    expect(defaultRunProcessProbe('darwin').supported).toBe(false);
+    expect(defaultRunProcessProbe('linux').supported).toBe(true);
+  });
 });
