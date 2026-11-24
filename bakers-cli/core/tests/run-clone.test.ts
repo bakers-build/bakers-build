@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -45,7 +46,7 @@ const commit = (cwd: string, message: string) =>
 
 /** A parent with `ticket` one commit ahead of the base and `origin/next` one commit beside it. */
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), 'bb-run-clone-'));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'bb-run-clone-')));
   roots.push(root);
   const parent = join(root, 'parent');
   mkdirSync(parent);

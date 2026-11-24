@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -31,7 +32,7 @@ const ident = ['-c', 'user.name=test', '-c', 'user.email=test@test'];
 
 /** Parent with `ticket`, a `sibling` branch and `origin/next` one commit ahead of the base. */
 function fixture(shared = false) {
-  const root = mkdtempSync(join(tmpdir(), 'bb-transfer-'));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'bb-transfer-')));
   roots.push(root);
   const parent = join(root, 'parent');
   mkdirSync(join(parent, '.bakers'), { recursive: true });
@@ -346,6 +347,24 @@ it('does not write the target ref through a symlinked refs directory', () => {
   expect(() => refreshRunTarget(record)).toThrow();
   expect(existsSync(join(outside, 'next'))).toBe(false);
   expect(refreshScratches(record.parentGitDir)).toEqual([]);
+});
+
+// The pin walks the process working directory; every exit must put it back.
+it('keeps the process working directory, also when a pin refuses a symlinked directory', () => {
+  const { root, record, commit } = fixture();
+  const cwd = process.cwd();
+  const tip = commit();
+  expect(runCloneTip(record)).toBe(tip);
+  refreshRunTarget(record);
+  expect(process.cwd()).toBe(cwd);
+  mkdirSync(join(root, 'outside'));
+  rmSync(join(record.gitDir, 'refs/remotes/origin'), { recursive: true });
+  symlinkSync(
+    join(root, 'outside'),
+    join(record.gitDir, 'refs/remotes/origin'),
+  );
+  expect(() => refreshRunTarget(record)).toThrow();
+  expect(process.cwd()).toBe(cwd);
 });
 
 const refreshScratches = (gitDir: string) =>

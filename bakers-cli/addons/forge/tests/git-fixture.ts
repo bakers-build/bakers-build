@@ -7,6 +7,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  realpathSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -49,7 +50,7 @@ export interface GitFixture {
 }
 
 export function gitFixture(): GitFixture {
-  const root = mkdtempSync(join(tmpdir(), 'forge-git-'));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-git-')));
   const remote = join(root, 'remote.git');
   const evil = join(root, 'evil.git');
   const seed = join(root, 'seed');

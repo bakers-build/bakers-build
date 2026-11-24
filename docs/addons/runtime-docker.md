@@ -38,11 +38,11 @@ expose host files.
 
 Permissions stay unchanged. Each image's first run checks that the mounts leave its agent visible.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
-See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes the container and home.
+See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes container and home.
 
 ## Delivery and limits
 
-Commit inside the run: only checked commits come back, as
+Commit inside the run: on Linux and macOS, only checked commits come back, as
 [isolated Git delivery](/provision/security/shared-settings#isolated-git-delivery) describes.
 Install dependencies and build inside the run.
 
@@ -57,4 +57,4 @@ real credential added by the proxy, and the conductor tool server. The run holds
 Each conductor's proxy serves one model API. The host's `127.0.0.1` is not
 reachable; use the conductor tools for DDEV and ports.
 
-On macOS use allowlist mode; host networking cannot reach the host. macOS is untested.
+On macOS use allowlist mode; host networking cannot reach the host.

@@ -15,7 +15,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, posix, sep } from 'node:path';
+import { join, posix } from 'node:path';
 import type { RunClone } from './run-clone.js';
 
 const git = (cwd: string, ...args: string[]) =>
@@ -111,16 +111,15 @@ function rejectGitlinks(entries: string): void {
 function copyObjects(source: string, target: string): void {
   if (!lstatSync(source).isDirectory() || realpathSync(source) !== source)
     throw new Error('isolated Git: invalid object store');
-  const root = source;
-  const copy = (from: string, to: string) => {
+  // Called inside the pinned object directory: `file` is a plain name there.
+  const copy = (file: string, to: string) => {
     // O_NONBLOCK: a FIFO the run planted must fail the isFile check, not block the open.
     const fd = openSync(
-      from,
+      file,
       constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
     );
     try {
-      const actual = realpathSync(`/proc/self/fd/${fd}`);
-      if (!actual.startsWith(root + sep) || !fstatSync(fd).isFile())
+      if (!fstatSync(fd).isFile())
         throw new Error('isolated Git: object escaped its private store');
       writeFileSync(to, readFileSync(fd), { flag: 'wx' });
     } finally {
@@ -134,65 +133,80 @@ function copyObjects(source: string, target: string): void {
     if (!lstatSync(from).isDirectory())
       throw new Error('isolated Git: invalid object directory');
     mkdirSync(join(target, name), { recursive: true });
-    for (const file of readdirSync(from)) {
-      const valid =
-        name === 'pack'
-          ? /^pack-[a-f0-9]{40,64}\.(pack|idx|rev)$/.test(file)
-          : /^[a-f0-9]{38}$|^[a-f0-9]{62}$/.test(file);
-      if (!valid) continue; // Auxiliary indexes and retention markers are not objects.
-      copy(join(from, file), join(target, name, file));
+    try {
+      inRunDir(source, name, false, () => {
+        for (const file of readdirSync('.')) {
+          const valid =
+            name === 'pack'
+              ? /^pack-[a-f0-9]{40,64}\.(pack|idx|rev)$/.test(file)
+              : /^[a-f0-9]{38}$|^[a-f0-9]{62}$/.test(file);
+          if (!valid) continue; // Auxiliary indexes and retention markers are not objects.
+          copy(file, join(target, name, file));
+        }
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message === LEFT_PIN)
+        throw new Error('isolated Git: object escaped its private store');
+      throw err;
     }
   }
 }
 
-// shortcut: /proc/self/fd pins directories against swapped symlinks, Linux only; use openat when another host OS runs isolating runtimes.
-/** Open `rel` below `root` one component at a time, never through a link the run planted. */
-function pinDir(root: string, rel: string, create = false): number {
-  const flags =
-    constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;
-  let fd = openSync(root, flags);
-  for (const part of rel.split('/').filter(Boolean)) {
-    const next = `/proc/self/fd/${fd}/${part}`;
-    try {
+const LEFT_PIN = 'isolated Git: a run path left its directory';
+
+/**
+ * Run `fn` with the working directory at `rel` below `root`, entered one
+ * component at a time and checked after each step, so a link the run planted
+ * or swapped in is refused; the working directory is restored afterwards.
+ */
+// The working directory pins like an open directory on every host OS: Node has no openat, and every caller is synchronous on the main thread.
+function inRunDir<T>(
+  root: string,
+  rel: string,
+  create: boolean,
+  fn: () => T,
+): T {
+  const previous = process.cwd();
+  try {
+    let expected = join(
+      realpathSync(posix.dirname(root)),
+      posix.basename(root),
+    );
+    process.chdir(root);
+    if (process.cwd() !== expected) throw new Error(LEFT_PIN);
+    for (const part of rel.split('/')) {
+      if (!part || part === '.') continue;
       if (part === '..') throw new Error('isolated Git: invalid path');
-      if (create && !existsSync(next)) mkdirSync(next);
-      const child = openSync(next, flags);
-      closeSync(fd);
-      fd = child;
-    } catch (err) {
-      closeSync(fd);
-      throw err;
+      if (create && !existsSync(part)) mkdirSync(part);
+      process.chdir(part);
+      expected = join(expected, part);
+      if (process.cwd() !== expected) throw new Error(LEFT_PIN);
     }
+    return fn();
+  } finally {
+    process.chdir(previous);
   }
-  return fd;
 }
 
 /** A small file below the run's Git directory; `undefined` when it does not exist. */
 function readRunFile(root: string, path: string): string | undefined {
-  let dir: number;
   try {
-    dir = pinDir(root, posix.dirname(path));
+    return inRunDir(root, posix.dirname(path), false, () => {
+      const fd = openSync(
+        posix.basename(path),
+        constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+      );
+      try {
+        if (!fstatSync(fd).isFile())
+          throw new Error(`isolated Git: ${path} is not a file`);
+        return readFileSync(fd, 'utf8');
+      } finally {
+        closeSync(fd);
+      }
+    });
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
     throw err;
-  }
-  try {
-    const fd = openSync(
-      `/proc/self/fd/${dir}/${posix.basename(path)}`,
-      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
-    );
-    try {
-      if (!fstatSync(fd).isFile())
-        throw new Error(`isolated Git: ${path} is not a file`);
-      return readFileSync(fd, 'utf8');
-    } finally {
-      closeSync(fd);
-    }
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
-    throw err;
-  } finally {
-    closeSync(dir);
   }
 }
 
@@ -235,10 +249,9 @@ function parentOrigin(record: RunClone, branch: string): string | undefined {
 
 /** One ref of the run's clone, written as a plain file below pinned directories. */
 function writeRunRef(record: RunClone, ref: string, tip: string): void {
-  const dir = pinDir(record.gitDir, posix.dirname(ref), true);
-  try {
+  inRunDir(record.gitDir, posix.dirname(ref), true, () => {
     const fd = openSync(
-      `/proc/self/fd/${dir}/${posix.basename(ref)}`,
+      posix.basename(ref),
       constants.O_WRONLY |
         constants.O_CREAT |
         constants.O_TRUNC |
@@ -250,9 +263,7 @@ function writeRunRef(record: RunClone, ref: string, tip: string): void {
     } finally {
       closeSync(fd);
     }
-  } finally {
-    closeSync(dir);
-  }
+  });
 }
 
 /**
@@ -291,22 +302,18 @@ export function refreshRunTarget(
         stdio: ['pipe', 'ignore', 'pipe'],
       },
     );
-    const pack = pinDir(record.gitDir, 'objects/pack', true);
-    try {
+    inRunDir(record.gitDir, 'objects/pack', true, () => {
       for (const file of readdirSync(scratch)) {
         try {
-          writeFileSync(
-            `/proc/self/fd/${pack}/${file}`,
-            readFileSync(join(scratch, file)),
-            { flag: 'wx', mode: 0o444 },
-          );
+          writeFileSync(file, readFileSync(join(scratch, file)), {
+            flag: 'wx',
+            mode: 0o444,
+          });
         } catch (err) {
           if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
         }
       }
-    } finally {
-      closeSync(pack);
-    }
+    });
     for (const { branch, tip } of tips)
       writeRunRef(record, `refs/remotes/origin/${branch}`, tip);
   } finally {

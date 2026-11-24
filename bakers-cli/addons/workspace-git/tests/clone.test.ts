@@ -6,6 +6,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -24,7 +25,7 @@ const git = (cwd: string, ...args: string[]) =>
 const ident = ['-c', 'user.name=test', '-c', 'user.email=test@test'];
 
 beforeEach(() => {
-  base = mkdtempSync(join(tmpdir(), 'bakers-ws-clone-'));
+  base = realpathSync(mkdtempSync(join(tmpdir(), 'bakers-ws-clone-')));
   root = join(base, 'repo');
   mkdirSync(join(root, 'locked'), { recursive: true });
   git(root, 'init', '-q', '-b', 'main');
