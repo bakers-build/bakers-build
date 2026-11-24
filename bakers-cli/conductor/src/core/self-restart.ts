@@ -9,8 +9,9 @@ import { basename, dirname, join } from 'node:path';
 
 /**
  * File mtimes come from the kernel's coarse clock and trail `Date.now()` by up
- * to one tick (measured 5.6 ms on Linux). Well under one restart, so the slack
- * adds at most one checked restart and never a loop.
+ * to one tick (measured 5.6 ms on Linux), and a sub-millisecond `mtimeMs` can
+ * lead the whole-millisecond `Date.now()`. Well under one restart, so the slack
+ * on both sides adds at most one checked restart and never a loop.
  */
 const MTIME_LAG_MS = 50;
 
@@ -101,7 +102,8 @@ export function watchForRestart(
     for (const file of new Set(paths.files)) {
       const mtime = statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? 0;
       // A future mtime (clock stepped back, touched or extracted file) would fire on every start.
-      if (mtime > since - MTIME_LAG_MS && mtime <= Date.now()) changed(file);
+      if (mtime > since - MTIME_LAG_MS && mtime <= Date.now() + MTIME_LAG_MS)
+        changed(file);
     }
 
   return {

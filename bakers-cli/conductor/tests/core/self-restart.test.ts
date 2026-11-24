@@ -213,6 +213,17 @@ else { console.log('before', process.pid);
     await settle();
     expect(fired).toEqual([[machine]]);
   });
+  it('counts a write whose mtime is a few milliseconds ahead of Date.now()', async () => {
+    const machine = join(dir, 'machine.config.js');
+    const loadedAt = Date.now();
+    writeFileSync(machine, 'export default { plugins: true };');
+    const ahead = new Date(Date.now() + 20);
+    utimesSync(machine, ahead, ahead);
+
+    const fired = watch({ files: [machine], dirs: [] }, undefined, loadedAt);
+    await settle();
+    expect(fired).toEqual([[machine]]);
+  });
   it('ignores a watched file with a future mtime, so a clock step back cannot loop restarts', async () => {
     const machine = join(dir, 'machine.config.js');
     writeFileSync(machine, 'export default {};');
