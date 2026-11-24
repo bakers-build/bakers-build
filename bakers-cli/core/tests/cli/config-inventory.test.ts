@@ -831,7 +831,8 @@ describe('offline configuration inventory', () => {
       const findings = report.findings.filter(
         (f) =>
           f.code === 'invalid_value' &&
-          (f.key?.startsWith('hooks.') || f.key?.startsWith('runtime.read_only')),
+          (f.key?.startsWith('hooks.') ||
+            f.key?.startsWith('runtime.read_only')),
       );
       return { path, findings };
     };

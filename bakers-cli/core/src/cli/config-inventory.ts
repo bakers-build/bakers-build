@@ -8,6 +8,7 @@ import {
   homeBbDir,
   stemForConfigFile,
 } from './bakers-dir.js';
+import { protectedPathProblems } from './config-protected-paths.js';
 import {
   type ConfigFileKind,
   type ConfigFileReport,
@@ -25,7 +26,6 @@ import {
   type ConfigSourceProperty,
   inspectConfigSource,
 } from './config-source.js';
-import { protectedPathProblems } from './config-protected-paths.js';
 import { type ConfigKind, checkConfigText } from './config-validate.js';
 
 const SCHEMA_KIND: Record<ConfigFileKind, ConfigKind> = {
