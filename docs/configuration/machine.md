@@ -113,6 +113,7 @@ export OPENAI_API_KEY='sk-...'
 |---|---|
 | Format | One `KEY=value` per line; a leading `export ` is accepted, `#` starts a comment line, blank lines are skipped. A value in matching `'…'` or `"…"` loses the quotes. No expansion and no escapes: `$(…)`, backticks and `$VAR` stay literal text, and the file is never run as shell. |
 | Bad line | The start stops and names the line number, never its text. |
+| Config files | The values never reach `process.env` while `machine.config.js` or `project.config.js` load: `process.env.X` there is `undefined`, so a setting such as the frp `admin_password` cannot come from this file. |
 | Permissions | Only you may read it. A file group or others can read stops the start with `chmod 600 ~/.bakers/.bakers.env` as the fix. A missing file is no error. |
 | Shell wins | A variable exported in the shell that starts the conductor overrides the file, so `( . ~/.bakers/.backer.env; bakers conductor start )` keeps working. To switch, rename that file to `.bakers.env` and `chmod 600` it. |
 | Hand-out | A run receives a value only when its agent addon declares the variable. Every other value stays in the conductor, under every runtime, the host included. |
