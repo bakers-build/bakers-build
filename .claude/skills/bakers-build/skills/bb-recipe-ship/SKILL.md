@@ -24,15 +24,15 @@ which and why.
 0. Without a ticket environment, add the `bakers_project_read` `environments` entry the ticket
    names **by name** with `bakers_ticket_update` `environments_add`; the readback `target_branch`
    must equal its `branch`. Else stop, naming it.
-1. Target equals source: stop, unless a step 5 fix is open.
+1. Target equals source: stop.
 2. Freeze the candidate once: `forge_fetch` (target in `branches`), then the SHA of
    `origin/<base_branch>`; an existing `origin/<branch_name>` keeps its head.
 3. Compute the ticket batch between target and frozen SHA; report unresolved identifiers.
 4. Read the SHA's pipeline (`forge_checks`, `ref` the SHA).
 5. Release environment: the version command's dry run on the SHA gives next version and notes;
-   empty output: stop. A failed hint rule with a named fix: commit it on `branch_name` from
-   `origin/<base_branch>`, merge request into `base_branch` (while `target_branch` equals it);
-   approval merges it, then set the target and freeze again.
+   empty output: stop. A failed hint rule with a named fix: commit it on `<branch_name>-fix`
+   from `origin/<base_branch>`; its merge request goes into `base_branch`, approval merges it,
+   then freeze again.
 
 ### bb-phase-deliver
 
