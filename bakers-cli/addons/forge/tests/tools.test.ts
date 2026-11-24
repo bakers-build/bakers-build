@@ -348,7 +348,7 @@ describe('forge tools', () => {
       }
     });
 
-    it('reads no ticket on a suffixed branch without the flag', async () => {
+    it('reads the ticket once on a suffixed branch, for its base only', async () => {
       const { backend } = fakeBackend({});
       let reads = 0;
       await forgeTools({ backend: async () => backend, settings: {} })
@@ -363,7 +363,7 @@ describe('forge tools', () => {
           },
         ),
       );
-      expect(reads).toBe(0);
+      expect(reads).toBe(1);
     });
 
     it('still returns the PR when the forge fails, skipping every reviewer with the reason', async () => {
@@ -452,6 +452,32 @@ describe('forge tools', () => {
         .text,
     );
     expect(merged.into).toBe('main');
+  });
+
+  it("opens a ship's variant into base_branch by the server's target, so a source fix lands before the freeze", async () => {
+    const atStart = {
+      identifier: 'BB-9',
+      branchName: 'release/bb-9',
+      baseBranch: 'next',
+      targetBranch: 'next',
+    };
+    const server = async () => ({ ...atStart, targetBranch: 'main' });
+    const { backend, calls } = fakeBackend({});
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const opened = JSON.parse(
+      (
+        await tools.forge_pr_upsert!(
+          request(
+            { title: 'fix(server): x', branch: 'release/bb-9-fix' },
+            '/nonexistent',
+            atStart,
+            server,
+          ),
+        )
+      ).text,
+    );
+    expect(opened).toMatchObject({ target: 'next', created: true });
+    expect(calls).toContain('create:release/bb-9-fix->next:fix(server): x');
   });
 
   it("forge_merge refuses a PR into the run copy's target once the server target moved", async () => {

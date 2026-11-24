@@ -5,13 +5,11 @@ description: Recipe for tickets of type ship — bring a frozen batch to one tar
 
 # Ship
 
-Writes follow `ticket-writes.md`; tools follow the frame's tool discovery and fallback.
-
 The ticket's `environments` entry is the target (`branch`, `base_url`), `base_branch` the source.
 `main` is the **release environment**. The **deploy steps** (deploy watch, login check) run only
 for a target with a `base_url`. The project's WORKFLOW.md `## bb-phase-work` *Ship* hint names the
 **version command** and the **npm package**. Missing ones are **skipped**; plan and summary say
-which and why (`no base_url`, `no version command`, `no npm package`).
+which and why.
 
 ## bb-gates
 
@@ -24,22 +22,23 @@ which and why (`no base_url`, `no version command`, `no npm package`).
 ### bb-phase-work
 
 0. Without a ticket environment, add the `bakers_project_read` `environments` entry the ticket
-   names (name or branch) **by name**, never a branch, with `bakers_ticket_update`
-   `environments_add`; the readback `target_branch` must equal its `branch`. Else stop, naming
-   the missing environment.
+   names **by name** with `bakers_ticket_update` `environments_add`; the readback `target_branch`
+   must equal its `branch`. Else stop, naming it.
 1. Target equals source: stop.
 2. Freeze the candidate once: `forge_fetch` (target in `branches`), then the SHA of
    `origin/<base_branch>`; an existing `origin/<branch_name>` keeps its head.
 3. Compute the ticket batch between target and frozen SHA; report unresolved identifiers.
 4. Read the SHA's pipeline (`forge_checks`, `ref` the SHA).
 5. Release environment: the version command's dry run on the SHA gives next version and notes;
-   empty output: stop. Apply the hint's blocking rules.
+   empty output: stop. A failed hint rule with a named fix: commit it on `<branch_name>-fix`
+   from `origin/<base_branch>`; its merge request goes into `base_branch`, approval merges it,
+   then freeze again.
 
 ### bb-phase-deliver
 
 One `plan` comment, no `spec` or `test`: target, frozen SHA, batch, gate status, skipped steps
 and, on the release environment, version and notes draft. Approval authorizes that release and
-version. Push nothing before it.
+version. Push only a step 5 fix before it.
 
 ## bb-state-working
 
@@ -47,8 +46,7 @@ version. Push nothing before it.
 
 A ship ticket builds nothing: skip the remote base check. On `branch_name`
 (`release/<identifier>`): `forge_fetch`, `git reset --hard <frozen SHA>`, then `forge_push`
-(`force_with_lease` once it exists). It carries no commit of its own; `main` merges the frozen
-commit.
+(`force_with_lease` once it exists); `main` merges the frozen commit.
 
 ### bb-phase-deliver
 
@@ -63,7 +61,7 @@ commit.
 4. Record the batch, always: `bakers_ticket_update` this ticket only with `referenced_tickets_add`.
 5. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA (its release
    carries the merge request's `### Upgrade notes` and `### Known open issues`), link the forge's
-   release, named GitHub or GitLab, in `links` once the frame's release-read operation verifies
+   release in `links` once the frame's release-read operation verifies
    it; with an npm package, verify `x.y.z` is published.
 
 ### bb-phase-transition
