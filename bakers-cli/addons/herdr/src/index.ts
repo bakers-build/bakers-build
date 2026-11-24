@@ -389,7 +389,7 @@ export class HerdrExecutor implements BbExecutor {
       // caller does not (BB-64). commandFor / writeLaunchScript sit inside
       // the try so an invalid env key or a temp-dir write error still closes
       // the tab.
-      launch = writeLaunchScript(this.commandFor(input));
+      launch = writeLaunchScript(this.commandFor(input), input.agent);
       await applyPaneLayout(
         this.execHerdr,
         rootPaneId,

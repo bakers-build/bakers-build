@@ -2138,6 +2138,9 @@ export class Conductor {
       instructions: ws.instructions,
       command: wrapped.command,
       env: wrapped.env,
+      ...(isolates && chosen.agent.herdrAgent
+        ? { agent: chosen.agent.herdrAgent }
+        : {}),
     });
     launch.started = true;
     this.logger.info(

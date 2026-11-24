@@ -22,6 +22,8 @@ export interface SpawnRunInput {
   instructions: { path: string; sha256: string; text: string } | null;
   command?: string;
   env?: Record<string, string>;
+  /** The harness's herdr agent name, set only for an isolated run: the launcher carries it. */
+  agent?: string;
 }
 
 /** The lifecycle-hook slots, keyed exactly like `config.hooks`. */

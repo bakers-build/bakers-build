@@ -76,6 +76,7 @@ async function listJson(dir: string, prefix: string): Promise<string[]> {
 
 export class OpencodeAgent implements BbAgent {
   readonly id = 'opencode';
+  readonly herdrAgent = 'opencode';
   readonly launchWarnings?: readonly string[];
   private readonly args: string[];
   private readonly model: string | undefined;

@@ -211,6 +211,8 @@ export interface AgentRuntimeInfo {
 export interface BbAgent extends AgentRuntimeInfo {
   /** Stable id, e.g. 'claude'. */
   readonly id: string;
+  /** herdr agent manifest name; an isolated run's launcher carries it so herdr and hc identify the pane. */
+  readonly herdrAgent?: string;
   /** Prepare configuration in a private run home without runtime-specific flags. */
   prepareRun?(
     context: AgentRunContext,

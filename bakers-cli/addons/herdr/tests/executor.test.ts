@@ -296,6 +296,20 @@ describe('HerdrExecutor.startRun pane-run command (BB-101 / BB-128)', () => {
   });
 });
 
+describe('HerdrExecutor.startRun named launcher', () => {
+  it('types the launcher named after the agent for an isolated run', async () => {
+    const calls: string[][] = [];
+    const executor = new HerdrExecutor(
+      { command: 'claude', launch_watch: INSTANT_WATCH },
+      makeFakeHerdr(calls),
+    );
+    await executor.startRun({ ...input, agent: 'claude' });
+    const run = calls.find((c) => c[0] === 'pane' && c[1] === 'run');
+    const typed = (run as string[])[3] ?? '';
+    expect(typed).toMatch(/^'\/[^']*\/bakers-run-[^/']+\/claude'$/);
+  });
+});
+
 describe('HerdrExecutor.stopRun', () => {
   it('is a no-op — issues no herdr commands (AC-3)', async () => {
     const calls: string[][] = [];

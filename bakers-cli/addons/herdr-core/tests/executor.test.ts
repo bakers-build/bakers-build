@@ -156,6 +156,17 @@ describe('HerdrCoreExecutor.startRun', () => {
     expect(request.params).not.toHaveProperty('rm');
   });
 
+  it('starts an isolated run through a launcher named after its agent', async () => {
+    const { hc, requests } = fakeHc();
+    const ex = new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc);
+    await ex.startRun({ ...input(), agent: 'claude' });
+    const argv = requests[0]?.params.argv ?? [];
+    expect(argv).toHaveLength(3);
+    expect(argv[0]).toBe(process.execPath);
+    expect(argv[1]).toMatch(/\/resize-forwarding\.js$/);
+    expect(argv[2]).toMatch(/\/bakers-run-[^/]+\/claude$/);
+  });
+
   it('fails fast with an install message when hc is missing', async () => {
     const { hc, calls } = fakeHc({ missing: true });
     await expect(

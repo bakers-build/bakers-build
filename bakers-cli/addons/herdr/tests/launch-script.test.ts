@@ -2,6 +2,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import {
   existsSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   statSync,
@@ -480,5 +481,57 @@ describe('HerdrExecutor.startRun launch watch', () => {
         }
       }
     }
+  });
+});
+
+describe('writeLaunchScript named after the agent', () => {
+  it('names an executable wrapper after the agent and launches it directly', () => {
+    const launch = writeLaunchScript('true', 'codex');
+    leftoverDirs.push(launch.dir);
+    expect(launch.wrapPath).toBe(join(launch.dir, 'codex'));
+    expect(statSync(launch.wrapPath).mode & 0o777).toBe(0o700);
+    expect(launch.argv).toEqual([launch.wrapPath]);
+    expect(launch.typedCommand).toBe(shellQuote(launch.wrapPath));
+  });
+
+  it('runs the named wrapper, writes the markers and removes itself and the command file', () => {
+    const launch = writeLaunchScript('exit 3', 'claude');
+    leftoverDirs.push(launch.dir);
+    let code = 0;
+    try {
+      execFileSync(launch.argv[0] ?? '', launch.argv.slice(1));
+    } catch (err) {
+      code = (err as { status: number }).status;
+    }
+    expect(code).toBe(3);
+    expect(readFileSync(launch.startedPath, 'utf8')).toBe('started');
+    expect(readFileSync(launch.exitPath, 'utf8')).toBe('exit 3\n');
+    expect(existsSync(launch.wrapPath)).toBe(false);
+    expect(existsSync(launch.commandPath)).toBe(false);
+  });
+
+  it('keeps run.sh behind sh without an agent', () => {
+    const launch = writeLaunchScript('true');
+    leftoverDirs.push(launch.dir);
+    expect(launch.wrapPath).toBe(join(launch.dir, 'run.sh'));
+    expect(launch.argv).toEqual(['sh', launch.wrapPath]);
+    expect(launch.typedCommand).toBe(`sh ${shellQuote(launch.wrapPath)}`);
+  });
+
+  it.each([
+    '../x',
+    'Claude',
+    '',
+    'a/b',
+    'run.sh',
+  ])('refuses the agent name %j before writing anything', (agent) => {
+    const before = new Set(
+      readdirSync(tmpdir()).filter((n) => n.startsWith('bakers-run-')),
+    );
+    expect(() => writeLaunchScript('true', agent)).toThrow(/agent name/);
+    const after = readdirSync(tmpdir()).filter(
+      (n) => n.startsWith('bakers-run-') && !before.has(n),
+    );
+    expect(after).toEqual([]);
   });
 });
