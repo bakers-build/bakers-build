@@ -37,8 +37,8 @@ interface MeasurementEvaluatorInterface {
    * @param array<string, \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>> $contexts
    *   The named context entities.
    * @param array<string, mixed> $categoryDefinition
-   *   The category configuration; `type` must be `days`, `weeks`, `months`
-   *   or `quarters`, with an inclusive `from`/`to` range.
+   *   The category configuration; `type` must be `hours`, `days`, `weeks`,
+   *   `months` or `quarters`, with an inclusive `from`/`to` range.
    * @param string $dimensionKey
    *   The dimension key to expand into series.
    * @param int $limit

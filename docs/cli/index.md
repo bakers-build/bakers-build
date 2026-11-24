@@ -23,7 +23,7 @@ Run `bakers <command> --help` for the options available in your installed versio
 | `bakers conductor` | Node-agent lifecycle and the registry of conductors: [bakers conductor](/cli/conductor) |
 | `bakers ui` | Interactive terminal UI: [bakers ui](/addons/bakers-ui/reference) |
 | `bakers tools` | List, describe and call the server's named tools: [bakers tools](/cli/tools) |
-| `bakers auth` | Sign in, switch auth profiles and show the session: [bakers auth](/cli/auth) |
+| `bakers auth` | Sign in, switch auth profiles, show the session and print an access token: [bakers auth](/cli/auth) |
 | `bakers deployment` | Release and deployment helpers: [bakers deployment](/addons/deployment/reference) |
 | `bakers agents` | Print the locally resolved agent catalog as JSON |
 | `bakers info` | Print the resolved project and workspace context as JSON |

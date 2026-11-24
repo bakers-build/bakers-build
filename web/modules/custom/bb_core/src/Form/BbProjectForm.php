@@ -25,4 +25,17 @@ final class BbProjectForm extends BbContentEntityFormBase {
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: \Drupal\Core\StringTranslation\TranslatableMarkup}
+   *   The label and description.
+   */
+  protected function dangerZoneText(): array {
+    return [
+      $this->t('Delete project'),
+      $this->t('Deletes this project with its environments, conductors, templates and time accounts. Its tickets and logged time must be removed first.'),
+    ];
+  }
+
 }

@@ -84,10 +84,13 @@ export async function runTicketTui(
         ? { conductorProcess: options.conductorProcess }
         : {}),
       ...(options.restartProcess
-        ? { restartProcess: options.restartProcess }
-        : {}),
-      ...(options.selectWorkspace
-        ? { selectWorkspace: options.selectWorkspace }
+        ? {
+            // Tear down first, so the child draws on a restored terminal.
+            restartProcess: (workspace: string): void => {
+              finish();
+              options.restartProcess?.(workspace);
+            },
+          }
         : {}),
       ...(options.workspace !== undefined
         ? { workspace: options.workspace }
@@ -387,7 +390,7 @@ export async function runTicketTui(
   // Best-effort: paint/timer failure must not block reaching the main UI.
   if (interactive && renderer && shell && !shouldSkipSplash(options)) {
     try {
-      const splash = mountTree(renderer, shell, splashTree());
+      const splash = mountTree(renderer, shell, splashTree(renderer.width));
       renderer.requestRender();
       await awaitSplash(SPLASH_MS, options.wait);
       unmountTree(shell, splash);

@@ -39,6 +39,7 @@ function agentWith(results: SandboxPreflight[]) {
   const agent: BbAgent = {
     id: 'claude',
     launchCommand: () => 'claude',
+    prepareRun: () => ({ env: {}, readPaths: [], writePaths: [] }),
     getRunLog: async () => '',
     parseFootprint: parseClaudeTranscript,
     sandboxPreflight: async () =>
@@ -132,11 +133,11 @@ describe('sandbox preflight gate', () => {
   it('warns that runtime prerequisites are unchecked without withholding claims', async () => {
     const { conductor, remote, logs } = setup(agentWith([{ ok: true }]), {
       kind: 'runtime',
-      id: 'docker',
+      id: 'bwrap',
       isolates: true,
       requiredModules: [],
       createRuntime: async () => ({
-        id: 'docker',
+        id: 'bwrap',
         wrap: async ({ command, env }) => ({ command, env }),
         cleanup: async () => {},
       }),
@@ -144,7 +145,7 @@ describe('sandbox preflight gate', () => {
     await conductor.start();
     expect(logs).toContainEqual({
       level: 'warn',
-      msg: expect.stringMatching(/host only.*docker.*not checked/),
+      msg: expect.stringMatching(/host only.*bwrap.*not checked/),
     });
     await conductor.tick();
     expect(remote.calls.markRunning[0]).toMatchObject({ runUuid: 'r-1' });

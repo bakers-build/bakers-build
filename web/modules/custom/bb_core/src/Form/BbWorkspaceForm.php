@@ -14,8 +14,8 @@ use Drupal\bb_core\RunLog\RunLogPolicy;
 /**
  * Workspace entity form with a meta header block on admin screens.
  *
- * The product Settings surface skips Meta (created/changed). Delete is not
- * offered here until Linear-style delayed delete exists.
+ * The product Settings surface skips Meta (created/changed) and offers Delete
+ * in a danger zone below the form instead of in the action row.
  */
 final class BbWorkspaceForm extends BbContentEntityFormBase {
 
@@ -70,6 +70,19 @@ final class BbWorkspaceForm extends BbContentEntityFormBase {
       ];
     }
     return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: \Drupal\Core\StringTranslation\TranslatableMarkup}
+   *   The label and description.
+   */
+  protected function dangerZoneText(): array {
+    return [
+      $this->t('Delete workspace'),
+      $this->t('Deletes this workspace with its first team, members, invitations, terms, templates, triggers and addons. Groups and projects must be removed first.'),
+    ];
   }
 
   /**

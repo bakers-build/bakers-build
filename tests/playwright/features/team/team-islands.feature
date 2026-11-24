@@ -78,16 +78,17 @@ Feature: The team screen's five tabs are routes inside one island
     And the tab "Overview" is current
     And the tab body shows the Projects relation
 
-  # The row is plain links with a thin underline on the current one. On a narrow
-  # viewport it wraps onto further lines instead of scrolling or hiding tabs
-  # behind a menu, so every destination stays visible and one tap away.
+  # The row is plain links with a thin underline on the current one. On a phone
+  # it stays one line and scrolls inside itself (BAKERS-57, requester decision
+  # 2026-11-14), so a long row never pushes the content down and the page never
+  # scrolls sideways; the current tab is scrolled into view.
   # The viewport is narrow BEFORE the page loads, as on a phone: the rail opens
   # only from 768px up and remembers its state, so shrinking an already loaded
   # desktop page keeps a 232px rail and leaves the row about 50px.
-  Scenario Outline: The tab row wraps on a narrow viewport and keeps every tab visible
+  Scenario Outline: The tab row scrolls inside itself on a narrow viewport
     Given I view the page <width> pixels wide
     And I visit the team "Platform Crew"
-    Then every tab fits within the viewport
+    Then the tab row is one line that scrolls inside itself
     And exactly one tab is marked as the current page
     When I click the tab "Members"
     Then the document was not reloaded
@@ -95,7 +96,8 @@ Feature: The team screen's five tabs are routes inside one island
     When I click the tab "Runs"
     Then the document was not reloaded
     And the tab "Runs" is current
-    And every tab fits within the viewport
+    And the current tab is in view
+    And the tab row is one line that scrolls inside itself
     And the tab row rests on the header rule
 
     Examples:
@@ -256,28 +258,18 @@ Feature: The team screen's five tabs are routes inside one island
     And the tab "Runs" is current
     And the rail was not part of the swap
 
-  # NO DUPLICATE ROW, and that much is proved. What is NOT asserted here is that
-  # the visitor is TOLD — measured on 2026-08-30, the second add produces no
-  # aria-invalid, no error class and no status message, so the refusal is
-  # silent. That is a real defect and it is recorded as one rather than dressed
-  # up: this scenario locks in the property that matters for the data (the list
-  # cannot grow a duplicate) and deliberately claims nothing about feedback,
-  # because a scenario that asserted feedback would be asserting something that
-  # does not happen.
-  #
-  # WHAT MAKES THE SECOND ADD MEAN ANYTHING is the step's own wait: it awaits the
-  # submit's POST RESPONSE, so by the time the row count is read the server has
-  # decided. Under the fixed sleep this step used to carry, `4 rows` was
-  # satisfied instantly whether or not the second submit had been processed at
-  # all — the assertion was true of a request that had not happened yet.
-  Scenario: Adding the same member twice grows no second row
+  # NO DUPLICATE ROW: someone already on the team is not offered by the add
+  # dialog at all, so a second add cannot be made; the server also refuses a
+  # forged one (`TeamMemberAddForm::validateForm`).
+  Scenario: A member already on the team is not offered again
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
     Then the members list has 5 rows
-    When I add the member "both-bakeries"
-    Then the members list has 5 rows
+    And the add dialog does not offer "both-bakeries"
     And the document was not reloaded
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
 
   # BB-489 — THE ENTRY PATH IS THE SUBJECT, and that is the whole difference
   # between these two scenarios and every members scenario around them. Those
@@ -323,7 +315,8 @@ Feature: The team screen's five tabs are routes inside one island
     Then the members list has 4 rows
     When I add the member "both-bakeries"
     Then the members list has 5 rows
-    When I pick the role "lead" for the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
     When I pick the role "member" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
@@ -331,7 +324,6 @@ Feature: The team screen's five tabs are routes inside one island
     Then the members list has no member "both-bakeries"
     And the members list has 4 rows
     And the document was not reloaded
-    And the rail was not part of the swap
 
   # BB-419 — REMOVING, asserted here as well as on the project screen, because
   # the control is ONE component and a shared control proved on one call site is
@@ -342,20 +334,22 @@ Feature: The team screen's five tabs are routes inside one island
   # than one member, so "back to the noted length" was satisfied just as well by
   # deleting the wrong one — which is exactly what the control did when this
   # scenario first reported green.
-  Scenario: Removing a member re-renders only the members island
+  #
+  # BAKERS-338: Remove sits on the member's page and returns to the roster, a
+  # navigation without a reload; only the add still re-renders the island in
+  # place, so the rail is asserted after the add.
+  Scenario: Removing a member from their page returns to the roster without a reload
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     And I note the members list
     When I add the member "both-bakeries"
     Then the members list has one more row
+    And the rail was not part of the swap
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
     And the members list is back to the members I noted
     And the document was not reloaded
-    And the rail was not part of the swap
-    # THE SECOND CLICK, landing on the fragment the REMOVE handed back rather
-    # than on one a navigation produced — one swap deeper than any tab-only
-    # scenario reaches.
+    # THE SECOND CLICK, landing on the page the REMOVE returned to.
     When I click the tab "Runs"
     Then the document was not reloaded
     And the tab "Runs" is current
@@ -371,18 +365,24 @@ Feature: The team screen's five tabs are routes inside one island
   # thing for the same reason, and this scenario asserts what
   # `project-members.feature`'s equivalent already does.
   Scenario: The remove control names the team it removes from
-    When I visit the team "Platform Crew" tab "Members"
+    Given the team "Platform Crew" has no member "both-bakeries"
+    And I visit the team "Platform Crew" tab "Members"
+    When I add the member "both-bakeries"
+    And I open the member "both-bakeries"
     Then the remove control names "Revokes their access."
     And no remove control names "no access is revoked"
+    When I remove the member "both-bakeries"
+    Then the members list has no member "both-bakeries"
 
-  # BB-435 — CRITERION 5 on this call site. The team roster was a
-  # `bb_theme:table` with three column headers; the settings section says a
-  # member list is a LIST, and the rule now reaches both screens rather than one.
-  Scenario: The team member list is a list and not a table
+  # The roster is an item list like the ticket and project lists, without
+  # columns; a team's own roster names no team, because every row is that team.
+  Scenario: The team member list is an item list without columns
     When I visit the team "Platform Crew" tab "Members"
-    Then the members list has no columns and no header row
-    And consecutive member rows are separated comfortably
+    Then the members are an item list without columns
 
+  # BAKERS-338: the roster row only opens the member's page, which holds the
+  # role control and Remove.
+  #
   # BB-435 — CRITERION 9 on this call site, REWRITTEN BY BB-456. This used to
   # assert an absence: a team granted no permissions, so an item carried its
   # membership STATE and no role control at all. BB-456's `bb_team-
@@ -403,14 +403,24 @@ Feature: The team screen's five tabs are routes inside one island
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
-    And the member "both-bakeries" shows their initial and joined date on the left, role and remove control right-aligned
+    And the member row "both-bakeries" only opens the member's page
+    When I open the member "both-bakeries"
+    Then the member "both-bakeries" shows their initial, role, joined date and remove control in their row
     When I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
     And the document was not reloaded
     And the rail was not part of the swap
     When I visit the team "Platform Crew" tab "Members"
     Then the member "both-bakeries" shows the role "Lead"
-    When I pick the role "member" for the member "both-bakeries"
+    When I open the member "both-bakeries"
+    And I pick the role "member" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
+
+  # Only the ticket's folded Details move above the body on a phone; an
+  # inspector without a disclosure stays after the main content (BAKERS-57).
+  Scenario: A team page keeps its body before the inspector on a phone
+    Given I view the page 390 pixels wide
+    And I visit the team "Platform Crew"
+    Then the main region comes before the inspector

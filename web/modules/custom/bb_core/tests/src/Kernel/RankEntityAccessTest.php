@@ -412,7 +412,7 @@ final class RankEntityAccessTest extends KernelTestBase {
    *
    * Rewritten for BB-462 D7: `bb_project` is no longer an OG group, so
    * there is no project-granted `lead` rank left to test. Two ranks carry
-   * `edit bb_project` and `delete bb_project` — the workspace `lead`/admin
+   * `edit bb_project` — the workspace `lead`/admin
    * rank asserted here, which must reach every project of its own workspace
    * regardless of team membership (D4's admin see-all rule), and the team
    * `lead` rank, which reaches a project only through `bb_project.teams`
@@ -429,7 +429,7 @@ final class RankEntityAccessTest extends KernelTestBase {
     );
     self::assertTrue(
       $project->access('delete', $workspace_lead),
-      'and can delete it — `delete bb_project` is on its rank',
+      'and deletes it, whoever created it',
     );
   }
 
@@ -453,8 +453,8 @@ final class RankEntityAccessTest extends KernelTestBase {
   /**
    * The team `lead` rank reaches the project of its team (BB-454 round 4).
    *
-   * This is the whole point of moving `edit bb_project` / `delete
-   * bb_project` off the workspace `contributor` rank and onto the team
+   * This is the whole point of moving `edit bb_project` off the workspace
+   * `contributor` rank and onto the team
    * `lead` rank, and until this test existed nothing said it worked: the
    * permission-level pin in BbRankAccessPolicyTest proves Layer A projects
    * the rank into the effective set, but a project is not the group that
@@ -487,9 +487,9 @@ final class RankEntityAccessTest extends KernelTestBase {
       $project->access('update', $team_lead),
       'the team lead edits the project that names its team',
     );
-    self::assertTrue(
+    self::assertFalse(
       $project->access('delete', $team_lead),
-      'and can delete it — `delete bb_project` moved onto the same rank',
+      'but deletes it only as its creator or the workspace owner',
     );
 
     $foreign = $this->fixture('a', 'bb_project');
@@ -526,6 +526,37 @@ final class RankEntityAccessTest extends KernelTestBase {
       $project->access('delete', $contributor),
       'nor delete one',
     );
+  }
+
+  /**
+   * A contributor edits the project they own, inside its workspace only.
+   *
+   * The owner's `update own bb_project` is a workspace contributor grant, so
+   * the fence keeps it inside that workspace: a peer's project stays closed,
+   * and removing the owner's membership closes their own one too.
+   */
+  public function testContributorEditsOnlyTheProjectTheyOwn(): void {
+    $owner = $this->createAccount('project-owner');
+    $this->addMembership($this->fixture('b', 'bb_workspace'), $owner, ['contributor']);
+    $this->addMembership($this->fixture('b', 'bb_team'), $owner, []);
+    $own = $this->createEntity('bb_project', [
+      'name' => 'owned-project',
+      'group_id' => $this->fixture('b', 'bb_group')->id(),
+      'teams' => [$this->fixture('b', 'bb_team')->id()],
+      'owner_user_id' => $owner->id(),
+    ]);
+
+    self::assertTrue($own->access('update', $owner), 'the owner edits their own project');
+    self::assertFalse(
+      $this->fixture('b', 'bb_project')->access('update', $owner),
+      'but not a project of the same workspace someone else created',
+    );
+
+    $membership = Og::getMembership($this->fixture('b', 'bb_workspace'), $owner);
+    self::assertNotNull($membership);
+    $membership->delete();
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_project')->resetCache();
+    self::assertFalse($own->access('update', $owner), 'ownership grants nothing once the membership is gone');
   }
 
   /**

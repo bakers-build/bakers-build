@@ -142,7 +142,8 @@
       deliberately — never to reintroduce a slot, which would buy back exactly the
       freedom the container exists to remove. That rule has been exercised twice
       now. `action` is the eighth: seven kinds rendered a value the record HOLDS
-      and none of them was a control, so a row action had nowhere to go.
+      and none of them was a control. It serves the exempt time-sheet grids and
+      detail-page tables only: a list row opens its detail page and nothing else.
       `rendered` is the ninth: a Views field decides its own face through its
       formatter and hands this template finished markup rather than data. Neither
       is a slot, and the difference is not cosmetic — a slot injects a whole
@@ -170,15 +171,15 @@
         is replaced instead of posting to a 404 (see the prop's description). #}
     {%- if c.external -%}
       {#- An address outside bakers.build: styled like a prose link, opened apart. #}
-      <a class="text-body text-link underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring break-all" href="{{ c.url|default('#') }}" target="_blank" rel="noopener noreferrer">{{ c.value }}</a>
+      <a class="text-body text-link underline underline-offset-2 max-md:inline-flex max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring break-all" href="{{ c.url|default('#') }}" target="_blank" rel="noopener noreferrer">{{ c.value }}</a>
     {%- else -%}
-    <a class="{{ c.mono ? 'font-mono text-data' : 'text-body' }} text-text no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
+    <a class="{{ c.mono ? 'font-mono text-data' : 'text-body' }} text-text no-underline max-md:inline-flex max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
     {%- endif -%}
   {%- elseif c.kind == 'badge' -%}
     {#- With `url` a badge is a linked chip; hover dims it, because underline
         does not paint through an inline-flex child. #}
     {%- if c.url is defined and c.url is not empty -%}
-    <a class="inline-flex rounded-sm no-underline transition-opacity duration-fast hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url }}">
+    <a class="inline-flex max-md:items-center max-md:min-h-touch max-md:min-w-touch rounded-sm no-underline transition-opacity duration-fast hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url }}">
     {%- endif -%}
     {{ include('bb_theme:badge', {
       label: c.label,
@@ -315,9 +316,11 @@
         control — a whole sentence serving as an icon-only button's accessible
         name, which a `text` cell would have printed as prose on every item.
 
-        ITEM-SCOPED, not members-only. It acts on the record the cell belongs to,
-        so any listing can carry a row action; nothing here knows what a
-        membership is.
+        ITEM-SCOPED, not members-only. It acts on the record the cell belongs to;
+        nothing here knows what a membership is. It is NOT for a list row: a list
+        row only opens its entity's detail page, and the actions live there. It
+        serves the exempt time-sheet grids (Submission review, Worklog week),
+        whose rows are the actions, and tables on a detail page.
 
         ITS FIELD LIST IS `button`'S, and that is the whole contract — `label`,
         `icon`, `icon_only`, `variant`. There is no `aria_label`: `button` declares
@@ -328,11 +331,11 @@
         `action-pattern.md` asks of a single-step action with a server-side one.
 
         With `href` the control is a link that works without JavaScript; `hx`
-        adds the create-trigger htmx attributes, so a row action can open a
+        adds the create-trigger htmx attributes, so an action can open a
         dialog. Without either it stays a `<button type="button">`.
 
-        `ghost` IS THE DEFAULT WEIGHT. A row action is secondary to the row it sits
-        on; a listing where every item carries a primary-weight button emphasises
+        `ghost` IS THE DEFAULT WEIGHT. An action is secondary to the values it sits
+        beside; a grid where every row carries a primary-weight button emphasises
         nothing, which is the same argument the add surface's single `lead` makes. #}
     {%- set action_attributes = create_attribute() -%}
     {%- for key in ['get', 'target', 'select', 'swap'] -%}
@@ -363,7 +366,10 @@
         whole entry; `hidden` carries the entry's identity and version so the
         save can refuse a stale cell. The entry link is an icon in the cell's
         corner, so the input keeps its width; `hx` lets it open the dialog the
-        way the action kind does. `stored` and `sums` feed `live_sums`. #}
+        way the action kind does. `stored` and `sums` feed `live_sums`.
+        `time` completes a typed time when the input loses focus, as
+        `input--bb-time` does for a form field: `duration` turns a bare whole
+        hour into H:00, `clock` pads a bare hour or H:MM to HH:MM. #}
     {%- set input_id = c.name|replace({'[': '-', ']': ''}) -%}
     {%- set input_attributes = create_attribute()
       .addClass(['text-right', 'tabular-nums'])
@@ -384,9 +390,18 @@
     {%- if c.autofocus -%}
       {%- set input_attributes = input_attributes.setAttribute('autofocus', 'autofocus') -%}
     {%- endif -%}
+    {%- if c.time -%}
+      {%- set time_blur = c.time == 'clock'
+        ? "const m = /^([01]?[0-9]|2[0-3])(?::([0-5][0-9]))?$/.exec($el.value.trim()); if (m) { $el.value = m[1].padStart(2, '0') + ':' + (m[2] || '00'); $el.dispatchEvent(new Event('input', { bubbles: true })) }"
+        : "const v = $el.value.trim(); if (/^[0-9]{1,6}$/.test(v)) { $el.value = String(Number(v)) + ':00'; $el.dispatchEvent(new Event('input', { bubbles: true })) }" -%}
+      {%- set input_attributes = input_attributes
+        .setAttribute('x-data', '{}')
+        .setAttribute('x-on:blur', time_blur) -%}
+    {%- endif -%}
     <span class="relative inline-flex flex-col items-end gap-inline-xs w-20 whitespace-normal text-left">
       {{- include('bb_theme:form_input', {
         type: 'text',
+        size: 'sm',
         id: input_id,
         name: c.name,
         value: c.value|default(''),
@@ -401,7 +416,7 @@
       {%- endif -%}
       {%- if c.url -%}
       {%- set details_attributes = create_attribute()
-        .addClass(['absolute', '-top-2', '-right-2', 'grid', 'place-items-center', 'w-4', 'h-4', 'rounded-xs', 'bg-surface', 'text-text-faint', 'hover:text-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'])
+        .addClass(['absolute', '-top-2', '-right-2', 'max-md:static', 'grid', 'place-items-center', 'w-4', 'h-4', 'max-md:size-touch', 'rounded-xs', 'bg-surface', 'text-text-faint', 'hover:text-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'])
         .setAttribute('href', c.url)
         .setAttribute('data-hx-boost', 'false')
         .setAttribute('aria-label', c.url_label|default('Details'))
@@ -453,8 +468,9 @@
         whether a ticket has a team at all. The six guarded fields above are
         guarded because they are FORWARDED to a composed component that types
         them as strings; this one is printed, and printing nothing is already
-        the right answer. #}
-    {{ c.markup }}
+        the right answer. A `contents` wrapper keeps the cell's layout and
+        gives a formatter's link the phone touch size. #}
+    <span class="contents max-md:[&>a]:inline-flex max-md:[&>a]:items-center max-md:[&>a]:min-h-touch max-md:[&>a]:min-w-touch">{{ c.markup }}</span>
   {%- elseif c.exact -%}
     {#- An abbreviated value with its exact value on hover and focus. The
         tooltip opens upwards and right-aligned: the table scrolls sideways, so
@@ -462,7 +478,7 @@
     {%- set tip_id = 'table-exact-' ~ random(1000000) -%}
     <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
       <span tabindex="0" aria-describedby="{{ tip_id }}" class="{{ emphasis_map[c.emphasis]|default('text-text') }} rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ c.value }}</span>
-      <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 bottom-full z-10 mb-inline-xs w-max max-w-prose whitespace-normal text-left rounded-xs bg-text px-inline py-inline-xs text-meta font-normal text-surface opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ c.exact }}</span>
+      <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 bottom-full z-10 mb-inline-xs w-max max-w-prose whitespace-normal text-left rounded-xs bg-text px-inline py-inline-xs text-meta font-normal text-surface pointer-events-none not-group-hover:not-group-focus-within:hidden" :class="{ '!hidden': dismissed }">{{ c.exact }}</span>
     </span>
   {%- else -%}
     {#- `sum` names a live total this value shows, `seconds` its stored base;
@@ -492,6 +508,11 @@
     'idle': 'bg-transparent'
   } %}
   {% set rail_classes = ['absolute', 'left-0', 'top-2', 'bottom-2', 'w-1', 'rounded-xs'] %}
+  {#- Row height: the default padded row, or a fixed dense (`md`) or roomy (`lg`)
+      row whose content is centred without vertical padding, so the row is
+      exactly that height. #}
+  {% set row_height_map = { 'default': 'h-row py-stack', 'md': 'h-row-md py-0', 'lg': 'h-row-lg py-0' } %}
+  {% set row_height_class = row_height_map[row_height|default('default')]|default('h-row py-stack') %}
   {#- LIVE SUMS: a timesheet's totals follow what the reader types, before the
       save, and after a refused save already on render. Each input names its
       totals (`sums`) and the seconds it held; each total shows its base plus
@@ -500,7 +521,7 @@
   {% set table_attributes = (attributes ?: create_attribute()).addClass(['w-full', 'border-collapse', 'text-body']) %}
   {% if live_sums %}
     {% set table_attributes = table_attributes
-      .setAttribute('x-data', "{ secs(v) { const m = /^(\\d{1,6}):([0-5]\\d)$/.exec((v || '').trim()); return m ? m[1] * 3600 + m[2] * 60 : 0 }, recalc() { const t = {}; this.$root.querySelectorAll('[data-sheet-sums]').forEach((i) => { const d = this.secs(i.value) - Number(i.dataset.sheetStored || 0); i.dataset.sheetSums.split(' ').forEach((k) => { t[k] = (t[k] || 0) + d }) }); this.$root.querySelectorAll('[data-sheet-sum]').forEach((c) => { const s = Math.max(0, Number(c.dataset.sheetSeconds || 0) + (t[c.dataset.sheetSum] || 0)); c.textContent = Math.floor(s / 3600) + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') }) } }")
+      .setAttribute('x-data', "{ secs(v) { const m = /^(\\d{1,6})(?::([0-5]\\d))?$/.exec((v || '').trim()); return m ? m[1] * 3600 + (m[2] || 0) * 60 : 0 }, recalc() { const t = {}; this.$root.querySelectorAll('[data-sheet-sums]').forEach((i) => { const d = this.secs(i.value) - Number(i.dataset.sheetStored || 0); i.dataset.sheetSums.split(' ').forEach((k) => { t[k] = (t[k] || 0) + d }) }); this.$root.querySelectorAll('[data-sheet-sum]').forEach((c) => { const s = Math.max(0, Number(c.dataset.sheetSeconds || 0) + (t[c.dataset.sheetSum] || 0)); c.textContent = Math.floor(s / 3600) + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') }) } }")
       .setAttribute('x-init', 'recalc()')
       .setAttribute('x-on:input', 'recalc()') %}
   {% endif %}
@@ -530,13 +551,15 @@
           <th class="text-left text-label text-text-light bg-app px-stack py-stack border-b border-border-2 whitespace-nowrap {{ column.num ? 'text-right tabular-nums' : '' }}"
             {%- if column.sort %} aria-sort="{{ sort_aria[column.sort]|default('none') }}"{% endif %}>
             {%- if column.sort %}
-              <a data-table-sort class="inline-flex items-center gap-inline-xs text-inherit no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ column.url|default('#') }}">
+              <a data-table-sort class="inline-flex items-center gap-inline-xs max-md:min-h-touch max-md:min-w-touch text-inherit no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ column.url|default('#') }}">
                 {{- column.label -}}
                 {%- if column.sort != 'none' %}
                   <span class="inline-flex {{ column.sort == 'asc' ? 'rotate-180' : '' }}">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}</span>
                 {%- endif -%}
               </a>
             {%- else %}{{ column.label }}{% endif -%}
+            {#- The space keeps label and sublabel apart in the header's text. #}
+            {%- if column.sublabel %} <span class="block text-body-strong text-text">{{ column.sublabel }}</span>{% endif -%}
           </th>
         {% endfor %}
       </tr>
@@ -556,7 +579,7 @@
             {#- A row-header column names its row for assistive technology and
                 stays at the left edge while the table scrolls sideways. #}
             {%- set cell_tag = column.row_header ? 'th' : 'td' -%}
-            <{{ cell_tag }}{% if column.row_header %} scope="row"{% endif %} class="h-row px-stack py-stack align-middle whitespace-nowrap border-b border-border-2 {{ loop.first ? 'relative pl-stack' : '' }} {{ column.num ? 'text-right tabular-nums' : '' }} {{ column.row_header ? 'sticky left-0 z-10 [&:has([data-option-picker-trigger][aria-expanded=true])]:z-20 bg-surface text-left font-normal' : '' }}">
+            <{{ cell_tag }}{% if column.row_header %} scope="row"{% endif %} class="{{ row_height_class }} px-stack align-middle whitespace-nowrap border-b border-border-2 {{ loop.first ? 'relative pl-stack' : '' }} {{ column.num ? 'text-right tabular-nums' : '' }} {{ column.row_header ? 'sticky left-0 z-10 [&:has([data-option-picker-trigger][aria-expanded=true])]:z-20 bg-surface text-left font-normal' : '' }}">
               {%- if loop.first %}<span class="{{ (rail_classes|merge([accent_map[row.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>{% endif -%}
               {%- if column.row_header and row.depth is defined -%}
                 {#- A TREE ROW: indented one step per level, its disclosure a plain
@@ -565,11 +588,11 @@
                 {%- set indent_map = { 1: 'pl-gutter', 2: 'pl-12', 3: 'pl-18' } -%}
                 <span class="inline-flex items-center gap-inline {{ indent_map[row.depth]|default('') }}">
                   {%- if row.disclosure -%}
-                    <a data-table-disclosure class="inline-flex w-5 justify-center text-text-light no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ row.disclosure.href }}" aria-expanded="{{ row.disclosure.expanded ? 'true' : 'false' }}" aria-label="{{ row.disclosure.expanded ? 'Collapse' : 'Expand' }} {{ c.value|default('') }}">
+                    <a data-table-disclosure class="inline-flex w-5 max-md:size-touch max-md:items-center justify-center text-text-light no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ row.disclosure.href }}" aria-expanded="{{ row.disclosure.expanded ? 'true' : 'false' }}" aria-label="{{ row.disclosure.expanded ? 'Collapse' : 'Expand' }} {{ c.value|default('') }}">
                       <span class="inline-flex {{ row.disclosure.expanded ? '' : '-rotate-90' }}">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}</span>
                     </a>
                   {%- else -%}
-                    <span class="inline-flex w-5" aria-hidden="true"></span>
+                    <span class="inline-flex w-5 max-md:w-touch" aria-hidden="true"></span>
                   {%- endif -%}
                   {%- if c %}{{ cells.cell(c) }}{% endif -%}
                   {%- for badge in row.badges|default([]) -%}

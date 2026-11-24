@@ -1,28 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CANCEL_RUN_ACTION_ID,
-  CANCELLABLE_RUN_STATES,
-  cancelRunPayload,
-  isRunCancellable,
-} from '../../../../src/Entity/run/Form/edit.js';
+import { offersCancelRun } from '../../../../src/Entity/run/Form/edit.js';
 
-describe('run edit form declaration', () => {
-  it('offers cancel from the active states only', () => {
-    expect(isRunCancellable('claimed')).toBe(true);
-    expect(isRunCancellable('running')).toBe(true);
-    for (const over of ['done', 'failed', 'expired', 'cancelled'])
-      expect(isRunCancellable(over)).toBe(false);
-  });
-
-  it('mirrors the workflow transition source states exactly', () => {
-    expect([...CANCELLABLE_RUN_STATES].sort()).toEqual(['claimed', 'running']);
-  });
-
-  it('never names the action "cancel", which already means close', () => {
-    expect(CANCEL_RUN_ACTION_ID).not.toBe('cancel');
-  });
-
-  it('writes only the state', () => {
-    expect(cancelRunPayload()).toEqual({ attributes: { state: 'cancelled' } });
+describe('run cancellation offer', () => {
+  it('offers cancel on an active run and on the newest failed run', () => {
+    expect(offersCancelRun('claimed', false)).toBe(true);
+    expect(offersCancelRun('running', false)).toBe(true);
+    expect(offersCancelRun('failed', true)).toBe(true);
+    expect(offersCancelRun('failed', false)).toBe(false);
+    for (const over of ['done', 'expired', 'cancelled'])
+      expect(offersCancelRun(over, true)).toBe(false);
   });
 });

@@ -69,16 +69,22 @@ export interface ProjectConfig {
     after_done?: string;
     on_freeze?: string;
     on_resume?: string;
-    /** Command, or commands by profile, offered to runs as provision_up(profile?). */
+    /** Command, or commands by profile, offered to runs as provision_up(profile?). A profile is a command, or { command, description } to tell the agent what it does. */
     provision_up?: string | {
-      [key: string]: string;
+      [key: string]: string | {
+        command: string;
+        /** One line for the agent, listed in the provision_up tool description: what the profile brings up and when to use it. */
+        description?: string;
+      };
     };
-    /** Commands by key, offered to runs as provision_exec(key, args). A string is a fixed command that takes no arguments; { command, args: true } also passes the run's arguments as argv after --, never through a shell. */
+    /** Commands by key, offered to runs as provision_exec(key, args). A string is a fixed command that takes no arguments; { command, args: true } also passes the run's arguments as argv after --, never through a shell; an optional description tells the agent what the key does. */
     provision_exec?: {
       [key: string]: string | {
         command: string;
         /** Pass the run's arguments to the command. */
         args?: boolean;
+        /** One line for the agent, listed in the provision_exec tool description: what the key runs and which args it takes. */
+        description?: string;
       };
     };
   };
@@ -88,11 +94,17 @@ export interface ProjectConfig {
     url: string;
     /** Branch or tag. */
     ref: string;
+    /** Plugins to install from this marketplace, at least one. */
     plugins: Array<string>;
   }>;
   /** Function choosing the agent for a ticket; replaces the shipped selection. */
   select_agent?: (...args: never[]) => unknown;
   runtime?: {
+    /** Machine runtime aliases this project may use; absent allows all. */
+    enabled?: Array<string>;
+    /** Runtime alias for tickets no label or machine route places. */
+    default?: string;
+    /** Under an isolating runtime: worktree-relative paths the run sees read-only and may not change in a commit. Host commands must start in one of them. .bakers is always protected. */
     read_only?: Array<string>;
   };
 }
@@ -124,6 +136,28 @@ export interface MachineConfig {
         [key: string]: string;
       };
     };
+    /** Function (aliases, ticket) => alias replacing the default agent order. */
+    select?: (...args: never[]) => unknown;
+  };
+  /** Where agent runs start, chosen per ticket. Absent: the addon runtime, else the host (system). */
+  runtime?: {
+    /** Runtime entries; the alias system is the host and always present. */
+    catalog?: Array<{
+      alias: string;
+      use: string;
+      /** The runtime addon's options. */
+      with?: unknown;
+    }>;
+    /** Named routes from states (or *) to aliases; routes.default is the automatic one. */
+    routes?: {
+      [key: string]: {
+        [key: string]: string;
+      };
+    };
+    /** Function (aliases, ticket) => alias replacing the default runtime order. */
+    select?: (...args: never[]) => unknown;
+    /** Let a runtime:<alias> label choose a runtime that does not isolate. Default false. */
+    allow_unsandboxed?: boolean;
   };
   /** Addons this machine uses. */
   addons?: Array<string | {

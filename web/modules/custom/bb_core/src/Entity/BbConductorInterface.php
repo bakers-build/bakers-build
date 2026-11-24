@@ -64,4 +64,22 @@ interface BbConductorInterface extends BbContentEntityInterface {
    */
   public function isOwnedBy(AccountInterface $account): bool;
 
+  /**
+   * Returns this conductor's own assignment setting.
+   *
+   * @return string
+   *   `machine` (defer to the machine), `allow` or `forbid`.
+   */
+  public function getAssignment(): string;
+
+  /**
+   * Returns the assignment setting in force and where it comes from.
+   *
+   * A conductor without a machine resolves to forbid from the machine.
+   *
+   * @return array{value: 'allow'|'forbid', source: 'conductor'|'machine'}
+   *   The effective value and its source.
+   */
+  public function getEffectiveAssignment(): array;
+
 }

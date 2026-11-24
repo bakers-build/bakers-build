@@ -234,6 +234,23 @@ final class WorklogFormTest extends KernelTestBase {
   }
 
   /**
+   * A bare whole hour saves as that many hours.
+   */
+  public function testAddFormAcceptsBareHour(): void {
+    $this->actAs($this->employee);
+    $form_state = $this->submitAdd([
+      'work_date' => '2026-10-06',
+      'duration' => '8',
+      'project' => $this->autocomplete($this->projectP),
+      'description' => 'Bare hour',
+    ]);
+    self::assertSame([], $form_state->getErrors());
+    $ids = $this->worklogIds();
+    self::assertCount(1, $ids);
+    self::assertSame(28800, (int) Worklog::load(reset($ids))->get('duration_seconds')->value);
+  }
+
+  /**
    * An edit updates duration and project, then delete removes only that row.
    */
   public function testEditThenDelete(): void {

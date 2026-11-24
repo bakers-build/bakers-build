@@ -123,7 +123,7 @@ Feature: Project Board Drupal
     Given a project world with these tickets:
       | ticket     | state         |
       | First work | qualification |
-    And the world has an open deployment to "develop" carrying "First work"
+    And the world has an open shipment to "develop" carrying "First work"
     And the account "north-lead" is seated in the world as a lead
     And I am signed in as "north-lead"
     When I open the world project Board
@@ -131,3 +131,40 @@ Feature: Project Board Drupal
     When the world deployment is closed
     And I open the world project Board
     Then the board card "First work" shows the deployed badge "develop"
+
+  # THE PHONE FILTER SHEET (BAKERS-57 AC-10). Below `lg` only the search and a
+  # "Filters · N" opener stay in the Board's row; the pickers, Details and Clear
+  # move into the sheet, and a tick there waits for "Show results".
+  Scenario: The Board's filters sit behind one button on a phone
+    Given a project world with these tickets:
+      | ticket        | state         | conductor | priority |
+      | Urgent fix    | working       | Oven A    | 1        |
+      | Urgent review | review        | Oven A    | 1        |
+      | Routine chore | qualification | Oven A    | 3        |
+    And I am signed in as the world's lead
+    And the viewport is 390 pixels wide
+    When I open the world project Board
+    Then the filters button reads "Filters"
+    When I open the filter sheet
+    Then the filter sheet holds the "Priority" facet
+    When I tick "High" in the "Priority" facet
+    Then the filter sheet is open
+    When I click button "Show results"
+    Then the Board shows the active filter "Priority is High · 2"
+    And the filters button reads "Filters · 1"
+
+  Scenario: A dismissed Board sheet drops the ticks it did not apply
+    Given a project world with these tickets:
+      | ticket        | state         | conductor | priority |
+      | Urgent fix    | working       | Oven A    | 1        |
+      | Routine chore | qualification | Oven A    | 3        |
+    And I am signed in as the world's lead
+    And the viewport is 390 pixels wide
+    When I open the world project Board
+    And I open the filter sheet
+    And I tick "High" in the "Priority" facet
+    And I close the open filter
+    And I dismiss the filter sheet
+    Then the filters button reads "Filters"
+    When I open the filter sheet
+    Then "High" is not ticked in the "Priority" facet

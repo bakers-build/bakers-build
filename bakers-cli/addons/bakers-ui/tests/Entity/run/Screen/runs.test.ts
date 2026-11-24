@@ -416,7 +416,7 @@ describe('the run screen holds and moves the page', () => {
     expect(shown.meta ?? '').not.toMatch(/run\(s\)/);
     // Closed lives in the badge strip; screen keys live in footer actions.
     expect(shown.meta ?? '').not.toContain('closed:');
-    expect(formatActionLadder(shown.actions)).toContain('Enter ticket');
+    expect(formatActionLadder(shown.actions)).toContain('Enter run');
     expect(formatActionLadder(shown.actions)).toContain('Tab tabs');
   });
 

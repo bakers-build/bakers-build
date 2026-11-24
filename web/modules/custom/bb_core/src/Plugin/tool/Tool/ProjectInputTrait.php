@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
+use Drupal\bb_core\Entity\BbEnvironmentInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\Component\Uuid\Uuid;
 
@@ -28,6 +29,40 @@ trait ProjectInputTrait {
       throw new \InvalidArgumentException(sprintf('Project %s does not exist or is not readable.', $project));
     }
     return $entity;
+  }
+
+  /**
+   * The readable environment of this project, by name or UUID, or an error.
+   *
+   * @throws \InvalidArgumentException
+   */
+  protected function readableEnvironment(BbProjectInterface $project, string $environment): BbEnvironmentInterface {
+    $storage = $this->entities()->getStorage('bb_environment');
+    $ids = $storage->getQuery()->accessCheck(TRUE)
+      ->condition('project_id', $project->id())
+      ->condition(Uuid::isValid($environment) ? 'uuid' : 'name', $environment)
+      ->range(0, 1)->execute();
+    $entity = $ids ? $storage->load(reset($ids)) : NULL;
+    if (!$entity instanceof BbEnvironmentInterface || !$entity->access('view', $this->currentUser)) {
+      throw new \InvalidArgumentException(sprintf('Environment %s is not one of project %s’s environments.', $environment, $project->getKey()));
+    }
+    return $entity;
+  }
+
+  /**
+   * The output of an environment tool: the stored environment.
+   *
+   * @return array<string, mixed>
+   *   Output values keyed by name.
+   */
+  protected function environmentOutput(BbEnvironmentInterface $environment): array {
+    return [
+      'uuid' => $environment->uuid(),
+      'name' => (string) $environment->label(),
+      'branch' => $environment->getBranch(),
+      'base_url' => $environment->getBaseUrl(),
+      'project' => $environment->getProject()?->getKey(),
+    ];
   }
 
   /**
@@ -63,7 +98,8 @@ trait ProjectInputTrait {
       'teams' => array_map(static fn ($team) => $team->uuid(), $project->getTeams()),
       'repository' => $viewable('repository') ? [
         'url' => $repository['url'],
-        'default_branch' => $repository['default_branch'] ?? NULL,
+        // The effective branch, as BaseBranchItemList bases tickets on it.
+        'default_branch' => ($repository['default_branch'] ?? '') !== '' ? $repository['default_branch'] : 'main',
         'branch_convention' => $repository['branch_convention'] ?? NULL,
       ] : NULL,
       'coder_config' => $viewable('coder_config') ? $project->get('coder_config')->first()?->getValue() : NULL,

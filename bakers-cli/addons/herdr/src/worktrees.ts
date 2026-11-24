@@ -6,7 +6,11 @@ import {
   type WorktreeGitExec,
 } from '@bakers-build/addon-workspace-git';
 import type { WorktreeTeardown } from '@bakers-build/conductor/contract';
-import { type ConductorLogger, loadRunClone } from '@bakers-build/core';
+import {
+  type ConductorLogger,
+  loadRunClone,
+  registerRunCloneWorktree,
+} from '@bakers-build/core';
 import { type HerdrExec, isRecord, parseJson } from './pane-layout.js';
 import { parseWorkspaceList } from './workspace-list.js';
 
@@ -105,40 +109,58 @@ export async function listWorktrees(
 }
 
 /**
- * A run clone is no Git worktree on the host, so herdr lists none for it: its
- * plain workspace is found by its label, the ticket branch.
+ * The run clone's open herdr workspace: the worktree herdr opened at `path`,
+ * or a plain workspace labelled with the branch that a run opened before the
+ * host registered its clone as a worktree.
  */
 export async function cloneWorkspaceId(
   execHerdr: HerdrExec,
+  root: string | undefined,
   branch: string,
+  path: string,
 ): Promise<string | null> {
+  const entry = (await listWorktrees(execHerdr, root)).find(
+    (worktree) => normPath(worktree.path) === normPath(path),
+  );
   return (
+    entry?.open_workspace_id ??
     parseWorkspaceList(await execHerdr(['workspace', 'list'])).find(
       (workspace) => workspace.label === branch,
-    )?.workspaceId ?? null
+    )?.workspaceId ??
+    null
   );
 }
 
-/** The run clone's herdr workspace, created at `path` when none is open. */
+/**
+ * The run clone's herdr workspace, opened as a worktree of `root` when none is
+ * open, so herdr groups it under the repository. Registers the clone as a
+ * worktree first, whichever addon made it: every refresh empties its stub.
+ */
 export async function openCloneWorkspace(
   execHerdr: HerdrExec,
+  root: string | undefined,
   branch: string,
   path: string,
 ): Promise<string> {
-  const open = await cloneWorkspaceId(execHerdr, branch);
+  const clone = loadRunClone(path);
+  if (clone) registerRunCloneWorktree(clone);
+  const open = await cloneWorkspaceId(execHerdr, root, branch, path);
   if (open) return open;
   const output = await execHerdr([
-    'workspace',
-    'create',
+    'worktree',
+    'open',
     '--cwd',
+    root ?? path,
+    '--path',
     path,
     '--label',
     branch,
     '--no-focus',
+    '--json',
   ]);
   let created: unknown;
   try {
-    const parsed = parseJson(output, 'workspace create');
+    const parsed = parseJson(output, 'worktree open');
     created = isRecord(parsed)
       ? (parsed.result as { workspace?: { workspace_id?: unknown } })?.workspace
           ?.workspace_id
@@ -149,10 +171,10 @@ export async function openCloneWorkspace(
   const id =
     typeof created === 'string' && created
       ? created
-      : await cloneWorkspaceId(execHerdr, branch);
+      : await cloneWorkspaceId(execHerdr, root, branch, path);
   if (!id)
     throw new Error(
-      `herdr workspace create did not yield a workspace for ${path} (branch ${branch}): ${output.trim()}`,
+      `herdr worktree open did not yield a workspace for ${path} (branch ${branch}): ${output.trim()}`,
     );
   return id;
 }
@@ -223,6 +245,22 @@ async function ensureFocusSafeToRemove(
 }
 
 /**
+ * Close the run clone's open herdr workspace before its directory goes.
+ * `false` when it is focused and no parent workspace can take focus (BB-166).
+ */
+export async function closeCloneWorkspace(
+  deps: HerdrTeardownDeps,
+  branch: string,
+  path: string,
+): Promise<boolean> {
+  const open = await cloneWorkspaceId(deps.execHerdr, deps.root, branch, path);
+  if (!open) return true;
+  if (!(await ensureFocusSafeToRemove(deps, open))) return false;
+  await deps.execHerdr(['workspace', 'close', open]);
+  return true;
+}
+
+/**
  * Tear down a ticket's entire worktree (git worktree + hosted workspace).
  * `herdr worktree remove` is keyed by an open workspace id, so resolve the
  * worktree first — by its stable `worktreePath`, falling back to `branch`
@@ -258,11 +296,8 @@ export async function removeHerdrWorktree(
     return 'unverified';
   }
   if (worktreePath && loadRunClone(worktreePath)) {
-    const open = await cloneWorkspaceId(execHerdr, branch);
-    if (open) {
-      if (!(await ensureFocusSafeToRemove(deps, open))) return 'unverified';
-      await execHerdr(['workspace', 'close', open]);
-    }
+    if (!(await closeCloneWorkspace(deps, branch, worktreePath)))
+      return 'unverified';
     return removeRunCloneWorkspace(worktreePath) ?? 'unverified';
   }
   const entry = resolveWorktreeEntry(

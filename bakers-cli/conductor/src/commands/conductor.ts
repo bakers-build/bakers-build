@@ -18,13 +18,19 @@ import {
   deriveConductorLiveness,
   homeBbDir,
   loadReadyBbConnection,
+  loadSecretsFile,
   type ProcProbe,
   printVersionLine,
+  readCliVersion,
   readMachineContext,
+  resolveCliVersion,
   resolveConfigPath,
+  type Secrets,
+  secretsFilePath,
   setDefaultCommandRunner,
   signalVerifiedProcess,
   stemForConfigFile,
+  UNKNOWN_VERSION,
   type UpdateCheckOptions,
   updateNotice,
   verifyConductorProcess,
@@ -134,32 +140,62 @@ export interface BbCliDeps {
   checkConfig?: () => Promise<string | undefined>;
   /** Replaces this process (`process.execve`). A test MUST inject a fake. */
   execve?: Execve;
+  /** Reads the installed CLI version from disk, uncached. */
+  readCliVersion?: () => string;
+  /** Migrates the config with the installed CLI; resolves an error message, or undefined. */
+  migrateConfig?: () => Promise<string | undefined>;
 }
 
 type Execve = (file: string, args: string[], env: NodeJS.ProcessEnv) => void;
+
+/**
+ * `config upgrade --scope all --yes` with the installed CLI in a child: the
+ * new files migrate the config, never the modules this process still holds.
+ */
+async function defaultMigrateConfig(): Promise<string | undefined> {
+  return runChild([
+    ...process.execArgv,
+    process.argv[1] as string,
+    'config',
+    'upgrade',
+    '--scope',
+    'all',
+    '--yes',
+  ]);
+}
 
 /**
  * `oven start --dry-run` in a child with this process's own runtime and argv:
  * the changed files are imported fresh there, never into this process.
  */
 async function defaultCheckConfig(): Promise<string | undefined> {
-  const args = [
+  return runChild([
     ...process.execArgv,
     ...process.argv
       .slice(1)
       .map((a) => (a === '--foreground' ? '--dry-run' : a)),
-  ];
+  ]);
+}
+
+/** Runs node with `args`; resolves the error output, or undefined on success. */
+async function runChild(args: string[]): Promise<string | undefined> {
   try {
     await promisify(execFile)(process.execPath, args, {
       cwd: process.cwd(),
       env: process.env,
-      // A hung check would block every later restart; a timeout fails it.
+      // A hung child would block every later restart; a timeout fails it.
       timeout: 60_000,
     });
     return undefined;
   } catch (err) {
-    const { stderr, message } = err as { stderr?: string; message: string };
-    return stderr?.trim().split('\n').slice(-20).join('\n') || message;
+    const { stderr, stdout, message } = err as {
+      stderr?: string;
+      stdout?: string;
+      message: string;
+    };
+    // `config upgrade` reports a blocked migration on stdout, not stderr.
+    const output = stderr?.trim() || stdout?.trim();
+    return output?.split('\n').slice(-20).join('\n') || message;
   }
 }
 
@@ -285,6 +321,24 @@ function logOptsOf(cmd: Command): LogOpts {
 }
 
 /** Create the conductor logger (with CLI log overrides) and route all exec logging through it. */
+/**
+ * `~/.bakers/.bakers.env`, or undefined after printing why it was refused and
+ * setting exit 1. The log names the loaded keys, never their values.
+ */
+function loadSecretsOrFail(logger?: ConductorLogger): Secrets | undefined {
+  try {
+    const secrets = loadSecretsFile();
+    const names = Object.keys(secrets);
+    if (names.length)
+      logger?.info({ secrets: names }, `secrets file: ${names.join(', ')} set`);
+    return secrets;
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    process.exitCode = 1;
+    return undefined;
+  }
+}
+
 function loggerFor(checkoutRoot: string, log: LogOpts = {}): ConductorLogger {
   const logger = createLogger({ checkoutRoot, ...log });
   setDefaultCommandRunner(new CommandRunner(logger));
@@ -428,6 +482,8 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
   const logger = loggerFor(checkoutRoot, log);
+  const secrets = loadSecretsOrFail(logger);
+  if (!secrets) return;
   if (!(await ensureAuthenticated(config, logger))) return;
   const remote = await resolveRemote(deps, config);
   const executor = deps.executor ?? (await selectExecutor(config, logger));
@@ -444,6 +500,7 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
     frozenStateFileOf(config),
     undefined,
     readMachineContext,
+    secrets,
   );
   await conductor.start();
   await conductor.tick();
@@ -584,9 +641,16 @@ async function cmdStartForeground(
   force = false,
   choice: TakeoverChoice = {},
 ): Promise<void> {
+  // A watched file changed after this instant was not loaded: the watcher restarts on it.
+  // A self-restart hands over when its watcher stopped looking, so a write during its drain counts.
+  const loadedAt = Number(process.env.BAKERS_RESTART_SINCE) || Date.now();
+  delete process.env.BAKERS_RESTART_SINCE;
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
   const logger = loggerFor(checkoutRoot, log);
+  // Every start path ends here: detached child, self-restart and update re-exec.
+  const secrets = loadSecretsOrFail(logger);
+  if (!secrets) return;
   if (!(await ensureAuthenticated(config, logger))) return;
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
@@ -613,6 +677,7 @@ async function cmdStartForeground(
     frozenStateFileOf(config),
     undefined,
     readMachineContext,
+    secrets,
   );
   // This process IS the conductor, so it may report its own pid and config
   // name — the two values a cockpit needs to stop it later. poll/reap build a
@@ -635,6 +700,39 @@ async function cmdStartForeground(
   const execve =
     deps.execve ?? (process as { execve?: Execve }).execve?.bind(process);
   let watcher: { close(): void } | undefined;
+  const check = deps.checkConfig ?? defaultCheckConfig;
+  // The restart re-runs loadSecretsOrFail, which exits on a bad file: check first.
+  const reloadSecrets = (): Secrets | undefined => {
+    try {
+      return loadSecretsFile();
+    } catch (err) {
+      logger.error(
+        { path: secretsFilePath() },
+        `${(err as Error).message}; keeping the running conductor on its last good secrets`,
+      );
+      return undefined;
+    }
+  };
+  // Config changes a bad secrets file held back, re-checked on the next change.
+  const heldBack = new Set<string>();
+  const restartNow = (since = Date.now()) => {
+    restart = true;
+    process.env.BAKERS_RESTART_SINCE = String(since);
+    watcher?.close();
+    clearInterval(versionTimer);
+    controller.abort();
+  };
+  // An upgrade replaces the installed files under this running process: once
+  // two polls read the same new version, migrate, check and come back on it.
+  const startVersion = resolveCliVersion();
+  const readVersion = deps.readCliVersion ?? readCliVersion;
+  const migrate = deps.migrateConfig ?? defaultMigrateConfig;
+  const prefix = process.env.BAKERS_CONDUCTOR
+    ? `bakers --conductor ${process.env.BAKERS_CONDUCTOR}`
+    : 'bakers';
+  let lastRead: string | undefined;
+  let settled: string | undefined; // the new version already handled or refused
+  let busy = false;
   if (config.restart_on_change !== false && config.watch_paths) {
     if (!execve) {
       logger.warn(
@@ -642,11 +740,39 @@ async function cmdStartForeground(
         'restart_on_change needs process.execve (Node >= 22.15); the conductor does not restart itself on config changes',
       );
     } else {
-      const check = deps.checkConfig ?? defaultCheckConfig;
       watcher = (deps.watchForRestart ?? watchForRestart)(
         config.watch_paths,
-        async (path) => {
+        async (paths) => {
+          // Changes after this batch was taken are lost when the watcher closes.
+          const cut = Date.now();
           if (controller.signal.aborted) return;
+          const secretsPath = secretsFilePath();
+          for (const p of paths) if (p !== secretsPath) heldBack.add(p);
+          if (!reloadSecrets()) return;
+          const configPaths = [...heldBack];
+          heldBack.clear();
+          if (!configPaths.length) {
+            const read = readVersion();
+            if (read !== UNKNOWN_VERSION && read !== startVersion) {
+              // A new CLI starts only after migrate and check: retry the upgrade on the next poll.
+              settled = undefined;
+              logger.info(
+                { path: secretsPath, to: read },
+                'secrets file changed; the pending CLI upgrade restarts the conductor',
+              );
+              return;
+            }
+            logger.info(
+              { path: secretsPath },
+              'secrets file changed; restarting conductor',
+            );
+            restartNow(cut);
+            return;
+          }
+          const path = [
+            ...configPaths,
+            ...paths.filter((p) => p === secretsPath),
+          ].join(', ');
           logger.info(
             { path },
             `restart_on_change: ${path} changed; checking config`,
@@ -662,17 +788,69 @@ async function cmdStartForeground(
             return;
           }
           logger.info({ path }, 'config check passed; restarting conductor');
-          restart = true;
-          watcher?.close();
-          controller.abort();
+          restartNow(cut);
         },
+        undefined,
+        loadedAt,
       );
     }
   }
+  const versionTimer = setInterval(async () => {
+    if (busy || controller.signal.aborted) return;
+    const read = readVersion();
+    const previous = lastRead;
+    lastRead = read;
+    if (read === UNKNOWN_VERSION || read === startVersion) return;
+    // A half-written install reads differently on the next poll.
+    if (read !== previous || read === settled) return;
+    settled = read;
+    const changed = `CLI version changed ${startVersion} → ${read}`;
+    if (config.restart_on_change === false) {
+      logger.warn(
+        { from: startVersion, to: read },
+        `${changed}; restart_on_change is off, restart with \`${prefix} oven start --force\``,
+      );
+      return;
+    }
+    if (!execve) {
+      logger.error(
+        { from: startVersion, to: read, node: process.version },
+        `${changed}; restarting needs process.execve (Node >= 22.15), restart with \`${prefix} oven start --force\``,
+      );
+      return;
+    }
+    logger.info(
+      { from: startVersion, to: read },
+      `${changed}; upgrading config`,
+    );
+    busy = true;
+    try {
+      if (!reloadSecrets()) return;
+      for (const [step, run] of [
+        ['config upgrade', migrate],
+        ['config check', check],
+      ] as const) {
+        const error = await run();
+        if (controller.signal.aborted) return;
+        if (error !== undefined) {
+          logger.error(
+            { from: startVersion, to: read, step, err: error },
+            `${step} failed; keeping the running conductor on ${startVersion}: ${error}. Recover with \`${prefix} config upgrade --scope all --yes\`, then \`${prefix} oven start --force\``,
+          );
+          return;
+        }
+      }
+    } finally {
+      busy = false;
+    }
+    logger.info({ to: read }, 'config check passed; restarting conductor');
+    restartNow();
+  }, config.poll_interval_ms);
   try {
     await conductor.serve(controller.signal);
   } finally {
     watcher?.close();
+    clearInterval(versionTimer);
     await conductor.stopTools();
     process.removeListener('SIGINT', onSignal);
     process.removeListener('SIGTERM', onSignal);
@@ -822,6 +1000,8 @@ async function cmdStart(
   foreground = false,
 ): Promise<void> {
   const current = printVersionLine();
+  // The detached child loads it again; checking here shows a refusal in this shell.
+  if (!foreground && !loadSecretsOrFail()) return;
   if (updateCheck) {
     const options: UpdateCheckOptions = {
       fetchImpl: deps.fetch ?? globalThis.fetch,
@@ -841,7 +1021,7 @@ async function cmdStart(
         'Installing accepts the newer release and runs configuration migration.',
       );
       console.log(
-        'After a successful install this start exits; rerun the start command to use the new release.',
+        'After a successful install this start continues on the new release.',
       );
       const question = `A new bakers version is available (${current} → ${result.latestVersion}). Install it now? [Y/n]`;
       const ask = deps.askUpdate ?? defaultAskUpdate;
@@ -880,7 +1060,6 @@ async function cmdStart(
       const prefix = env.BAKERS_CONDUCTOR
         ? `bakers --conductor ${env.BAKERS_CONDUCTOR}`
         : 'bakers';
-      const rerun = `${prefix} conductor start${force ? ' --force' : ''}`;
       if (accepted) {
         try {
           await runBb(['update']);
@@ -897,17 +1076,32 @@ async function cmdStart(
           console.error(
             `Retry with: ${prefix} config upgrade --scope all --yes`,
           );
-          console.error(`Then rerun \`${rerun}\`.`);
+          console.error(
+            `Then run \`${prefix} conductor start${force ? ' --force' : ''}\`.`,
+          );
           process.exitCode = 1;
           return;
         }
         console.log('bakers update and configuration migration completed.');
-        console.log(
-          `This process still has the previous modules loaded; rerun \`${rerun}\` in a new process.`,
-        );
-        console.log(
-          'A source checkout or PATH shim may still run the source tree after a global install; use the bakers executable you expect after bakers update.',
-        );
+        // This process still holds the previous modules: continue as a fresh
+        // process of the same command on the new release, without asking again.
+        const again = [...process.argv.slice(1), '--no-update-check'];
+        const execve =
+          deps.execve ?? (process as { execve?: Execve }).execve?.bind(process);
+        if (execve) {
+          execve(
+            process.execPath,
+            [process.execPath, ...process.execArgv, ...again],
+            env,
+          );
+          return;
+        }
+        try {
+          await runBb(again.slice(1));
+        } catch (err) {
+          console.error(String(err));
+          process.exitCode = 1;
+        }
         return;
       }
       if (!(await declineUpdate(result, options))) {

@@ -9,39 +9,50 @@ const PRELUDE = [
   '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
 ].join(' ');
 
+const OWNED_WORKSPACE = '$o = current($etm->getStorage("user")->loadByProperties(["name" => "fixture-workspace-owner"])); $e = \\Drupal::service("bb_core.workspace_provisioner")->provision($l, $o, "First crew"); $extra[] = current($etm->getStorage("bb_team")->loadByProperties(["workspace_id" => $e->id()])); ';
+
 // Per kind: creates `$e` (the subject) and `$extra` (helpers), sets `$manage` and `$delete`.
 export const KINDS: Record<string, string> = {
   project: '$e = $etm->getStorage("bb_project")->create(["name" => $l, "key" => "D" . substr($n, -7), "group_id" => $p->get("group_id")->target_id, "teams" => $p->get("teams")->getValue()]); $e->save(); $manage = $e->toUrl()->toString() . "/settings";',
   'busy project': '$e = $etm->getStorage("bb_project")->create(["name" => $l, "key" => "D" . substr($n, -7), "group_id" => $p->get("group_id")->target_id, "teams" => $p->get("teams")->getValue()]); $e->save(); $t = $etm->getStorage("bb_ticket")->create(["project_id" => $e->id(), "title" => $l, "workflow" => "bb_work"]); $t->save(); $extra[] = $t; $manage = $e->toUrl()->toString() . "/settings";',
-  team: '$e = $etm->getStorage("bb_team")->create(["name" => $l, "workspace_id" => $w->id()]); $e->save(); $manage = $e->toUrl()->toString();',
+  team: '$e = $etm->getStorage("bb_team")->create(["name" => $l, "workspace_id" => $w->id()]); $e->save(); $manage = $e->toUrl()->toString() . "/settings";',
   group: '$e = $etm->getStorage("bb_group")->create(["name" => $l, "workspace_id" => $w->id()]); $e->save(); $manage = $e->toUrl()->toString() . "/settings";',
   environment: '$e = $etm->getStorage("bb_environment")->create(["name" => $l, "project_id" => $p->id()]); $e->save(); $manage = $e->toUrl("edit-form")->toString();',
-  label: '$e = $etm->getStorage("bb_term")->create(["vid" => "label", "name" => $l, "workspace_id" => $w->id()]); $e->save(); $t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => $l, "workflow" => "bb_work", "labels" => [$e->id()]]); $t->save(); $extra[] = $t; $manage = "/$slug/settings/labels"; $delete = "/$slug/term/" . $e->id() . "/delete";',
-  recipe: '$e = $etm->getStorage("bb_term")->create(["vid" => "recipe", "name" => $l, "workspace_id" => $w->id()]); $e->save(); $manage = "/$slug/settings/recipes"; $delete = "/$slug/term/" . $e->id() . "/delete";',
-  template: '$e =$etm->getStorage("bb_ticket_template")->create(["name" => $l, "workspace_id" => $w->id(), "enabled" => TRUE, "title_pattern" => $l, "workflow" => "bb_work", "target_state" => "qualification"]); $e->save(); $manage = $e->toUrl("edit-form")->toString();',
-  trigger: '$tp = $etm->getStorage("bb_ticket_template")->create(["name" => $l, "workspace_id" => $w->id(), "enabled" => TRUE, "title_pattern" => $l, "workflow" => "bb_work", "target_state" => "qualification"]); $tp->save(); $extra[] = $tp; $e = $etm->getStorage("bb_ticket_trigger")->create(["bundle" => "template", "workspace_id" => $w->id(), "template_id" => $tp->id(), "trigger_type" => ["plugin_id" => "schedule", "plugin_configuration" => ["frequency" => "monthly", "day" => "1", "time" => "09:00", "timezone" => "Europe/Berlin"]], "enabled" => FALSE]); $e->save(); $manage = \\Drupal\\Core\\Url::fromRoute("view.bb_ticket_triggers.template_list", $tp->toUrl()->getRouteParameters())->toString();',
+  label: '$e = $etm->getStorage("bb_term")->create(["vid" => "label", "name" => $l, "workspace_id" => $w->id()]); $e->save(); $t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => $l, "workflow" => "bb_work", "labels" => [$e->id()]]); $t->save(); $extra[] = $t; $manage = $e->toUrl()->toString(); $delete = "/$slug/term/" . $e->id() . "/delete";',
+  recipe: '$e = $etm->getStorage("bb_term")->create(["vid" => "recipe", "name" => $l, "workspace_id" => $w->id()]); $e->save(); $manage = $e->toUrl()->toString(); $delete = "/$slug/term/" . $e->id() . "/delete";',
+  template: '$e =$etm->getStorage("bb_ticket_template")->create(["name" => $l, "workspace_id" => $w->id(), "enabled" => TRUE, "title_pattern" => $l, "workflow" => "bb_work", "target_state" => "qualification"]); $e->save(); $manage = $e->toUrl()->toString();',
+  trigger: '$tp = $etm->getStorage("bb_ticket_template")->create(["name" => $l, "workspace_id" => $w->id(), "enabled" => TRUE, "title_pattern" => $l, "workflow" => "bb_work", "target_state" => "qualification"]); $tp->save(); $extra[] = $tp; $e = $etm->getStorage("bb_ticket_trigger")->create(["bundle" => "template", "workspace_id" => $w->id(), "template_id" => $tp->id(), "trigger_type" => ["plugin_id" => "schedule", "plugin_configuration" => ["frequency" => "monthly", "day" => "1", "time" => "09:00", "timezone" => "Europe/Berlin"]], "enabled" => FALSE]); $e->save(); $manage = $e->toUrl()->toString();',
   ticket: '$e = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => $l, "workflow" => "bb_work"]); $e->save(); $c = $etm->getStorage("bb_comment")->create(["ticket_id" => $e->id(), "body" => ["value" => $l, "format" => "bb_rich"]]); $c->save(); $extra[] = $c; $manage = $e->toUrl("edit-form")->toString();',
   comment: '$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => $l, "workflow" => "bb_work"]); $t->save(); $e = $etm->getStorage("bb_comment")->create(["ticket_id" => $t->id(), "body" => ["value" => $l, "format" => "bb_rich"]]); $e->save(); $extra[] = $t; $manage = $t->toUrl()->toString();',
-  invite: '$e = $etm->getStorage("bb_invite")->create(["email" => "delete-" . $n . "@example.com", "workspace_id" => $w->id()]); $e->save(); $manage = "/$slug/settings/members"; $delete = "/$slug/invite/" . $e->id() . "/delete";',
-  machine: '$admin = current($etm->getStorage("user")->loadByProperties(["name" => "site-admin"])); $e = $etm->getStorage("bb_machine")->create(["name" => $l, "host_key" => "delete-" . $n, "owner_user_id" => $admin->id()]); $e->save(); $manage = $e->toUrl()->toString();',
+  invite: '$e = $etm->getStorage("bb_invite")->create(["email" => "delete-" . $n . "@example.com", "workspace_id" => $w->id()]); $e->save(); $manage = $e->toUrl()->toString(); $delete = "/$slug/invite/" . $e->id() . "/delete";',
+  machine: '$admin = current($etm->getStorage("user")->loadByProperties(["name" => "site-admin"])); $e = $etm->getStorage("bb_machine")->create(["name" => $l, "host_key" => "delete-" . $n, "owner_user_id" => $admin->id()]); $e->save(); $manage = $e->toUrl()->toString() . "/settings";',
   'conductor project': '$e = $etm->getStorage("bb_project")->create(["name" => $l, "key" => "D" . substr($n, -7), "group_id" => $p->get("group_id")->target_id, "teams" => $p->get("teams")->getValue()]); $e->save(); $c = $etm->getStorage("bb_conductor")->create(["label" => $l, "conductor_id" => "delete-" . $n, "project_id" => $e->id()]); $c->save(); $extra[] = $c; $manage = $e->toUrl()->toString() . "/settings";',
   conductor: '$e =$etm->getStorage("bb_conductor")->create(["label" => $l, "conductor_id" => "delete-" . $n, "project_id" => $p->id()]); $e->save(); $manage = $e->toUrl()->toString();',
   workspace: '$e = $etm->getStorage("bb_workspace")->create(["name" => $l, "slug" => "delete-" . $n]); $e->save(); $manage = "/delete-$n/settings";',
+  // As sign-up leaves it, owned by fixture-workspace-owner; the first team is the helper.
+  'owned workspace': OWNED_WORKSPACE + '$manage = "/" . $e->getSlug() . "/settings";',
+  // A group nobody in the workspace created, so only the owner deletes it.
+  'group in an owned workspace': OWNED_WORKSPACE + '$extra[] = $e; $e = $etm->getStorage("bb_group")->create(["name" => $l, "workspace_id" => $e->id()]); $e->save(); $manage = $e->toUrl()->toString() . "/settings";',
+  'owned workspace with a group': OWNED_WORKSPACE + '$g = $etm->getStorage("bb_group")->create(["name" => $l, "workspace_id" => $e->id()]); $g->save(); $extra[] = $g; $manage = "/" . $e->getSlug() . "/settings";',
 };
 
 /**
  * The PHP that creates a disposable entity of the kind.
  *
  * It prints "type:id[,type:id…]|label|managing path|delete path", the subject
- * first, then the helpers it needed.
+ * first, then the helpers it needed. A creator account becomes the subject's
+ * owner.
  */
-export function disposableSnippet(kind: string, n: string): string {
+export function disposableSnippet(kind: string, n: string, creator?: string): string {
   const create = KINDS[kind];
   if (!create) throw new Error(`No disposable kind "${kind}".`);
   return [
     PRELUDE,
     `$n = "${n}"; $l = "Delete me ${kind} ${n}"; $extra = []; $delete = NULL;`,
     create,
+    creator
+      ? `$e->set("owner_user_id", current($etm->getStorage("user")->loadByProperties(["name" => ${JSON.stringify(creator)}]))->id())->save();`
+      : '',
     '$delete = $delete ?? $e->toUrl("delete-form")->toString();',
     '$created = array_merge([$e->getEntityTypeId() . ":" . $e->id()], array_map(fn($x) => $x->getEntityTypeId() . ":" . $x->id(), $extra));',
     '$label = $e->label() ?: $e->getEntityType()->getSingularLabel();',

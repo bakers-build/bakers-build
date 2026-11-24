@@ -1,7 +1,8 @@
 // Renders an addon page's Options table from the addon's options.schema.json at build time:
 // the line `<!-- @options @bakers-build/addon-<name> -->` becomes a note and a Markdown table,
 // so the page cannot drift from what `bakers config check` validates.
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 
 const REPO = new URL('../../', import.meta.url)
 const DIRECTIVE = /^<!-- @options (\S+) -->$/gm
@@ -100,6 +101,16 @@ export function optionsTable(pkg, { page, load = loadSchema }) {
 
 export const expandOptions = (markdown, options) =>
   markdown.replace(DIRECTIVE, (_, pkg) => optionsTable(pkg, options))
+
+// buildEnd (config.mts): each page's Markdown, options expanded, beside its HTML at `<page>.md`,
+// so skills read the full text instead of a summarised fetch.
+export function writeMarkdownSources({ srcDir, outDir, pages, rewrite = (page) => page, load = loadSchema }) {
+  for (const page of pages) {
+    const file = join(outDir, rewrite(page))
+    mkdirSync(dirname(file), { recursive: true })
+    writeFileSync(file, expandOptions(readFileSync(join(srcDir, page), 'utf8'), { page, load }))
+  }
+}
 
 // markdown-it plugin (config.mts): expands directives before parsing, so local search indexes the rows.
 export function addonOptions(md) {

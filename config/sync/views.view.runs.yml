@@ -585,7 +585,7 @@ display:
             general:
               autosubmit: true
               auto_submit_sort_only: false
-              autosubmit_breakpoint: ''
+              autosubmit_breakpoint: 'bb_theme:bb_theme.lg'
               autosubmit_exclude_textfield: false
               autosubmit_textfield_delay: 500
               autosubmit_textfield_minimum_length: 3
@@ -610,6 +610,7 @@ display:
                 collapsible: false
                 collapsible_label: 'Sort options'
                 is_secondary: false
+                no_reset: false
             filter:
               facets_state:
                 plugin_id: bb_option_picker
@@ -1092,6 +1093,14 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Run facets'
+                                sheet_id:
+                                  source_id: textfield
+                                  source:
+                                    value: run-filters
+                                opener:
+                                  source_id: checkbox
+                                  source:
+                                    value: false
                               slots:
                                 controls:
                                   sources:
@@ -1117,6 +1126,13 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Search and sort'
+                                sheet_for:
+                                  source_id: textfield
+                                  source:
+                                    value: run-filters
+                                active_count:
+                                  source_id: bb_view_filter_count
+                                  source: {  }
                               slots:
                                 controls:
                                   sources:
@@ -1253,6 +1269,14 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Run facets'
+                                sheet_id:
+                                  source_id: textfield
+                                  source:
+                                    value: run-filters
+                                opener:
+                                  source_id: checkbox
+                                  source:
+                                    value: false
                               slots:
                                 controls:
                                   sources:
@@ -1278,6 +1302,13 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Search and sort'
+                                sheet_for:
+                                  source_id: textfield
+                                  source:
+                                    value: run-filters
+                                active_count:
+                                  source_id: bb_view_filter_count
+                                  source: {  }
                               slots:
                                 controls:
                                   sources:

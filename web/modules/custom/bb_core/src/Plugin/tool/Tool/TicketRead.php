@@ -15,6 +15,7 @@ use Drupal\tool\ExecutableResult;
 use Drupal\tool\Tool\ToolBase;
 use Drupal\tool\Tool\ToolOperation;
 use Drupal\tool\TypedData\InputDefinition;
+use Drupal\tool\TypedData\ListInputDefinition;
 use Drupal\tool\TypedData\ListOutputDefinition;
 use Drupal\tool\TypedData\MapOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
@@ -25,7 +26,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_read',
   label: new TranslatableMarkup('Read a ticket'),
-  description: new TranslatableMarkup('Returns a ticket’s fields, labels, links, its newest readable comments in chronological order and facets over all its readable comments.'),
+  description: new TranslatableMarkup('Returns a ticket’s fields, labels, links, readable blockers (identifier, title, state), its newest readable comments in chronological order, per type when types is given, and facets over all its readable comments.'),
   operation: ToolOperation::Read,
   permission: 'view bb_ticket',
   input_definitions: [
@@ -38,8 +39,19 @@ use Drupal\tool\TypedData\OutputDefinition;
     'newest' => new InputDefinition(
       data_type: 'integer',
       label: new TranslatableMarkup('Newest'),
-      description: new TranslatableMarkup('How many of the newest readable comments to return in full, 0 or more; default 2. comment_facets lists all, bakers_comment_read fetches more.'),
+      description: new TranslatableMarkup('How many of the newest readable comments to return in full, 0 or more, per type when types is given; default 2. comment_facets lists all, bakers_comment_read fetches more.'),
       required: FALSE,
+    ),
+    'types' => new ListInputDefinition(
+      label: new TranslatableMarkup('Types'),
+      description: new TranslatableMarkup('Only comments of these types, e.g. spec or plan; an unknown type matches none. Empty or absent: every type.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Type'),
+        description: new TranslatableMarkup('One comment type.'),
+        constraints: ['NotBlank' => []],
+      ),
     ),
   ],
   output_definitions: [
@@ -50,6 +62,11 @@ use Drupal\tool\TypedData\OutputDefinition;
         label: new TranslatableMarkup('Reviewer'),
         description: new TranslatableMarkup('The saved account.'),
         property_definitions: [
+          'uuid' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('UUID'),
+            description: new TranslatableMarkup('The user UUID.'),
+          ),
           'name' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('Name'),
@@ -61,6 +78,11 @@ use Drupal\tool\TypedData\OutputDefinition;
             description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
             nullable: TRUE,
           ),
+          'service_account' => new OutputDefinition(
+            data_type: 'boolean',
+            label: new TranslatableMarkup('Service account'),
+            description: new TranslatableMarkup('Whether the account is a workspace service account, not a person.'),
+          ),
         ],
       ),
     ),
@@ -69,6 +91,11 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('The saved account.'),
       nullable: TRUE,
       property_definitions: [
+        'uuid' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('UUID'),
+          description: new TranslatableMarkup('The user UUID.'),
+        ),
         'name' => new OutputDefinition(
           data_type: 'string',
           label: new TranslatableMarkup('Name'),
@@ -79,6 +106,11 @@ use Drupal\tool\TypedData\OutputDefinition;
           label: new TranslatableMarkup('Mail'),
           description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
           nullable: TRUE,
+        ),
+        'service_account' => new OutputDefinition(
+          data_type: 'boolean',
+          label: new TranslatableMarkup('Service account'),
+          description: new TranslatableMarkup('Whether the account is a workspace service account, not a person.'),
         ),
       ],
     ),
@@ -230,17 +262,42 @@ use Drupal\tool\TypedData\OutputDefinition;
         ],
       ),
     ),
-    'deployments' => new ListOutputDefinition(
-      label: new TranslatableMarkup('Deployments'),
-      description: new TranslatableMarkup('The viewable deployment tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
+    'blocked_by' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Blocked by'),
+      description: new TranslatableMarkup('The readable tickets this one waits for; unreadable blockers are omitted.'),
       item_definition: new MapOutputDefinition(
-        label: new TranslatableMarkup('Deployment'),
-        description: new TranslatableMarkup('One deployment ticket.'),
+        label: new TranslatableMarkup('Blocker'),
+        description: new TranslatableMarkup('One blocking ticket.'),
         property_definitions: [
           'identifier' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('Identifier'),
-            description: new TranslatableMarkup('The deployment ticket identifier.'),
+            description: new TranslatableMarkup('The ticket identifier, e.g. BAKERS-15.'),
+          ),
+          'title' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Title'),
+            description: new TranslatableMarkup('The ticket title.'),
+          ),
+          'state' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('State'),
+            description: new TranslatableMarkup('The ticket’s workflow state id.'),
+          ),
+        ],
+      ),
+    ),
+    'deployments' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Deployments'),
+      description: new TranslatableMarkup('The viewable ship tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Deployment'),
+        description: new TranslatableMarkup('One ship ticket.'),
+        property_definitions: [
+          'identifier' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Identifier'),
+            description: new TranslatableMarkup('The ship ticket identifier.'),
           ),
           'environments' => new ListOutputDefinition(
             label: new TranslatableMarkup('Environments'),
@@ -256,7 +313,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
     'comments' => new ListOutputDefinition(
       label: new TranslatableMarkup('Comments'),
-      description: new TranslatableMarkup('The newest readable comments, oldest first.'),
+      description: new TranslatableMarkup('The newest readable comments, per type when types is given, oldest first.'),
       item_definition: new MapOutputDefinition(
         label: new TranslatableMarkup('Comment'),
         description: new TranslatableMarkup('One comment.'),
@@ -361,15 +418,8 @@ final class TicketRead extends ToolBase {
     if ($newest < 0) {
       throw new \InvalidArgumentException('newest must be 0 or more.');
     }
-    $storage = $this->entities()->getStorage('bb_comment');
-    $ids = $newest === 0 ? [] : $storage->getQuery()->accessCheck(TRUE)
-      ->condition('ticket_id', $ticket->id())
-      ->sort('created', 'DESC')
-      ->sort('id', 'DESC')
-      ->range(0, $newest)
-      ->execute();
     $comments = [];
-    foreach (array_reverse($storage->loadMultiple($ids)) as $comment) {
+    foreach ($this->newestComments($ticket, $values['types'] ?? [], $newest) as $comment) {
       assert($comment instanceof ContentEntityInterface);
       $comments[] = $this->commentItem($comment);
     }
@@ -401,6 +451,7 @@ final class TicketRead extends ToolBase {
         'value' => (float) $row['value'],
         'unit' => $row['unit'] ?? NULL,
       ], $ticket->get('metrics')->getValue()) : NULL,
+      'blocked_by' => $this->blockers($ticket),
       'deployments' => array_map(static fn (BbTicketInterface $deployment): array => [
         'identifier' => $deployment->getIdentifier(),
         'environments' => array_map(static fn ($env): string => (string) $env->label(), $deployment->get('environments')->referencedEntities()),
@@ -414,6 +465,40 @@ final class TicketRead extends ToolBase {
         )),
       ],
     ]);
+  }
+
+  /**
+   * Loads the newest readable comments, per type when types are given.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket.
+   * @param array<string> $types
+   *   The comment types; none matches every type.
+   * @param int $newest
+   *   How many comments, per type when types are given.
+   *
+   * @return array<\Drupal\Core\Entity\EntityInterface>
+   *   The comments, oldest first.
+   */
+  private function newestComments(BbTicketInterface $ticket, array $types, int $newest): array {
+    if ($newest === 0) {
+      return [];
+    }
+    $storage = $this->entities()->getStorage('bb_comment');
+    // The newest N apply per type: one bounded query per type.
+    $ids = [];
+    foreach (array_map(static fn ($type): array => [$type], $types) ?: [[]] as $group) {
+      $query = $storage->getQuery()->accessCheck(TRUE)->condition('ticket_id', $ticket->id());
+      if ($group) {
+        $query->condition('type', $group, 'IN');
+      }
+      $ids += $query->sort('created', 'DESC')->sort('id', 'DESC')->range(0, $newest)->execute();
+    }
+    return $ids ? $storage->loadMultiple($storage->getQuery()->accessCheck(TRUE)
+      ->condition('id', $ids, 'IN')
+      ->sort('created')
+      ->sort('id')
+      ->execute()) : [];
   }
 
   /**

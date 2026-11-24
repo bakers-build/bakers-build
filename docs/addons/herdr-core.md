@@ -57,7 +57,7 @@ The machine's executor wins for every project on that machine; the project keeps
 
 ## Run lifecycle
 
-`startRun` starts an 80x24 background terminal in the worktree through `hc connect`. A forwarder passes each resize (`SIGWINCH`) to the agent, also under bwrap's `--new-session`. Its terminal name holds at most 32 characters of `a-z0-9-_`. The run's environment travels in a private launch script, never in the command line. `stopRun` does nothing. Cleanup ends (`hc kill`) and removes (`hc rm`) only this run's terminals, found by their branch and run labels. Run state reaches bakers.build through the agent and the server, as with herdr.
+`startRun` starts an 80x24 background terminal in the worktree through `hc connect`. A forwarder passes each resize (`SIGWINCH`) to the agent. An isolated run starts through a launcher named after its agent, so `hc ls` names it. Its terminal name holds at most 32 characters of `a-z0-9-_`. The run's environment travels in a private launch script, not the command line. `stopRun` does nothing. Cleanup ends (`hc kill`) and removes (`hc rm`) only this run's terminals, found by their labels. Run state reaches bakers.build as with herdr.
 
 herdr-core has no workspace of its own and opens no layout. Remote machines (`hc run --on`) are not used.
 

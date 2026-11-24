@@ -840,6 +840,30 @@ function projectIdsInWorkspaceSnippet(slug: string): string {
   ].join(' ');
 }
 
+/** Identifiers of the signed-in reader's open tickets in the workspace, sorted. */
+function myOpenTickets(uid: string, slug: string): string[] {
+  return php(
+    [
+      projectIdsInWorkspaceSnippet(slug),
+      '$terminal = [];',
+      'foreach (\\Drupal\\bb_core\\Workflow\\TypeWorkflows::terminalTicketStates() as $w => $states) {',
+      '$terminal[$w] = $states; }',
+      '$out = [];',
+      'foreach (\\Drupal::entityTypeManager()->getStorage("bb_ticket")->loadMultiple() as $t) {',
+      `if ((string) ($t->get("assignee_user_id")->target_id ?? "") !== "${uid}") { continue; }`,
+      'if (!in_array((string) ($t->get("project_id")->target_id ?? ""), $projectIds, TRUE)) { continue; }',
+      '$w = (string) $t->get("workflow")->value;',
+      '$s = (string) $t->get("state")->value;',
+      'if (in_array($s, $terminal[$w] ?? [], TRUE)) { continue; }',
+      '$out[] = (string) $t->get("identifier")->value; }',
+      'sort($out);',
+      'print implode(",", $out);',
+    ].join(' '),
+  )
+    .split(',')
+    .filter((identifier) => identifier !== '');
+}
+
 /**
  * The scoped list holds EXACTLY the reader's own non-terminal tickets.
  *
@@ -862,36 +886,22 @@ Then('the ticket listing lists exactly my open tickets', async ({ page }) => {
   if (listing.uid === null || listing.slug === null) {
     throw new Error('No account was signed in, so there is no work to scope to.');
   }
-  const expected = php(
-    [
-      projectIdsInWorkspaceSnippet(listing.slug),
-      '$terminal = [];',
-      'foreach (\\Drupal\\bb_core\\Workflow\\TypeWorkflows::terminalTicketStates() as $w => $states) {',
-      '$terminal[$w] = $states; }',
-      '$out = [];',
-      'foreach (\\Drupal::entityTypeManager()->getStorage("bb_ticket")->loadMultiple() as $t) {',
-      `if ((string) ($t->get("assignee_user_id")->target_id ?? "") !== "${listing.uid}") { continue; }`,
-      'if (!in_array((string) ($t->get("project_id")->target_id ?? ""), $projectIds, TRUE)) { continue; }',
-      '$w = (string) $t->get("workflow")->value;',
-      '$s = (string) $t->get("state")->value;',
-      'if (in_array($s, $terminal[$w] ?? [], TRUE)) { continue; }',
-      '$out[] = (string) $t->get("identifier")->value; }',
-      'sort($out);',
-      'print implode(",", $out);',
-    ].join(' '),
-  )
-    .split(',')
-    .filter((identifier) => identifier !== '');
-
-  expect(expected.length, 'The signed-in member has no open work to show.').toBeGreaterThan(0);
-
+  // Parallel workers assign tickets to the same reader, so one render is
+  // bracketed by two snapshots: only a ticket changed in between may differ.
+  const before = myOpenTickets(listing.uid, listing.slug);
+  await active(page).reload();
   const shown = (
     await active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item] [data-cell="identifier"]`).allInnerTexts()
   )
     .map((text) => text.trim())
     .sort();
+  const after = myOpenTickets(listing.uid, listing.slug);
 
-  expect(shown).toEqual(expected);
+  const stable = before.filter((identifier) => after.includes(identifier));
+  expect(stable.length, 'The signed-in member has no open work to show.').toBeGreaterThan(0);
+  expect(new Set(shown).size, 'A ticket is listed twice').toBe(shown.length);
+  expect(stable.filter((identifier) => !shown.includes(identifier)), 'Open tickets of mine missing from the list').toEqual([]);
+  expect(shown.filter((identifier) => !before.includes(identifier) && !after.includes(identifier)), 'Listed tickets that are not my open work').toEqual([]);
 });
 
 /**
@@ -1602,4 +1612,13 @@ Then(
 
 Then('the ticket {string} shows its assignee', async ({ page }, title: string) => {
   await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="assignee"] [role="img"]')).toBeVisible();
+});
+
+// A boosted click on a row's ticket link, as a reader leaves the list.
+When('I open the first listed ticket', async ({ page }) => {
+  const target = active(page);
+  const link = target.locator(`${CONTENT_ISLAND} a[href*="/ticket/"]:not([href*="/ticket/create"])`).first();
+  const href = await link.getAttribute('href');
+  await link.click();
+  await target.waitForURL((url) => url.pathname === href, { timeout: 20000 });
 });

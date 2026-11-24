@@ -37,4 +37,17 @@ final class BbTeamForm extends BbContentEntityFormBase {
     ];
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: \Drupal\Core\StringTranslation\TranslatableMarkup}
+   *   The label and description.
+   */
+  protected function dangerZoneText(): array {
+    return [
+      $this->t('Delete team'),
+      $this->t('Deletes this team; its invitations stay without it. A project whose only team this is must get another team first.'),
+    ];
+  }
+
 }

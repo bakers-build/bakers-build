@@ -45,7 +45,7 @@ bakers conductor stop
 
 The `bakers ui` Conductors tab shows the same list; see [bakers ui](/addons/bakers-ui/reference). The web UI has two listings: opening the person mark swaps the rail to Account, Conductors (`/user/{user}/conductors`, the conductors assigned to that account) and Machines (`/user/{user}/machines`), and `/{workspace}/project/{key}/conductors` is the conductors assigned to that project (Title search, status and reported load). Opening a row shows Overview at `/{workspace}/conductor/{id}`: Activities, the ticket activities of this conductor's own runs, newest first, with a **Refresh** button, beside one Identity card. An activity counts for a conductor only through its run, never through the ticket's later assignment, so work stays with the conductor and machine that did it; an activity without a run is in no conductor's or machine's feed. Activities list only tickets you may inspect.
 
-The Identity card edits the label and the served states with its own **Save** and shows the conductor id, project, machine and owner read-only. The Overview shows none of the conductor's status, last seen and load: the heartbeat writes them. The served states are set when the conductor first registers and change on the card or through the API. Only the owner edits; other readers see the values only. **Disable conductor** and **Enable conductor** below the card change Activity after a confirmation; an inactive conductor can still be online. A conductor is the machine + project + variant, so another machine registers its own conductor id. Disabling stops new assignments and claims and reassigns or clears eligible pending tickets; work already in flight is not cancelled. Enabling restores eligibility without moving tickets back or starting a process. The heartbeat creates a conductor; **Delete** on its Overview opens `/{workspace}/conductor/{id}/delete`. Capacity is the machine's **Max parallel**, edited on the machine's Overview.
+The Identity card shows the label, served states, assignment, conductor id, project, machine and owner read-only. Who may update the conductor (its owner) also sees the **Settings** tab at `/{workspace}/conductor/{id}/settings`, which edits the label, served states and assignment. The Overview shows none of the conductor's status, last seen and load: the heartbeat writes them. The served states are set when the conductor first registers and change on Settings or through the API. Only the owner edits; other readers see the values only. **Disable conductor** and **Enable conductor** below the card change Activity after a confirmation; an inactive conductor can still be online. A conductor is the machine + project + variant, so another machine registers its own conductor id. Disabling stops new assignments and claims and reassigns or clears eligible pending tickets; work already in flight is not cancelled. Enabling restores eligibility without moving tickets back or starting a process. The heartbeat creates a conductor; **Delete** on Settings opens `/{workspace}/conductor/{id}/delete`. Capacity is the machine's **Max parallel**, edited on the machine's Settings.
 
 ## What a cycle does
 
@@ -56,7 +56,7 @@ The loop repeats every `poll_interval_ms` (default 5000). Each cycle:
 3. Reaps worktrees of closed tickets that were not cleaned up.
 4. Claims tickets one at a time while the machine is below its run budget, and dispatches each: it ensures the worktree under `.bakers-worktrees/`, prepares it through [`after_create`](/configuration/project/hooks#when-each-hook-runs) when needed, lays out a fresh worktree's overview tab, runs `before_run` and starts the agent session detached.
 
-A cycle never writes ticket state; the agent does that. A dispatch error marks that run `failed` with the error; after repeated failures the server parks the ticket behind a circuit breaker until it [is restarted](/addons/bakers-ui/tickets#restart-a-parked-ticket) or 2 hours pass.
+A cycle never writes ticket state; the agent does that. A dispatch error marks that run `failed` with the error; after repeated failures the server parks the ticket behind a circuit breaker until it [is restarted](/addons/bakers-ui/tickets#restart-a-ticket) or 2 hours pass.
 
 `once` runs one cycle without looping. With `--log-level debug` it shows whether it claimed, was at capacity or found nothing. It never says why a given ticket was passed over, because an ineligible ticket is simply not a candidate.
 
@@ -123,6 +123,18 @@ A team host provides execution capacity so project managers need no conductor of
 4. Check `bakers conductor ls` from any machine, assign a small ticket to the conductor and confirm a run appears.
 
 If a ticket is not picked up, check its conductor, state and blockers, and the conductor's liveness.
+
+## Who may assign this conductor
+
+Assigning means setting a conductor on a ticket or template. The owner always may. Everyone else depends on the conductor's **Assignment**:
+
+| Value | Who may assign |
+|---|---|
+| `machine` | The default, also for conductors registered before this setting existed: the machine's value applies ([Machines](/configuration/machine#who-may-assign-this-conductor)). |
+| `allow` | Anyone who can view the conductor. |
+| `forbid` | Nobody else, administrators included. |
+
+Only the owner changes it, in the web UI on the conductor's **Settings** tab; the Identity card shows the value in force and its source. The CLI never writes it. Pickers offer only conductors you may assign; a refused save says `Conductor <label> cannot be assigned: its owner <owner> forbids assignment by others (<source> setting).` A [team host](#run-a-conductor-for-a-team) needs `allow` before others can assign its conductors.
 
 ## Command reference
 

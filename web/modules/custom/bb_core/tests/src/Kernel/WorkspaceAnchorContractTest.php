@@ -67,6 +67,8 @@ final class WorkspaceAnchorContractTest extends KernelTestBase {
     'bb_conductor' => 'project_id',
     'bb_run' => 'ticket_id',
     'bb_comment' => 'ticket_id',
+    // One profile per account and workspace.
+    'bb_profile' => 'workspace_id',
   ];
 
   /**

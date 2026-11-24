@@ -228,6 +228,34 @@ describe('runtime-docker wrap', () => {
     ]);
   });
 
+  it("probes the installed agent once per image with the run's mounts", async () => {
+    const rt = dockerRuntime({ mounts: ['/srv/tools'] }, deps());
+    await rt.wrap(launch());
+    await rt.wrap(launch({ run: { uuid: 'r-2', id: 8 } }));
+    const probes = calls.filter(([, a]) => a.includes('--entrypoint'));
+    expect(probes).toHaveLength(1);
+    expect(probes[0]?.[1]).toEqual(
+      expect.arrayContaining([
+        '/opt/cli:/opt/cli:ro',
+        '/srv/tools:/srv/tools:ro',
+        "command -v 'fake'",
+      ]),
+    );
+  });
+
+  it('refuses the run when a mount hides the agent, naming the mounts', async () => {
+    const d = deps({
+      exec: async (file, args) => {
+        if (args.includes('--entrypoint'))
+          throw new Error('exit 127: sh: 1: fake: not found');
+        return deps().exec(file, args);
+      },
+    });
+    await expect(dockerRuntime({}, d).wrap(launch())).rejects.toThrow(
+      /fake is not found in bakers-runtime:.* with the run's mounts \(\/opt\/cli\)/,
+    );
+  });
+
   it('never builds an operator image', async () => {
     const d = deps({
       exec: async (file, args) => {
@@ -240,6 +268,22 @@ describe('runtime-docker wrap', () => {
       dockerRuntime({ image: 'mine:1' }, d).wrap(launch()),
     ).rejects.toThrow(/mine:1/);
     expect(calls.some(([, a]) => a[0] === 'build')).toBe(false);
+  });
+
+  it('takes the credential from the secrets the conductor hands out', async () => {
+    const rt = dockerRuntime(
+      {},
+      deps({ env: { XDG_CACHE_HOME: cache, HOME: join(root, 'home') } }),
+    );
+    const secrets = { MODEL_TOKEN: 'from-file' };
+    const prepared = await rt.prepareRun?.(
+      { uuid: 'r-uuid', id: 7 },
+      { ...agent(), secrets },
+    );
+    expect(prepared?.env).toEqual(secrets);
+    const out = await rt.wrap(launch({ secrets }));
+    expect(out.env.MODEL_TOKEN).toBe('from-file');
+    expect(out.command).not.toContain('from-file');
   });
 });
 
@@ -437,6 +481,31 @@ describe('runtime-docker allowlist mode', () => {
     expect(out.command).toContain("'bb-runtime-aaa'");
   });
 
+  it('hands the sidecar a file secret through the exec env, never argv', async () => {
+    const seen: Array<{ args: string[]; env?: Record<string, string> }> = [];
+    const base = fakeDocker({ networks: new Set() });
+    const rt = dockerRuntime(allowOpts, {
+      ...base,
+      env: { XDG_CACHE_HOME: cache, HOME: join(root, 'home') },
+      exec: async (file, args, opts) => {
+        seen.push({ args, ...(opts?.env ? { env: opts.env } : {}) });
+        return base.exec(file, args);
+      },
+    });
+    await rt.toolServerHosts?.();
+    rt.toolsUrl?.('http://127.0.0.1:4242');
+    const out = await rt.wrap(
+      launch({ secrets: { MODEL_TOKEN: 'from-file' } }),
+    );
+    const proxy = seen.find(
+      ({ args }) => args[0] === 'run' && args.includes('-d'),
+    );
+    expect(proxy?.args).toContain('MODEL_TOKEN');
+    expect(proxy?.args.join(' ')).not.toContain('from-file');
+    expect(proxy?.env).toEqual({ MODEL_TOKEN: 'from-file' });
+    expect(out.env.MODEL_TOKEN).toBeUndefined();
+  });
+
   it('recreates a sidecar still attached to the old shared run network', async () => {
     const oldHash = shortHash(
       JSON.stringify([
@@ -466,7 +535,9 @@ describe('runtime-docker allowlist mode', () => {
       ?.split('=')[1];
     calls = [];
     await wrapped({ networks: new Set(), label: hash });
-    expect(calls.some(([, a]) => a[0] === 'rm' || a[0] === 'run')).toBe(false);
+    const sidecar = ([, a]: Call) =>
+      a[0] === 'rm' || (a[0] === 'run' && !a.includes('--entrypoint'));
+    expect(calls.some(sidecar)).toBe(false);
   });
 
   it("never touches another conductor's sidecar", async () => {

@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_core\Kernel\Tool;
 
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -52,6 +53,65 @@ final class TicketCreateToolTest extends BakersToolTestBase {
     self::assertSame($type->id(), $stored->get('ticket_type')->target_id);
     self::assertSame($recipe->id(), $stored->get('recipe')->target_id);
     self::assertSame($parent->id(), $stored->get('parent_id')->target_id);
+  }
+
+  /**
+   * Blockers named by identifier or UUID are stored on the new ticket.
+   */
+  public function testCreatesBlockedTicket(): void {
+    $first = $this->ticket('TC-B1');
+    $second = $this->ticket('TC-B2');
+    $out = $this->outputs($this->runTool('bakers_ticket_create', [
+      'title' => 'Waits',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+      'blocked_by' => [$first->getIdentifier(), $second->uuid()],
+    ]));
+    $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $stored);
+    self::assertSame([$first->id(), $second->id()], array_map('strval', array_column($stored->get('blocked_by')->getValue(), 'target_id')));
+  }
+
+  /**
+   * A blocker of another project, closed or unreadable creates nothing.
+   */
+  public function testRefusedBlockerCreatesNothing(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $other = $etm->getStorage('bb_project')->create([
+      'name' => 'other-project',
+      'group_id' => $this->project->get('group_id')->target_id,
+      'teams' => [$this->project->get('teams')->target_id],
+    ]);
+    $other->save();
+    $elsewhere = $this->ticket('TC-OTHER', ['project_id' => $other->id()])->getIdentifier();
+    $done = $this->ticket('TC-DONE', ['state' => 'done'])->getIdentifier();
+    $foreign = $etm->getStorage('bb_workspace')->create([
+      'name' => 'foreign',
+      'slug' => 'foreign',
+      'owner_user_id' => $this->account('stranger')->id(),
+    ]);
+    $foreign->save();
+    $group = $etm->getStorage('bb_group')->create(['name' => 'foreign-group', 'workspace_id' => $foreign->id()]);
+    $group->save();
+    $hidden = $etm->getStorage('bb_project')->create(['name' => 'foreign-project', 'group_id' => $group->id()]);
+    $hidden->save();
+    $unreadable = $this->ticket('TC-HIDDEN', ['project_id' => $hidden->id()])->getIdentifier();
+    $storage = $etm->getStorage('bb_ticket');
+    $before = $storage->getQuery()->accessCheck(FALSE)->count()->execute();
+    foreach ([
+      $elsewhere => 'Choose open blocking tickets from this ticket',
+      $done => 'Choose open blocking tickets from this ticket',
+      $unreadable => "Ticket $unreadable does not exist or is not readable.",
+      'NOPE-3' => 'Ticket NOPE-3 does not exist or is not readable.',
+    ] as $blocker => $message) {
+      $this->assertFailure($this->runTool('bakers_ticket_create', [
+        'title' => 'Never',
+        'workflow' => 'bb_work',
+        'project' => $this->project->uuid(),
+        'blocked_by' => [$blocker],
+      ]), $message);
+    }
+    self::assertSame($before, $storage->getQuery()->accessCheck(FALSE)->count()->execute());
   }
 
   /**
@@ -145,11 +205,24 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
-   * The workspace member with that e-mail address becomes the assignee.
+   * The retired names are refused, naming ship; ship and ship are saved.
    */
-  public function testAssigneeEmailOfWorkspaceMemberIsAssigned(): void {
+  public function testRetiredDeploymentNamesPointToShip(): void {
+    $values = ['title' => 'Release', 'workflow' => 'bb_work', 'project' => $this->project->uuid()];
+    $this->assertFailure($this->runTool('bakers_ticket_create', $values + ['type' => 'deployment']), 'The type deployment is now ship.');
+    $this->assertFailure($this->runTool('bakers_ticket_create', $values + ['recipe' => 'deploy-and-release']), 'The recipe deploy-and-release is now ship.');
+    $out = $this->outputs($this->runTool('bakers_ticket_create', $values + ['type' => 'ship', 'recipe' => 'ship']));
+    $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $stored);
+    self::assertSame('ship', $stored->get('ticket_type')->entity?->label());
+    self::assertSame('ship', $stored->get('recipe')->entity?->label());
+  }
+
+  /**
+   * The workspace member with that UUID becomes the assignee.
+   */
+  public function testAssigneeOfWorkspaceMemberIsAssigned(): void {
     $member = $this->account('member');
-    $member->set('mail', 'member@example.test')->save();
     $this->addMembership($this->workspace, $member, ['contributor']);
     // The caller's read scope is memoised per request; this is a new one.
     $this->container->get('bb_core.workspace_read_scope')->reset();
@@ -157,69 +230,76 @@ final class TicketCreateToolTest extends BakersToolTestBase {
       'title' => 'Mine',
       'workflow' => 'bb_work',
       'project' => $this->project->uuid(),
-      'assignee_email' => 'Member@Example.TEST',
+      'assignee' => $member->uuid(),
     ]);
     $out = $this->outputs($result);
     self::assertSame('Ticket created.', (string) $result->getMessage());
-    self::assertSame('member', $out['assignee']);
+    self::assertSame($member->uuid(), $out['assignee']['uuid']);
+    self::assertSame('member', $out['assignee']['name']);
+    self::assertFalse($out['assignee']['service_account']);
     $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
     self::assertInstanceOf(BbTicketInterface::class, $stored);
     self::assertSame($member->id(), $stored->get('assignee_user_id')->target_id);
   }
 
   /**
-   * An unknown address and one outside the workspace give the same answer.
+   * People are set by UUID only; the e-mail inputs are gone.
+   */
+  public function testEmailInputsAreUnknown(): void {
+    $inputs = array_keys($this->container->get('plugin.manager.tool')->getDefinition('bakers_ticket_create')->getInputDefinitions());
+    self::assertContains('assignee', $inputs);
+    self::assertContains('reviewers', $inputs);
+    self::assertNotContains('assignee_email', $inputs);
+    self::assertNotContains('reviewer_emails', $inputs);
+  }
+
+  /**
+   * An unknown UUID and one outside the workspace give the same answer.
    *
    * The ticket is created unassigned either way, no account is created, and
    * the response does not tell the two apart.
    */
-  public function testUnassignableAssigneeEmailLeavesTheTicketUnassigned(): void {
+  public function testUnassignableAssigneeLeavesTheTicketUnassigned(): void {
     $etm = $this->container->get('entity_type.manager');
-    $elsewhere = $etm->getStorage('bb_workspace')->create(['name' => 'elsewhere', 'slug' => 'elsewhere']);
-    assert($elsewhere instanceof ContentEntityInterface);
-    $elsewhere->save();
-    $outsider = $this->account('outsider');
-    $outsider->set('mail', 'outsider@example.test')->save();
-    $this->addMembership($elsewhere, $outsider, ['contributor']);
-    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $outsider = $this->outsider();
     $users = $etm->getStorage('user')->getQuery()->accessCheck(FALSE)->count()->execute();
     $answers = [];
-    foreach (['nobody@example.test', 'outsider@example.test'] as $email) {
+    foreach (['nobody' => $this->container->get('uuid')->generate(), 'outsider' => $outsider->uuid()] as $key => $uuid) {
       $result = $this->runTool('bakers_ticket_create', [
         'title' => 'Unassigned',
         'workflow' => 'bb_work',
         'project' => $this->project->uuid(),
-        'assignee_email' => $email,
+        'assignee' => $uuid,
       ]);
       $out = $this->outputs($result);
       $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
       self::assertInstanceOf(BbTicketInterface::class, $stored);
-      self::assertTrue($stored->get('assignee_user_id')->isEmpty(), $email);
-      $answers[$email] = [(string) $result->getMessage(), $out['assignee'], array_keys($out)];
+      self::assertTrue($stored->get('assignee_user_id')->isEmpty(), $key);
+      $answers[$key] = [(string) $result->getMessage(), $out['assignee'], array_keys($out)];
     }
-    self::assertSame('Ticket created without an assignee: no account with this e-mail address can be assigned in this workspace.', $answers['nobody@example.test'][0]);
-    self::assertNull($answers['nobody@example.test'][1]);
-    self::assertSame($answers['nobody@example.test'], $answers['outsider@example.test']);
+    self::assertSame('Ticket created without an assignee: no such user can be assigned in this workspace.', $answers['nobody'][0]);
+    self::assertNull($answers['nobody'][1]);
+    self::assertSame($answers['nobody'], $answers['outsider']);
     self::assertSame($users, $etm->getStorage('user')->getQuery()->accessCheck(FALSE)->count()->execute());
   }
 
   /**
-   * The workspace member with a reviewer e-mail address becomes a reviewer.
+   * The workspace member with a reviewer UUID becomes a reviewer.
    */
-  public function testReviewerEmailOfWorkspaceMemberIsAdded(): void {
+  public function testReviewerOfWorkspaceMemberIsAdded(): void {
     $member = $this->account('member');
-    $member->set('mail', 'member@example.test')->save();
     $this->addMembership($this->workspace, $member, ['contributor']);
     $this->container->get('bb_core.workspace_read_scope')->reset();
     $result = $this->runTool('bakers_ticket_create', [
       'title' => 'Review mine',
       'workflow' => 'bb_work',
       'project' => $this->project->uuid(),
-      'reviewer_emails' => ['Member@Example.TEST'],
+      'reviewers' => [$member->uuid()],
     ]);
     $out = $this->outputs($result);
     self::assertSame('Ticket created.', (string) $result->getMessage());
-    self::assertSame(['member'], $out['reviewers']);
+    self::assertSame([$member->uuid()], array_column($out['reviewers'], 'uuid'));
+    self::assertSame(['member'], array_column($out['reviewers'], 'name'));
     self::assertNull($out['assignee']);
     $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
     self::assertInstanceOf(BbTicketInterface::class, $stored);
@@ -227,58 +307,52 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
-   * An unknown reviewer address and one outside the workspace add no one.
+   * An unknown reviewer UUID and one outside the workspace add no one.
    *
    * The ticket is created either way, no account is created, and the response
    * does not tell the two apart.
    */
-  public function testUnacceptableReviewerEmailAddsNoOne(): void {
+  public function testUnacceptableReviewerAddsNoOne(): void {
     $etm = $this->container->get('entity_type.manager');
-    $elsewhere = $etm->getStorage('bb_workspace')->create(['name' => 'elsewhere', 'slug' => 'elsewhere']);
-    assert($elsewhere instanceof ContentEntityInterface);
-    $elsewhere->save();
-    $outsider = $this->account('outsider');
-    $outsider->set('mail', 'outsider@example.test')->save();
-    $this->addMembership($elsewhere, $outsider, ['contributor']);
-    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $outsider = $this->outsider();
     $users = $etm->getStorage('user')->getQuery()->accessCheck(FALSE)->count()->execute();
     $answers = [];
-    foreach (['nobody@example.test', 'outsider@example.test'] as $email) {
+    foreach (['nobody' => $this->container->get('uuid')->generate(), 'outsider' => $outsider->uuid()] as $key => $uuid) {
       $result = $this->runTool('bakers_ticket_create', [
         'title' => 'No reviewer',
         'workflow' => 'bb_work',
         'project' => $this->project->uuid(),
-        'reviewer_emails' => [$email],
+        'reviewers' => [$uuid],
       ]);
       $out = $this->outputs($result);
       $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
       self::assertInstanceOf(BbTicketInterface::class, $stored);
-      self::assertTrue($stored->get('reviewers')->isEmpty(), $email);
-      $answers[$email] = [(string) $result->getMessage(), $out['reviewers'], array_keys($out)];
+      self::assertTrue($stored->get('reviewers')->isEmpty(), $key);
+      $answers[$key] = [(string) $result->getMessage(), $out['reviewers'], array_keys($out)];
     }
-    self::assertSame('Ticket created. Not every reviewer was added: no account with this e-mail address can be a reviewer in this workspace.', $answers['nobody@example.test'][0]);
-    self::assertSame([], $answers['nobody@example.test'][1]);
-    self::assertSame($answers['nobody@example.test'], $answers['outsider@example.test']);
+    self::assertSame('Ticket created. Not every reviewer was added: no such user can be a reviewer in this workspace.', $answers['nobody'][0]);
+    self::assertSame([], $answers['nobody'][1]);
+    self::assertSame($answers['nobody'], $answers['outsider']);
     self::assertSame($users, $etm->getStorage('user')->getQuery()->accessCheck(FALSE)->count()->execute());
   }
 
   /**
-   * A list with a member and an unknown address adds only the member.
+   * A list with a member and an unknown UUID adds only the member.
    */
-  public function testMixedReviewerEmailsAddOnlyAcceptedAccounts(): void {
+  public function testMixedReviewersAddOnlyAcceptedAccounts(): void {
     $member = $this->account('member');
-    $member->set('mail', 'member@example.test')->save();
     $this->addMembership($this->workspace, $member, ['contributor']);
     $this->container->get('bb_core.workspace_read_scope')->reset();
     $result = $this->runTool('bakers_ticket_create', [
       'title' => 'Mixed',
       'workflow' => 'bb_work',
       'project' => $this->project->uuid(),
-      'reviewer_emails' => ['nobody@example.test', 'member@example.test'],
+      'reviewers' => [$this->container->get('uuid')->generate(), $member->uuid()],
     ]);
     $out = $this->outputs($result);
-    self::assertSame('Ticket created. Not every reviewer was added: no account with this e-mail address can be a reviewer in this workspace.', (string) $result->getMessage());
-    self::assertSame(['member'], $out['reviewers']);
+    self::assertSame('Ticket created. Not every reviewer was added: no such user can be a reviewer in this workspace.', (string) $result->getMessage());
+    self::assertSame([$member->uuid()], array_column($out['reviewers'], 'uuid'));
+    self::assertSame(['member'], array_column($out['reviewers'], 'name'));
   }
 
   /**
@@ -295,6 +369,20 @@ final class TicketCreateToolTest extends BakersToolTestBase {
       'project' => $this->project->uuid(),
     ]), 'may not create');
     self::assertEmpty($etm->getStorage('bb_ticket')->loadByProperties(['title' => 'Denied']));
+  }
+
+  /**
+   * An active account that belongs to another workspace only.
+   */
+  private function outsider(): UserInterface {
+    $elsewhere = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
+      ->create(['name' => 'elsewhere', 'slug' => 'elsewhere']);
+    assert($elsewhere instanceof ContentEntityInterface);
+    $elsewhere->save();
+    $outsider = $this->account('outsider');
+    $this->addMembership($elsewhere, $outsider, ['contributor']);
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    return $outsider;
   }
 
 }

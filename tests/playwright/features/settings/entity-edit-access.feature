@@ -1,8 +1,8 @@
 @functional @api @feature:entity-edit-access
 Feature: Entity edit access across browser, session token and CLI
-  Workspace lead, referenced team lead, and machine/conductor owners may edit
-  the fields the product exposes. A machine and a conductor are edited on
-  their detail page Identity card; their form address here is the card's own route. Peers, foreign leads and rankless accounts
+  Workspace lead, referenced team lead, a project's creator, and machine/conductor owners may edit
+  the fields the product exposes. Every entity here is edited on its Settings
+  form. Peers, foreign leads and rankless accounts
   are refused. Session tokens are real OAuth Bearers. Server-maintained fields
   stay read-only on a saved row.
 
@@ -62,6 +62,14 @@ Feature: Entity edit access across browser, session token and CLI
       {"data":{"type":"bb_workspace--bb_workspace","id":"{workspace.home}","attributes":{"description":"team-lead must not write"}}}
       """
     Then the API response status is 403
+
+  Scenario: A contributor edits the project they created and no other
+    Given I am logged in as the account "fixture-project-owner"
+    When the contract browser opens the form of fixture "project.owner" twice with status 200
+    And the contract browser fills "repository[0][default_branch]" with "develop" and saves
+    And the contract browser reloads the form of fixture "project.owner"
+    Then the contract field "repository[0][default_branch]" has value "develop"
+    When the contract browser opens the form of fixture "project.edit" twice with status 403
 
   Scenario Outline: A denied actor cannot PATCH <fixture> as <account>
     Given the API client is "<account>"

@@ -95,7 +95,7 @@
       properties, and there is nothing else it could be called. #}
   {% set pills_content %}{% block pills %}{% if pills %}{{ pills }}{% endif %}{% endblock %}{% endset %}
   {% if pills_content is not empty %}
-    <div class="form__properties flex flex-wrap items-center gap-[6px]" role="group" aria-label="Properties">
+    <div class="form__properties flex flex-wrap items-center gap-stack" role="group" aria-label="Properties">
       {{ pills_content }}
     </div>
   {% endif %}

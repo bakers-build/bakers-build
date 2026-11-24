@@ -61,13 +61,15 @@ description: >-
   string.
 
 
-  `action` IS THE ONE KIND THAT IS NOT A VALUE, and it is item-scoped rather
-  than a members-only special case: seven kinds render something the record
-  HOLDS, and a listing whose items can be acted on had nowhere to put the
-  control. It arrived by the rule the macro states — add a kind, never reopen a
-  slot — because the shape that asked for it was a membership's remove control,
-  whose accessible name is a whole sentence that a `text` cell would have
-  printed as prose on every item.
+  `action` IS THE ONE KIND THAT IS NOT A VALUE, and a LIST ROW NEVER CARRIES IT.
+  A list row only opens its entity's detail page — one link in the primary cell,
+  the whole row the hit area — and offers no other action: no row buttons, no
+  action menus, no row submits, no inline controls; the actions live on the
+  detail page. The kind stays because the shared `cell()` macro serves `table`
+  too, where it belongs to the exempt time-sheet grids (Submission review,
+  Worklog week), whose rows are the actions, and to tables on a detail page; in
+  `list` it is legal only in a `plain` block on a detail page. List-level
+  controls not tied to a row (filters, search, create new) sit outside the list.
 
 
   IT RENDERS A REAL `<ul>` OF `<li>`, which is the accessibility half of the
@@ -160,9 +162,10 @@ props:
         one text, mono, link or picker value gives it the rest of the line: text
         is cut to one line with the full value in its title, and a picker cuts
         its own value. The label stays level with the first line of a taller
-        value. Default `lines`. In `lines`, the `action` cells of an item form
-        one group at the right edge, in their own order; the group wraps as a
-        whole when the line is full.
+        value. Default `lines`. A listing row carries no `action` cell (it only
+        opens its detail page); should a non-listing use place `action` cells in
+        `lines`, they form one group at the right edge, in their own order, and
+        the group wraps as a whole when the line is full.
       default: lines
     spacing:
       type: string

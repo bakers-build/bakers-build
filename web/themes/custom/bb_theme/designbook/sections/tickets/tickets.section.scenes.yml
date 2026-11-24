@@ -1106,11 +1106,11 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--stats
                               active: false
-                filters:
+                main:
                   - component: bb_theme:filters
                     props:
-                      title: Filters
                       label: Time filters
+                      layout: bar
                     slots:
                       controls:
                         - component: bb_theme:segmented_control
@@ -1147,7 +1147,6 @@ scenes:
                                   - value: API home · API home
                                     label: API home · API home
                                     selected: false
-                main:
                   - component: bb_theme:active-filters
                     props:
                       label: Chosen period
@@ -1156,57 +1155,10 @@ scenes:
                         - field: Week
                           values:
                             - 2026-11-02 through 2026-11-08
-                  - component: bb_theme:week-strip
-                    props:
-                      label: Days of week 2026-11-02
-                      days:
-                        - weekday: Mon
-                          date: '02'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-02'
-                          active: false
-                          aria_label: Mon 2026-11-02, 0:00
-                        - weekday: Tue
-                          date: '03'
-                          total: '2:30'
-                          url: '?mode=day&date=2026-11-03'
-                          active: false
-                          aria_label: Tue 2026-11-03, 2:30
-                        - weekday: Wed
-                          date: '04'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-04'
-                          active: false
-                          aria_label: Wed 2026-11-04, 0:00
-                        - weekday: Thu
-                          date: '05'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-05'
-                          active: false
-                          aria_label: Thu 2026-11-05, 0:00
-                        - weekday: Fri
-                          date: '06'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-06'
-                          active: false
-                          aria_label: Fri 2026-11-06, 0:00
-                        - weekday: Sat
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-07'
-                          active: false
-                          aria_label: Sat 2026-11-07, 0:00
-                        - weekday: Sun
-                          date: '08'
-                          total: '2:00'
-                          url: '?mode=day&date=2026-11-08'
-                          active: false
-                          aria_label: Sun 2026-11-08, 2:00
-                      total_label: Week total
-                      total: '4:30'
                   - component: bb_theme:text
                     props:
-                      text: 'Total recorded time: 4:30'
+                      text: Week total 4:30
+                      align: end
                   - component: bb_theme:table
                     props:
                       columns:
@@ -1216,24 +1168,31 @@ scenes:
                         - key: '2026-11-02'
                           label: Mon 02
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-03'
                           label: Tue 03
                           num: true
+                          sublabel: '2:30'
                         - key: '2026-11-04'
                           label: Wed 04
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-05'
                           label: Thu 05
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-06'
                           label: Fri 06
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-07'
                           label: Sat 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-08'
                           label: Sun 08
                           num: true
+                          sublabel: '2:00'
                         - key: total
                           label: Total
                           num: true
@@ -1308,34 +1267,7 @@ scenes:
                             total:
                               kind: text
                               value: '0:30'
-                        - cells:
-                            label:
-                              kind: text
-                              value: Total
-                            '2026-11-02':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-03':
-                              kind: text
-                              value: '2:30'
-                            '2026-11-04':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-05':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-06':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-07':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-08':
-                              kind: text
-                              value: '2:00'
-                            total:
-                              kind: text
-                              value: '4:30'
+                      row_height: md
   - name: my-time-empty
     group: Screens
     section: tickets
@@ -2716,8 +2648,10 @@ scenes:
       transition buttons and no tab row — and the INTERVENTIONS put where they
       act. The page header carries no buttons at all. Freeze ticket (bordered)
       and Cancel ticket sit in the inspector's intervention footer, below a
-      divider, as GitHub's issue sidebar ends, and the running run in Run
-      history carries its own Cancel run.
+      divider, as GitHub's issue sidebar ends. A Run history row only opens
+      its run (BAKERS-338): the state badge is the link and the whole row the
+      hit area, and Cancel run, Retry, Re-dispatch and the log live on the run
+      detail.
 
 
       This scene shows the ticket frozen. The operator's hold stops it from
@@ -2732,15 +2666,12 @@ scenes:
 
 
       The main region is composed here rather than taken from the `full` view
-      mode, because the running run's row needs a trailing action and the
-      `bb_run.teaser` row is a one-item `list` of cells with no slot for one.
-      So Run history is one composed `list` whose five items carry exactly the
-      cells the teaser emits, the running one ending in an `action` cell, and
-      the handoffs are the two `event` nodes the comment mapping emits. Entity
-      references side by side in a scene slot are what contract B5 forbids — a
-      listing is a View or is rendered by its parent entity — so moving the
-      action into a mapping, which restores the `bb_ticket` route-bearer here,
-      is the follow-up.
+      mode: Run history is one composed `list` whose five items carry exactly
+      the cells the teaser emits, each row linking to its run with no trailing
+      action, and the handoffs are the two `event` nodes the comment mapping
+      emits. Entity references side by side in a scene slot are what contract
+      B5 forbids — a listing is a View or is rendered by its parent entity — so
+      restoring the `bb_ticket` route-bearer here is the follow-up.
 
 
       The inspector is one lifted panel (`surface`) of four blocks separated by
@@ -2887,6 +2818,7 @@ scenes:
                           layout: lines
                           items:
                             - accent: idle
+                              url: /_workspace/1/ticket/1/run/1
                               cells:
                                 state:
                                   kind: badge
@@ -2894,6 +2826,7 @@ scenes:
                                   tone: idle
                                   icon: check
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/1
                                 from_label:
                                   kind: text
                                   value: from
@@ -2922,6 +2855,7 @@ scenes:
                                   kind: mono
                                   value: 4210s
                             - accent: attention
+                              url: /_workspace/1/ticket/1/run/2
                               cells:
                                 state:
                                   kind: badge
@@ -2929,6 +2863,7 @@ scenes:
                                   tone: attention
                                   icon: alert-triangle
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/2
                                 from_label:
                                   kind: text
                                   value: from
@@ -2957,6 +2892,7 @@ scenes:
                                   kind: mono
                                   value: 2160s
                             - accent: running
+                              url: /_workspace/1/ticket/1/run/3
                               cells:
                                 state:
                                   kind: badge
@@ -2964,6 +2900,7 @@ scenes:
                                   tone: running
                                   icon: run
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/3
                                 from_label:
                                   kind: text
                                   value: from
@@ -2984,11 +2921,8 @@ scenes:
                                 started:
                                   kind: mono
                                   value: 2026-06-30 15:50
-                                cancel:
-                                  kind: action
-                                  label: Cancel run
-                                  variant: danger
                             - accent: wait
+                              url: /_workspace/1/ticket/1/run/4
                               cells:
                                 state:
                                   kind: badge
@@ -2996,6 +2930,7 @@ scenes:
                                   tone: wait
                                   icon: lock
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/4
                                 from_label:
                                   kind: text
                                   value: from
@@ -3016,6 +2951,7 @@ scenes:
                                 started:
                                   kind: mono
                             - accent: idle
+                              url: /_workspace/1/ticket/1/run/5
                               cells:
                                 state:
                                   kind: badge
@@ -3023,6 +2959,7 @@ scenes:
                                   tone: stale
                                   icon: clock
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/5
                                 from_label:
                                   kind: text
                                   value: from
@@ -3585,6 +3522,7 @@ scenes:
                           layout: lines
                           items:
                             - accent: idle
+                              url: /_workspace/1/ticket/1/run/1
                               cells:
                                 state:
                                   kind: badge
@@ -3592,6 +3530,7 @@ scenes:
                                   tone: idle
                                   icon: check
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/1
                                 from_label:
                                   kind: text
                                   value: from
@@ -3620,6 +3559,7 @@ scenes:
                                   kind: mono
                                   value: 4210s
                             - accent: attention
+                              url: /_workspace/1/ticket/1/run/2
                               cells:
                                 state:
                                   kind: badge
@@ -3627,6 +3567,7 @@ scenes:
                                   tone: attention
                                   icon: alert-triangle
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/2
                                 from_label:
                                   kind: text
                                   value: from
@@ -3655,6 +3596,7 @@ scenes:
                                   kind: mono
                                   value: 2160s
                             - accent: running
+                              url: /_workspace/1/ticket/1/run/3
                               cells:
                                 state:
                                   kind: badge
@@ -3662,6 +3604,7 @@ scenes:
                                   tone: running
                                   icon: run
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/3
                                 from_label:
                                   kind: text
                                   value: from
@@ -3682,11 +3625,8 @@ scenes:
                                 started:
                                   kind: mono
                                   value: 2026-06-30 15:50
-                                cancel:
-                                  kind: action
-                                  label: Cancel run
-                                  variant: danger
                             - accent: wait
+                              url: /_workspace/1/ticket/1/run/4
                               cells:
                                 state:
                                   kind: badge
@@ -3694,6 +3634,7 @@ scenes:
                                   tone: wait
                                   icon: lock
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/4
                                 from_label:
                                   kind: text
                                   value: from
@@ -3714,6 +3655,7 @@ scenes:
                                 started:
                                   kind: mono
                             - accent: idle
+                              url: /_workspace/1/ticket/1/run/5
                               cells:
                                 state:
                                   kind: badge
@@ -3721,6 +3663,7 @@ scenes:
                                   tone: stale
                                   icon: clock
                                   dot: true
+                                  url: /_workspace/1/ticket/1/run/5
                                 from_label:
                                   kind: text
                                   value: from

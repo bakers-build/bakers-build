@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_track
+id: bb_track_account.full
+label: Full
+description: ''
+targetEntityType: bb_track_account
+cache: true

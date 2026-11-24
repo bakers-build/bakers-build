@@ -1,57 +1,44 @@
 @feature:detail-cards
-Feature: Entity detail pages save each card on its own
+Feature: Entity detail pages show read-only cards; Settings edit
   Team, group, machine, conductor and project details share one layout: an
-  Activities feed beside one inspector card per section. An editable card is
-  its own form with its own Save. Team, machine and conductor each have one
-  editable card; a Save replaces only that card, a refresh of another
-  placement keeps its unsent input, and a rename updates the page heading
-  and the document title without a reload. The project and group details
-  edit nothing: their Settings do. The project inspector has About and Properties.
-  Readers see read-only rows, and a card POST without update access is refused. The former Settings addresses of
-  team and machine lead to the detail page. Conductor and machine Activities list only the activities of
+  Activities feed beside one inspector card per section. The cards edit
+  nothing: each entity's Settings do, and a card has no POST address. The
+  project inspector has About and Properties. The former edit address of a
+  machine leads to its detail page. Conductor and machine Activities list only the activities of
   their own runs. Every editing scenario edits a disposable world of its own,
   removed afterwards; the access scenarios only read seeded fixtures.
 
-  Scenario Outline: An editor renames a <entity> on its Identity card and saves again
+  Scenario Outline: An editor renames a <entity> on its Settings and its card shows the new name
     Given I edit a disposable detail world
     When I open the <entity> detail page
-    And I set "<label>" to "Renamed <entity>" in the "Identity" card
-    And I save the "Identity" card
-    Then the "Identity" card says "saved."
-    And the page heading is "Renamed <entity>"
+    Then the "Identity" card offers no Save and no inputs
+    When I click the tab "Settings"
+    And I set "<label>" to "Renamed <entity>" on the Settings
+    And I save the Settings
+    Then the stored <entity> <field> is "Renamed <entity>"
+    When I open the <entity> detail page
+    Then the page heading is "Renamed <entity>"
     And the document title names "Renamed <entity>"
-    And the document title names the site once
-    And the document was not reloaded
-    And the stored <entity> <field> is "Renamed <entity>"
-    When I set "<label>" to "Renamed <entity> twice" in the "Identity" card
-    And I save the "Identity" card
-    Then the page heading is "Renamed <entity> twice"
-    And the document title names "Renamed <entity> twice"
-    And the stored <entity> <field> is "Renamed <entity> twice"
-    When I reload the page
-    Then the "Identity" card field "<label>" holds "Renamed <entity> twice"
-    And the page heading is "Renamed <entity> twice"
+    And the "Identity" card shows "<label>" as "Renamed <entity>"
 
     Examples:
       | entity    | label | field |
       | machine   | Name  | name  |
-      | team      | Name  | name  |
       | conductor | Label | label |
 
-  Scenario: A machine saves its name and capacity together on its one card
+  Scenario: A machine saves its name and capacity together on its Settings
     Given I edit a disposable detail world
     When I open the machine detail page
     Then the detail page has no "Capacity" card
-    And the "Identity" card offers "Max parallel" with Save
     And the "Identity" card shows "Host key" as "detail-"
     And the "Identity" card shows "Current load" as "0"
-    When I set "Name" to "Machine on one card" in the "Identity" card
-    And I set "Max parallel" to "7" in the "Identity" card
-    And I save the "Identity" card
-    Then the "Identity" card says "saved."
-    And the stored machine name is "Machine on one card"
+    When I click the tab "Settings"
+    And I set "Name" to "Machine on Settings" on the Settings
+    And I set "Max parallel" to "7" on the Settings
+    And I save the Settings
+    Then the stored machine name is "Machine on Settings"
     And the stored machine max_parallel is "7"
-    And the page heading is "Machine on one card"
+    And the page heading is "Machine on Settings"
 
   Scenario: The project detail offers its editor no input and no card POST
     Given I edit a disposable detail world
@@ -64,51 +51,10 @@ Feature: Entity detail pages save each card on its own
     Then the card post is refused with status 404
     And the stored project name is still its original value
 
-  Scenario: Unsent input in a card survives a refresh of the Activities and of the page header
+  Scenario: The team detail offers its editor no input: its Settings edit it
     Given I edit a disposable detail world
-    When I open the machine detail page
-    And I set "Max parallel" to "9" in the "Identity" card
-    And I refresh the Activities
-    Then the "Identity" card field "Max parallel" holds "9"
-    Given another editor stores the machine name "Stored elsewhere"
-    When the page is announced the island event "bakers.entity.renamed"
-    Then the page heading is "Stored elsewhere"
-    And the "Identity" card field "Max parallel" holds "9"
-    And the document was not reloaded
-    And the stored machine max_parallel is still its original value
-
-  Scenario: A card's own Refresh shows external changes and asks before dropping input
-    Given I edit a disposable detail world
-    When I open the conductor detail page
-    And another editor stores the conductor label "Stored elsewhere"
-    And I refresh the "Identity" card
-    Then the "Identity" card field "Label" holds "Stored elsewhere"
-    And the document was not reloaded
-    When I set "Label" to "Unsent label" in the "Identity" card
-    And I refresh the "Identity" card and keep my changes
-    Then the "Identity" card field "Label" holds "Unsent label"
-    When I refresh the "Identity" card and discard my changes
-    Then the "Identity" card field "Label" holds "Stored elsewhere"
-
-  Scenario Outline: An empty <entity> <field> is reported in its card, kept, and corrected
-    Given I edit a disposable detail world
-    When I open the <entity> detail page
-    And I set "<label>" to "" in the "Identity" card past browser validation
-    And I save the "Identity" card
-    Then the "Identity" card says "<label> field is required."
-    And the "Identity" card field "<label>" holds ""
-    And the stored <entity> <field> is still its original value
-    When I refresh the "Identity" card and keep my changes
-    Then the "Identity" card field "<label>" holds ""
-    When I set "<label>" to "Corrected <entity>" in the "Identity" card
-    And I save the "Identity" card
-    Then the stored <entity> <field> is "Corrected <entity>"
-    And the page heading is "Corrected <entity>"
-
-    Examples:
-      | entity  | label | field |
-      | machine | Name  | name  |
-      | team    | Name  | name  |
+    When I open the team detail page
+    Then the "Identity" card offers no Save and no inputs
 
   Scenario Outline: A reader sees the <card> card of <fixture> read-only and its POST is refused
     Given I am logged in as the account "north-contributor"
@@ -125,8 +71,8 @@ Feature: Entity detail pages save each card on its own
       | group.edit           | Properties    | properties    | Workspace    | Northside Bakery         | 404    |
       | group.edit           | Identity      | identity      | Description  | —                        | 404    |
       | project.edit         | Properties    | properties    | Key          | EDP1                     | 404    |
-      | team.home            | Identity      | identity      | Workspace    | Northside Bakery         | 403    |
-      | conductor.properties | Identity      | identity      | Conductor ID | bdd-properties-conductor | 403    |
+      | team.home            | Identity      | identity      | Workspace    | Northside Bakery         | 404    |
+      | conductor.properties | Identity      | identity      | Conductor ID | bdd-properties-conductor | 404    |
 
   Scenario Outline: A reader of another workspace gets no detail page of <fixture>
     Given I am logged in as the account "south-contributor"
@@ -150,7 +96,6 @@ Feature: Entity detail pages save each card on its own
 
     Examples:
       | account             | fixture      |
-      | fixture-lead            | team.home    |
       | fixture-conductor-owner | machine.edit |
 
   Scenario: A run's activities are listed on the conductor and machine of that run only
@@ -183,17 +128,3 @@ Feature: Entity detail pages save each card on its own
     Then the Activities list the ticket "started work in plan"
     And the Activities list the ticket "run failed in plan"
     And the Activities list the ticket "qualification → plan"
-
-  # Without JavaScript a Save is a native POST of that one card; unsent input
-  # in other cards is not promised to survive the page change.
-  @nojs
-  Scenario: Without JavaScript a card Save posts only that card and shows the result
-    Given I edit a disposable detail world
-    When I open the machine detail page
-    And I set "Name" to "Renamed without JavaScript" in the "Identity" card
-    And I save the "Identity" card
-    Then the page shows "saved."
-    And the page heading is "Renamed without JavaScript"
-    And the document title names "Renamed without JavaScript"
-    And the document title names the site once
-    And the stored machine name is "Renamed without JavaScript"

@@ -642,26 +642,6 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * A detail card keeps its Save, and the last write still wins.
-   */
-  public function testDetailCardsKeepTheirSaveButton(): void {
-    $team = $this->container->get('entity_type.manager')->getStorage('bb_team')
-      ->create(['name' => 'Platform Crew', 'workspace_id' => $this->workspace->id()]);
-    self::assertInstanceOf(ContentEntityInterface::class, $team);
-    $team->save();
-    $this->tabsOn('entity.bb_team.canonical', ['bb_team' => $team]);
-    $opening = $this->openForm($team, 'identity');
-    $team->set('name', 'Renamed elsewhere')->save();
-
-    [$form, $state] = $this->postForm($team, 'identity', ['name' => [['value' => 'Platform Team']]] + $opening);
-
-    self::assertSame([], $state->getErrors());
-    self::assertSame('Platform Team', $this->stored($team)->label());
-    self::assertSame('Save', (string) $form['actions']['submit']['#value']);
-    self::assertNotContains('js-hide', $form['actions']['#attributes']['class'] ?? []);
-  }
-
-  /**
    * Opens an entity form on GET, as the page does.
    *
    * @return array<string, string>
@@ -1241,6 +1221,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'view.tickets.team_tickets',
         'view.runs.team_runs',
         'bb_core.bb_team.members',
+        'bb_core.bb_team.settings',
         'view.worklog.team',
       ],
       $tabs,
@@ -1328,19 +1309,17 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * Restart sits in the footer only while failed runs park the ticket.
+   * Restart runs sits in the footer while the newest run failed, unparked too.
    */
-  public function testParkedTicketOffersRestart(): void {
-    $this->createRun('failed', 'working', 1770000000);
-    $this->createRun('failed', 'working', 1770000100);
-    self::assertStringNotContainsString('>Restart ticket<', $this->renderScreen(), 'Two failed runs do not park.');
-
-    $newest = $this->createRun('failed', 'working', 1770000200);
+  public function testFailedTicketOffersRestartRuns(): void {
+    self::assertStringNotContainsString('>Restart runs<', $this->renderScreen(), 'No run, nothing to restart.');
+    $newest = $this->createRun('failed', 'working', 1770000000);
     self::assertInstanceOf(BbRunInterface::class, $newest);
     $html = $this->renderScreen();
-    self::assertStringContainsString('>Restart ticket<', $html);
-    self::assertStringContainsString('run=' . $newest->uuid(), $html, 'Restart confirms cancelling the newest failed run.');
-    self::assertArrayNotHasKey('cancel', $this->rowItem($newest)['cells'], 'Its run row offers no Cancel run; Restart is in the footer.');
+    self::assertStringContainsString('>Restart runs<', $html);
+    self::assertStringContainsString('/restart', $html, 'Restart runs opens the ticket\'s Restart runs dialog.');
+    self::assertStringNotContainsString('>Restart ticket<', $html);
+    self::assertArrayNotHasKey('cancel', $this->rowItem($newest)['cells'], 'Its run row offers no Cancel run; Restart runs is in the footer.');
     $zone = $this->container->get('bb_core.run_inspector_rows')->status($newest);
     $status = (string) $this->container->get('renderer')->renderInIsolation($zone);
     self::assertStringContainsString('failed', $status);
@@ -1350,7 +1329,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     self::assertInstanceOf(StateItemInterface::class, $state);
     $state->applyTransitionById('cancel_failed');
     $newest->save();
-    self::assertStringNotContainsString('>Restart ticket<', $this->renderScreen(), 'A restarted ticket is no longer parked.');
+    self::assertStringNotContainsString('>Restart runs<', $this->renderScreen(), 'A restarted ticket has nothing left to restart.');
   }
 
   /**
@@ -1412,6 +1391,12 @@ final class TicketDetailScreenTest extends KernelTestBase {
     self::assertSame($expected, $found[0]['url']);
     self::assertStringContainsString('parent=' . $this->ticket->getIdentifier(), $found[0]['url']);
     self::assertStringContainsString('closed=all', $found[0]['url']);
+
+    // A ticket without an identifier has no parent to filter by.
+    $identifier = $this->ticket->getIdentifier();
+    $this->ticket->setIdentifier('');
+    self::assertSame([], $links($rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket)), 'No identifier, no link.');
+    $this->ticket->setIdentifier($identifier);
 
     // A ticket without a project has no list to open.
     $this->ticket->set('project_id', NULL);
@@ -1628,26 +1613,25 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * Cancel run sits on the active run's own row and names that run.
+   * A run row offers no Cancel run: it is one link to the run's detail.
    */
-  public function testCancelRunSitsOnTheActiveRunsRow(): void {
+  public function testRunRowIsOneLinkWithoutCancel(): void {
     $running = $this->createRun('running', 'working', 1770090000);
-    $done = $this->createRun('done', 'plan', 1770003600);
 
     $row = $this->runRow($running);
     $html = (string) $this->container->get('renderer')->renderInIsolation($row);
-    self::assertMatchesRegularExpression(
-      '#data-cell="cancel">.*?run=' . preg_quote($running->uuid(), '#') . '.*?>\s*Cancel run\s*<#s',
-      $html,
-      'The running run offers Cancel run for itself.',
-    );
-    $row = $this->runRow($done);
-    $html = (string) $this->container->get('renderer')->renderInIsolation($row);
-    self::assertStringNotContainsString('data-cell="cancel"', $html, 'A finished run offers none.');
+    self::assertStringNotContainsString('data-cell="cancel"', $html, 'Cancel run lives on the run detail.');
+    self::assertStringNotContainsString('Cancel run', $html);
+    $item = $this->rowItem($running);
+    self::assertSame([], $this->actionLabels($item));
+    self::assertSame($running->toUrl()->toString(), $item['url'] ?? NULL, 'The row links to the run.');
   }
 
   /**
-   * The newest failed run is danger, says why and offers its three actions.
+   * The newest failed run is danger and says why; its detail has the actions.
+   *
+   * Both runs record an error-log size without a stored file, so neither has
+   * a log to offer or to point to.
    */
   public function testFailedRunRowShowsReasonAndActions(): void {
     $this->assignTheConductors();
@@ -1661,22 +1645,19 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $item = $this->rowItem($newest);
     self::assertSame('critical', $item['accent']);
     self::assertSame('critical', $item['cells']['state']['tone']);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
-    self::assertSame(['Retry', 'Re-dispatch', 'Log'], $this->actionLabels($item));
-    self::assertStringContainsString('run_action=retry', $item['cells']['retry']['href']);
-    self::assertStringContainsString('run_action=redispatch', $item['cells']['redispatch']['hx']['get']);
-    self::assertTrue($item['cells']['log']['full_load'], 'The Log downloads as a whole document, outside the boost.');
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
+    self::assertSame([], $this->actionLabels($item), 'Retry and Re-dispatch live on the run detail.');
 
     $item = $this->rowItem($older);
     self::assertSame('critical', $item['accent']);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
-    self::assertSame(['Log'], $this->actionLabels($item), 'An older failed run offers its log only.');
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
+    self::assertSame([], $this->actionLabels($item), 'An older failed run without a log offers nothing.');
 
     $guest = $this->createUser(['view bb_ticket']);
     self::assertInstanceOf(UserInterface::class, $guest);
     $this->setCurrentUser($guest);
     $item = $this->rowItem($newest);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
     self::assertSame([], $this->actionLabels($item), 'A guest sees the reason, no intervention and no log.');
   }
 
@@ -1711,7 +1692,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     self::assertSame('attention', $item['cells']['state']['tone']);
     self::assertStringStartsWith("Claimed by O'Brien & Co ", $item['detail']);
     self::assertMatchesRegularExpression('/, not started yet\. The claim lapses in \d+ minutes; after that the run expires and the ticket can be claimed again\.$/', $item['detail']);
-    self::assertSame(['Cancel run'], $this->actionLabels($item));
+    self::assertSame([], $this->actionLabels($item), 'Cancel run is on the run detail.');
 
     $row = $this->runRow($claimed);
     $html = (string) $this->container->get('renderer')->renderInIsolation($row);
@@ -2244,6 +2225,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'owner_user_id' => $owner->id(),
         'status' => 'online',
         'project_id' => $this->ticket->get('project_id')->target_id,
+        // The reader re-dispatches to it; the setting has its own tests.
+        'assignment' => 'allow',
         'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
       ]);
       $conductor->save();

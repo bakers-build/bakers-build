@@ -12,7 +12,6 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\user\UserInterface;
-use Drupal\Core\Session\AccountInterface;
 
 /**
  * Resolves a tool's `ticket` input, an identifier or UUID, under view access.
@@ -41,6 +40,61 @@ trait TicketInputTrait {
       throw new \InvalidArgumentException(sprintf('Ticket %s does not exist or is not readable.', $ticket));
     }
     return $entity;
+  }
+
+  /**
+   * Appends readable, open blockers the ticket lacks, keeping the rest.
+   *
+   * Project and cycle rules stay with the field's constraints; the open rule
+   * mirrors the form's picker, which offers open tickets only.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed or created.
+   * @param array<string> $values
+   *   Ticket identifiers or UUIDs.
+   *
+   * @throws \InvalidArgumentException
+   */
+  protected function addBlockers(BbTicketInterface $ticket, array $values): void {
+    $present = array_map('strval', $ticket->getBlockedByIds());
+    foreach (array_unique($values) as $value) {
+      $blocker = $this->readableTicket($value);
+      if (in_array((string) $blocker->id(), $present, TRUE)) {
+        continue;
+      }
+      if ($blocker->isClosed()) {
+        throw new \InvalidArgumentException(sprintf("blocked_by: %s is closed. Choose open blocking tickets from this ticket's project.", $value));
+      }
+      $ticket->get('blocked_by')->appendItem($blocker->id());
+      $present[] = (string) $blocker->id();
+    }
+  }
+
+  /**
+   * The readable blockers as the read and update tools return them.
+   *
+   * @return array<array{identifier: string, title: string, state: string}>
+   *   Each blocker's identifier, title and state, in stored order.
+   */
+  protected function blockers(BbTicketInterface $ticket): array {
+    $ids = $ticket->getBlockedByIds();
+    if (!$ids || !$ticket->get('blocked_by')->access('view', $this->currentUser)) {
+      return [];
+    }
+    $storage = $this->entities()->getStorage('bb_ticket');
+    // Entity access alone admits other workspaces; the scoped query does not.
+    $readable = array_map('intval', $storage->getQuery()->accessCheck(TRUE)->condition('id', $ids, 'IN')->execute());
+    $rows = [];
+    foreach ($storage->loadMultiple(array_intersect($ids, $readable)) as $blocker) {
+      if ($blocker instanceof BbTicketInterface && $blocker->access('view', $this->currentUser)) {
+        $rows[] = [
+          'identifier' => $blocker->getIdentifier(),
+          'title' => $blocker->getTitle(),
+          'state' => (string) $blocker->get('state')->value,
+        ];
+      }
+    }
+    return $rows;
   }
 
   /**
@@ -103,6 +157,11 @@ trait TicketInputTrait {
    * @throws \InvalidArgumentException
    */
   protected function term(?BbWorkspaceInterface $workspace, string $vid, string $name): ContentEntityInterface {
+    // Renamed to ship; refused so first use cannot recreate the old term.
+    $retired = ['type' => 'deployment', 'recipe' => 'deploy-and-release'][$vid] ?? NULL;
+    if ($retired !== NULL && BbTerm::keyOf($name) === BbTerm::keyOf($retired)) {
+      throw new \InvalidArgumentException(sprintf('The %s %s is now ship.', $vid, $retired));
+    }
     $storage = $this->entities()->getStorage('bb_term');
     $ids = $this->termIds($workspace, $vid, [$name]);
     if (!$ids && $vid === 'label' && $workspace !== NULL) {
@@ -156,8 +215,11 @@ trait TicketInputTrait {
     $person = function (EntityInterface $account): array {
       assert($account instanceof UserInterface);
       return [
+        'uuid' => $account->uuid(),
         'name' => $account->getDisplayName(),
         'mail' => $account->get('mail')->access('view', $this->currentUser) ? $account->get('mail')->value : NULL,
+        // Marker read by name: bb_api_key declares it and depends on bb_core.
+        'service_account' => $account->hasField('bb_service_workspace') && !$account->get('bb_service_workspace')->isEmpty(),
       ];
     };
     $reviewers = $ticket->get('reviewers');
@@ -169,13 +231,13 @@ trait TicketInputTrait {
   }
 
   /**
-   * Assigns the active account of this address when the field's rule allows.
+   * Assigns the active account of this UUID when the field's rule allows.
    *
    * The assignee field's own validation (ValidReference with its selection
    * handler) decides, as in the web form. Returns whether it was assigned.
    */
-  protected function assign(BbTicketInterface $ticket, string $email): bool {
-    $account = $this->activeAccount($email);
+  protected function assign(BbTicketInterface $ticket, string $uuid): bool {
+    $account = $this->activeAccount($uuid);
     if (!$account) {
       return FALSE;
     }
@@ -188,13 +250,13 @@ trait TicketInputTrait {
   }
 
   /**
-   * Adds the active account of this address as a reviewer when allowed.
+   * Adds the active account of this UUID as a reviewer when allowed.
    *
    * The reviewers field's own validation decides, as for the assignee.
    * Returns whether it was added.
    */
-  protected function addReviewer(BbTicketInterface $ticket, string $email): bool {
-    $account = $this->activeAccount($email);
+  protected function addReviewer(BbTicketInterface $ticket, string $uuid): bool {
+    $account = $this->activeAccount($uuid);
     if (!$account) {
       return FALSE;
     }
@@ -210,18 +272,11 @@ trait TicketInputTrait {
   }
 
   /**
-   * The active account with this e-mail address, if any.
+   * The active account with this UUID, if any.
    */
-  protected function activeAccount(string $email): ?AccountInterface {
-    $storage = $this->entities()->getStorage('user');
-    // Case-insensitive, like core's unique-mail check; escaped as escapeLike().
-    $ids = $storage->getQuery()->accessCheck(FALSE)
-      ->condition('mail', addcslashes($email, '\\%_'), 'LIKE')
-      ->condition('status', 1)
-      ->range(0, 1)
-      ->execute();
-    $account = $ids ? $storage->load(reset($ids)) : NULL;
-    return $account instanceof AccountInterface ? $account : NULL;
+  protected function activeAccount(string $uuid): ?UserInterface {
+    $account = current($this->entities()->getStorage('user')->loadByProperties(['uuid' => $uuid, 'status' => 1]));
+    return $account instanceof UserInterface ? $account : NULL;
   }
 
 }

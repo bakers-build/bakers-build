@@ -1,0 +1,44 @@
+{
+    "advisories": {
+        "drupal/core": [
+            {
+                "advisoryId": "SA-CORE-2026-017",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.6.22 || >=11.0.0 <11.3.22 || >=11.4.0 <11.4.13",
+                "title": "Drupal core - Critical - Remote code execution - SA-CORE-2026-017",
+                "cve": "CVE-2026-132165",
+                "link": "https://www.drupal.org/sa-core-2026-017",
+                "reportedAt": "2026-11-18T17:43:11+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Critical - Remote code execution - SA-CORE-2026-017",
+                        "remoteId": "SA-CORE-2026-017"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-018",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.6.22 || >=11.0.0 <11.3.22 || >=11.4.0 <11.4.13",
+                "title": "Drupal core - Moderately critical - Gadget chain - SA-CORE-2026-018",
+                "cve": "CVE-2026-132166",
+                "link": "https://www.drupal.org/sa-core-2026-018",
+                "reportedAt": "2026-11-18T17:50:21+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Gadget chain - SA-CORE-2026-018",
+                        "remoteId": "SA-CORE-2026-018"
+                    }
+                ],
+                "severity": null
+            }
+        ]
+    },
+    "abandoned": {
+        "doctrine/common": null
+    },
+    "filter": [],
+    "cooldown": []
+}
+[31mFailed to execute command `composer audit --format=json`: exit status 1[0m

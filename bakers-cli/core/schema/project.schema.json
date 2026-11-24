@@ -101,7 +101,7 @@
           "type": "string"
         },
         "provision_up": {
-          "description": "Command, or commands by profile, offered to runs as provision_up(profile?).",
+          "description": "Command, or commands by profile, offered to runs as provision_up(profile?). A profile is a command, or { command, description } to tell the agent what it does.",
           "anyOf": [
             {
               "type": "string"
@@ -109,13 +109,33 @@
             {
               "type": "object",
               "additionalProperties": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object",
+                    "required": ["command"],
+                    "properties": {
+                      "command": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "description": {
+                        "description": "One line for the agent, listed in the provision_up tool description: what the profile brings up and when to use it.",
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
               }
             }
           ]
         },
         "provision_exec": {
-          "description": "Commands by key, offered to runs as provision_exec(key, args). A string is a fixed command that takes no arguments; { command, args: true } also passes the run's arguments as argv after --, never through a shell.",
+          "description": "Commands by key, offered to runs as provision_exec(key, args). A string is a fixed command that takes no arguments; { command, args: true } also passes the run's arguments as argv after --, never through a shell; an optional description tells the agent what the key does.",
           "type": "object",
           "propertyNames": {
             "pattern": "^[A-Za-z0-9_-]+$"
@@ -137,6 +157,11 @@
                   "args": {
                     "description": "Pass the run's arguments to the command.",
                     "type": "boolean"
+                  },
+                  "description": {
+                    "description": "One line for the agent, listed in the provision_exec tool description: what the key runs and which args it takes.",
+                    "type": "string",
+                    "minLength": 1
                   }
                 },
                 "additionalProperties": false
@@ -164,6 +189,7 @@
           },
           "plugins": {
             "type": "array",
+            "description": "Plugins to install from this marketplace, at least one.",
             "minItems": 1,
             "items": {
               "$ref": "#/$defs/nonempty"
@@ -294,8 +320,20 @@
     "runtime": {
       "type": "object",
       "properties": {
+        "enabled": {
+          "type": "array",
+          "description": "Machine runtime aliases this project may use; absent allows all.",
+          "items": {
+            "$ref": "#/$defs/nonempty"
+          }
+        },
+        "default": {
+          "$ref": "#/$defs/nonempty",
+          "description": "Runtime alias for tickets no label or machine route places."
+        },
         "read_only": {
           "type": "array",
+          "description": "Under an isolating runtime: worktree-relative paths the run sees read-only and may not change in a commit. Host commands must start in one of them. .bakers is always protected.",
           "items": {
             "type": "string",
             "pattern": "^(?:(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*?/$)[^\\\\:\\u0000$]+)$"
@@ -303,7 +341,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "Under an isolating runtime: worktree-relative paths the run sees read-only and may not change in a commit. Host commands must start in one of them. .bakers is always protected."
+      "description": "The project's runtime restrictions and protected paths."
     }
   }
 }

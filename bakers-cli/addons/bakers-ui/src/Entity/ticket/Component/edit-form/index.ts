@@ -21,8 +21,8 @@
 // things that really are this popup's own — around one call.
 //
 // BB-313 (D4) finally makes the claim above literally true: the field list is
-// HANDED IN rather than imported. There are two declarations now — with and
-// without Cancel ticket — so importing either here would make this file a
+// HANDED IN rather than imported. There are two declarations now — writable
+// and a closed ticket's read-only one — so importing either here would make this file a
 // second decider that can drift from the screen's. It names no field; it renders
 // the list it is given.
 //
@@ -100,7 +100,7 @@ const LEGEND =
   'Assignee = human ownership · Reviewers = named reviewers · Conductor = who works it next · ' +
   'Estimate/Spent = accounted time, not the run footprint (1d 2h 30m, 90m, or a bare number as minutes) · ' +
   'Parent = optional parent ticket · Labels = multi-select from label · ' +
-  'Cancel ticket abandons a non-terminal ticket (Esc closes and writes nothing)';
+  'Esc closes and writes nothing';
 
 /**
  * A block of chrome prose, wrapped so the frame never has to clip it.

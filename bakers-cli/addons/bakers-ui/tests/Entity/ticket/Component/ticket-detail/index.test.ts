@@ -704,13 +704,21 @@ it('timeline membership follows comments linkage, not every included comment', (
   expect(pending[0]).toBe('1 review awaiting acceptance');
   expect(pending).toContain('— Ada · submitted');
   expect(pending.at(-1)).toBe('Open this ticket in Web to accept or reject.');
+  const served = {
+    ...doc,
+    data: {
+      ...doc.data,
+      attributes: {
+        ...doc.data.attributes,
+        url: 'https://bakers.example.test/bakers/ticket/bb-1',
+      },
+    },
+  };
   const linked = sectionText(
-    detailSections(doc, undefined, 0, 'https://bakers.example.test/').find(
-      (s) => s.heading === 'Pending reviews',
-    ),
+    detailSections(served).find((s) => s.heading === 'Pending reviews'),
   );
   expect(linked.at(-1)).toBe(
-    'Open in Web to accept or reject: https://bakers.example.test/admin/bakers/ticket/ticket-uuid',
+    'Open in Web to accept or reject: https://bakers.example.test/bakers/ticket/bb-1',
   );
   const headings = detailSections(doc).map((s) => s.heading);
   expect(headings.indexOf('Pending reviews')).toBe(

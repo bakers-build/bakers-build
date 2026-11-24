@@ -98,6 +98,51 @@ their owning app, component and plugin dependencies for configuration imports.
 Standard Menu, Page Content and Block configurations have typed schemas; custom
 island plugins can declare `island.configuration.PLUGIN_ID`.
 
+### Embedding a placement in a component slot
+
+A placement in the reserved slot `embedded` is never rendered by the layout.
+It renders only where a `ui_patterns_component` placement references it with
+the `island_placement` source (settings: `placement: <id>`) in one of its
+component slots, for example a page header's `actions` slot:
+
+```yaml
+header:
+  plugin_id: ui_patterns_component
+  slot: header
+  configuration:
+    component:
+      component_id: 'my_theme:page_header'
+      slots:
+        actions:
+          sources:
+            - source_id: island_placement
+              source: { placement: favorite }
+favorite:
+  plugin_id: my_favorite_toggle
+  slot: embedded
+```
+
+The embedded island keeps its own wrapper, events and html id
+(`IslandRuntimeId::forPlacement()`). It is a placement of the same profile host,
+so its actions post to the page, `rebuildSelf()` swaps only its container and
+`dispatch()` brings subscribers along. When the referencing component rebuilds
+on its own event, the embedded island renders again with the same id. An action
+or refresh reaches it only while it and its referencing placement are both
+visible.
+
+The profile form and configuration import refuse, naming the placement: a
+reference to a missing or disabled placement or to one outside `embedded`; an
+`embedded` placement referenced zero times or more than once; a layout that
+declares a slot named `embedded`; and a reference made from an `embedded`
+placement (embedding is one level deep). A placement plugin declares its
+references through `IslandEmbeddingInterface`; core knows nothing about UI
+Patterns slot structure.
+
+The `IslandBoost` nesting guard does not see into component slots, because UI
+Patterns builds them after the guard has run. A boosted component that embeds an
+island with a boost of its own is not checked, so declare no conflicting boost
+on either.
+
 ## Quickest path to a new island
 
 One plugin class in `my_module/src/Plugin/Island/MyTasks.php`:

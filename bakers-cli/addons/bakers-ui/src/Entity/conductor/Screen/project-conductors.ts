@@ -4,7 +4,6 @@ import type { ListFilterBadge } from '../../../Component/list-chrome/index.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
 import { ListScreen } from '../../../Screen/list-screen.js';
-import { runRowAction } from '../../../Screen/row-action.js';
 import type { ScreenContext } from '../../../Screen/screen.js';
 import type { Page } from '../../collection.js';
 import { resolveWhoCandidate } from '../../user/Data/users.js';
@@ -28,6 +27,8 @@ import { createConductorProcessHost } from '../Data/process.js';
  * The project-scoped Conductors tab — an ordinary {@link ListScreen}, paged
  * and filtered to the operator's own conductors by default (BB-460 D1),
  * ANDed with the project narrowing this tab already carried (BB-450 D13).
+ * A row only opens its conductor's detail, where start and stop live
+ * (BAKERS-338).
  *
  * Refresh is the shared mechanism (BB-376 `ui-refresh` file + `R`), not a
  * screen-private timer. Enter loads; navigation away cancels in-flight reads
@@ -51,14 +52,7 @@ export class ProjectConductorsScreen extends ListScreen<
   readonly id = ProjectConductorsScreen.route.id;
   readonly frameId = 'project-conductors';
   protected readonly table = PROJECT_CONDUCTOR_TABLE;
-  private readonly busyIds = new Set<string>();
-  /**
-   * BB-460 review — how `mine` failed to resolve, not an action's outcome.
-   * Sharing a field with the action toast let `loadRows()` blank a start/stop
-   * result on every refresh and let a standing identity reason permanently
-   * block {@link viewOnlyNotice}; kept apart, each notice source has its own
-   * lifecycle. Action results go on {@link toast}.
-   */
+  /** BB-460 review — how `mine` failed to resolve. */
   private identityReason = '';
   private mine = DEFAULT_CONDUCTOR_MINE;
   private readonly identity = new OwnerIdentity(resolveWhoCandidate);
@@ -68,7 +62,7 @@ export class ProjectConductorsScreen extends ListScreen<
   protected tableContext(context: ScreenContext): ConductorListContext {
     return {
       nowSeconds: context.nowSeconds?.() ?? Math.floor(Date.now() / 1000),
-      busyIds: this.busyIds,
+      busyIds: new Set(),
       projectNames: new Map(),
     };
   }
@@ -148,49 +142,19 @@ export class ProjectConductorsScreen extends ListScreen<
     };
   }
 
-  /**
-   * BB-450 review B9 — `s`/`x` are advertised only when the SELECTED row can
-   * actually be acted on: `mine` is the identity gate (B10), not `isLocal`'s
-   * filesystem check, so a foreign conductor whose workspace happens to exist
-   * on this disk (BB-281 Finding 2) is correctly excluded too.
-   *
-   * `Enter open` is no longer gated on `mine`: it opens the conductor detail
-   * scope for every row; its Log tab is the one place that still withholds a
-   * foreign conductor's log.
-   */
   protected actions() {
-    const canAct = this.rows[this.selectedIndex]?.mine ?? false;
     return [
-      ...(canAct
-        ? [
-            actionItem('project-conductors-start', 's', 'start'),
-            actionItem('project-conductors-stop', 'x', 'stop'),
-          ]
-        : []),
       actionItem('project-conductors-enter', 'Enter', 'open'),
       actionItem('project-conductors-tab', 'Tab', 'tabs'),
       ...this.pagingActionItems(),
     ];
   }
 
-  /**
-   * BB-450 review B6/B10 — a row this screen cannot act on states so,
-   * before any key is pressed: `!mine` is the identity gate `act()` uses too.
-   * The row's own MARKS cell already carries `elsewhere`; this is the
-   * footer's copy of the same fact for the row currently selected.
-   */
-  private viewOnlyNotice(): string | undefined {
-    const row = this.rows[this.selectedIndex];
-    return row && !row.mine
-      ? `${row.label} runs on another machine — view-only`
-      : undefined;
-  }
-
   protected override notice(): string | undefined {
-    return this.viewOnlyNotice() || this.identityReason;
+    return this.identityReason || undefined;
   }
 
-  select(index: number, context: ScreenContext): boolean {
+  override select(index: number, context: ScreenContext): boolean {
     if (index < 0 || index >= this.rows.length) return false;
     this.selectedIndex = index;
     this.toast = '';
@@ -212,10 +176,6 @@ export class ProjectConductorsScreen extends ListScreen<
 
   override handleInput(input: string, context: ScreenContext): boolean {
     if (super.handleInput(input, context)) return true;
-    if (input === 's' || input === 'x') {
-      void this.act(input === 's' ? 'start' : 'stop', context);
-      return true;
-    }
     if (input === 'enter') return this.activate(this.selectedIndex, context);
     if (input === 'm') {
       this.mine = !this.mine;
@@ -244,56 +204,7 @@ export class ProjectConductorsScreen extends ListScreen<
     this.identity.reset();
     this.ownerId = undefined;
     this.hidden = null;
-    this.busyIds.clear();
     this.identityReason = '';
     super.reset();
-  }
-
-  /**
-   * BB-450 review B6 — every outcome is now stated in the footer: the two
-   * refusals this screen can decide on its own (foreign row, already-online),
-   * the `{ok, message}` `host.start()`/`host.stop()` returns (previously
-   * discarded at the call site — the host-mismatch refusal `start` gained in
-   * the prior rework was composed only to be dropped here), and a thrown
-   * failure.
-   */
-  private act(action: 'start' | 'stop', context: ScreenContext): void {
-    const row = this.rows[this.selectedIndex];
-    if (!row) return;
-    if (!row.mine) {
-      context.requestDraw();
-      return;
-    }
-    if (action === 'start' && row.derivedStatus === 'online') {
-      this.toast = `${row.label} is already online`;
-      context.requestDraw();
-      return;
-    }
-    const host =
-      context.services?.conductorProcess ?? createConductorProcessHost();
-    runRowAction({
-      rowId: row.id,
-      busy: this.busyIds,
-      context,
-      perform: () =>
-        action === 'start'
-          ? host.start({
-              workspaceRoot: row.workspaceRoot,
-              conductorName: row.conductorName,
-              hostKey: row.hostKey,
-            })
-          : host.stop({
-              pid: row.lastPid,
-              hostKey: row.hostKey,
-            }),
-      refresh: (ctx) => this.reload(ctx),
-      setStatus: (status) => {
-        this.toast = status;
-      },
-      captureLifecycle: () => this.captureLifecycle(context),
-      lifecycleIsCurrent: (guard, ctx) => this.lifecycleIsCurrent(guard, ctx),
-      statusIsCurrent: (guard, ctx) => this.actionStillCurrent(guard, ctx),
-      failPrefix: `${action} failed`,
-    });
   }
 }

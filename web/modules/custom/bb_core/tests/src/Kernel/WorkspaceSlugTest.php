@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Entity\EntityStorageException;
+use Drupal\Core\Utility\UpdateException;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\Validation\Constraint\BbWorkspaceSlugConstraint;
@@ -127,6 +129,50 @@ final class WorkspaceSlugTest extends KernelTestBase {
     $second = $this->makeWorkspace('Second', 'shared');
 
     self::assertGreaterThan(0, $second->validate()->count());
+  }
+
+  /**
+   * The database refuses a duplicate slug that skipped validation.
+   */
+  public function testDatabaseRefusesDuplicateSlug(): void {
+    $this->makeWorkspace('First', 'shared')->save();
+
+    $this->expectException(EntityStorageException::class);
+    $this->makeWorkspace('Second', 'shared')->save();
+  }
+
+  /**
+   * The update adds the slug key, and refuses while duplicates exist.
+   */
+  public function testSlugKeyUpdateRefusesDuplicates(): void {
+    // The schema as it stood before the key existed.
+    $schema = $this->container->get('database')->schema();
+    $keyValue = $this->container->get('keyvalue')->get('entity.storage_schema.sql');
+    $entitySchema = $keyValue->get('bb_workspace.entity_schema_data');
+    unset($entitySchema['bb_workspace']['unique keys']['bb_workspace__slug']);
+    $keyValue->set('bb_workspace.entity_schema_data', $entitySchema);
+    $schema->dropUniqueKey('bb_workspace', 'bb_workspace__slug');
+    $first = $this->makeWorkspace('First', 'shared');
+    $first->save();
+    $second = $this->makeWorkspace('Second', 'shared');
+    $second->save();
+    $this->container->get('module_handler')->loadInclude('bb_core', 'install');
+
+    try {
+      bb_core_update_11001();
+      self::fail('The update must refuse while duplicate slugs exist.');
+    }
+    catch (UpdateException $expected) {
+      self::assertStringContainsString(sprintf('shared: %s, %s', $first->id(), $second->id()), $expected->getMessage());
+    }
+    self::assertFalse($schema->indexExists('bb_workspace', 'bb_workspace__slug'));
+    $unchanged = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->loadUnchanged($second->id());
+    self::assertInstanceOf(BbWorkspaceInterface::class, $unchanged);
+    self::assertSame('shared', $unchanged->getSlug(), 'Nothing is renamed.');
+
+    $second->delete();
+    bb_core_update_11001();
+    self::assertTrue($schema->indexExists('bb_workspace', 'bb_workspace__slug'));
   }
 
   /**

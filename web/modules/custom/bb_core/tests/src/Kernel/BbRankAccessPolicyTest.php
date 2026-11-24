@@ -82,9 +82,13 @@ final class BbRankAccessPolicyTest extends KernelTestBase {
       'the contributor rank does not grant edit bb_project — that moved to '
       . 'bb_team-bb_team-lead in BB-454 round 4, not to the workspace',
     );
-    self::assertFalse(
-      $account->hasPermission('delete bb_project'),
-      'the contributor rank does not grant delete bb_project, for the same reason',
+    self::assertTrue(
+      $account->hasPermission('delete own bb_project'),
+      'the contributor rank deletes the projects it created',
+    );
+    self::assertTrue(
+      $account->hasPermission('update own bb_project'),
+      'the contributor rank edits the projects it created',
     );
     self::assertFalse(
       $account->hasPermission('administer bakers'),
@@ -93,14 +97,14 @@ final class BbRankAccessPolicyTest extends KernelTestBase {
   }
 
   /**
-   * A team `lead` rank grants edit/delete of the projects it holds.
+   * A team `lead` rank grants edit, not delete, of the projects it holds.
    *
-   * Moved here from `bb_workspace-bb_workspace-contributor` (BB-454
-   * round 4 review): a project's edit/delete rights belong to the team that
-   * carries visibility over it, not to the workspace, which carries rights
-   * but no membership relationship to any one project.
+   * Edit moved here from `bb_workspace-bb_workspace-contributor` (BB-454
+   * round 4 review): a project's edit rights belong to the team that
+   * carries visibility over it. Delete is the creator's or a workspace
+   * lead's.
    */
-  public function testTeamLeadRankGrantsEditAndDeleteBbProject(): void {
+  public function testTeamLeadRankGrantsEditNotDeleteBbProject(): void {
     $workspace = $this->createEntity('bb_workspace', [
       'name' => 'Acme',
       'owner_user_id' => $this->worldOwner->id(),
@@ -117,9 +121,9 @@ final class BbRankAccessPolicyTest extends KernelTestBase {
       $account->hasPermission('edit bb_project'),
       'the team lead rank grants edit bb_project (BB-454 round 4)',
     );
-    self::assertTrue(
-      $account->hasPermission('delete bb_project'),
-      'the team lead rank grants delete bb_project (BB-454 round 4)',
+    self::assertFalse(
+      $account->hasPermission('delete any bb_project'),
+      'the team lead rank deletes no project it did not create',
     );
   }
 
@@ -164,6 +168,7 @@ final class BbRankAccessPolicyTest extends KernelTestBase {
 
     self::assertTrue($account->hasPermission('edit bb_project'));
     self::assertTrue($account->hasPermission('create bb_project'));
+    self::assertTrue($account->hasPermission('delete any bb_project'));
     self::assertFalse($account->hasPermission('assign bakers conductor'));
     self::assertFalse(
       $account->hasPermission('administer bakers'),

@@ -13,10 +13,6 @@ next:
 
 Agents need somewhere to run: an existing team environment, a remote server or your own computer. Choose that location first. Reuse its tools and accounts wherever possible. <span id="choose-your-tools"></span>
 
-::: tip Your team already runs this project?
-Continue with [ticket work](/get-started/daily-work/create-a-ticket). You can use the web or a connected chat without installing an agent locally.
-:::
-
 <span id="choose-the-machine"></span>
 
 ## Choose an execution environment
@@ -34,11 +30,7 @@ The bakers.build application server stores tickets and accounts. Hosting it your
 
 Follow these steps only if you are responsible for preparing the chosen environment. Run them there; a remote environment needs its tools and sign-ins on the remote machine. Keep working installations.
 
-**You need:** your account, workspace access, server URL, and an installed, signed-in [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) in that environment.
-
-::: tip Already ready?
-[Verify the setup](#verify) and continue with [your project](/get-started/connect-a-project).
-:::
+**You need:** your account, workspace access, the server URL if your team does not use `https://app.bakers.build`, and an installed, signed-in [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) in that environment.
 
 <span id="skill-wizard-—-recommended"></span>
 <span id="use-the-guided-setup"></span>
@@ -54,7 +46,7 @@ Follow [skill installation](/skills-and-workflows/skills) for your chosen agent,
 
 ### 2. Check tools and sign in
 
-Start a new agent session in the chosen environment. Ask it to check what is ready and guide only the missing steps:
+Start a new agent session in the chosen environment. It checks what is ready and guides only the missing steps. **Ask your agent:**
 
 ```text
 Use `bakers:bb-init` to check this environment for running bakers.build agents.
@@ -67,9 +59,9 @@ change before applying it. Leave project tooling for project setup.
 
 ::: details What the setup changes
 
-The skill checks Git, host [Node.js ≥20.19 and npm](/provision/node), the agent and its [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites). Container Node does not supply the host CLI.
+The skill opens with a welcome naming the steps and the files it will write, and marks each question `Step n of m`. It checks Git, host [Node.js ≥20.19 and npm](https://nodejs.org/en/download), the agent and its [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites). Container Node does not supply the host CLI.
 
-It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connection) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/guide); initialization alone does not supply an agent catalog.
+It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. Sign-in uses `https://app.bakers.build` unless you name another server; the device link opens with its code filled in for you to compare with the terminal. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connection) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/guide); initialization alone does not supply an agent catalog. Its model credentials go to `~/.bakers/.bakers.env`, the conductor's private [secrets file](/configuration/machine#secrets-file). For a `sandbox` permission mode the skill offers only the runtimes this machine supports: [bubblewrap](/addons/runtime-bwrap) (Linux, light, uses host tools) or [Docker](/addons/runtime-docker) (stronger isolation, tools from the image). It shows every written file back, secrets masked.
 :::
 
 <span id="install-and-sign-in"></span>

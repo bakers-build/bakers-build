@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Island;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\island\IslandContextProviderInterface;
+use Drupal\island\IslandViewAccessInterface;
 
 /**
  * Host seam for the workspace settings screen's Members island.
@@ -18,9 +19,16 @@ use Drupal\island\IslandContextProviderInterface;
  * Off a workspace route there is no ambient workspace to key the list on, so
  * the island renders nothing rather than every workspace's membership.
  */
-final class BbWorkspaceIslandHost implements IslandContextProviderInterface {
+final class BbWorkspaceIslandHost implements IslandContextProviderInterface, IslandViewAccessInterface {
 
   use MembersIslandPlacementTrait;
+
+  /**
+   * The workspace Members screen's own gate.
+   *
+   * The roster lists invited addresses.
+   */
+  private const string MEMBERS_ACCESS = 'update';
 
   public function __construct(
     private readonly RouteMatchInterface $routeMatch,
@@ -44,7 +52,7 @@ final class BbWorkspaceIslandHost implements IslandContextProviderInterface {
     // The key is `group`, not `workspace` — BbTeamIslandHost keys the same
     // way for the same reason: the shared form and island stay type-blind, and
     // this class's whole job is saying WHICH entity the route is about.
-    return ['group' => $workspace];
+    return ['group' => $workspace] + $this->memberData('bb_workspace');
   }
 
 }

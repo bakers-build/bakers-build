@@ -270,6 +270,7 @@ const longTicketDoc = {
       identifier: 'BB-241',
       title: 'a long scrollable detail',
       state: 'coding',
+      url: 'https://bakers.example/bakers/ticket/bb-241',
       derived_status: 'running',
       description: Array.from(
         { length: 45 },
@@ -304,6 +305,8 @@ interface ServiceOverrides {
    * it is in flight. Unset everywhere else, so no other fixture moves.
    */
   hold?: Promise<void>;
+  /** A clicked ticket's runs read sideloads its run, as a run detail needs. */
+  clickedRuns?: boolean;
 }
 
 /** Routes every read the kernel can make, recording which ones it made. */
@@ -327,7 +330,7 @@ function fakeServices(
   };
   const client: DropshClient = {
     collection,
-    get: async (path: string) => {
+    get: async (path: string, params?: { getQueryString?: () => string }) => {
       paths.push(path);
       if (path === 'user/user') {
         if (overrides.currentUserId === null) return { data: [] };
@@ -348,7 +351,21 @@ function fakeServices(
       const clicked = CLICK_TICKETS.find((t) =>
         path.startsWith(`bb_ticket/bb_ticket/${t.id}`),
       );
-      if (clicked) return clickTicketDetailDoc(clicked.identifier);
+      if (clicked) {
+        const doc = clickTicketDetailDoc(clicked.identifier);
+        // A run row opens its run detail, which reads the ticket's runs.
+        const run = runListDoc.data[CLICK_TICKETS.indexOf(clicked)];
+        const query = decodeURIComponent(params?.getQueryString?.() ?? '');
+        return overrides.clickedRuns && query.includes('runs') && run
+          ? {
+              data: {
+                ...doc.data,
+                relationships: { runs: { data: [{ id: run.id }] } },
+              },
+              included: [run],
+            }
+          : doc;
+      }
       if (path === 'bb_ticket/bb_ticket')
         return overrides.tickets ?? ticketListDoc;
       return { data: [] };
@@ -1338,8 +1355,8 @@ describe('BB-241 — the wheel scrolls the viewport (AC-3)', () => {
     // BB-375 — bodyRows is content inside the fixed viewport frame.
     expect(
       before.slice(0, 2).join('\n'),
-      'the Overview tab starts on its first section',
-    ).toContain('Description');
+      'the Overview tab starts on its first section, the links',
+    ).toContain(' links');
     expect(
       before.join('\n'),
       'and the expanded body overflows the window',
@@ -1526,6 +1543,27 @@ describe('BB-241 — a click on the selected row activates it (AC-5, R2)', () =>
   });
 });
 
+describe('a click on a My work row selects it, a second click opens it', () => {
+  it('a click on the second row highlights it; a click on it again opens its detail', async () => {
+    const tui = await bootTty(undefined, { tickets: clickTicketListDoc });
+    // Found by text, not by offset: the claim is that the row clicked is the
+    // row highlighted, wherever My work draws its table.
+    const row = rowsOf(tui).findIndex((line) => line.includes('BB-302')) + 1;
+    expect(row).toBeGreaterThan(0);
+    expect(selectedRow(tui)).toContain('BB-301');
+
+    await click(tui, row);
+    expect(selectedRow(tui)).toContain('BB-302');
+
+    await click(tui, row);
+    expect(frameOf(tui), 'the clicked ticket opened').toContain(
+      'DETAIL-OF-BB-302',
+    );
+
+    await quit(tui);
+  });
+});
+
 describe('BB-241 — non-rows are inert (AC-6)', () => {
   it('a click on chrome is inert', async () => {
     const tui = await bootProjectTickets({ tickets: clickTicketListDoc });
@@ -1690,10 +1728,11 @@ describe('BB-241 — keyboard navigation is unchanged on every list screen (AC-8
     await quit(tui);
   });
 
-  it('project-runs: j/k/g/G move the selection and Enter opens the ticket', async () => {
+  it('project-runs: j/k/g/G move the selection and Enter opens the run', async () => {
     const tui = await bootProjectTickets({
       tickets: clickTicketListDoc,
       runs: runListDoc,
+      clickedRuns: true,
     });
     await tabTo(tui, 1);
     expect(selectedRow(tui)).toContain('#901');
@@ -1706,10 +1745,8 @@ describe('BB-241 — keyboard navigation is unchanged on every list screen (AC-8
     expect(selectedRow(tui)).toContain('#901');
 
     await tui.press('\r');
-    // Enter on a run opens its ticket on the RUNS tab (BB-192 AC-3), so the
-    // Overview description is not on screen — the title bar is the evidence.
-    expect(frameOf(tui)).toContain('BB-301 · clicked open');
-    expect(frameOf(tui)).toContain('[Runs]');
+    // BAKERS-338: Enter on a run opens the run's own detail.
+    expect(frameOf(tui)).toContain('#901 · BB-301 · running');
 
     await quit(tui);
   });
@@ -2266,9 +2303,9 @@ describe('a bar click acts at the current level (AC-13)', () => {
     expect(styledFrame(tui), 'clicking [My work] itself').toBe(before);
     expect(tui.paints(), 'not one redraw in two clicks').toBe(painted);
 
-    // A root Conductors click remains a ROOT tab, never a project one.
+    // A root Machines click remains a ROOT tab, never a project one.
     await click(tui, TOP_TAB_ROW, COL_ROOT_CONDUCTORS);
-    expect(tabBarRow(tui), 'the root bar, still').toContain('[Conductors]');
+    expect(tabBarRow(tui), 'the root bar, still').toContain('[Machines]');
     expect(tabBarRow(tui)).not.toContain('Tickets');
 
     // The root bar's OTHER tab is live, which is what makes the sweep above a

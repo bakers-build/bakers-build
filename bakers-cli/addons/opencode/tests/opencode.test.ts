@@ -362,3 +362,10 @@ describe('OpencodeAgent shared run security', () => {
     ]);
   });
 });
+
+describe('herdr agent name', () => {
+  it('declares opencode so herdr identifies an isolated run', async () => {
+    const agent = new (await loadOpencodeModule()).OpencodeAgent({});
+    expect(agent.herdrAgent).toBe('opencode');
+  });
+});

@@ -24,6 +24,7 @@ export function validate(f) {
     'Expected expect.state working, review or done exactly for a transition');
   requireValue((e.stop === 'technical-problem') === nonempty(e.cause), 'Expected expect.cause exactly for a technical problem');
   requireValue(e.link === undefined || (e.stop === 'question' && nonempty(e.link)), 'Expected expect.link only for a user question');
+  requireValue(e.asks === undefined || (e.stop === 'question' && nonempty(e.asks)), 'Expected expect.asks only for a user question');
   requireValue(e.hidden === undefined || (e.link !== undefined && Array.isArray(e.hidden) && e.hidden.every(nonempty)),
     'Expected expect.hidden as technical terms of an acceptance question');
   requireValue(e.stop !== 'none' || nonempty(e.decision), 'Expected expect.decision for a run that does not stop');
@@ -37,7 +38,7 @@ function analyze(f, output, context) {
   const { recovered, diagnostics } = callRecovery(trace);
   const sent = writes(trace).filter(c => c.result?.exit_code !== 4);
   const of = id => sent.filter(c => c.name === tool(id));
-  const comments = of('bakers_comment_publish'), updates = of('bakers_ticket_update');
+  const comments = of('bakers_comment_create'), updates = of('bakers_ticket_update');
   const states = of('bakers_ticket_transition').filter(c => arg(c, 'state'));
   // The heading is the comment's whole first line: `# Technical problem details` is an ordinary comment.
   const headed = heading => comments.filter(c => new RegExp(`^\\s*# ${heading}[ \\t]*(\\n|$)`).test(arg(c, 'body') ?? ''));
@@ -100,6 +101,10 @@ function analyze(f, output, context) {
   if (e.link) {
     checks.push(check('auto-link', String(arg(headed('Question')[0], 'body')).includes(e.link),
       `Put the tunnel link (${e.link}) in the user question`));
+  }
+  if (e.asks) {
+    checks.push(check('auto-asks', String(arg(headed('Question')[0], 'body')).includes(e.asks),
+      `Address the user question to ${e.asks}`));
   }
   if (e.hidden) {
     const body = String(arg(headed('Question')[0], 'body'));

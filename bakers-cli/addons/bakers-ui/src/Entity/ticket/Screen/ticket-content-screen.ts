@@ -9,6 +9,7 @@ import {
   AsyncScreen,
   type FullScreenChrome,
 } from '../../../Screen/async-screen.js';
+import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import { runRowAction } from '../../../Screen/row-action.js';
 import type {
   ScreenAction,
@@ -48,6 +49,7 @@ import { loadTicketDetail } from '../Data/detail.js';
 import { ticketDetailInputContext } from '../Data/input.js';
 import {
   loadTicketView,
+  mergeTicketDocuments,
   readTicket,
   refreshTicket,
   saveTicket,
@@ -55,6 +57,8 @@ import {
   watchTicket,
 } from '../Data/store.js';
 import { updateTicketFrozen } from '../Data/write.js';
+import { isTicketCancellable } from '../Form/edit.js';
+import { cancelTicketRequest, restartTicketRequest } from './ticket-actions.js';
 
 /** Overview width when the context carries none — a pipe has no terminal. */
 const DEFAULT_COLUMNS = 80;
@@ -381,25 +385,54 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       return this.select(keys.length - 1, context);
     return false;
   }
+  private cancellable(): boolean {
+    return !!this.document && isTicketCancellable(this.document);
+  }
+  /** The dialog asks the site which runs to restart; a closed or frozen ticket has none. */
+  private restartable(): boolean {
+    return this.cancellable() && !this.isFrozen();
+  }
   commandForInput(input: string): string | undefined {
-    return this.state === 'ready' && this.viewMode === 'full' && input === 'e'
-      ? 'edit-assignment'
-      : undefined;
+    if (this.state !== 'ready' || this.viewMode !== 'full') return undefined;
+    if (input === 'e') return 'edit-assignment';
+    if (input === 'x' && this.cancellable()) return 'cancel-ticket';
+    if (input === 'r' && this.restartable()) return 'restart-runs';
+    return undefined;
   }
   actionForInput(
     input: string,
     context: ScreenContext,
   ): ScreenAction | undefined {
-    return this.commandForInput(input) === 'edit-assignment'
-      ? ticketEditAction(context, this.document)
-      : undefined;
+    const command = this.commandForInput(input);
+    if (command === 'edit-assignment')
+      return ticketEditAction(context, this.document);
+    if (command === 'cancel-ticket' && this.document)
+      return confirmNavigation(cancelTicketRequest(this.document));
+    if (command === 'restart-runs' && this.document)
+      return confirmNavigation(
+        restartTicketRequest(
+          this.document.data?.id ?? context.params?.ticketId ?? '',
+          ticketTitleOf(this.document).identifier,
+        ),
+      );
+    return undefined;
   }
   receiveResult(result: unknown, context: ScreenContext): void {
-    if (
-      result &&
-      typeof result === 'object' &&
-      (result as { type?: unknown }).type === 'ticket-assignment-updated'
-    ) {
+    const type =
+      result && typeof result === 'object'
+        ? (result as { type?: unknown }).type
+        : undefined;
+    if (type === 'ticket-cancelled' || type === 'run-cancelled') {
+      const document = (result as { document?: TicketDetailDocument }).document;
+      // Merged, so this view's includes stay.
+      if (document)
+        this.replaceReady(
+          saveTicket(context, mergeTicketDocuments(this.document, document)),
+        );
+      context.requestDraw();
+      return;
+    }
+    if (type === 'ticket-assignment-updated') {
       const returned = result as {
         document?: TicketDetailDocument;
         options?: AssignmentLabels;
@@ -463,11 +496,17 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
     return [
       actionItem('detail-tab', 'Tab', 'section'),
       actionItem('detail-edit', 'e', 'edit'),
-      // Freeze and paging before copy: at 80 columns the footer clips the
-      // tail, and `Y:Copy link` is the hint that yields.
+      ...(this.cancellable()
+        ? [actionItem('ticket-cancel', 'x', 'cancel ticket')]
+        : []),
+      // Freeze and paging before restart and copy: at 80 columns the footer
+      // clips the tail, and those hints yield.
       actionItem('detail-freeze', 'f', this.isFrozen() ? 'unfreeze' : 'freeze'),
       actionItem('detail-arrows', '↑↓', selectable > 1 ? 'select' : 'scroll'),
       actionItem('detail-page', 'PgUp/PgDn', 'page'),
+      ...(this.restartable()
+        ? [actionItem('detail-restart', 'r', 'restart runs')]
+        : []),
       ...ticketCopyActions(),
       ...(selectable > 0
         ? [actionItem('detail-enter', 'Enter/Space', 'expand')]
@@ -548,13 +587,7 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       memo.now === now
     )
       return memo.model;
-    const model = ticketContentModel(
-      document,
-      this.tab,
-      this.labels,
-      now,
-      context.services?.baseUrl,
-    );
+    const model = ticketContentModel(document, this.tab, this.labels, now);
     this.modelMemo = { document, labels: this.labels, now, model };
     return model;
   }

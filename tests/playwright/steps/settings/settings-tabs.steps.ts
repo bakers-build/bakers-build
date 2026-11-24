@@ -14,10 +14,11 @@ import { createBdd } from 'playwright-bdd';
 import { Drush } from '../../support/drush';
 import type { Page, Request } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
+import { RAIL_ISLAND } from '../../support/shell';
 
 const { Given, When, Then, After } = createBdd(test);
 
-type Surface = 'workspace' | 'project' | 'group';
+type Surface = 'workspace' | 'project' | 'group' | 'team';
 
 interface SettingsWorld {
   slug: string;
@@ -109,13 +110,14 @@ Given('I lead a disposable workspace world', async ({ page, authProvider, apiCli
       '\\Drupal::service("cache.static")->deleteAll();',
       'print json_encode([',
       '"uid" => $lead->id(),',
-      '"ids" => ["workspace" => $w->id(), "project" => $p->id(), "group" => $g->id()],',
+      '"ids" => ["workspace" => $w->id(), "project" => $p->id(), "group" => $g->id(), "team" => $t->id()],',
       '"projectPage" => $p->toUrl()->toString(),',
-      '"names" => ["workspace" => $w->label(), "project" => $p->label(), "group" => $g->label()],',
+      '"names" => ["workspace" => $w->label(), "project" => $p->label(), "group" => $g->label(), "team" => $t->label()],',
       '"urls" => [',
       '"workspace" => \\Drupal\\Core\\Url::fromRoute("bb_core.bb_workspace.settings", ["bb_workspace" => $w->getSlug()])->toString(),',
       '"project" => \\Drupal\\Core\\Url::fromRoute("bb_core.bb_project.settings", $p->toUrl()->getRouteParameters())->toString(),',
       '"group" => \\Drupal\\Core\\Url::fromRoute("bb_core.bb_group.settings", $g->toUrl()->getRouteParameters())->toString(),',
+      '"team" => \\Drupal\\Core\\Url::fromRoute("bb_core.bb_team.settings", $t->toUrl()->getRouteParameters())->toString(),',
       ']]);',
     ].join(' '),
   );
@@ -294,4 +296,30 @@ When('a stranger requests the project Settings', async ({ page, authProvider, ap
 Then('the stranger is denied', async () => {
   expect(strangerStatus).toBe(403);
   expect(storedField('project', 'name')).toBe(world!.names.project);
+});
+
+Then('the rail links {string}', async ({ page }, name: string) => {
+  await expect(page.locator(RAIL_ISLAND).getByRole('link', { name, exact: true })).toBeVisible();
+});
+
+// Any entity's Settings form, its fields named by label. Consumers:
+// features/entity-detail, conductors, machines.
+function settingsForm(page: Page) {
+  return page.locator('form[data-bakers-tab-body="settings"]');
+}
+
+When('I set {string} to {string} on the Settings', async ({ page }, label: string, value: string) => {
+  await settingsForm(page).getByLabel(label, { exact: true }).fill(value);
+});
+
+When('I choose {string} for {string} on the Settings', async ({ page }, values: string, label: string) => {
+  await settingsForm(page).getByLabel(label, { exact: true }).selectOption(values.split(', '));
+});
+
+Then('the Settings offer {string}', async ({ page }, label: string) => {
+  await expect(settingsForm(page).getByLabel(label, { exact: true })).toBeEditable({ timeout: 10000 });
+});
+
+Then('the Settings offer the action {string}', async ({ page }, name: string) => {
+  await expect(settingsForm(page).getByRole('link', { name, exact: true })).toBeVisible();
 });

@@ -3,10 +3,12 @@ import { existsSync, readFileSync, symlinkSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
+  type AgentRunContext,
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
@@ -36,6 +38,7 @@ import {
   withoutGitDirs,
 } from '@bakers-build/core';
 import { parseCodexTranscript } from './footprint.js';
+import { CODEX_SECRET_ENV, prepareCodexRun } from './run.js';
 
 export { parseCodexTranscript } from './footprint.js';
 
@@ -158,6 +161,30 @@ export function codexMcpServerIds(toml: string): string[] {
   return [...ids];
 }
 
+/** One literal argv token: no quoting, globbing, expansion or operator. */
+const COMMAND_TOKEN = /^[A-Za-z0-9_./@%+=:,-]+$/;
+
+/**
+ * Codex `prefix_rule`s allowing each entry, a literal command prefix of
+ * whitespace-separated argv tokens (`'ddev'`, `'git push'`, or `'ddev *'` as
+ * written for Claude). Throws on any entry Codex would not match literally,
+ * so none silently widens.
+ */
+export function trustedCommandRules(entries: readonly string[]): string {
+  return entries
+    .map((entry) => {
+      const tokens = entry.trim().split(/\s+/);
+      // A Claude-style trailing ` *` means the same prefix; no other wildcard.
+      if (tokens.length > 1 && tokens.at(-1) === '*') tokens.pop();
+      if (entry.trim() === '' || !tokens.every((t) => COMMAND_TOKEN.test(t)))
+        throw new Error(
+          `sandbox.trusted_commands: ${JSON.stringify(entry)} is not a literal command prefix such as 'ddev' or 'git push'; Codex has no wildcards, quoting or shell syntax`,
+        );
+      return `prefix_rule(pattern=${JSON.stringify(tokens)}, decision="allow", justification="bakers.build sandbox.trusted_commands")\n`;
+    })
+    .join('');
+}
+
 const CODEX_KNOWN: readonly KnownOptionSpec[] = [
   { kind: 'model', flags: ['--model', '-m'], configKeys: ['model'] },
   { kind: 'effort', flags: [], configKeys: ['model_reasoning_effort'] },
@@ -165,12 +192,16 @@ const CODEX_KNOWN: readonly KnownOptionSpec[] = [
 
 export class CodexAgent implements BbAgent {
   readonly id = 'codex';
+  readonly herdrAgent = 'codex';
+  readonly secretEnv = CODEX_SECRET_ENV;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
   private readonly overrides: { model: boolean; effort: boolean };
   readonly security: ResolvedSecurity;
   private readonly allowWrite: string[];
+  /** This launch's `.rules` text, empty without trusted commands. */
+  private readonly trustedRules: string;
   readonly runEnvPolicy: RunEnvPolicy;
   readonly pluginsDisabled: boolean;
   /** The Codex home runs read and write: the agent home while plugins are on. */
@@ -186,21 +217,23 @@ export class CodexAgent implements BbAgent {
     this.model = cli.model;
     this.effort = cli.effort;
     this.overrides = cli.overrides;
-    // Shared deny_read and trusted_commands have nothing to map onto here.
+    // A shared deny_read has nothing to map onto here.
     this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS, {
-      unsupported: ['deny_read', 'trusted_commands'],
+      unsupported: ['deny_read'],
     });
     this.runEnvPolicy = this.security.runEnvPolicy;
     this.allowWrite = withoutGitDirs(this.security.sandbox.allow_write);
     this.pluginsDisabled =
       validateOptionalBoolean(options.plugins, 'plugins') === false;
     this.configDir = this.userCodexHome();
-    // Codex has no read deny or unsandboxed-command list to map these onto.
-    for (const key of ['trusted_commands', 'deny_read'] as const) {
-      if (this.security.sandbox[key].length > 0) {
-        throw new Error(`Codex does not support sandbox.${key}`);
-      }
+    // Codex has no read deny to map this onto.
+    if (this.security.sandbox.deny_read.length > 0) {
+      throw new Error('Codex does not support sandbox.deny_read');
     }
+    this.trustedRules =
+      this.security.mode === 'sandbox'
+        ? trustedCommandRules(this.security.sandbox.trusted_commands)
+        : '';
     // `-c` takes a TOML value; a JSON object is not one.
     for (const [key, value] of Object.entries(this.security.config ?? {})) {
       if (
@@ -261,6 +294,10 @@ export class CodexAgent implements BbAgent {
       home: outcome,
       trust_bypass: ['hook trust'],
     };
+  }
+
+  prepareRun(context: AgentRunContext) {
+    return prepareCodexRun(context, this.configDir);
   }
 
   /** A `config.toml` server the conductor's own replaces, named once per dispatch. */
@@ -356,6 +393,8 @@ export class CodexAgent implements BbAgent {
     const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
     const parts = [
       'codex',
+      // A shared daemon would serve another home's rules.
+      ...(this.trustedRules ? ['--no-daemon'] : []),
       ...this.securityFlags(
         workspacePath,
         tools !== undefined,
@@ -402,6 +441,21 @@ export class CodexAgent implements BbAgent {
     if (prompt !== '') {
       parts.push(shellQuote(prompt));
       parts.push(...this.args.map(shellQuote));
+    }
+    if (this.trustedRules) {
+      const launcher = fileURLToPath(
+        new URL(
+          import.meta.url.endsWith('.ts')
+            ? './trusted-launch.ts'
+            : './trusted-launch.js',
+          import.meta.url,
+        ),
+      );
+      parts.unshift(
+        shellQuote(process.execPath),
+        shellQuote(launcher),
+        shellQuote(this.trustedRules),
+      );
     }
     return parts.join(' ');
   }
@@ -513,6 +567,7 @@ export function codexAgent(options: CodexAgentOptions = {}): AgentPlugin {
     id: 'codex',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent(config) {
       agent.useMarketplaces(config.marketplaces ?? []);
       return agent;

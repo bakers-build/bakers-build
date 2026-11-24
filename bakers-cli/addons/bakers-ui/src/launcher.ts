@@ -66,10 +66,9 @@ export interface BbUiLauncherOptions {
   /** BB-472 — the loaded connection config's absolute path, so the
    *  workspace-picker screen can find `workspace_id`'s owning file. */
   configPath?: string | undefined;
-  /** BB-472 — re-executes this process; the picker calls it after writing a
-   *  new workspace selection. Injected from `ui/src/bun-runtime.ts`. */
-  restartProcess?: (() => void) | undefined;
-  selectWorkspace?: ((name: string) => Promise<void>) | undefined;
+  /** BB-472 — re-executes this process scoped to the picked workspace; nothing
+   *  is written. Injected from `ui/src/bun-runtime.ts`. */
+  restartProcess?: ((workspace: string) => void) | undefined;
   /** The connection's current user (uuid or name) — My work's "me". */
   currentUser?: string | undefined;
   /** Injected dropsh `buildProgram` (the entry passes dropsh's real one). */
@@ -132,9 +131,6 @@ export async function runBbUi(opts: BbUiLauncherOptions): Promise<void> {
     ...(opts.configPath !== undefined ? { configPath: opts.configPath } : {}),
     ...(opts.restartProcess !== undefined
       ? { restartProcess: opts.restartProcess }
-      : {}),
-    ...(opts.selectWorkspace !== undefined
-      ? { selectWorkspace: opts.selectWorkspace }
       : {}),
     ...(opts.currentUser !== undefined
       ? { currentUser: opts.currentUser }

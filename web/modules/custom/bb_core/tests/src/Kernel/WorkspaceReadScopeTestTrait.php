@@ -37,7 +37,7 @@ trait WorkspaceReadScopeTestTrait {
     'user', 'og_membership',
     'bb_workspace', 'bb_group', 'bb_team', 'bb_machine', 'bb_project',
     'bb_ticket', 'bb_run', 'bb_comment', 'bb_environment',
-    'bb_conductor', 'bb_term', 'bb_ticket_template', 'bb_invite',
+    'bb_conductor', 'bb_term', 'bb_ticket_template', 'bb_invite', 'bb_profile',
   ];
 
   /**
@@ -109,6 +109,7 @@ trait WorkspaceReadScopeTestTrait {
     foreach (self::READ_SCOPE_ENTITY_TYPES as $entity_type_id) {
       $this->installEntitySchema($entity_type_id);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['user']);
     // The term bundles are owned by the recipe, which a kernel test does
     // not apply, so the fixture creates them itself.
@@ -207,6 +208,9 @@ trait WorkspaceReadScopeTestTrait {
       'name' => "machine-$side",
       'host_key' => "host-$side",
       'owner_user_id' => $owner_id,
+      // As every machine predating the setting; ConductorOwnerAccessTest
+      // covers forbid.
+      'assignment' => 'allow',
     ]);
     // One label per side, so cross-workspace term isolation and the ticket's
     // own label rule are both observable in this world (BB-339 D7, D6).

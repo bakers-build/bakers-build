@@ -1,14 +1,9 @@
 // The "Edit ticket" popup (BB-233, widened by BB-308 / BB-313 / BB-360)
 // as a DECLARATION over the form kernel (BB-236): two `clearable` selects, two
 // text fields for accounted durations, a clearable Parent autocomplete, a Labels
-// multi-select, and dual actions (Save + Cancel ticket on non-terminal). One
-// `toObject` yields the ordinary Save PATCH; Cancel ticket uses a separate pure
-// payload helper. No I/O here.
-//
-// BB-360 removes the State select entirely (D8). Cancelling is a second
-// `f.action` whose id is never `cancel` — that intent closes the popup (Esc).
-// Two declarations from one body: a terminal ticket's popup simply omits the
-// Cancel ticket action (D3), and `editFormFor` picks between them.
+// multi-select, and Save. One `toObject` yields the ordinary Save PATCH. No I/O
+// here. Cancelling a ticket is not part of this popup: it is its own action on
+// the ticket detail, confirmed in the shared dialog (`cancelEditPayload` below).
 import {
   declareForm,
   type FieldDecl,
@@ -34,11 +29,10 @@ export type EditFieldId =
   | 'ticketType'
   | 'recipe'
   | 'labels'
-  | 'submit'
-  | 'cancelTicket';
+  | 'submit';
 
 /**
- * BB-313 / BB-360 — the ONE lifecycle move this popup offers, as a named
+ * BB-313 / BB-360 — the ONE lifecycle move the ticket detail offers, as a named
  * constant.
  *
  * Not derived, and deliberately so: `state_flow` is a `bb_dashboard` computed
@@ -52,14 +46,6 @@ export type EditFieldId =
  * predicate, and no workflow id is needed to tell them apart.
  */
 export const CANCELLED_STATE = 'cancelled';
-
-/**
- * The Cancel ticket action's field id (BB-360 D4).
- *
- * Never `'cancel'` — `intent.kind === 'cancel'` already means "close the
- * popup", and two meanings for one word is a defect waiting.
- */
-export const CANCEL_TICKET_ACTION_ID = 'cancelTicket';
 
 /**
  * The states no transition leaves, in every ticket workflow.
@@ -177,7 +163,7 @@ const timeAttributes = (v: EditValues): Record<string, number | null> => {
 };
 
 /**
- * One body, two declarations (D3 / D8).
+ * One body, two declarations: writable, and a closed ticket's read-only one.
  *
  * BOTH assignment selects are `clearable`: AC-4 requires REMOVING an assignment,
  * not only changing it, so `null` is a real position in each cycle. Parent is
@@ -187,7 +173,7 @@ const timeAttributes = (v: EditValues): Record<string, number | null> => {
  *
  * Ordinary Save NEVER includes `attributes.state` — a self-transition is not a
  * declared edge, so echoing the current state would turn every ordinary edit
- * into a 422. Cancel ticket is a separate action that uses `cancelEditPayload`.
+ * into a 422.
  *
  * The kernel builds its field list once, at module load, and every consumer —
  * the renderer's `▸` marker, `keyToIntent`, `apply` — indexes that array by
@@ -195,7 +181,7 @@ const timeAttributes = (v: EditValues): Record<string, number | null> => {
  * every index below it; absence has to be a property of WHICH DECLARATION is in
  * force.
  */
-const declareEditForm = (savable: boolean, cancellable: boolean) =>
+const declareEditForm = (savable: boolean) =>
   declareForm<EditValues, EditFormOptions, EditFormPayload>({
     fields: (f) => [
       f.select('assignee', 'Assignee', { from: 'users', clearable: true }),
@@ -217,9 +203,6 @@ const declareEditForm = (savable: boolean, cancellable: boolean) =>
       f.select('recipe', 'Recipe', { from: 'recipes', clearable: true }),
       f.multi('labels', 'Labels', { from: 'labels' }),
       ...(savable ? [f.action('Save', 'submit')] : []),
-      ...(cancellable
-        ? [f.action('Cancel ticket', CANCEL_TICKET_ACTION_ID)]
-        : []),
     ],
     toObject: (v) => ({
       // Ordinary Save never writes lifecycle state (D6/D7).
@@ -245,15 +228,13 @@ const declareEditForm = (savable: boolean, cancellable: boolean) =>
     }),
   });
 
-/** The ordinary popup: a non-terminal ticket can be cancelled from it. */
-export const EDIT_FORM = declareEditForm(true, true);
-/** A terminal ticket's popup: assignment, times, structure — no Cancel ticket. */
-export const EDIT_FORM_TERMINAL = declareEditForm(true, false);
+/** The ordinary popup: assignment, times, structure and Save. */
+export const EDIT_FORM = declareEditForm(true);
 /**
- * A closed ticket's popup: read-only, no Save and no Cancel ticket. The server
- * freezes a ticket on its stored `closed` flag and answers any PATCH with 403.
+ * A closed ticket's popup: read-only, no Save. The server freezes a ticket on
+ * its stored `closed` flag and answers any PATCH with 403.
  */
-export const EDIT_FORM_CLOSED = declareEditForm(false, false);
+export const EDIT_FORM_CLOSED = declareEditForm(false);
 export type EditFormDeclaration = typeof EDIT_FORM;
 
 /** The ticket's state as the popup sees it; `''` when the read carried none. */
@@ -262,28 +243,27 @@ export const ticketState = (document: TicketDetailDocument): string => {
   return typeof value === 'string' ? value : '';
 };
 
+/** Which declaration a ticket gets: a closed ticket's popup is read-only. */
+export const editFormFor = (
+  document: TicketDetailDocument,
+): EditFormDeclaration =>
+  document.data?.attributes?.closed === true ? EDIT_FORM_CLOSED : EDIT_FORM;
+
 /**
- * Which declaration a ticket gets (AC-4 / D13).
+ * Whether the ticket detail offers Cancel ticket: not closed, not terminal.
  *
  * An unknown state fails OPEN (D13): `loadTicketDetail` requests no fieldset, so
  * a missing `state` means genuinely unknown rather than not-requested. Hiding
  * Cancel ticket on a thin read would cost a legitimate affordance; offering it
- * costs at worst the server's 422, which the popup already renders in full.
+ * costs at worst the server's 422, which the dialog shows in full.
  */
-export const editFormFor = (
-  document: TicketDetailDocument,
-): EditFormDeclaration => {
-  if (document.data?.attributes?.closed === true) return EDIT_FORM_CLOSED;
-  return TERMINAL_TICKET_STATES.has(ticketState(document))
-    ? EDIT_FORM_TERMINAL
-    : EDIT_FORM;
-};
+export const isTicketCancellable = (document: TicketDetailDocument): boolean =>
+  document.data?.attributes?.closed !== true &&
+  !TERMINAL_TICKET_STATES.has(ticketState(document));
 
 /** Field order in the popup, per declaration. */
 export const EDIT_FIELDS =
   EDIT_FORM.fields as unknown as FieldDef<EditFieldId>[];
-export const EDIT_FIELDS_TERMINAL =
-  EDIT_FORM_TERMINAL.fields as unknown as FieldDef<EditFieldId>[];
 export const EDIT_FIELDS_CLOSED =
   EDIT_FORM_CLOSED.fields as unknown as FieldDef<EditFieldId>[];
 
@@ -293,9 +273,7 @@ export type EditFormState = FormState<EditValues>;
  * No lists to OFFER — bags start empty until the adapter / option loader fills
  * them. Prefill names every value, and `clear`/`toObject` read no option list
  * for the required fields, so adapters that have no options hand over this bag.
- * Exported so the screen's options-failure path can reuse it (D11): a failed
- * user/conductor/label read must not silently remove Cancel ticket (D8 keeps
- * the action on the declaration, not in the bag).
+ * Exported so the screen's options-failure path can reuse it (D11).
  */
 export const EMPTY_EDIT_FORM_OPTIONS: EditFormOptions = {
   users: [],
@@ -392,10 +370,8 @@ export function initialEditForm(document: TicketDetailDocument): EditFormState {
 }
 
 /**
- * The Cancel ticket PATCH body (BB-360 D1): lifecycle only.
- *
- * Local field edits are discarded; after a successful write the detail reloads
- * from the server (same as Save's reload path). No relationships.
+ * The Cancel ticket PATCH body (BB-360 D1): lifecycle only, no relationships.
+ * After a successful write the detail reloads from the server.
  */
 export const cancelEditPayload = (): CancelEditPayload => ({
   attributes: { state: CANCELLED_STATE },

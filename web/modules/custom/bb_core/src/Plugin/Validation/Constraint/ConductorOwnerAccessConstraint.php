@@ -9,7 +9,7 @@ use Drupal\Core\Validation\Attribute\Constraint;
 use Symfony\Component\Validator\Constraint as SymfonyConstraint;
 
 /**
- * A conductor may be newly assigned only when its owner may take the work.
+ * A newly set conductor needs an owner with access who allows the actor.
  */
 #[Constraint(
   id: 'BbConductorOwnerAccess',
@@ -25,10 +25,10 @@ final class ConductorOwnerAccessConstraint extends SymfonyConstraint {
   public string $message = 'Conductor @label cannot be assigned: its owner has no access to this project.';
 
   /**
-   * The violation message when the owner is not responsible for the ticket.
+   * The violation message when the owner's setting forbids the actor.
    *
    * @var string
    */
-  public string $notResponsibleMessage = 'Conductor @label cannot be assigned: its owner is neither the assignee nor a reviewer of this ticket.';
+  public string $forbiddenMessage = 'Conductor @label cannot be assigned: its owner @owner forbids assignment by others (@source setting).';
 
 }

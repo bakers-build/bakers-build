@@ -1,6 +1,6 @@
 ---
 name: bb-label-human-accept
-description: "Use when a ticket labelled `human-accept` runs, in any state: carry it to done on your own once a person accepts the result; a planned risky change also needs the reviewer's verdict."
+description: "Use when a ticket labelled `human-accept` runs, in any state: carry it to done on your own once a person accepts the result; a planned risky change also needs the assignee's or a reviewer's verdict."
 ---
 
 # Human accept
@@ -14,7 +14,7 @@ transition, its origin status and, once `result` and any due `verdict` are passe
 Decide technical questions yourself and record each decision with its reason under `Decisions` in
 the handoff.
 
-A `criterion` stops with a question for the person the label rules name. An unplanned risky change
+A `criterion` stops with a question for the [confirming person](../bb-workflow/references/gates.md#label-rules). An unplanned risky change
 ends the run as a technical problem.
 
 | State | The run |
@@ -22,10 +22,9 @@ ends the run as a technical problem.
 | qualification | approves the criteria and transitions to `plan` |
 | plan | approves its spec, plan and test, or the diagnosis; records under `Decisions` whether the plan touches the risk list and which items; transitions to `working` |
 | working | at a GREEN [coding gate](../bb-workflow/references/coding-gate.md) asks for the **acceptance**, then transitions to `review` once it is given |
-| review | publishes the verdict; `Not OK` that coding can fix transitions to `working`; `OK` merges, except with a planned risky change: then it stops until the ticket's reviewer confirms the verdict |
+| review | publishes the verdict; `Not OK` that coding can fix transitions to `working`; `OK` merges, except with a planned risky change: then it stops with one question that names the confirming person and asks them to confirm the verdict |
 
 The **acceptance** is one question for a non-technical reader: only what changed and how to try it
 at exactly one URL, the tunnel link from [preview links](../bb-workflow/references/preview-links.md)
 or, if nothing runs, the merge request. An explicit acceptance in a comment newer than the question
-passes `result`; work requested changes and ask again. A planned risky change without a reviewer
-stops with a question naming the missing reviewer.
+passes `result`; work requested changes and ask again.

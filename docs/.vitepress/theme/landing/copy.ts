@@ -8,6 +8,7 @@ export const DOCS_URL = '/get-started/'
 export const SELF_HOST_URL = '/self-hosting/'
 export const SECURITY_URL = '/agents/security'
 export const REPO_URL = 'https://github.com/bakers-build/bakers-build'
+export const SYMPHONY_URL = 'https://github.com/openai/symphony'
 // The language switch, in the design's fixed order.
 export const LANGUAGES = [
   { code: 'de', label: 'DE', name: 'Deutsch', href: '/de/' },
@@ -20,6 +21,7 @@ const en = {
   nav: { label: 'Main', menu: 'Menu' },
   signUp: 'Sign up',
   docs: 'Read the docs',
+  inspired: 'Inspired by OpenAI Symphony',
   hero: {
     title: 'A ticket-driven AI software factory.',
     text: "Before your team is up, the prep is done. Agents work every ticket on your development machine or on remote workers, and at every step you can look into the oven.",
@@ -42,7 +44,7 @@ const en = {
       ['Plan', 'You describe what you need: in the browser, in a chat with Claude or in the terminal. The agent sorts it, asks what’s unclear and proposes a plan with acceptance criteria you can check.', 'Nothing gets built until you approve the scope.'],
       ['Build', 'The agent works on its own branch, in its own environment on your machines. Automated tests run before the ticket moves on.', 'You confirm the result.'],
       ['Review', 'A second agent reviews independently and gives a verdict. When it needs an expert eye, a developer joins.', 'Confirm it, or send it back with a clear expectation.'],
-      ['Ship', 'After the merge, a deployment ticket can roll a batch of merged tickets out to an environment and tag the release.', 'A person authorizes the merge: you or someone on your team.'],
+      ['Ship', 'After the merge, a ship ticket can move a batch of merged tickets to an environment and tag the release.', 'A person authorizes the merge: you or someone on your team.'],
     ],
   },
   run: {
@@ -112,6 +114,7 @@ const de: Copy = {
   nav: { label: 'Hauptmenü', menu: 'Menü' },
   signUp: 'Anmelden',
   docs: 'Docs lesen',
+  inspired: 'Inspiriert von OpenAI Symphony',
   hero: {
     title: 'Eine KI-Softwarefabrik. Vom Ticket bis zum Merge.',
     text: 'Bevor dein Team da ist, ist die Vorbereitung erledigt. Agenten arbeiten jedes Ticket auf deinem Entwicklungsrechner oder auf Remote-Workern ab, und bei jedem Schritt kannst du in den Ofen schauen.',
@@ -134,7 +137,7 @@ const de: Copy = {
       ['Planen', 'Du beschreibst, was du brauchst: im Browser, im Chat mit Claude oder im Terminal. Der Agent ordnet ein, fragt nach und legt einen Plan mit prüfbaren Abnahmekriterien vor.', 'Gebaut wird erst, wenn du den Umfang freigibst.'],
       ['Umsetzen', 'Der Agent arbeitet auf eigenem Branch in einer eigenen Umgebung auf deinen Rechnern. Automatische Tests laufen, bevor das Ticket weitergeht.', 'Du bestätigst das Ergebnis.'],
       ['Prüfen', 'Ein zweiter Agent prüft unabhängig und gibt ein Urteil ab. Wenn es den Blick vom Fach braucht, kommt ein Entwickler dazu.', 'Bestätigen oder mit klarer Erwartung zurückschicken.'],
-      ['Fertig', 'Nach dem Merge kann ein Deployment-Ticket einen Stapel gemergter Tickets in eine Umgebung ausrollen und das Release taggen.', 'Ein Mensch gibt den Merge frei: du selbst oder jemand aus deinem Team.'],
+      ['Fertig', 'Nach dem Merge kann ein Ship-Ticket einen Stapel gemergter Tickets in eine Umgebung bringen und das Release taggen.', 'Ein Mensch gibt den Merge frei: du selbst oder jemand aus deinem Team.'],
     ],
   },
   run: {

@@ -92,8 +92,8 @@ user_flows: |
   - Project identity on Overview is the mark, the title and the key · group caption — **no** project-edit page. Reversible writes live on Settings.
   - **Board** tab for operational work; **Stats** for statistics, **Tickets** / **Runs** for
     native listings.
-  - **Members** tab: the project's people as a list; add through the form on that face, change a
-    member's role on the member's own item, remove from the item that names them.
+  - **Members** tab: the project's people as a list; add through the form on that face. A roster row
+    carries no control (BAKERS-338): role changes and removal are not offered on the row.
   - **Settings** tab: Environments, with its add.
   - On Projects: the project table with Title search; create via `[+]` dialog (owner/teams, not
     full roster).
@@ -179,6 +179,10 @@ ui_requirements: |
   surface that has a LIST CONTEXT to lose; this control lives inside the face it changes, and a
   successful submit re-renders that face and nothing else — the tab strip, the rail and the shell
   stay where the operator left them. A dialog would take the list away in order to add to it.
+
+  **No roster row carries a control (BAKERS-338).** A list row only opens its entity's detail page;
+  the two paragraphs below describe the controls as they were, which now live on a member's page
+  (workspace and team), never on a row. On the project roster the role reads as a badge.
 
   Remove is SINGLE-STEP AND NAMES ITS EFFECT: the rule confirms an action exactly when it ends or
   discards the ticket; a membership removal does neither, so there is no confirmation. The control
@@ -1870,10 +1874,14 @@ scenes:
 
       EACH MEMBER IS ONE LINE OF FACTS, NOT A LEFT-TO-RIGHT RUN OF CELLS:
       each item is a patterned row (BB-638) — `headline: [person]`,
-      `meta: [joined, team]`, `right: [state, role, transfer, remove]` —
+      `meta: [joined, team]`, `right: [state, role]` —
       so the person and the joined date sit on the left and the role or
-      state, transfer and remove are right-aligned, as
-      GroupMembersForm::listZone() renders it.
+      state is right-aligned.
+
+      NO ROW CONTROLS (BAKERS-338). A list row carries no inline control: the
+      role reads as a badge and there is no remove or transfer on the row. The
+      two paragraphs below describe the controls as they were; role changes
+      and removal belong on a member's own page.
 
       THE ROLE IS PICKED ON THE MEMBER'S OWN ITEM. A role IS reversible, so here
       the pick genuinely is the write — no save button, no dirty state, no
@@ -1941,7 +1949,7 @@ scenes:
                   - component: bb_theme:zone
                     props:
                       gap: none
-                      description: A project is a rights level — a member's role is picked on their own item
+                      description: A project is a rights level — who belongs to it and in which role
                     slots:
                       heading: Members
                       # NO `[+]` IN THE ACTIONS SLOT, deliberately. The add surface is
@@ -2016,17 +2024,10 @@ scenes:
                               right:
                                 - state
                                 - role
-                                - transfer
-                                - remove
                             items:
-                              # BOTH INTERACTIVE CELLS ARE `rendered` (BB-435): the role picker's
-                              # panel and the remove button are markup `option_picker`/`button`
-                              # produce, addressed by the cell's key rather than shaped by `list`
-                              # itself — see the section prose above. Storybook never calls
-                              # `Drupal.attachBehaviors`, so no panel opens in a build; `markup` here
-                              # is the same tag-free, escaped-string stand-in `list.rendered.story.yml`
-                              # establishes, and the live picker/button proof is that story plus the
-                              # Kernel test that reads the real rendered surface.
+                              # NO ROW CONTROLS (BAKERS-338): a list row carries no inline control,
+                              # so the role is a plain badge and there is no remove; role changes
+                              # and removal belong on a member's own page, not on the roster.
                               - cells:
                                   person:
                                     kind: person
@@ -2035,14 +2036,12 @@ scenes:
                                     color: unassigned
                                     mail: christian.wiedemann@keytec.example
                                   role:
-                                    kind: rendered
-                                    markup: Lead
+                                    kind: badge
+                                    label: Lead
+                                    tone: neutral
                                   joined:
                                     kind: mono
                                     value: joined 2026-01-15
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
                               - cells:
                                   person:
                                     kind: person
@@ -2051,14 +2050,12 @@ scenes:
                                     color: running
                                     mail: sven.gruber@keytec.example
                                   role:
-                                    kind: rendered
-                                    markup: Member
+                                    kind: badge
+                                    label: Member
+                                    tone: neutral
                                   joined:
                                     kind: mono
                                     value: joined 2026-01-15
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
   - name: project-detail-settings
     group: Screens
     section: projects
@@ -2210,11 +2207,11 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-projects-scenes--project-detail-settings
                               active: false
-                filters:
+                main:
                   - component: bb_theme:filters
                     props:
-                      title: Filters
                       label: Time filters
+                      layout: bar
                     slots:
                       controls:
                         - component: bb_theme:segmented_control
@@ -2254,58 +2251,10 @@ scenes:
                                   - value: api-member
                                     label: api-member
                                     selected: false
-                main:
-                  - component: bb_theme:week-strip
-                    props:
-                      label: Days of week 2026-12-07
-                      days:
-                        - weekday: Mon
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-07'
-                          active: false
-                          aria_label: Mon 2026-12-07, 0:00
-                        - weekday: Tue
-                          date: '08'
-                          total: '2:45'
-                          url: '?mode=day&date=2026-12-08'
-                          active: false
-                          aria_label: Tue 2026-12-08, 2:45
-                        - weekday: Wed
-                          date: '09'
-                          total: '1:00'
-                          url: '?mode=day&date=2026-12-09'
-                          active: false
-                          aria_label: Wed 2026-12-09, 1:00
-                        - weekday: Thu
-                          date: '10'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-10'
-                          active: false
-                          aria_label: Thu 2026-12-10, 0:00
-                        - weekday: Fri
-                          date: '11'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-11'
-                          active: false
-                          aria_label: Fri 2026-12-11, 0:00
-                        - weekday: Sat
-                          date: '12'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-12'
-                          active: false
-                          aria_label: Sat 2026-12-12, 0:00
-                        - weekday: Sun
-                          date: '13'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-13'
-                          active: false
-                          aria_label: Sun 2026-12-13, 0:00
-                      total_label: Week total
-                      total: '3:45'
                   - component: bb_theme:text
                     props:
-                      text: 'Total recorded time: 3:45'
+                      text: Week total 3:45
+                      align: end
                   - component: bb_theme:table
                     props:
                       columns:
@@ -2315,24 +2264,31 @@ scenes:
                         - key: '2026-12-07'
                           label: Mon 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-08'
                           label: Tue 08
                           num: true
+                          sublabel: '2:45'
                         - key: '2026-12-09'
                           label: Wed 09
                           num: true
+                          sublabel: '1:00'
                         - key: '2026-12-10'
                           label: Thu 10
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-11'
                           label: Fri 11
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-12'
                           label: Sat 12
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-13'
                           label: Sun 13
                           num: true
+                          sublabel: '0:00'
                         - key: total
                           label: Total
                           num: true
@@ -2477,34 +2433,7 @@ scenes:
                             total:
                               kind: text
                               value: '1:30'
-                        - cells:
-                            label:
-                              kind: text
-                              value: Total
-                            '2026-12-07':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-08':
-                              kind: text
-                              value: '2:45'
-                            '2026-12-09':
-                              kind: text
-                              value: '1:00'
-                            '2026-12-10':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-11':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-12':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-13':
-                              kind: text
-                              value: '0:00'
-                            total:
-                              kind: text
-                              value: '3:45'
+                      row_height: md
   - name: project-detail-billing
     group: Screens
     section: projects
@@ -2516,22 +2445,22 @@ scenes:
 
 
       THE ACCOUNTS ARE A `list` OF PATTERNED ROWS, NOT A TABLE: `headline: [name]`, `meta: [type, tickets]`,
-      `right: [default, make_default, edit, archive]`. An account is read one at a time, not compared down
-      a column.
+      `right: [default]`. An account is read one at a time, not compared down a column. A row only opens
+      the account''s page (BAKERS-338): the name is the one link, the whole row its hit area, and the row
+      carries no action. Edit, Make default and Archive live on the account''s page.
 
 
-      THE DEFAULT AND TICKET LINKS EXCLUDE EACH OTHER. The default row carries the Default badge and no
-      Archive — make another account the default first, so a project always has one. An account with linked
-      tickets offers no Make default. Only an unlinked, non-default account offers both.
+      THE DEFAULT AND TICKET LINKS EXCLUDE EACH OTHER. The default account carries the Default badge and
+      its page offers no Archive — make another account the default first, so a project always has one. An
+      account with linked tickets offers no Make default. Only an unlinked, non-default account offers both.
 
 
       TICKETS ARE LINKED ON THE TICKET, NEVER HERE (the inspector''s Billing row). This face only names
       them in the meta line.
 
 
-      ARCHIVED ACCOUNTS STAY READABLE, collapsed below, because existing bookings keep their reference.
-      Make default, Edit and Archive are drawn as `action` cells; on the server they arrive as named submit
-      triggers of the face''s form.'
+      ARCHIVED ACCOUNTS STAY READABLE, collapsed below, because existing bookings keep their reference;
+      each row links to the account''s page as well.'
     items:
       - scene: design-system:shell
         with:
@@ -2607,15 +2536,13 @@ scenes:
                                 - tickets
                               right:
                                 - default
-                                - make_default
-                                - edit
-                                - archive
                             items:
-                              - cells:
+                              - url: /_workspace/1/project/1/accounts/1
+                                cells:
                                   name:
-                                    kind: text
+                                    kind: link
                                     value: bakers.build Platform internal
-                                    emphasis: strong
+                                    url: /_workspace/1/project/1/accounts/1
                                   type:
                                     kind: text
                                     value: Internal
@@ -2629,15 +2556,12 @@ scenes:
                                     label: Default
                                     tone: running
                                     dot: true
-                                  edit:
-                                    kind: action
-                                    label: Edit
-                                    variant: ghost
-                              - cells:
+                              - url: /_workspace/1/project/1/accounts/2
+                                cells:
                                   name:
-                                    kind: text
+                                    kind: link
                                     value: Kunde X maintenance
-                                    emphasis: strong
+                                    url: /_workspace/1/project/1/accounts/2
                                   type:
                                     kind: text
                                     value: Time & Material
@@ -2646,19 +2570,12 @@ scenes:
                                     kind: text
                                     value: Linked to BB-12, BB-40
                                     emphasis: faint
-                                  edit:
-                                    kind: action
-                                    label: Edit
-                                    variant: ghost
-                                  archive:
-                                    kind: action
-                                    label: Archive
-                                    variant: ghost
-                              - cells:
+                              - url: /_workspace/1/project/1/accounts/3
+                                cells:
                                   name:
-                                    kind: text
+                                    kind: link
                                     value: Relaunch fixed price
-                                    emphasis: strong
+                                    url: /_workspace/1/project/1/accounts/3
                                   type:
                                     kind: text
                                     value: Fixed Price
@@ -2667,18 +2584,6 @@ scenes:
                                     kind: text
                                     value: No linked tickets
                                     emphasis: faint
-                                  make_default:
-                                    kind: action
-                                    label: Make default
-                                    variant: ghost
-                                  edit:
-                                    kind: action
-                                    label: Edit
-                                    variant: ghost
-                                  archive:
-                                    kind: action
-                                    label: Archive
-                                    variant: ghost
                         - component: bb_theme:collapsible
                           props:
                             open: false
@@ -2697,10 +2602,12 @@ scenes:
                                     right:
                                       - state
                                   items:
-                                    - cells:
+                                    - url: /_workspace/1/project/1/accounts/4
+                                      cells:
                                         name:
-                                          kind: text
+                                          kind: link
                                           value: Pilot phase
+                                          url: /_workspace/1/project/1/accounts/4
                                         type:
                                           kind: text
                                           value: Fixed Price
@@ -2717,8 +2624,8 @@ scenes:
 
 
       NAME AND BILLING TYPE, NOTHING ELSE: no ticket field — tickets link on the ticket — and no default
-      switch — Make default is a row action. Edit opens the same dialog filled in, titled Edit billing account,
-      submitting Save.'
+      switch — Make default is on the account''s page. Edit, on that page, opens the same dialog filled in,
+      titled Edit billing account, submitting Save.'
     items:
       - scene: design-system:shell
         with:
@@ -2793,15 +2700,13 @@ scenes:
                                 - tickets
                               right:
                                 - default
-                                - make_default
-                                - edit
-                                - archive
                             items:
-                              - cells:
+                              - url: /_workspace/1/project/1/accounts/1
+                                cells:
                                   name:
-                                    kind: text
+                                    kind: link
                                     value: bakers.build Platform internal
-                                    emphasis: strong
+                                    url: /_workspace/1/project/1/accounts/1
                                   type:
                                     kind: text
                                     value: Internal
@@ -2815,15 +2720,12 @@ scenes:
                                     label: Default
                                     tone: running
                                     dot: true
-                                  edit:
-                                    kind: action
-                                    label: Edit
-                                    variant: ghost
-                              - cells:
+                              - url: /_workspace/1/project/1/accounts/2
+                                cells:
                                   name:
-                                    kind: text
+                                    kind: link
                                     value: Kunde X maintenance
-                                    emphasis: strong
+                                    url: /_workspace/1/project/1/accounts/2
                                   type:
                                     kind: text
                                     value: Time & Material
@@ -2832,19 +2734,12 @@ scenes:
                                     kind: text
                                     value: Linked to BB-12, BB-40
                                     emphasis: faint
-                                  edit:
-                                    kind: action
-                                    label: Edit
-                                    variant: ghost
-                                  archive:
-                                    kind: action
-                                    label: Archive
-                                    variant: ghost
-                              - cells:
+                              - url: /_workspace/1/project/1/accounts/3
+                                cells:
                                   name:
-                                    kind: text
+                                    kind: link
                                     value: Relaunch fixed price
-                                    emphasis: strong
+                                    url: /_workspace/1/project/1/accounts/3
                                   type:
                                     kind: text
                                     value: Fixed Price
@@ -2853,18 +2748,6 @@ scenes:
                                     kind: text
                                     value: No linked tickets
                                     emphasis: faint
-                                  make_default:
-                                    kind: action
-                                    label: Make default
-                                    variant: ghost
-                                  edit:
-                                    kind: action
-                                    label: Edit
-                                    variant: ghost
-                                  archive:
-                                    kind: action
-                                    label: Archive
-                                    variant: ghost
                         - component: bb_theme:collapsible
                           props:
                             open: false
@@ -2883,10 +2766,12 @@ scenes:
                                     right:
                                       - state
                                   items:
-                                    - cells:
+                                    - url: /_workspace/1/project/1/accounts/4
+                                      cells:
                                         name:
-                                          kind: text
+                                          kind: link
                                           value: Pilot phase
+                                          url: /_workspace/1/project/1/accounts/4
                                         type:
                                           kind: text
                                           value: Fixed Price

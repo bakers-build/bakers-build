@@ -24,7 +24,7 @@ use Drupal\search_api\Query\QueryInterface;
 #[SearchApiProcessor(
   id: 'bb_deployment_identifiers',
   label: new TranslatableMarkup('bakers.build deployment identifiers'),
-  description: new TranslatableMarkup('Deployment tickets carrying this work ticket.'),
+  description: new TranslatableMarkup('Ship tickets carrying this work ticket.'),
   stages: ['add_properties' => 0, 'preprocess_query' => 0],
 )]
 final class BbDeploymentIdentifiers extends ProcessorPluginBase implements ContainerFactoryPluginInterface {
@@ -32,7 +32,7 @@ final class BbDeploymentIdentifiers extends ProcessorPluginBase implements Conta
   /**
    * Reads deployment records at indexing and query time.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}
@@ -68,7 +68,7 @@ final class BbDeploymentIdentifiers extends ProcessorPluginBase implements Conta
         }
         $storage = $this->entityTypeManager->getStorage('bb_ticket');
         $ids = $storage->getQuery()->accessCheck(TRUE)
-          ->condition('ticket_type.entity.name', 'deployment')
+          ->condition('ticket_type.entity.name', 'ship')
           ->condition('identifier', $values, 'IN')->execute();
         $readable = [];
         foreach ($storage->loadMultiple($ids) as $deployment) {
@@ -108,13 +108,13 @@ final class BbDeploymentIdentifiers extends ProcessorPluginBase implements Conta
     $fields = $this->getFieldsHelper()->filterForPropertyPath($item->getFields(), NULL, 'deployment_identifiers');
     $ticket = $item->getOriginalObject()->getValue();
     if ($fields === [] || !$ticket instanceof BbTicketInterface
-      || $ticket->get('ticket_type')->entity?->label() === 'deployment') {
+      || $ticket->get('ticket_type')->entity?->label() === 'ship') {
       return;
     }
     // Indexing is viewer-independent; query-time scope protects the results.
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
     $ids = $storage->getQuery()->accessCheck(FALSE)
-      ->condition('ticket_type.entity.name', 'deployment')
+      ->condition('ticket_type.entity.name', 'ship')
       ->condition('referenced_tickets', $ticket->id())->execute();
     foreach ($storage->loadMultiple($ids) as $deployment) {
       assert($deployment instanceof BbTicketInterface);

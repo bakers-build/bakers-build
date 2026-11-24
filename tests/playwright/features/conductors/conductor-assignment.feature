@@ -2,6 +2,7 @@
 Feature: Conductor assignment follows local authority
   Ordinary members, leads and apps can assign within their project. A lead
   grant in another workspace must not grant access to this workspace.
+  Another member's conductor is set only while its owner allows assignment.
 
   # BB-462 F5: `fixture-foreign-lead` used to pass here (201/200) because
   # direct PROJECT membership (now retired, D7) carried the implicit
@@ -46,3 +47,20 @@ Feature: Conductor assignment follows local authority
       | fixture-foreign-lead | 403    |
       | north-contributor       | 200    |
       | south-lead | 403    |
+
+  # `conductor.forbidden` sits on a machine whose owner forbids assignment by
+  # others; `conductor.home` allows it, so the rows above stay as they were.
+  Scenario Outline: Setting another member's conductor follows its owner's setting
+    Given the API client is "north-contributor"
+    When the API client creates a "bb_work" ticket in "home" as "ticket"
+    Given the API client is "<actor>"
+    When the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
+      """
+      {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{conductor.forbidden}"}}}}}
+      """
+    Then the API response status is <status>
+
+    Examples:
+      | actor               | status |
+      | north-contributor   | 422    |
+      | fixture-claim-owner | 200    |

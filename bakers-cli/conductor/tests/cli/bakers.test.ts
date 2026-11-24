@@ -24,7 +24,7 @@ import {
   type ConductorStatus,
   ConductorTakeoverRequired,
 } from '@bakers-build/conductor/contract';
-import type { ProcProbe } from '@bakers-build/core';
+import { defaultProcProbe, type ProcProbe } from '@bakers-build/core';
 import {
   afterAll,
   afterEach,
@@ -322,16 +322,29 @@ describe('bakers conductor start --force (BB-450 D10)', () => {
    */
   function fakeProcProbe(
     pid: number,
-    opts: { diesOn?: NodeJS.Signals } = {},
+    opts: { diesOn?: NodeJS.Signals; darwin?: boolean } = {},
   ): ProcProbe & { sentSignals: NodeJS.Signals[] } {
     let alive = true;
     const sentSignals: NodeJS.Signals[] = [];
+    // macOS: the real probe over a fake `ps -ww -o uid= -o command= -p <pid>`.
+    const ps = (_file: string, args: string[]) => {
+      if (Number(args.at(-1)) !== pid || !alive) throw new Error('ps exit 1');
+      return `${process.getuid?.() ?? 0} ${CONDUCTOR_CMDLINE}\n`;
+    };
+    const identity = opts.darwin
+      ? defaultProcProbe('darwin', ps)
+      : {
+          supported: true,
+          cmdlineOf: (p: number) =>
+            p === pid && alive ? CONDUCTOR_CMDLINE : undefined,
+          uidOf: (p: number) =>
+            p === pid ? (process.getuid?.() ?? 0) : undefined,
+        };
     return {
-      supported: true,
+      supported: identity.supported,
       sentSignals,
-      cmdlineOf: (p: number) =>
-        p === pid && alive ? CONDUCTOR_CMDLINE : undefined,
-      uidOf: (p: number) => (p === pid ? (process.getuid?.() ?? 0) : undefined),
+      cmdlineOf: identity.cmdlineOf,
+      uidOf: identity.uidOf,
       send: (p: number, signal: NodeJS.Signals) => {
         if (p !== pid) return;
         sentSignals.push(signal);
@@ -340,7 +353,10 @@ describe('bakers conductor start --force (BB-450 D10)', () => {
     };
   }
 
-  it('restarts: verified SIGTERM, then a fresh spawn once the old pid is gone', async () => {
+  it.each([
+    ['Linux', false],
+    ['macOS', true],
+  ])('restarts on %s: verified SIGTERM, then a fresh spawn once the old pid is gone', async (_os, darwin) => {
     const remote = new ScriptedRemote([
       [runningRow()], // existing check: running, pid 4242
       // waitForFreshHeartbeat attempt 0 (BB-450 review B8): a SIGKILLed
@@ -363,7 +379,7 @@ describe('bakers conductor start --force (BB-450 D10)', () => {
     ]);
     const spawnConductor = fakeSpawn();
     // Dies on the first signal it receives (SIGTERM) — the ordinary graceful case.
-    const probe = fakeProcProbe(4242, { diesOn: 'SIGTERM' });
+    const probe = fakeProcProbe(4242, { diesOn: 'SIGTERM', darwin });
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
     try {
@@ -1161,14 +1177,16 @@ describe('bakers conductor start update prompt', () => {
     };
   }
 
-  it('yes: runs update then migration, prints rerun, and skips startup', async () => {
+  it('yes: runs update then migration, then continues on the new binary without a second check', async () => {
     const commands: string[][] = [];
     const asked: string[] = [];
     const logs: string[] = [];
     const logSpy = vi.spyOn(console, 'log').mockImplementation((m) => {
       logs.push(String(m));
     });
+    const execve = vi.fn();
     const { deps, spawnConductor } = promptDeps({
+      execve,
       env: { ...process.env, CI: '', BAKERS_CONDUCTOR: 'portal' },
       askUpdate: async (question) => {
         asked.push(question);
@@ -1194,9 +1212,21 @@ describe('bakers conductor start update prompt', () => {
     expect(logs.join('\n')).toContain(
       'bakers update and configuration migration completed.',
     );
-    expect(logs.join('\n')).toContain(
-      'bakers --conductor portal conductor start --force',
-    );
+    expect(logs.join('\n')).not.toMatch(/rerun/i);
+    expect(execve).toHaveBeenCalledTimes(1);
+    const [file, args, env] = execve.mock.calls[0] as [
+      string,
+      string[],
+      NodeJS.ProcessEnv,
+    ];
+    expect(file).toBe(process.execPath);
+    expect(args).toEqual([
+      process.execPath,
+      ...process.execArgv,
+      ...process.argv.slice(1),
+      '--no-update-check',
+    ]);
+    expect(env.BAKERS_CONDUCTOR).toBe('portal');
     expect(logs).not.toContain('LOOP_STARTED');
     expect(spawnConductor.spawned).toHaveLength(0);
   });

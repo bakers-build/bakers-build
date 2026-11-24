@@ -162,6 +162,7 @@ const agent = (
   extension: Record<string, unknown> = {},
 ): BbAgent => ({
   id: 'claude',
+  prepareRun: () => ({ env: {}, readPaths: [], writePaths: [] }),
   ...extension,
   launchCommand: (prompt, _run, _ws, tools) => {
     seen.prompt = prompt;
@@ -178,6 +179,7 @@ function setup(
   extension: Record<string, unknown> = {},
   instructions: string | null = null,
   clones = true,
+  secrets: Record<string, string> = {},
 ) {
   const order: string[] = [];
   const runtime =
@@ -238,6 +240,10 @@ function setup(
     ],
     log,
     CHECKOUT,
+    undefined,
+    undefined,
+    undefined,
+    secrets,
   );
   const run = async (inspect?: () => Promise<void>, endpointFile?: string) => {
     if (withTools) {
@@ -280,8 +286,9 @@ describe('runtime slot — launch wrapping', () => {
     );
     expect(isolated.seen.prompt).toContain('Read-only here: .bakers, .ddev.');
     expect(isolated.seen.prompt).toContain(
-      'a maintainer merges the target outside the run',
+      'forge_update_branch merges the target into your branch; follow its sync',
     );
+    expect(isolated.seen.prompt).not.toContain('a maintainer merges');
     expect(isolated.seen.prompt).not.toContain('runtime_transfer_commit');
 
     const { hostRuntime } = await import('../../src/plugins/runtime.js');
@@ -423,6 +430,44 @@ describe('runtime slot — launch wrapping', () => {
     ).toBe(true);
   });
 
+  it('fails an isolated dispatch of an agent without prepareRun, naming both', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    let prepared = false;
+    const s = setup(
+      recordingRuntime([], rec, {
+        prepareRun: async () => {
+          prepared = true;
+          return { homePath: '/private/run' };
+        },
+      }),
+      false,
+      { prepareRun: undefined },
+    );
+    await s.run();
+    expect(prepared).toBe(false);
+    expect(rec.wraps).toHaveLength(0);
+    expect(s.executor.started).toHaveLength(0);
+    expect(
+      s.logs.some((line) =>
+        JSON.stringify(line.obj).includes(
+          'agent opus: the runtime isolates runs, but the agent has no prepareRun',
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it('launches an agent without prepareRun on a non-isolating runtime', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const runtime: RuntimePlugin = {
+      ...recordingRuntime([], rec),
+      isolates: false,
+    };
+    const s = setup(runtime, false, { prepareRun: undefined });
+    await s.run();
+    expect(rec.wraps).toHaveLength(1);
+    expect(s.executor.started).toHaveLength(1);
+  });
+
   it('tells hooks and the run the worktree path and that the runtime isolates', async () => {
     const rec: Recorded = { wraps: [], cleanups: [] };
     const s = setup(recordingRuntime([], rec));
@@ -513,6 +558,19 @@ describe('runtime slot — launch wrapping', () => {
     expect(s.order).toContain('after_run');
   });
 
+  it('names the herdr agent to the executor only for an isolating runtime', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const isolated = setup(recordingRuntime([], rec), false, {
+      herdrAgent: 'claude',
+    });
+    await isolated.run();
+    expect(isolated.executor.started[0]?.agent).toBe('claude');
+    const { hostRuntime } = await import('../../src/plugins/runtime.js');
+    const host = setup(hostRuntime, false, { herdrAgent: 'claude' });
+    await host.run();
+    expect(host.executor.started[0]).not.toHaveProperty('agent');
+  });
+
   it('host runtime passes the launch through unchanged', async () => {
     const plain = setup(undefined, true);
     await plain.run();
@@ -533,6 +591,86 @@ describe('runtime slot — launch wrapping', () => {
     expect(host.logs.find((l) => l.msg === 'dispatched run')?.obj.runtime).toBe(
       'host',
     );
+  });
+});
+
+describe('secrets file hand-out', () => {
+  const file = { DECLARED_KEY: 'file-declared', OTHER_KEY: 'file-other' };
+  let shell: string | undefined;
+  beforeEach(() => {
+    shell = process.env.DECLARED_KEY;
+    delete process.env.DECLARED_KEY;
+  });
+  afterEach(() => {
+    if (shell === undefined) delete process.env.DECLARED_KEY;
+    else process.env.DECLARED_KEY = shell;
+  });
+
+  it('hands an isolated run only the declared secrets, through runtime and agent', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const seen: { runtime?: unknown; context?: unknown } = {};
+    const s = setup(
+      recordingRuntime([], rec, {
+        prepareRun: async (_run, info) => {
+          seen.runtime = info.secrets;
+          return { homePath: '/private/run' };
+        },
+      }),
+      false,
+      {
+        secretEnv: ['DECLARED_KEY'],
+        prepareRun: (context: { secrets?: unknown }) => {
+          seen.context = context.secrets;
+          return { env: {}, readPaths: [], writePaths: [] };
+        },
+      },
+      null,
+      true,
+      file,
+    );
+    await s.run();
+    const declared = { DECLARED_KEY: 'file-declared' };
+    expect(seen.runtime).toEqual(declared);
+    expect(seen.context).toEqual(declared);
+    expect(rec.wraps[0]?.secrets).toEqual(declared);
+    expect(JSON.stringify(rec.wraps[0])).not.toContain('file-other');
+    expect(JSON.stringify(s.executor.started)).not.toContain('file-other');
+    expect(JSON.stringify(s.logs)).not.toContain('file-declared');
+  });
+
+  it('lets a variable exported in the shell win over the file', async () => {
+    process.env.DECLARED_KEY = 'shell-declared';
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const s = setup(
+      recordingRuntime([], rec),
+      false,
+      { secretEnv: ['DECLARED_KEY'] },
+      null,
+      true,
+      file,
+    );
+    await s.run();
+    expect(rec.wraps[0]?.secrets).toEqual({ DECLARED_KEY: 'shell-declared' });
+  });
+
+  it('adds a file-only declared secret to a host run env, never an undeclared one', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const runtime: RuntimePlugin = {
+      ...recordingRuntime([], rec),
+      isolates: false,
+    };
+    const s = setup(
+      runtime,
+      false,
+      { secretEnv: ['DECLARED_KEY'], prepareRun: undefined },
+      null,
+      true,
+      file,
+    );
+    await s.run();
+    const env = s.executor.started[0]?.env ?? {};
+    expect(env.DECLARED_KEY).toBe('file-declared');
+    expect(env).not.toHaveProperty('OTHER_KEY');
   });
 });
 

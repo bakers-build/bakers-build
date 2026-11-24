@@ -55,16 +55,15 @@ final class BbTermTest extends KernelTestBase {
   }
 
   /**
-   * Terms have add, edit and delete forms and no page of their own.
+   * Terms have a page, add, edit and delete forms, and no collection.
    */
-  public function testTermRoutesAreFormsOnly(): void {
+  public function testTermRoutes(): void {
     $routes = $this->container->get('router.route_provider');
+    $this->assertSame('/_workspace/{bb_workspace}/term/{bb_term}', $routes->getRouteByName('entity.bb_term.canonical')->getPath());
     $this->assertSame('/_workspace/{bb_workspace}/term/{bb_vocabulary}/add', $routes->getRouteByName('entity.bb_term.add_form')->getPath());
     $this->assertSame('/_workspace/{bb_workspace}/term/{bb_term}/edit', $routes->getRouteByName('entity.bb_term.edit_form')->getPath());
     $this->assertSame('/_workspace/{bb_workspace}/term/{bb_term}/delete', $routes->getRouteByName('entity.bb_term.delete_form')->getPath());
-    foreach (['canonical', 'collection'] as $link) {
-      $this->assertEmpty($routes->getRoutesByNames(["entity.bb_term.$link"]), "entity.bb_term.$link must not exist");
-    }
+    $this->assertEmpty($routes->getRoutesByNames(['entity.bb_term.collection']), 'entity.bb_term.collection must not exist');
   }
 
   /**

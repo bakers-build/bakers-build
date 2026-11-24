@@ -61,12 +61,12 @@ const readmeTabNote = unwrap(section(readme, TAB_NOTE, /\n##+ /));
 // different widths and a claim is a sentence, not a line.
 const readmeNavSection = section(
   readme,
-  '## Navigation — five scopes',
+  '## Navigation — six scopes',
   /\n##+ /,
 );
 const referenceNavSection = section(
   reference,
-  '## Navigation - five scopes',
+  '## Navigation - six scopes',
   /\n##+ /,
 );
 const readmeNav = unwrap(readmeNavSection);
@@ -274,13 +274,13 @@ it.each([
 it.each([
   ['README', readmeNavSection],
   ['reference', referenceNavSection],
-])('the %s documents the exact five-scope sitemap', (_name, nav) => {
-  expect(nav).toMatch(/^## Navigation [-—] five scopes/);
-  expect(nav).toMatch(/Navigation has five tab scopes/);
+])('the %s documents the exact six-scope sitemap', (_name, nav) => {
+  expect(nav).toMatch(/^## Navigation [-—] six scopes/);
+  expect(nav).toMatch(/Navigation has six tab scopes/);
   for (const [level, tabs] of [
     [
       'Root',
-      '**My work** · **Projects** · **Members** (workspace lead only) · **Conductors**',
+      '**My work** · **Projects** · **Members** (workspace lead only) · **Machines**',
     ],
     ['Project', '**Overview** · **Tickets** · **Runs** · **Conductors**'],
     [
@@ -288,6 +288,8 @@ it.each([
       '**Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card',
     ],
     ['Workspace member', '**Overview** · **Tickets** · **Runs**'],
+    ['Machine', '**Overview** · **Conductors**'],
+    ['Conductor', '**Overview** · **Held work** · **Assigned** · **Log**'],
   ]) {
     expect(section(nav, `| ${level} |`, /\n/)).toContain(tabs);
   }
@@ -311,4 +313,17 @@ it('the README key table makes member rosters navigable', () => {
   const row = section(readmeKeys, '| Workspace Members |', /\n/);
   expect(row).toMatch(/↑↓.*select|select/);
   expect(row).toMatch(/Enter.*open member/);
+});
+
+// BAKERS-338 — a list only opens its row's own detail; the actions live on
+// the detail screens, and no document advertises a row action on a list.
+it.each([
+  ['README', readme],
+  ['reference', reference],
+])('the %s puts every action on a detail, none on a list row', (_name, doc) => {
+  const text = unwrap(doc);
+  expect(text).toMatch(/opens the row's own detail/);
+  expect(text).not.toMatch(/on the selected row of the Runs tab/);
+  expect(text).not.toMatch(/`r` on your own machine or conductor/);
+  expect(text).not.toMatch(/claimed and running runs expose `e`/);
 });

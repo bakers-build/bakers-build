@@ -1,12 +1,16 @@
 import { ConductorLogScreen } from '../Entity/conductor/Screen/conductor-log.js';
 import { ConductorOverviewScreen } from '../Entity/conductor/Screen/conductor-overview.js';
 import { ConductorRunsScreen } from '../Entity/conductor/Screen/conductor-runs.js';
-import { ConductorsScreen } from '../Entity/conductor/Screen/conductors.js';
+import {
+  ConductorsScreen,
+  MachineConductorsScreen,
+} from '../Entity/conductor/Screen/conductors.js';
+import { MachineOverviewScreen } from '../Entity/conductor/Screen/machine-overview.js';
+import { MachinesScreen } from '../Entity/conductor/Screen/machines.js';
 import { ProjectConductorsScreen } from '../Entity/conductor/Screen/project-conductors.js';
 import { ProjectOverviewScreen } from '../Entity/project/Screen/project-overview.js';
 import { ProjectPickerScreen } from '../Entity/project/Screen/project-picker.js';
 import { ProjectsScreen } from '../Entity/project/Screen/projects-screen.js';
-import { EditRunFormScreen } from '../Entity/run/Screen/edit-run-form.js';
 import { RunDetailScreen } from '../Entity/run/Screen/run-detail.js';
 import { RunsScreen } from '../Entity/run/Screen/runs.js';
 import { WorkspaceMemberRunsScreen } from '../Entity/run/Screen/user-runs.js';
@@ -30,6 +34,7 @@ import { WhoFilterScreen } from '../Entity/ticket/Screen/who-filter-form.js';
 import { WorkspaceMemberOverviewScreen } from '../Entity/user/Screen/member-overview.js';
 import { UsersScreen } from '../Entity/user/Screen/users.js';
 import { WorkspacePickerScreen } from '../Entity/workspace/Screen/workspace-picker.js';
+import { ConfirmDialogScreen } from '../Screen/confirm-dialog.js';
 import type { ResolvedRoute } from '../types.js';
 import { defineRoutes } from './registry.js';
 import type { RouteLocation, ScreenClass } from './route.js';
@@ -67,6 +72,9 @@ export const bootLocationFor = (route?: ResolvedRoute): RouteLocation => {
 
 const BUILT_IN: readonly ScreenClass[] = [
   MyWorkScreen,
+  MachinesScreen,
+  MachineOverviewScreen,
+  MachineConductorsScreen,
   ConductorsScreen,
   ConductorOverviewScreen,
   ConductorRunsScreen,
@@ -91,7 +99,7 @@ const BUILT_IN: readonly ScreenClass[] = [
   TicketAddonsScreen,
   AddonActionFormScreen,
   RunDetailScreen,
-  EditRunFormScreen,
+  ConfirmDialogScreen,
 ];
 
 export function buildRoutes(

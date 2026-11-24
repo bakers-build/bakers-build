@@ -40,7 +40,7 @@ final class BbMarkdown extends EditorBase implements ContainerFactoryPluginInter
   /**
    * Renders the toolbar markup.
    */
-  private RendererInterface $renderer;
+  protected RendererInterface $renderer;
 
   /**
    * {@inheritdoc}

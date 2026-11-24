@@ -19,8 +19,9 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * bb_group first. BbGroup uses the entity module's EntityPermissionProvider
  * and, since BB-305, implements EntityOwnerInterface — so the provider emits
  * `update any|own` and `delete any|own` in place of the bare verbs, while
- * `create` and `view` are unchanged. The rank takes the `any` variants: a lead
- * is meant to act on everyone's rows inside its own workspace.
+ * `create` and `view` are unchanged. The rank takes `update any`: a lead
+ * edits everyone's rows inside its own workspace, but deletes only its own
+ * (`delete own`); the workspace owner deletes any (BbRankEntityFence).
  *
  * BB-359 D6 moved WHERE that capability comes from. It used to be the
  * site-wide `bb_project_manager` role, which this ticket deletes; it is now
@@ -58,7 +59,7 @@ final class ProjectManagerGroupAccessTest extends KernelTestBase {
    */
   private const GROUP_PERMS = [
     'create bb_group',
-    'delete any bb_group',
+    'delete own bb_group',
     'update any bb_group',
     'view bb_group',
   ];
@@ -122,7 +123,10 @@ final class ProjectManagerGroupAccessTest extends KernelTestBase {
     $group = $this->createGroup('keytec', $workspace);
     $this->assertTrue($handler->access($group, 'view', $lead), 'a lead may view a bb_group');
     $this->assertTrue($handler->access($group, 'update', $lead), 'a lead may update a bb_group');
-    $this->assertTrue($handler->access($group, 'delete', $lead), 'a lead may delete a bb_group');
+    $this->assertFalse($handler->access($group, 'delete', $lead), 'a lead may not delete a group it did not create');
+    $group->set('owner_user_id', $lead->id())->save();
+    $handler->resetCache();
+    $this->assertTrue($handler->access($group, 'delete', $lead), 'a lead may delete a bb_group it created');
   }
 
   /**

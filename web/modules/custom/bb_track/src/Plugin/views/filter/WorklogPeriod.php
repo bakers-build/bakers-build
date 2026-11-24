@@ -9,6 +9,8 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_track\Form\WorklogFormLayout;
+use Drupal\bb_track\WorklogAggregates;
 use Drupal\bb_track\WorklogCalendar;
 use Drupal\bb_track\WorklogSelection;
 use Drupal\views\Attribute\ViewsFilter;
@@ -42,7 +44,7 @@ final class WorklogPeriod extends FilterPluginBase {
   /**
    * Memoised selection for this request.
    */
-  private ?WorklogSelection $resolvedSelection = NULL;
+  protected ?WorklogSelection $resolvedSelection = NULL;
 
   /**
    * Constructs the filter.
@@ -51,9 +53,10 @@ final class WorklogPeriod extends FilterPluginBase {
     array $configuration,
     $plugin_id,
     $plugin_definition,
-    private readonly RequestStack $requestStack,
-    private readonly AccountInterface $currentUser,
-    private readonly WorklogCalendar $calendar,
+    protected readonly RequestStack $requestStack,
+    protected readonly AccountInterface $currentUser,
+    protected readonly WorklogCalendar $calendar,
+    protected readonly WorklogAggregates $aggregates,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
@@ -69,6 +72,7 @@ final class WorklogPeriod extends FilterPluginBase {
       $container->get('request_stack'),
       $container->get('current_user'),
       $container->get('bb_track.worklog_calendar'),
+      $container->get('bb_track.worklog_aggregates'),
     );
   }
 
@@ -193,10 +197,10 @@ final class WorklogPeriod extends FilterPluginBase {
         ],
       ],
     ];
+    // The period is chosen with ‹ › and the label; the date rides along.
     $form['date'] = [
-      '#type' => 'date',
-      '#title' => $this->t('Date'),
-      '#default_value' => $selection->date,
+      '#type' => 'hidden',
+      '#value' => $selection->date,
     ];
     if ($this->context() !== 'project') {
       $form['project'] = $this->picker($selection, 'project', $this->t('Project'), 'project', $this->t('All projects'));
@@ -207,12 +211,21 @@ final class WorklogPeriod extends FilterPluginBase {
     if (count($selection->options['people']) > 1) {
       $form['person'] = $this->picker($selection, 'person', $this->t('Person'), 'user', $this->t('Everyone'));
     }
-    foreach (['previous' => $this->t('Previous'), 'today' => $this->t('Today'), 'next' => $this->t('Next')] as $direction => $label) {
-      $form[$direction] = [
-        '#type' => 'link',
-        '#title' => $label,
-        '#url' => $this->navigationUrl($selection, $direction),
-      ];
+    $form['previous'] = $this->stepButton($selection, 'previous', (string) $this->t('Previous'), 'arrow-left');
+    $label = $this->periodLabel($selection);
+    $form['period'] = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:button',
+      '#variant' => 'ghost',
+      '#props' => [
+        'label' => $label,
+        'href' => $this->navigationUrl($selection, 'today')->toString(),
+        'aria_label' => (string) $this->t('Go to today, @period', ['@period' => $label]),
+      ],
+    ];
+    $form['next'] = $this->stepButton($selection, 'next', (string) $this->t('Next'), 'arrow-right');
+    if ($selection->mode === 'week') {
+      $form['week_total'] = $this->weekTotal($selection);
     }
     $form['page'] = [
       '#type' => 'hidden',
@@ -328,15 +341,16 @@ final class WorklogPeriod extends FilterPluginBase {
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:option_picker',
+      // A labelled pill, "Project · All", as Figma draws it.
       '#props' => [
-        'variant' => 'facet',
+        'variant' => 'field',
         'label' => (string) $label,
         'id' => 'filter-' . $key,
         'icon' => $icon,
         'open' => FALSE,
         'multiple' => FALSE,
-        'values' => $value === '' ? [] : [$value],
-        'value_labels' => $value === '' ? [] : [$selection->label($key)],
+        'value_label' => $value === '' ? (string) $this->t('All') : $selection->label($key),
+        'prominent' => $value !== '',
         'searchable' => count($rows) > 6,
       ],
       '#slots' => [
@@ -371,6 +385,74 @@ final class WorklogPeriod extends FilterPluginBase {
       }
     }
     $form_state->setUserInput($input);
+  }
+
+  /**
+   * A ‹ or › step to the previous or next period, as an icon button.
+   *
+   * @return array<string, mixed>
+   *   The `bb_theme:button` render array.
+   */
+  private function stepButton(WorklogSelection $selection, string $direction, string $label, string $icon): array {
+    return [
+      '#type' => 'component',
+      '#component' => 'bb_theme:button',
+      '#variant' => 'neutral',
+      '#props' => [
+        'label' => $label,
+        'href' => $this->navigationUrl($selection, $direction)->toString(),
+        'icon_only' => TRUE,
+      ],
+      '#slots' => [
+        'icon' => [
+          '#type' => 'component',
+          '#component' => 'bb_theme:icon',
+          '#props' => ['name' => $icon, 'size' => 'sm'],
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * The shown period: "2 – 8 Nov 2026" for a week, "Tue 3 Nov 2026" for a day.
+   */
+  private function periodLabel(WorklogSelection $selection): string {
+    $day = new \DateTimeImmutable($selection->date);
+    if ($selection->mode !== 'week') {
+      return $day->format('D j M Y');
+    }
+    $start = new \DateTimeImmutable($selection->weekStart);
+    $end = $start->modify('+6 days');
+    $from = match (TRUE) {
+      $start->format('Y') !== $end->format('Y') => 'j M Y',
+      $start->format('n') !== $end->format('n') => 'j M',
+      default => 'j',
+    };
+    return $start->format($from) . ' – ' . $end->format('j M Y');
+  }
+
+  /**
+   * The week total, "Week total 4:30", at the end of the toolbar row.
+   *
+   * @return array<string, mixed>
+   *   The render array.
+   */
+  private function weekTotal(WorklogSelection $selection): array {
+    $seconds = array_sum($this->aggregates->secondsByDay($selection));
+    return [
+      '#type' => 'container',
+      'label' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:text',
+        '#props' => ['text' => (string) $this->t('Week total'), 'as' => 'span', 'size' => 'meta', 'tone' => 'light'],
+      ],
+      'gap' => ['#plain_text' => ' '],
+      'value' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:text',
+        '#props' => ['text' => WorklogFormLayout::formatDuration($seconds), 'as' => 'span', 'size' => 'section-title'],
+      ],
+    ];
   }
 
   /**

@@ -45,6 +45,12 @@ install:
   # on it.
   - bb_inbox
   - bb_addon
+  # Core's breakpoint registry, BEFORE the views are imported: Better Exposed
+  # Filters reads `bb_theme:bb_theme.lg` from it to auto-submit the ticket
+  # facets only from `lg` up, so the phone filter sheet applies on "Show
+  # results". Without it the breakpoint is silently ignored and every tick
+  # reloads the list. Also in `config/sync/core.extension.yml`.
+  - breakpoint
   - better_exposed_filters
   # Swaps the 'string'/'combine'/'search_api_text'/'search_api_fulltext' Views
   # filter handler CLASS for every view (hook_views_plugins_filter_alter), not
@@ -298,6 +304,8 @@ config:
       - core.entity_form_mode.bb_team.settings
       - core.entity_form_display.bb_team.bb_team.settings
       - core.entity_form_mode.bb_workspace.settings
+      - core.entity_form_mode.bb_machine.settings
+      - core.entity_form_mode.bb_conductor.settings
       # THE TWO PAGE LAYOUTS ARE NOT ON THIS LIST, AND THAT IS THE POINT.
       # `display_builder_page_layout.page_layout.bb_shell` was named here
       # until BB-415, and `…bb_gate` never was. Both now ship in THIS
@@ -529,6 +537,9 @@ config:
       # The conductor detail's Overview body (BB-619); its display ships in
       # `recipes/bakers/config/`, so it needs no entry here.
       - core.entity_view_mode.bb_conductor.full
+      # The pending invitation's detail; its display ships in
+      # `recipes/bakers/config/`.
+      - core.entity_view_mode.bb_invite.full
       # The machine detail's Overview body (BB-619); its display ships in
       # `recipes/bakers/config/`, so it needs no entry here.
       - core.entity_view_mode.bb_machine.full
@@ -710,6 +721,9 @@ config:
     # The activity row view mode; its display ships in `recipes/bakers/config/`.
     bb_activity:
       - core.entity_view_mode.bb_activity.full
+    # The billing account's detail; its display ships in `recipes/bakers/config/`.
+    bb_track:
+      - core.entity_view_mode.bb_track_account.full
     bb_api_key:
       # The team "Reporter" rank: lets a team member — human or a
       # workspace service account — create tickets in that team's projects,

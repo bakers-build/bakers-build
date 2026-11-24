@@ -1,6 +1,3 @@
-import { actionItem } from '../../../Component/footer-actions/index.js';
-import { copyThrough } from '../../../lib/clipboard.js';
-import { serverMessage } from '../../../lib/jsonapi-error.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import type {
   FullScreenChrome,
@@ -9,7 +6,6 @@ import type {
 import { ListScreen } from '../../../Screen/list-screen.js';
 import type { ScreenContext } from '../../../Screen/screen.js';
 import { resolveWhoCandidate } from '../../user/Data/users.js';
-import { loadTicketDetail } from '../Data/detail.js';
 import {
   CLOSED_FILTER_VALUES,
   cycleValue,
@@ -23,12 +19,10 @@ import {
 import {
   countTicketsIgnoringClosed,
   loadFilteredTickets,
-  mapTicketDocument,
   TICKET_TABLE,
   type TicketPage,
   type TicketRow,
 } from '../Data/tickets.js';
-import { ticketUrl } from '../Data/url.js';
 import { TicketFilterBar } from './ticket-filter-bar.js';
 import { TicketSearch } from './ticket-search.js';
 
@@ -37,7 +31,6 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
   protected readonly table = TICKET_TABLE;
   commandForInput(input: string): string | undefined {
     if (input === '/') return 'search';
-    if (input === 'e') return 'edit-assignment-list';
     if (input === 'mouse-select') return 'leave-search';
     return undefined;
   }
@@ -99,25 +92,7 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
       this.setCriteria({ ...this.criteria, project }, context);
       return;
     }
-    if (
-      result &&
-      typeof result === 'object' &&
-      (result as { type?: unknown }).type === 'ticket-assignment-updated'
-    ) {
-      const returned = result as {
-        ticketId: string;
-        document?: Parameters<typeof mapTicketDocument>[0];
-      };
-      if (returned.document)
-        this.replaceRow(
-          returned.ticketId,
-          mapTicketDocument(returned.document),
-        );
-      this.status = 'saved';
-      context.requestDraw();
-    }
   }
-  private openingEdit = false;
   private status = '';
   private readonly search = new TicketSearch(this);
   override leave(): void {
@@ -399,34 +374,6 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
       this.setCriteria({ ...this.criteria, who: this.mine }, context);
     });
   }
-  /**
-   * BB-326 — `y` copies the selected ticket's identifier, `Y` its link.
-   *
-   * TWO TARGETS AND NO MODE: the operator pastes an identifier into an agent
-   * prompt or a chat line, and a link into a browser. Making one of them a
-   * second keystroke away would be a mode; making the shifted key the "bigger"
-   * variant is the ladder saying it in one press.
-   *
-   * It follows the CURSOR, not the page — the row `↑↓` is standing on is the
-   * one thing the operator has already pointed at.
-   */
-  private copySelection(link: boolean, context: ScreenContext): string {
-    const row = this.rows[this.selectedIndex];
-    if (!row) return 'nothing to copy';
-    return link
-      ? copyThrough(
-          context.copyToClipboard,
-          ticketUrl(context.services?.baseUrl, row.id),
-          `the link to ${row.identifier}`,
-          `no link to ${row.identifier} · this session has no base URL`,
-        )
-      : copyThrough(
-          context.copyToClipboard,
-          row.identifier,
-          row.identifier,
-          'nothing to copy',
-        );
-  }
   protected renderLoading(): string[] {
     return ['Loading tickets…'];
   }
@@ -507,10 +454,7 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
   }
 
   protected actions() {
-    return [
-      actionItem('tickets-edit', 'e', 'edit'),
-      ...this.pagingActionItems(),
-    ];
+    return this.pagingActionItems();
   }
 
   protected notice(): string | undefined {
@@ -522,42 +466,9 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
     context.navigate('ticket.detail', { ticketId: row.id });
     return true;
   }
-  select(index: number, context: ScreenContext): boolean {
-    if (index < 0 || index >= this.rows.length) return false;
-    this.selectedIndex = index;
-    context.requestDraw();
-    return true;
-  }
   override handleInput(input: string, context: ScreenContext): boolean {
     if (super.handleInput(input, context)) return true;
-    if (this.openingEdit) return true;
     if (this.search.handleKey(input, context)) return true;
-    if (input === 'e') {
-      const ticketId = this.rows[this.selectedIndex]?.id;
-      if (!ticketId || this.openingEdit || !context.services) return true;
-      this.openingEdit = true;
-      this.status = 'loading assignment…';
-      context.requestDraw();
-      const guard = this.captureLifecycle(context);
-      void loadTicketDetail(context.services.client, ticketId)
-        .then((document) => {
-          if (!this.lifecycleIsCurrent(guard, context)) return;
-          context.navigate?.(
-            'ticket.assignment.edit',
-            { ...(context.params ?? {}), ticketId },
-            { document },
-          );
-        })
-        .catch((caught) => {
-          if (!this.lifecycleIsCurrent(guard, context)) return;
-          this.status = serverMessage(caught);
-          this.requestActiveDraw(context);
-        })
-        .finally(() => {
-          this.openingEdit = false;
-        });
-      return true;
-    }
     // The paging arrows, dispatched HERE and not by the base (BB-294 D3). The
     // position is the load-bearing part: they are reached only PAST the search
     // branch above, which consumes them, so while the `/` field is open the arrows
@@ -569,15 +480,6 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
     // and why paging steps from the LOADED page live once, on
     // `ListScreen.handlePagingInput`.
     if (this.handlePagingInput(input, context)) return true;
-    // BB-326 — the copy keys, and their POSITION is the whole reason `y` is
-    // safe: they are reached only past the search branch above, which
-    // consumes every printable character, so `y` typed into the `/` field is a
-    // letter and never a copy. Nothing else in `src/` binds `y` or `Y`.
-    if (input === 'y' || input === 'Y') {
-      this.status = this.copySelection(input === 'Y', context);
-      context.requestDraw();
-      return true;
-    }
     const rows = this.readyValue?.rows;
     if (input === 's') {
       this.setCriteria(
@@ -609,7 +511,7 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
       // BB-416 — the SAME picker, opened in owner mode: `filterTarget`
       // steers `WhoFilterScreen` to emit `owner-filter-set` instead of
       // `who-filter-set` (`Screen/who-filter-form.ts`). `o` was free: the
-      // screen's bound single keys are /, e, y, Y, s, x, w, p, m, c, n plus
+      // screen's bound single keys are /, s, x, w, p, m, c, n plus
       // the cursor/paging keys — `o` for "owner" reads as directly as `w` for
       // "who" and `p` for "parent" do.
       context.navigate?.('project.tickets.who-filter', {
@@ -648,7 +550,6 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
     this.resetList();
     this.criteria = { ...DEFAULT_TICKET_CRITERIA };
     this.mine = undefined;
-    this.openingEdit = false;
     this.status = '';
     this.search.reset();
     this.hiddenByClosed = null;

@@ -31,6 +31,7 @@ function fakeFetch(routes: Record<string, Route>) {
     const route = routes[`${method} ${url.pathname.replace(P, '')}`];
     if (!route) return new Response('not found', { status: 404 });
     const out = route(url);
+    if (out instanceof Response) return out;
     return typeof out === 'string' ? new Response(out) : Response.json(out);
   }) as typeof fetch;
   return { doFetch, calls };
@@ -311,5 +312,192 @@ describe('forge-gitlab', () => {
       }),
     ).rejects.toThrow(/force_remove_source_branch/);
     expect(f.calls.slice(before).some((c) => c.method === 'PUT')).toBe(false);
+  });
+
+  describe('addReviewers', () => {
+    const users = (url: URL) =>
+      ({
+        'ada@example.com': [
+          { id: 3, public_email: 'other@example.com' },
+          { id: 7, public_email: 'Ada@Example.com' },
+        ],
+        'hidden@example.com': [{ id: 8, public_email: '' }],
+        // A non-admin token gets basic fields only, no e-mail.
+        'bea@example.com': [{ id: 4, username: 'bea' }],
+        'two@example.com': [
+          { id: 1, username: 'a' },
+          { id: 2, username: 'b' },
+        ],
+      })[url.searchParams.get('search') ?? ''] ?? [];
+
+    it('takes the single hit when the list shows no e-mail, as for a non-admin token', async () => {
+      const f = fakeFetch({
+        'GET /api/v4/users': users,
+        'GET /merge_requests/9': () => ({ ...MR, reviewers: [] }),
+        'PUT /merge_requests/9': () => MR,
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(
+        await b.addReviewers(PR, ['bea@example.com', 'two@example.com']),
+      ).toMatchObject({
+        requested: ['bea@example.com'],
+        skipped: [{ mail: 'two@example.com' }],
+      });
+      expect(f.calls.find((c) => c.method === 'PUT')?.body).toEqual({
+        reviewer_ids: [4],
+      });
+    });
+
+    it('resolves mails to users by exact e-mail and PUTs the union with the reviewers already on the MR', async () => {
+      const f = fakeFetch({
+        'GET /api/v4/users': users,
+        'GET /merge_requests/9': () => ({ ...MR, reviewers: [{ id: 5 }] }),
+        'PUT /merge_requests/9': () => MR,
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(
+        await b.addReviewers(PR, ['ada@example.com', 'hidden@example.com']),
+      ).toEqual({
+        requested: ['ada@example.com'],
+        skipped: [
+          {
+            mail: 'hidden@example.com',
+            reason: 'no GitLab user with this public e-mail',
+          },
+        ],
+      });
+      expect(f.calls.filter((c) => c.method === 'PUT')).toEqual([
+        {
+          method: 'PUT',
+          path: `${P}/merge_requests/9`,
+          body: { reviewer_ids: [5, 7] },
+          token: 'glpat-SECRET',
+        },
+      ]);
+    });
+
+    it('sends no PUT when every found user already reviews the MR', async () => {
+      const f = fakeFetch({
+        'GET /api/v4/users': users,
+        'GET /merge_requests/9': () => ({ ...MR, reviewers: [{ id: 7 }] }),
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(
+        await b.addReviewers(PR, ['ada@example.com', 'nobody@example.com']),
+      ).toMatchObject({
+        requested: ['ada@example.com'],
+        skipped: [{ mail: 'nobody@example.com' }],
+      });
+      expect(f.calls.some((c) => c.method !== 'GET')).toBe(false);
+    });
+  });
+
+  describe('origin issue', () => {
+    const ISSUE = 'https://gitlab.com/acme/board/-/issues/4';
+    const B = '/api/v4/projects/acme%2Fboard';
+    const fail = () => new Response('boom', { status: 500 });
+    const page1 = Array.from({ length: 100 }, (_, i) => ({
+      name: `p${i}`,
+      is_project_label: true,
+    }));
+
+    it('lists project and inherited group labels across pages, from the project in the origin URL', async () => {
+      const f = fakeFetch({
+        [`GET ${B}/labels`]: (url) =>
+          url.searchParams.get('page') === '2'
+            ? [{ name: 'doing', is_project_label: false, color: '#fff' }]
+            : page1,
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      const labels = await b.issueLabels(ISSUE);
+      expect(labels).toHaveLength(101);
+      expect(labels.at(-1)).toEqual({ name: 'doing', is_project_label: false });
+      expect(labels[0]).toEqual({ name: 'p0', is_project_label: true });
+      expect(f.calls.map((c) => c.path)).toEqual([
+        `${B}/labels?include_ancestor_groups=true&per_page=100&page=1`,
+        `${B}/labels?include_ancestor_groups=true&per_page=100&page=2`,
+      ]);
+    });
+
+    it('accepts a work_items URL and a URL without /-/', async () => {
+      const f = fakeFetch({ [`GET ${B}/labels`]: () => [] });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      await b.issueLabels('https://gitlab.com/acme/board/-/work_items/4');
+      await b.issueLabels('https://gitlab.com/acme/board/issues/4');
+      expect(f.calls).toHaveLength(2);
+    });
+
+    it('refuses an origin on another host or of another shape before any request', async () => {
+      const f = fakeFetch({});
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      for (const url of [
+        'https://evil.example/acme/board/-/issues/4',
+        'http://gitlab.com/acme/board/-/issues/4',
+        'https://gitlab.com/acme/board/-/merge_requests/4',
+        'https://github.com/acme/board/issues/4',
+        'not a url',
+      ]) {
+        await expect(b.issueLabels(url)).rejects.toThrow(/nothing was sent/);
+        await expect(
+          b.updateIssueLabels(url, { add: 'x', remove: [] }),
+        ).rejects.toThrow(/nothing was sent/);
+        await expect(b.commentIssue(url, 'x')).rejects.toThrow(
+          /nothing was sent/,
+        );
+      }
+      expect(f.calls).toEqual([]);
+    });
+
+    it('updates the labels in one PUT and returns them', async () => {
+      const f = fakeFetch({
+        [`PUT ${B}/issues/4`]: () => ({ iid: 4, labels: ['review', 'bug'] }),
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(
+        await b.updateIssueLabels(ISSUE, {
+          add: 'review',
+          remove: ['doing', 'plan'],
+        }),
+      ).toEqual(['review', 'bug']);
+      expect(f.calls).toEqual([
+        {
+          method: 'PUT',
+          path: `${B}/issues/4`,
+          body: { add_labels: 'review', remove_labels: 'doing,plan' },
+          token: 'glpat-SECRET',
+        },
+      ]);
+    });
+
+    it('a failed label list is an error', async () => {
+      const f = fakeFetch({ [`GET ${B}/labels`]: fail });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      await expect(b.issueLabels(ISSUE)).rejects.toThrow(/500/);
+    });
+
+    it('posts one note with the body unchanged and returns its URL; a failure is one call', async () => {
+      const body = '## Status\n\n**review** — `x`\n';
+      const f = fakeFetch({
+        [`POST ${B}/issues/4/notes`]: () => ({ id: 77, body }),
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(await b.commentIssue(ISSUE, body)).toEqual({
+        id: 77,
+        url: `${ISSUE}#note_77`,
+      });
+      expect(f.calls).toEqual([
+        {
+          method: 'POST',
+          path: `${B}/issues/4/notes`,
+          body: { body },
+          token: 'glpat-SECRET',
+        },
+      ]);
+
+      const g = fakeFetch({ [`POST ${B}/issues/4/notes`]: fail });
+      const c = await factory(SETTINGS, { home: '/h', fetch: g.doFetch });
+      await expect(c.commentIssue(ISSUE, body)).rejects.toThrow(/500/);
+      expect(g.calls).toHaveLength(1);
+    });
   });
 });

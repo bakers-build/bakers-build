@@ -48,7 +48,8 @@ description: >-
   facts rather than prose passes a subject (label, optional URL), a statement,
   plain `facts`, `links` and one preformatted `detail` line; the template lays
   them out and the same `rich-text` treatment styles them. `body` wins when both
-  arrive.
+  arrive. PHONE TOUCH DELTA (AC-15): below md, the subject identifier link is at
+  least the `touch` height (44px); md and up are unchanged.
 provider: bb_theme
 props:
   type: object

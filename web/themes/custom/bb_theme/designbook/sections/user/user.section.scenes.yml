@@ -5,7 +5,8 @@ description: >
   **Product place: account.** `/user/{user}` is the read route
   (`user.user.full`); `/user/{user}/edit` is the account form
   (`user.user.default`); `/user/{user}/profile` is the Profile form
-  (`user.user.profile`). Reached from the shell person mark, which swaps the
+  (`bb_profile.bb_profile.default`, the profile for the workspace in
+  context). Reached from the shell person mark, which swaps the
   rail to Account, Conductors and Machines. Onboarding uses its own form and
   chrome.
 status: in-progress
@@ -157,8 +158,10 @@ scenes:
     group: User
     section: user
     docs: >-
-      THE PROFILE FORM on `/user/{user}/profile` (`bb_core.user.profile`, form
-      mode `profile`), the third tab after View and Edit, in the account area.
+      THE PROFILE FORM on `/user/{user}/profile` (`bb_core.user.profile`), the
+      third tab after View and Edit, in the account area. It is the `default`
+      form of the user's `bb_profile` for the workspace in context
+      (`bb_profile.bb_profile.default`), titled "Profile in <workspace>".
       The AI-use notice is the page header's description; the form holds only
       Position and background. A workspace lead reaches the same page for a
       service account from the Service Accounts row menu.
@@ -172,7 +175,7 @@ scenes:
                 header:
                   - component: bb_theme:page_header
                     props:
-                      title: Christian Wiedemann
+                      title: Profile in keytec
                       description: >-
                         bakers.build passes these details as context to the AI
                         assistants it uses, so that explanations and support
@@ -205,24 +208,24 @@ scenes:
                             lines:
                               - component: bb_theme:form_label
                                 props:
-                                  for: edit-field-developer-title
+                                  for: edit-position-0-value
                                 slots:
                                   title: Position
                               - component: bb_theme:form_input
                                 props:
-                                  name: field_developer_title
-                                  id: edit-field-developer-title
+                                  name: position[0][value]
+                                  id: edit-position-0-value
                                   placeholder: e.g. Product Lead
                                   value: Product Lead
                               - component: bb_theme:form_label
                                 props:
-                                  for: edit-field-bakers-background
+                                  for: edit-background-0-value
                                 slots:
                                   title: What should bakers.build know about your background?
                               - component: bb_theme:form_textarea
                                 props:
-                                  name: field_bb_background
-                                  id: edit-field-bakers-background
+                                  name: background[0][value]
+                                  id: edit-background-0-value
                                   rows: 3
                                   value: Drupal, Linear, or something else entirely.
                             actions:
@@ -456,61 +459,92 @@ scenes:
                               name: plus
                               size: sm
                 main:
-                  - component: bb_theme:week-strip
+                  - component: bb_theme:filters
                     props:
-                      label: Days of week 2026-08-03
-                      days:
-                        - weekday: Mon
-                          date: '03'
-                          total: '2:15'
-                          url: '?mode=day&date=2026-08-03'
-                          active: false
-                          aria_label: Mon 2026-08-03, 2:15
-                        - weekday: Tue
-                          date: '04'
-                          total: '2:15'
-                          url: '?mode=day&date=2026-08-04'
-                          active: false
-                          aria_label: Tue 2026-08-04, 2:15
-                        - weekday: Wed
-                          date: '05'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-05'
-                          active: false
-                          aria_label: Wed 2026-08-05, 0:00
-                        - weekday: Thu
-                          date: '06'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-06'
-                          active: false
-                          aria_label: Thu 2026-08-06, 0:00
-                        - weekday: Fri
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-07'
-                          active: false
-                          aria_label: Fri 2026-08-07, 0:00
-                        - weekday: Sat
-                          date: '08'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-08'
-                          active: false
-                          aria_label: Sat 2026-08-08, 0:00
-                        - weekday: Sun
-                          date: '09'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-09'
-                          active: false
-                          aria_label: Sun 2026-08-09, 0:00
-                      total_label: Week total
-                      total: '4:30'
-                  - component: bb_theme:text
-                    props:
-                      text: 'Total recorded time: 4:30'
-                  - component: bb_theme:text
-                    props:
-                      text: 'Proposed — not yet recorded: 2:00'
-                      tone: faint
+                      label: Time filters
+                      layout: toolbar
+                      pinned_width: auto
+                    slots:
+                      pinned:
+                        - component: bb_theme:segmented_control
+                          props:
+                            label: Period
+                            items:
+                              - label: Day
+                                url: '?mode=day&date=2026-08-03'
+                                active: false
+                              - label: Week
+                                url: '?mode=week&date=2026-08-03'
+                                active: true
+                      controls:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Previous
+                            href: '?mode=week&date=2026-07-27'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-left
+                                size: sm
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: 3 – 9 Aug 2026
+                            href: '?mode=week&date=2026-08-03'
+                            aria_label: Go to today, 3 – 9 Aug 2026
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Next
+                            href: '?mode=week&date=2026-08-10'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-right
+                                size: sm
+                        - component: bb_theme:option_picker
+                          props:
+                            variant: field
+                            label: Project
+                            id: filter-project
+                            icon: project
+                            open: false
+                            multiple: false
+                            value_label: All
+                            prominent: false
+                            searchable: false
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: keytec · Time capture
+                                    label: keytec · Time capture
+                                    selected: false
+                                  - value: keytec · Time capture two
+                                    label: keytec · Time capture two
+                                    selected: false
+                                  - value: API home · API home
+                                    label: API home · API home
+                                    selected: false
+                      actions:
+                        - component: bb_theme:text
+                          props:
+                            text: Week total
+                            as: span
+                            size: meta
+                            tone: light
+                        - component: bb_theme:text
+                          props:
+                            text: '4:30'
+                            as: span
+                            size: section-title
                   - component: bb_theme:message
                     props:
                       status: status
@@ -525,7 +559,6 @@ scenes:
                       type: submit
                   - component: bb_theme:table
                     props:
-                      variant: ''
                       columns:
                         - key: label
                           label: Project
@@ -533,24 +566,31 @@ scenes:
                         - key: '2026-08-03'
                           label: Mon 03
                           num: true
+                          sublabel: '2:15'
                         - key: '2026-08-04'
                           label: Tue 04
                           num: true
+                          sublabel: '2:15'
                         - key: '2026-08-05'
                           label: Wed 05
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-06'
                           label: Thu 06
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-07'
                           label: Fri 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-08'
                           label: Sat 08
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-09'
                           label: Sun 09
                           num: true
+                          sublabel: '0:00'
                         - key: total
                           label: Total
                           num: true
@@ -747,43 +787,6 @@ scenes:
                         - cells:
                             label:
                               kind: text
-                              value: Recorded
-                              emphasis: strong
-                            '2026-08-03':
-                              kind: text
-                              value: '2:15'
-                              emphasis: strong
-                            '2026-08-04':
-                              kind: text
-                              value: '2:15'
-                              emphasis: strong
-                            '2026-08-05':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-06':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-07':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-08':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-09':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            total:
-                              kind: text
-                              value: '4:30'
-                              emphasis: strong
-                        - cells:
-                            label:
-                              kind: text
                               value: Proposed — not yet recorded
                               emphasis: faint
                             '2026-08-03':
@@ -835,6 +838,7 @@ scenes:
                               sum: proposed:total
                               seconds: 7200
                       live_sums: true
+                      row_height: md
                   - component: bb_theme:button
                     props:
                       variant: ghost
@@ -881,6 +885,92 @@ scenes:
                               name: plus
                               size: sm
                 main:
+                  - component: bb_theme:filters
+                    props:
+                      label: Time filters
+                      layout: toolbar
+                      pinned_width: auto
+                    slots:
+                      pinned:
+                        - component: bb_theme:segmented_control
+                          props:
+                            label: Period
+                            items:
+                              - label: Day
+                                url: '?mode=day&date=2026-08-03'
+                                active: false
+                              - label: Week
+                                url: '?mode=week&date=2026-08-03'
+                                active: true
+                      controls:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Previous
+                            href: '?mode=week&date=2026-07-27'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-left
+                                size: sm
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: 3 – 9 Aug 2026
+                            href: '?mode=week&date=2026-08-03'
+                            aria_label: Go to today, 3 – 9 Aug 2026
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Next
+                            href: '?mode=week&date=2026-08-10'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-right
+                                size: sm
+                        - component: bb_theme:option_picker
+                          props:
+                            variant: field
+                            label: Project
+                            id: filter-project
+                            icon: project
+                            open: false
+                            multiple: false
+                            value_label: All
+                            prominent: false
+                            searchable: false
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: keytec · Time capture
+                                    label: keytec · Time capture
+                                    selected: false
+                                  - value: keytec · Time capture two
+                                    label: keytec · Time capture two
+                                    selected: false
+                                  - value: API home · API home
+                                    label: API home · API home
+                                    selected: false
+                      actions:
+                        - component: bb_theme:text
+                          props:
+                            text: Week total
+                            as: span
+                            size: meta
+                            tone: light
+                        - component: bb_theme:text
+                          props:
+                            text: '4:30'
+                            as: span
+                            size: section-title
                   - component: bb_theme:message
                     props:
                       status: error
@@ -888,64 +978,8 @@ scenes:
                       body: >-
                         The week was not saved. Correct the marked cells;
                         nothing was changed.
-                  - component: bb_theme:week-strip
-                    props:
-                      label: Days of week 2026-08-03
-                      days:
-                        - weekday: Mon
-                          date: '03'
-                          total: '2:15'
-                          url: '?mode=day&date=2026-08-03'
-                          active: false
-                          aria_label: Mon 2026-08-03, 2:15
-                        - weekday: Tue
-                          date: '04'
-                          total: '2:15'
-                          url: '?mode=day&date=2026-08-04'
-                          active: false
-                          aria_label: Tue 2026-08-04, 2:15
-                        - weekday: Wed
-                          date: '05'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-05'
-                          active: false
-                          aria_label: Wed 2026-08-05, 0:00
-                        - weekday: Thu
-                          date: '06'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-06'
-                          active: false
-                          aria_label: Thu 2026-08-06, 0:00
-                        - weekday: Fri
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-07'
-                          active: false
-                          aria_label: Fri 2026-08-07, 0:00
-                        - weekday: Sat
-                          date: '08'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-08'
-                          active: false
-                          aria_label: Sat 2026-08-08, 0:00
-                        - weekday: Sun
-                          date: '09'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-09'
-                          active: false
-                          aria_label: Sun 2026-08-09, 0:00
-                      total_label: Week total
-                      total: '4:30'
-                  - component: bb_theme:text
-                    props:
-                      text: 'Total recorded time: 4:30'
-                  - component: bb_theme:text
-                    props:
-                      text: 'Proposed — not yet recorded: 2:00'
-                      tone: faint
                   - component: bb_theme:table
                     props:
-                      variant: ''
                       columns:
                         - key: label
                           label: Project
@@ -953,24 +987,31 @@ scenes:
                         - key: '2026-08-03'
                           label: Mon 03
                           num: true
+                          sublabel: '2:15'
                         - key: '2026-08-04'
                           label: Tue 04
                           num: true
+                          sublabel: '2:15'
                         - key: '2026-08-05'
                           label: Wed 05
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-06'
                           label: Thu 06
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-07'
                           label: Fri 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-08'
                           label: Sat 08
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-09'
                           label: Sun 09
                           num: true
+                          sublabel: '0:00'
                         - key: total
                           label: Total
                           num: true
@@ -1150,43 +1191,6 @@ scenes:
                         - cells:
                             label:
                               kind: text
-                              value: Recorded
-                              emphasis: strong
-                            '2026-08-03':
-                              kind: text
-                              value: '2:15'
-                              emphasis: strong
-                            '2026-08-04':
-                              kind: text
-                              value: '2:15'
-                              emphasis: strong
-                            '2026-08-05':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-06':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-07':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-08':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-09':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            total:
-                              kind: text
-                              value: '4:30'
-                              emphasis: strong
-                        - cells:
-                            label:
-                              kind: text
                               value: Proposed — not yet recorded
                               emphasis: faint
                             '2026-08-03':
@@ -1238,6 +1242,7 @@ scenes:
                               sum: proposed:total
                               seconds: 7200
                       live_sums: true
+                      row_height: md
                   - component: bb_theme:button
                     props:
                       variant: ghost
@@ -1283,57 +1288,92 @@ scenes:
                               name: plus
                               size: sm
                 main:
-                  - component: bb_theme:week-strip
+                  - component: bb_theme:filters
                     props:
-                      label: Days of week 2026-08-03
-                      days:
-                        - weekday: Mon
-                          date: '03'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-03'
-                          active: false
-                          aria_label: Mon 2026-08-03, 0:00
-                        - weekday: Tue
-                          date: '04'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-04'
-                          active: false
-                          aria_label: Tue 2026-08-04, 0:00
-                        - weekday: Wed
-                          date: '05'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-05'
-                          active: false
-                          aria_label: Wed 2026-08-05, 0:00
-                        - weekday: Thu
-                          date: '06'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-06'
-                          active: false
-                          aria_label: Thu 2026-08-06, 0:00
-                        - weekday: Fri
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-07'
-                          active: false
-                          aria_label: Fri 2026-08-07, 0:00
-                        - weekday: Sat
-                          date: '08'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-08'
-                          active: false
-                          aria_label: Sat 2026-08-08, 0:00
-                        - weekday: Sun
-                          date: '09'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-09'
-                          active: false
-                          aria_label: Sun 2026-08-09, 0:00
-                      total_label: Week total
-                      total: '0:00'
-                  - component: bb_theme:text
-                    props:
-                      text: 'Total recorded time: 0:00'
+                      label: Time filters
+                      layout: toolbar
+                      pinned_width: auto
+                    slots:
+                      pinned:
+                        - component: bb_theme:segmented_control
+                          props:
+                            label: Period
+                            items:
+                              - label: Day
+                                url: '?mode=day&date=2026-08-03'
+                                active: false
+                              - label: Week
+                                url: '?mode=week&date=2026-08-03'
+                                active: true
+                      controls:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Previous
+                            href: '?mode=week&date=2026-07-27'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-left
+                                size: sm
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: 3 – 9 Aug 2026
+                            href: '?mode=week&date=2026-08-03'
+                            aria_label: Go to today, 3 – 9 Aug 2026
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Next
+                            href: '?mode=week&date=2026-08-10'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-right
+                                size: sm
+                        - component: bb_theme:option_picker
+                          props:
+                            variant: field
+                            label: Project
+                            id: filter-project
+                            icon: project
+                            open: false
+                            multiple: false
+                            value_label: All
+                            prominent: false
+                            searchable: false
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: keytec · Time capture
+                                    label: keytec · Time capture
+                                    selected: false
+                                  - value: keytec · Time capture two
+                                    label: keytec · Time capture two
+                                    selected: false
+                                  - value: API home · API home
+                                    label: API home · API home
+                                    selected: false
+                      actions:
+                        - component: bb_theme:text
+                          props:
+                            text: Week total
+                            as: span
+                            size: meta
+                            tone: light
+                        - component: bb_theme:text
+                          props:
+                            text: '0:00'
+                            as: span
+                            size: section-title
                   - component: bb_theme:empty-state
                     props:
                       message: No time entries for this period.
@@ -1341,7 +1381,6 @@ scenes:
                       compact: true
                   - component: bb_theme:table
                     props:
-                      variant: ''
                       columns:
                         - key: label
                           label: Project
@@ -1349,24 +1388,31 @@ scenes:
                         - key: '2026-08-03'
                           label: Mon 03
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-04'
                           label: Tue 04
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-05'
                           label: Wed 05
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-06'
                           label: Thu 06
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-07'
                           label: Fri 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-08'
                           label: Sat 08
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-09'
                           label: Sun 09
                           num: true
+                          sublabel: '0:00'
                         - key: total
                           label: Total
                           num: true
@@ -1436,44 +1482,8 @@ scenes:
                               value: '0:00'
                               sum: row:1:0
                               seconds: 0
-                        - cells:
-                            label:
-                              kind: text
-                              value: Recorded
-                              emphasis: strong
-                            '2026-08-03':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-04':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-05':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-06':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-07':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-08':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-09':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            total:
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
                       live_sums: true
+                      row_height: md
                   - component: bb_theme:button
                     props:
                       variant: ghost
@@ -1519,57 +1529,92 @@ scenes:
                               name: plus
                               size: sm
                 main:
-                  - component: bb_theme:week-strip
+                  - component: bb_theme:filters
                     props:
-                      label: Days of week 2026-08-03
-                      days:
-                        - weekday: Mon
-                          date: '03'
-                          total: '1:30'
-                          url: '?mode=day&date=2026-08-03'
-                          active: false
-                          aria_label: Mon 2026-08-03, 1:30
-                        - weekday: Tue
-                          date: '04'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-04'
-                          active: false
-                          aria_label: Tue 2026-08-04, 0:00
-                        - weekday: Wed
-                          date: '05'
-                          total: '2:00'
-                          url: '?mode=day&date=2026-08-05'
-                          active: false
-                          aria_label: Wed 2026-08-05, 2:00
-                        - weekday: Thu
-                          date: '06'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-06'
-                          active: false
-                          aria_label: Thu 2026-08-06, 0:00
-                        - weekday: Fri
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-07'
-                          active: false
-                          aria_label: Fri 2026-08-07, 0:00
-                        - weekday: Sat
-                          date: '08'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-08'
-                          active: false
-                          aria_label: Sat 2026-08-08, 0:00
-                        - weekday: Sun
-                          date: '09'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-08-09'
-                          active: false
-                          aria_label: Sun 2026-08-09, 0:00
-                      total_label: Week total
-                      total: '4:30'
-                  - component: bb_theme:text
-                    props:
-                      text: 'Total recorded time: 3:30'
+                      label: Time filters
+                      layout: toolbar
+                      pinned_width: auto
+                    slots:
+                      pinned:
+                        - component: bb_theme:segmented_control
+                          props:
+                            label: Period
+                            items:
+                              - label: Day
+                                url: '?mode=day&date=2026-08-03'
+                                active: false
+                              - label: Week
+                                url: '?mode=week&date=2026-08-03'
+                                active: true
+                      controls:
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Previous
+                            href: '?mode=week&date=2026-07-27'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-left
+                                size: sm
+                        - component: bb_theme:button
+                          props:
+                            variant: ghost
+                            label: 3 – 9 Aug 2026
+                            href: '?mode=week&date=2026-08-03'
+                            aria_label: Go to today, 3 – 9 Aug 2026
+                        - component: bb_theme:button
+                          props:
+                            variant: neutral
+                            label: Next
+                            href: '?mode=week&date=2026-08-10'
+                            icon_only: true
+                          slots:
+                            icon:
+                              component: bb_theme:icon
+                              props:
+                                name: arrow-right
+                                size: sm
+                        - component: bb_theme:option_picker
+                          props:
+                            variant: field
+                            label: Project
+                            id: filter-project
+                            icon: project
+                            open: false
+                            multiple: false
+                            value_label: All
+                            prominent: false
+                            searchable: false
+                          slots:
+                            options:
+                              component: bb_theme:option_list
+                              props:
+                                multiple: false
+                                options:
+                                  - value: keytec · Time capture
+                                    label: keytec · Time capture
+                                    selected: false
+                                  - value: keytec · Time capture two
+                                    label: keytec · Time capture two
+                                    selected: false
+                                  - value: API home · API home
+                                    label: API home · API home
+                                    selected: false
+                      actions:
+                        - component: bb_theme:text
+                          props:
+                            text: Week total
+                            as: span
+                            size: meta
+                            tone: light
+                        - component: bb_theme:text
+                          props:
+                            text: '3:30'
+                            as: span
+                            size: section-title
                   - component: bb_theme:message
                     props:
                       status: status
@@ -1582,7 +1627,6 @@ scenes:
                       type: submit
                   - component: bb_theme:table
                     props:
-                      variant: ''
                       columns:
                         - key: label
                           label: Project
@@ -1590,24 +1634,31 @@ scenes:
                         - key: '2026-08-03'
                           label: Mon 03
                           num: true
+                          sublabel: '1:30'
                         - key: '2026-08-04'
                           label: Tue 04
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-05'
                           label: Wed 05
                           num: true
+                          sublabel: '2:00'
                         - key: '2026-08-06'
                           label: Thu 06
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-07'
                           label: Fri 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-08'
                           label: Sat 08
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-08-09'
                           label: Sun 09
                           num: true
+                          sublabel: '0:00'
                         - key: total
                           label: Total
                           num: true
@@ -1717,44 +1768,8 @@ scenes:
                               value: '3:30'
                               sum: row:1:12
                               seconds: 12600
-                        - cells:
-                            label:
-                              kind: text
-                              value: Recorded
-                              emphasis: strong
-                            '2026-08-03':
-                              kind: text
-                              value: '1:30'
-                              emphasis: strong
-                            '2026-08-04':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-05':
-                              kind: text
-                              value: '2:00'
-                              emphasis: strong
-                            '2026-08-06':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-07':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-08':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            '2026-08-09':
-                              kind: text
-                              value: '0:00'
-                              emphasis: strong
-                            total:
-                              kind: text
-                              value: '3:30'
-                              emphasis: strong
                       live_sums: true
+                      row_height: md
                   - component: bb_theme:button
                     props:
                       variant: ghost
@@ -2183,7 +2198,9 @@ scenes:
     docs: >-
       BB-668 design preview, no backend. `/user/{user}/api-keys`: the
       owner-only listing of self-service pipeline credentials (Name, Client
-      ID, Created, Expires, Status, Revoke). Reuses `list` and `badge`
+      ID, Created, Expires, Status). Each row only opens the key's page
+      (`/user/{user}/api-keys/{id}`), which carries Revoke; the name is the
+      link and the row has no action (BAKERS-338). Reuses `list` and `badge`
       exactly as `personal-time` reuses them for the week's entries; no new
       component was needed.
     items:
@@ -2212,10 +2229,12 @@ scenes:
                   - component: bb_theme:list
                     props:
                       items:
-                        - cells:
+                        - url: /user/7/api-keys/3
+                          cells:
                             name:
-                              kind: text
+                              kind: link
                               value: Pipeline deploy
+                              url: /user/7/api-keys/3
                             client_id:
                               kind: text
                               value: bakers-key-7f3a9c2e
@@ -2231,15 +2250,12 @@ scenes:
                               props:
                                 label: Active
                                 tone: running
-                            revoke:
-                              kind: link
-                              value: Revoke
-                              url: >-
-                                /?path=/story/designbook-sections-user-scenes--api-keys-list
-                        - cells:
+                        - url: /user/7/api-keys/2
+                          cells:
                             name:
-                              kind: text
+                              kind: link
                               value: Nightly report
+                              url: /user/7/api-keys/2
                             client_id:
                               kind: text
                               value: bakers-key-1b8e4f10
@@ -2255,11 +2271,6 @@ scenes:
                               props:
                                 label: Expired
                                 tone: critical
-                            revoke:
-                              kind: link
-                              value: Revoke
-                              url: >-
-                                /?path=/story/designbook-sections-user-scenes--api-keys-list
   - name: api-keys-list-empty
     group: User
     section: user

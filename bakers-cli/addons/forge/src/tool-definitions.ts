@@ -13,7 +13,7 @@ const branch = {
 export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   forge_fetch: {
     description:
-      "Fetch the ticket's base_branch, its own branch and the named parent branches into refs/remotes/origin/*; read only. Then rebase or merge locally with git.",
+      "Fetch the ticket's base_branch, its own branch and the named parent branches into refs/remotes/origin/*; read only. To integrate the target into the ticket branch call forge_update_branch.",
     input: {
       type: 'object',
       properties: {
@@ -24,6 +24,11 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
         },
       },
     },
+  },
+  forge_update_branch: {
+    description:
+      "Merge the ticket's current target (fetched fresh) into the ticket branch of an isolated run; pushes nothing, changes no PR/MR. Commit first. Returns previous, target and resulting SHAs and sync: none (no-op), in_place (run the returned git merge --ff-only before further work) or restart (protected paths changed: stop, cancel the run with bakers_run_cancel; the next run starts at resulting). Refuses uncommitted work, conflicts and concurrent branch movement without changing anything. A conflict names its paths: stop and report it to the developers, who merge outside the run.",
+    input: { type: 'object', properties: {} },
   },
   forge_push: {
     description:
@@ -39,13 +44,18 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   },
   forge_pr_upsert: {
     description:
-      "Create the PR/MR of an owned branch into its base (target_branch, which is base_branch unless a deployment names its environment branch; the ticket branch for a variant), or update the open one's title and body. The title must be a Conventional Commits subject.",
+      "Create the PR/MR of an owned branch into its base (target_branch, which is base_branch unless a ship names its environment branch; the ticket branch for a variant, base_branch for a ship's variant), or update the open one's title and body. The title must be a Conventional Commits subject.",
     input: {
       type: 'object',
       properties: {
         branch,
         title: { type: 'string' },
         body: { type: 'string' },
+        request_reviewers: {
+          type: 'boolean',
+          description:
+            "set when the ticket asks for its reviewers on the PR/MR: adds the ticket's reviewers, found by their public forge e-mail, and removes none; the result lists requested and skipped reviewers with the reason",
+        },
       },
       required: ['title'],
     },
@@ -80,6 +90,27 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
         },
       },
       required: ['job_id'],
+    },
+  },
+  forge_issue_update: {
+    description:
+      "The run ticket's origin issue, with the conductor's credentials. operation list_labels: the origin project's labels, inherited group labels included, as {name, is_project_label}. update_labels: in one update add the label `add` and remove the labels `remove`; every name must be a listed label spelled exactly, none is created; returns the issue's labels. comment: post `body` (Markdown, sent unchanged) once, never retried; returns {id, url}. Refused without an origin, and on a backend without origin issues (GitHub): record the step in Manual review.",
+    input: {
+      type: 'object',
+      properties: {
+        operation: {
+          type: 'string',
+          enum: ['list_labels', 'update_labels', 'comment'],
+        },
+        add: { type: 'string', description: 'update_labels: label to set' },
+        remove: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'update_labels: labels to remove',
+        },
+        body: { type: 'string', description: 'comment: Markdown text' },
+      },
+      required: ['operation'],
     },
   },
   forge_merge: {

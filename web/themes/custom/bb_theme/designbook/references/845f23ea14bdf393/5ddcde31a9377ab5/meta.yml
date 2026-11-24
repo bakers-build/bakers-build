@@ -1,0 +1,32 @@
+{
+ "source": {
+  "kind": "storybook",
+  "identity": "http://localhost:50979/iframe.html?id=designbook-sections-settings-scenes--workspace-members&viewMode=story",
+  "revision": null
+ },
+ "role": "actual",
+ "elements": [
+  {
+   "id": "members",
+   "locator": {
+    "kind": "css",
+    "value": "body > div:nth-of-type(5) > div"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 1440,
+     "height": 900
+    }
+   ]
+  }
+ ],
+ "prelude_digest": "1dacaf2071d1ce018c4361c290a1dc427342432fb3fcd1c3b0ff4d1c21558943",
+ "assets_dir": "assets"
+}

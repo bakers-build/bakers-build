@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_api_key\Plugin\views\field;
 
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\consumers\Entity\ConsumerInterface;
 use Drupal\views\Attribute\ViewsField;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
@@ -48,11 +49,7 @@ final class ApiKeyStatus extends FieldPluginBase {
     if (!$entity instanceof ConsumerInterface) {
       return '';
     }
-    [$label, $tone] = match (TRUE) {
-      !(bool) $entity->get('status')->value => [$this->t('Disabled'), 'offline'],
-      $this->isExpired($entity) => [$this->t('Expired'), 'critical'],
-      default => [$this->t('Active'), 'running'],
-    };
+    [$label, $tone] = self::statusOf($entity, $this->time->getCurrentTime());
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:badge',
@@ -63,12 +60,19 @@ final class ApiKeyStatus extends FieldPluginBase {
   }
 
   /**
-   * Whether the key has reached its stored expiry.
+   * A key's status label and badge tone: Disabled, Expired or Active.
+   *
+   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: string}
+   *   The label and the badge tone.
    */
-  private function isExpired(ConsumerInterface $entity): bool {
+  public static function statusOf(ConsumerInterface $entity, int $now): array {
     $expires = $entity->get('bb_expires')->value;
-    // A managed key with no expiry at all is invalid, not perpetually valid.
-    return $expires === NULL || $expires === '' || (int) $expires <= $this->time->getCurrentTime();
+    return match (TRUE) {
+      !(bool) $entity->get('status')->value => [new TranslatableMarkup('Disabled'), 'offline'],
+      // A managed key with no expiry at all is invalid, not perpetually valid.
+      $expires === NULL || $expires === '' || (int) $expires <= $now => [new TranslatableMarkup('Expired'), 'critical'],
+      default => [new TranslatableMarkup('Active'), 'running'],
+    };
   }
 
 }

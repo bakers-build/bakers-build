@@ -8,15 +8,23 @@ import type {
   ToolResult,
 } from '@bakers-build/conductor/contract';
 import {
+  changedProtectedPaths,
   homeBbDir,
   loadRunClone,
+  type RunClone,
   refreshRunTarget,
+  runCloneTip,
   saveRunClone,
   transferIsolatedCommit,
 } from '@bakers-build/core';
-import type { ForgeBackend, ForgeCheck } from './backend.js';
+import type {
+  ForgeBackend,
+  ForgeCheck,
+  ForgePr,
+  ReviewerResult,
+} from './backend.js';
 import { FORGE_NEEDS_BACKEND, loadForgeBackend, mergeRule } from './config.js';
-import { fetchBranches, pushBranch } from './git.js';
+import { fetchBranches, pushBranch, updateBranch } from './git.js';
 import {
   derivedBase,
   isConventionalTitle,
@@ -28,6 +36,9 @@ import {
 
 export const FORGE_NEEDS_RUN =
   'forge tools act only for an agent run: the call carries no ticket branch_name and base_branch (an operator delivers by hand)';
+
+export const FORGE_NEEDS_ORIGIN =
+  "forge_issue_update acts only on the run ticket's origin issue, and this ticket has none";
 
 export interface ForgeToolDeps {
   backend(): Promise<ForgeBackend>;
@@ -54,16 +65,15 @@ function runOf(req: ToolRequest): Run {
 }
 
 /**
- * Where `branch` merges: a variant into the ticket branch, the ticket branch into
- * the ticket's current target as the server returns it now. A failed read refuses;
- * the run copy may predate an environment added during the run.
+ * Where `branch` merges, by `derivedBase` on the ticket's current target as the
+ * server returns it now. A failed read refuses; the run copy may predate an
+ * environment added during the run.
  */
 async function currentBase(
   req: ToolRequest,
   branch: string,
   run: Run,
 ): Promise<string> {
-  if (branch !== run.branchName) return derivedBase(branch, run);
   const refuse = (why: string) =>
     new Error(
       `forge: the ticket's current target_branch could not be read from the server (${why}); nothing was sent`,
@@ -74,14 +84,103 @@ async function currentBase(
   });
   const target = t.targetBranch ?? t.baseBranch;
   if (!target) throw refuse('no target_branch or base_branch returned');
-  return target;
+  return derivedBase(branch, {
+    ...run,
+    baseBranch: t.baseBranch ?? run.baseBranch,
+    targetBranch: target,
+  });
 }
+
+/** The ticket's origin as the server returns it now, else the run's copy. */
+async function originOf(req: ToolRequest): Promise<string> {
+  const t = req.currentTicket ? await req.currentTicket() : req.ticket;
+  if (!t?.issueUrl) throw new Error(FORGE_NEEDS_ORIGIN);
+  return t.issueUrl;
+}
+
+/**
+ * Requests the ticket's reviewers on `pr` by e-mail. Never throws: the PR is
+ * already written, so every failure becomes a named skip.
+ */
+async function requestReviewers(
+  req: ToolRequest,
+  b: ForgeBackend,
+  pr: ForgePr,
+): Promise<{
+  requested: string[];
+  skipped: { reviewer: string; reason: string }[];
+}> {
+  const skipped: { reviewer: string; reason: string }[] = [];
+  let reviewers: { name: string; mail?: string }[];
+  try {
+    reviewers =
+      (req.currentTicket ? await req.currentTicket() : req.ticket)?.reviewers ??
+      [];
+  } catch (err) {
+    return {
+      requested: [],
+      skipped: [{ reviewer: '*', reason: errorText(err) }],
+    };
+  }
+  const byMail = new Map<string, string>();
+  for (const r of reviewers)
+    if (r.mail) byMail.set(r.mail, r.name);
+    else skipped.push({ reviewer: r.name, reason: 'e-mail not readable' });
+  if (byMail.size === 0) return { requested: [], skipped };
+  let result: ReviewerResult;
+  try {
+    result = await b.addReviewers(pr, [...byMail.keys()]);
+  } catch (err) {
+    result = {
+      requested: [],
+      skipped: [...byMail.keys()].map((mail) => ({
+        mail,
+        reason: errorText(err),
+      })),
+    };
+  }
+  const name = (mail: string) => byMail.get(mail) ?? mail;
+  return {
+    requested: result.requested.map(name),
+    skipped: [
+      ...skipped,
+      ...result.skipped.map((s) => ({
+        reviewer: name(s.mail),
+        reason: s.reason,
+      })),
+    ],
+  };
+}
+
+const errorText = (err: unknown) =>
+  err instanceof Error ? err.message : String(err);
 
 function ownedBranch(req: ToolRequest, run: Run): string {
   const branch = (req.args.branch as string | undefined) ?? run.branchName;
   if (!isOwned(branch, run.branchName))
     throw new Error(ownershipRefusal(branch, run.branchName));
   return branch;
+}
+
+const restartRefusal = (sha: string) =>
+  `forge: the branch was updated to ${sha} with protected changes this run cannot see; stop and cancel this run with bakers_run_cancel on its ticket, the next run starts there`;
+
+/**
+ * Bring the run's commits into the parent. A run behind its branch (an update
+ * it has not synced) or awaiting a restart is refused: it would act on stale files.
+ */
+function transferRun(clone: RunClone): RunClone {
+  if (clone.restartPending)
+    throw new Error(restartRefusal(clone.restartPending));
+  const tip = runCloneTip(clone);
+  const expected = transferIsolatedCommit(clone, tip);
+  if (expected !== tip)
+    throw new Error(
+      `forge: the run is behind its branch at ${expected}; run git merge --ff-only ${expected} and validate first`,
+    );
+  const saved = { ...clone, expected };
+  saveRunClone(saved);
+  return saved;
 }
 
 export const LOG_DEFAULT_BYTES = 16_384;
@@ -157,8 +256,7 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const b = await backend();
       const clone = loadRunClone(req.worktreePath);
       // Only checked commits leave the run: transfer first, push from the parent.
-      if (clone && branch === clone.branch)
-        saveRunClone({ ...clone, expected: transferIsolatedCommit(clone) });
+      if (clone && branch === clone.branch) transferRun(clone);
       const sha = await pushBranch(
         clone?.parentGitDir ?? req.worktreePath,
         await b.gitAuth(),
@@ -174,6 +272,65 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       return json({ branch, sha });
     },
 
+    forge_update_branch: async (req) => {
+      const run = runOf(req);
+      const loaded = loadRunClone(req.worktreePath);
+      if (!loaded)
+        throw new Error(
+          'forge_update_branch serves isolated run clones; in this checkout run forge_fetch, then merge origin/<target> locally',
+        );
+      if (loaded.restartPending)
+        throw new Error(restartRefusal(loaded.restartPending));
+      const target = await currentBase(req, run.branchName, run);
+      const auth = await (await backend()).gitAuth();
+      const tip = runCloneTip(loaded);
+      // Run commits first, so the merge keeps them; a run behind its branch keeps its tip.
+      const clone = {
+        ...loaded,
+        expected: transferIsolatedCommit(loaded, tip),
+      };
+      saveRunClone(clone);
+      await fetchBranches(clone.parentGitDir, auth, [target, run.branchName]);
+      refreshRunTarget(clone, [target]);
+      const u = await updateBranch(clone.parentGitDir, auth, {
+        branch: run.branchName,
+        target,
+        expected: clone.expected,
+        workspace: { path: clone.workspace, clean: tip },
+      });
+      const protectedPaths =
+        u.resulting === tip
+          ? []
+          : changedProtectedPaths(clone, tip, u.resulting);
+      const sync =
+        u.resulting === tip
+          ? 'none'
+          : protectedPaths.length > 0
+            ? 'restart'
+            : 'in_place';
+      if (sync === 'in_place') refreshRunTarget(clone, [target], [u.resulting]);
+      saveRunClone({
+        ...clone,
+        expected: u.resulting,
+        ...(sync === 'restart' ? { restartPending: u.resulting } : {}),
+      });
+      const next = {
+        none: `nothing to do: '${run.branchName}' already contains ${u.target}`,
+        in_place: `run git merge --ff-only ${u.resulting} before any further work, then validate and forge_push`,
+        restart: `protected paths changed (${protectedPaths.join(', ')}): do no further work or publication; cancel this run with bakers_run_cancel on its ticket, the next run starts at ${u.resulting}`,
+      }[sync];
+      return json({
+        branch: run.branchName,
+        target_branch: target,
+        previous: u.previous,
+        target: u.target,
+        resulting: u.resulting,
+        noop: u.noop,
+        sync,
+        next,
+      });
+    },
+
     forge_pr_upsert: async (req) => {
       const title = String(req.args.title);
       // Refused before any request reaches the forge.
@@ -181,6 +338,12 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const run = runOf(req);
       const branch = ownedBranch(req, run);
       const body = (req.args.body as string | undefined) ?? '';
+      // One server read serves the base and the reviewers.
+      const read = req.currentTicket;
+      if (read) {
+        let once: ReturnType<typeof read> | undefined;
+        req = { ...req, currentTicket: () => (once ??= read()) };
+      }
       const base = await currentBase(req, branch, run);
       const b = await backend();
       const open = await b.findOpenPr(branch);
@@ -197,6 +360,9 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         number: pr.number,
         target: pr.base,
         created: !open,
+        ...(req.args.request_reviewers === true
+          ? { reviewers: await requestReviewers(req, b, pr) }
+          : {}),
       });
     },
 
@@ -296,6 +462,45 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         max_bytes: maxBytes,
         log: log.text,
       });
+    },
+
+    forge_issue_update: async (req) => {
+      runOf(req);
+      const op = req.args.operation;
+      if (op === 'comment') {
+        const body = req.args.body;
+        if (typeof body !== 'string' || body.trim() === '')
+          throw new Error('comment needs a non-blank body');
+        const issueUrl = await originOf(req);
+        return json(await (await backend()).commentIssue(issueUrl, body));
+      }
+      if (op === 'list_labels') {
+        const issueUrl = await originOf(req);
+        const labels = await (await backend()).issueLabels(issueUrl);
+        return json({ issue_url: issueUrl, labels });
+      }
+      if (op !== 'update_labels')
+        throw new Error(
+          'operation must be list_labels, update_labels or comment',
+        );
+      const add = typeof req.args.add === 'string' ? req.args.add : '';
+      const remove = (req.args.remove as string[] | undefined) ?? [];
+      if (!add && remove.length === 0)
+        throw new Error('update_labels needs add or remove');
+      const issueUrl = await originOf(req);
+      const b = await backend();
+      // GitLab creates an unknown label it is sent: only listed names pass.
+      const known = new Set((await b.issueLabels(issueUrl)).map((l) => l.name));
+      const unknown = [add, ...remove].filter((n) => n && !known.has(n));
+      if (unknown.length > 0)
+        throw new Error(
+          `update_labels sends only existing labels, spelled exactly; not found: ${unknown.join(', ')}; nothing was sent`,
+        );
+      const labels = await b.updateIssueLabels(issueUrl, {
+        ...(add ? { add } : {}),
+        remove,
+      });
+      return json({ issue_url: issueUrl, labels });
     },
   };
   return Object.fromEntries(

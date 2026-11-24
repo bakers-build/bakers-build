@@ -10,7 +10,7 @@ The terminal UI's Overview tab leads with the latest `summary`:
 bakers ui <identifier>
 ```
 
-`bakers ui <identifier> | cat` prints the same sections as text. The full record with its 2 newest comments and an index of all of them, through the `bakers_ticket_read` tool that every agent run starts with; `bakers_comment_read` returns the others:
+`bakers ui <identifier> | cat` prints the same sections as text. The full record with its 2 newest comments and an index of all of them, through the `bakers_ticket_read` tool that every agent run starts with. Its `types` input narrows the comments to the newest per named type, so a run reads its handoff comments in the same call; `bakers_comment_read` returns the others:
 
 ```sh
 bakers tools tool_api__bakers_ticket_read --data '{"ticket":"<identifier>"}'
@@ -18,7 +18,7 @@ bakers tools tool_api__bakers_ticket_read --data '{"ticket":"<identifier>"}'
 
 ## Runs
 
-A run is one execution attempt for a ticket state: a claim, a worktree and an agent session hosted by the configured executor. A state may have retries. The ticket's **Runs** tab lists them; `Enter` opens one with its log and footprint (tokens, turns, tool calls).
+A run is one execution attempt for a ticket state: a claim, a worktree and an agent session hosted by the configured executor. A state may have retries. The ticket's **Runs** tab lists them; `Enter` opens one with its log and footprint (tokens, turns, tool calls), and `x` on that run detail cancels a `claimed` or `running` run. The list rows themselves only open.
 
 | Run state | Meaning |
 |---|---|
@@ -32,7 +32,7 @@ A run is one execution attempt for a ticket state: a claim, a worktree and an ag
 One `bb_activity` row per event: `created`; `status_changed` with the step's summary and any closed run and its conductor; `claimed` for the first run outside qualification only; `run_ended` for a `failed`, `expired` or `cancelled` run; `assigned`, `review_requested` and `review_completed` when the assignee changes, a reviewer is added or a review is submitted (they can also be [mailed to you](/configuration/guides/notifications)). Later claims, unchanged saves, heartbeats and `done` runs add none. Visibility follows ticket view.
 
 ```sh
-bakers tools tool_api__bakers_ticket_activity_list --data '{"ticket":"<identifier>","limit":20}'
+bakers tools tool_api__bakers_activity_list --data '{"ticket":"<identifier>","limit":20}'
 ```
 
 Pass `project` (key or UUID) instead of `ticket` for a whole project's feed, and `offset` with the returned `next_offset` for the next page. Clients cannot write these rows. The tool reference is [bakers tools](/cli/tools).
@@ -68,17 +68,18 @@ A ticket without a worktree on that machine gets no hook and no marker. The cond
 
 `on_resume` runs whenever a ticket leaves the conductor's frozen list, so closing or reassigning a frozen ticket whose worktree still exists runs it too. A conductor follows its first 50 frozen tickets; any beyond that get no hooks. The server records the freeze time in `frozen_at`; clients cannot write it.
 
-## Restart a parked ticket
+## Restart a ticket
 
 A ticket is **parked** when its 3 most recent runs all failed and the newest of them changed within the last 2 hours, typically because the environment did not start (DDEV, credentials, the host). Conductors skip it and its Stall reads `failing`. It becomes claimable again by itself 2 hours after the last failure, or at once with a restart.
 
-Once the cause is fixed, open the ticket page and choose **Restart ticket** in the Properties footer, or cancel through the tool:
+**Restart runs** in the Properties footer (`r` in `bakers ui`) restarts an open ticket that is not frozen while its newest run is `claimed`, `running` or `failed`, parked or not. Its dialog names the runs; **OK** cancels them and **Cancel** closes without a change. Through the tools, list the runs and cancel them:
 
 ```sh
-bakers tools tool_api__bakers_run_cancel --data '{"ticket":"<identifier>","reason":"environment fixed"}'
+bakers tools tool_api__bakers_run_list --data '{"ticket":"<identifier>","restartable":true}'
+bakers tools tool_api__bakers_run_cancel --data '{"runs":["<run uuid>"],"reason":"environment fixed"}'
 ```
 
-A restart sets the newest failed run to `cancelled`, so the 3 most recent runs are no longer all failed and the next claim succeeds. Every run stays with its error log; the tool appends the reason to that run's log. Restart needs update access to the ticket and is offered only while the ticket is parked; on a ticket that is neither parked nor running, the tool refuses and changes nothing. Three new failures park the ticket again.
+A restart sets those runs to `cancelled`; a cancelled run counts neither as active nor as a failure, so the next claim gives the ticket one fresh run. Every run stays with its error log, and the reason is appended as `cancelled by <you>: <reason>`. Restart needs update access to the ticket and its runs. Three new failures park the ticket again.
 
 ## Blockers, parents and branches
 
@@ -86,4 +87,4 @@ A restart sets the newest failed run to `cancelled`, so the 3 most recent runs a
 - **Parent.** A sub-ticket's base branch is its parent's branch; otherwise it is the project's default branch. It is computed, never set.
 - **Carrier ticket.** To base several tickets on a long-lived branch, create one ticket whose `branch_name` is that branch (writable only at creation) and hang the real tickets under it.
 
-Every ticket runs the one workflow `bb_work`. A deployment or a verification is a ticket with the type `deployment` or `verification` and its recipe.
+Every ticket runs the one workflow `bb_work`. A shipment or a verification is a ticket with the type `ship` or `verification` and its recipe.

@@ -146,8 +146,13 @@ export interface PluginLaunch {
   env: Record<string, string>;
   /** Passed to `launchCommand` as its `args`. */
   args: string[];
-  /** `built` when this call built the home, `reused` when it was complete. */
-  home: 'built' | 'reused';
+  /**
+   * `built` when this call built the home, `reused` when it was complete,
+   * `host` when the run uses the person's own config dir instead.
+   */
+  home: 'built' | 'reused' | 'host';
+  /** Differences from the declaration left unchanged, logged at run start. */
+  warnings?: string[];
   /** Trust checks this run skips, for the run's `plugins` log entry. */
   trust_bypass?: string[];
   /** Declared plugins the harness cannot load, for the same entry. */
@@ -159,6 +164,8 @@ export interface AgentRunContext {
   homePath: string;
   workspacePath: string;
   env: Readonly<Record<string, string>>;
+  /** The agent's declared `secretEnv` values the conductor hands this run. */
+  secrets?: Readonly<Record<string, string>>;
 }
 
 /** Files and environment an agent needs, independent of its execution backend. */
@@ -192,11 +199,20 @@ export interface AgentModelApi {
 export interface AgentRuntimeInfo {
   readonly installCommand?: string;
   readonly modelApi?: AgentModelApi;
+  /**
+   * Env names this agent's runs may receive from `~/.bakers/.bakers.env` or
+   * the conductor's shell; no other secrets-file value reaches a run.
+   */
+  readonly secretEnv?: readonly string[];
+  /** The declared values the conductor hands this run; never logged. */
+  readonly secrets?: Readonly<Record<string, string>>;
 }
 
 export interface BbAgent extends AgentRuntimeInfo {
   /** Stable id, e.g. 'claude'. */
   readonly id: string;
+  /** herdr agent manifest name; an isolated run's launcher carries it so herdr and hc identify the pane. */
+  readonly herdrAgent?: string;
   /** Prepare configuration in a private run home without runtime-specific flags. */
   prepareRun?(
     context: AgentRunContext,
@@ -212,6 +228,8 @@ export interface BbAgent extends AgentRuntimeInfo {
   installPlugins?(
     marketplaces: readonly MarketplaceDeclaration[],
     home: string,
+    /** The run's picked {@link secretEnv} values, for a token login. */
+    secrets?: Readonly<Record<string, string>>,
   ): Promise<PluginLaunch>;
   /**
    * How the conductor treats ticket/project env_vars whose names match

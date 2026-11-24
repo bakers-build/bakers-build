@@ -140,6 +140,18 @@ Then('the rail disclosure {string} is collapsed', async ({ page }, name: string)
   await expect(railDisclosure(page, name)).toHaveAttribute('aria-expanded', 'false');
 });
 
+Then('the rail team {string} links to the team and has no sub-navigation', async ({ page }, name: string) => {
+  const url = php(
+    '$t = current(\\Drupal::entityTypeManager()->getStorage("bb_team")' +
+      `->loadByProperties(["name" => ${JSON.stringify(name)}])); print $t ? $t->toUrl()->toString() : "";`,
+  );
+  expect(url, `No bb_team named "${name}"`).not.toBe('');
+  const row = page.locator(`${RAIL} [data-navigation] li`).filter({ has: page.getByRole('link', { name, exact: true }) }).last();
+  await expect(row.getByRole('link', { name, exact: true })).toHaveAttribute('href', url);
+  await expect(row.getByRole('link', { name: 'Tickets', exact: true })).toHaveCount(0);
+  await expect(railDisclosure(page, `${name} sub-navigation`)).toHaveCount(0);
+});
+
 Then('the rail heading {string} shows the {string} icon', async ({ page }, label: string, icon: string) => {
   const heading = page.locator(`${RAIL} [data-navigation]`).getByRole('button', { name: label });
   await expect(heading, `Rail heading "${label}" is missing`).toBeVisible();

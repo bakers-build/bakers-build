@@ -12,6 +12,7 @@ The conductor owns lifecycle hooks. Each slot holds one addon.
 | [herdr](/addons/herdr) | herdr TUI tabs; shows a new worktree with the `open` layout | herdr worktrees; removed with `herdr worktree remove`, else Git |
 | [Orca](/addons/orca) | Orca terminals; opens a new worktree's overview terminal | Git worktrees adopted by Orca; removed with `orca worktree rm`, else Git |
 | [herdr-core](/addons/herdr-core) | herdr-core (`hc`) terminals | — |
+| [Rex](/addons/rex) | Rex sessions | — |
 | [Git workspace](/addons/workspace-git) | — | Plain Git worktrees |
 
 ## Set both in the project

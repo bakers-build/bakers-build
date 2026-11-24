@@ -13,8 +13,11 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
 use Drupal\bb_core\Access\BbConductorAccessControlHandler;
 use Drupal\bb_core\Access\BbOwnerGrantQueryAccessHandler;
+use Drupal\bb_core\Field\ConductorAssignmentEffectiveItemList;
 use Drupal\bb_core\Form\BbConductorActionForm;
+use Drupal\bb_core\Form\BbConductorForm;
 use Drupal\bb_core\Form\BbEntityDetailCardForm;
+use Drupal\bb_core\Form\BbRestartRunsForm;
 use Drupal\bb_core\ListBuilder\BbConductorListBuilder;
 use Drupal\bb_core\Routing\BbConductorRouteProvider;
 use Drupal\bb_core\ViewsData\BbConductorViewsData;
@@ -47,9 +50,12 @@ use Drupal\user\EntityOwnerTrait;
     'list_builder' => BbConductorListBuilder::class,
     'form' => [
       'delete' => BbContentEntityDeleteForm::class,
-      // The Overview's card and its Disable/Enable confirmation.
+      // The Overview's read-only card and its Disable/Enable confirmation;
+      // Settings edits the conductor.
       'identity' => BbEntityDetailCardForm::class,
+      'settings' => BbConductorForm::class,
       'action' => BbConductorActionForm::class,
+      'restart' => BbRestartRunsForm::class,
     ],
     // Views integration is declared HERE rather than attached by a hook. It
     // came from bb_dashboard's hook_entity_type_alter(), which was a detour:
@@ -187,6 +193,24 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
       ->setSetting('max_length', 255)
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'string_textfield', 'weight' => 16]);
+    // Owner-only (AccessFenceHooks); registration never writes it.
+    $fields['assignment'] = BaseFieldDefinition::create('list_string')
+      ->setLabel(new TranslatableMarkup('Assignment'))
+      ->setDescription(new TranslatableMarkup('Whether others may assign this conductor to tickets.'))
+      ->setRequired(TRUE)
+      ->setSetting('allowed_values', [
+        'machine' => 'Machine setting',
+        'allow' => 'Allow',
+        'forbid' => 'Forbid',
+      ])
+      ->setDefaultValue('machine')
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayOptions('form', ['type' => 'options_select', 'weight' => 17]);
+    $fields['assignment_effective'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Effective assignment'))
+      ->setDescription(new TranslatableMarkup('The assignment setting in force and its source.'))
+      ->setComputed(TRUE)
+      ->setClass(ConductorAssignmentEffectiveItemList::class);
     return $fields;
   }
 
@@ -236,6 +260,24 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
   public function getMachine(): ?BbMachineInterface {
     $entity = $this->get('machine')->entity;
     return $entity instanceof BbMachineInterface ? $entity : NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getAssignment(): string {
+    return (string) $this->get('assignment')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEffectiveAssignment(): array {
+    $own = $this->getAssignment();
+    if ($own === 'allow' || $own === 'forbid') {
+      return ['value' => $own, 'source' => 'conductor'];
+    }
+    return ['value' => $this->getMachine()?->getAssignment() === 'allow' ? 'allow' : 'forbid', 'source' => 'machine'];
   }
 
   /**

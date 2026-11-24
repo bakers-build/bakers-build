@@ -4,11 +4,14 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 ## bb-phase-provision
 
-Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site;
-`config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
+Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site.
+A site whose database is behind the code (for example after a merge that brings an update hook)
+gets `provision_exec('down')` first, which stops it and drops its reuse marker, so the next
+`provision_up('recipe-test')` installs afresh. `config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
 `existing-config` install at the same revision. Commands in the web container run through
-fixed `provision_exec` keys: `phpcs`, `phpmd`, `phpstan`, `uli` (`[<persona>, <url>?]`), `playwright`
-(spec paths), `playwright-cli` and `playground-ticket`; there is no free command. `ddev_status`/`ddev_start` replace
+fixed `provision_exec` keys: `phpcs`, `phpmd`, `phpstan`, `phpunit` and `phpunit-mariadb` (test paths), `paratest`
+(one suite or path), `uli` (`[<persona>, <url>?]`), `playwright`
+(spec paths), `playwright-cli`, `designbook` (Storybook and captures) and `playground-ticket`; there is no free command. `ddev_status`/`ddev_start` replace
 project inspection and startup. Provisioning profiles use the fixed, protected `.bakers/provision.sh`
 entry point; their implementation is read from that file on each call.
 Under an isolating runtime (`BAKERS_RUNTIME_ISOLATES=1`) the run installs and builds itself:
@@ -44,6 +47,12 @@ Apply all matching rows.
 | Scenes or screens built from a design reference | `designbook:design-verify` last, `designbook:repair` for its findings |
 | Skills, frontmatter or plugin manifests | `mattpocock-skills:writing-for-agents`, `ponytail:ponytail` |
 
+*Ship*: version command `pnpm --dir bakers-cli run release:version <SHA> --notes -`; npm package
+`@bakers-build/bakers`. Block when a breaking (`!`) server commit is in the batch and none raises
+`min_client_version`. Its fix, made by the ship: set it to the planned release version in both
+`bb_core.settings` homes and in the client version the Playwright features send, title
+`fix(server): require bakers <version> or newer to claim work`.
+
 ## bb-phase-validate
 
 Apply all matching rows to the plan and final diff. Run each distinct command once per revision and
@@ -57,6 +66,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | bakers.build CLI source | Dependencies installed (see provision), then `cd bakers-cli && pnpm -r run build` |
 | PHP implementation | PHP coding standards, mess detection and static analysis through `provision_exec('phpcs')`, `('phpmd')` and `('phpstan')` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
+| Update or post-update hooks (`*.install`, `*.post_update.php`), or entity/field schema changes | `bash scripts/ci/update-from-release.sh`: the latest release image (`ghcr.io/bakers-build/bakers-build/php:<version>`) with seeded content, then the branch's image, `drush updb -y`, `drush cim -y`, and the hook's data checks (values carried over, removed storage gone). The CI job `update_from_release` runs it on pull requests that touch these paths; a run without Docker reads that job through `forge_checks` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
 | `.ddev/**` or `.bakers/provision.sh` | `bash tests/contract/ddev-provision.sh` |
 | `.bakers/scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
@@ -72,7 +82,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 PHPUnit, browser E2E and config import run against the built Docker images in CI.
 
 Fetch, push, open the PR, read checks and merge through the forge tools
-(`bb-workflow` › `references/forge.md`). For GitHub, update the branch from its target, push and wait
+(`bb-workflow` › `references/forge.md`). For GitHub, update the branch from its target (`forge_update_branch` in a run clone), push and wait
 for the complete `GitHub checks` workflow and its aggregate `required`. PRs into `next` skip `image_gate`; it runs on the push to `next`
 after the merge, before the develop deployment. PRs into `main` run it, and `required` fails without it. A failed check blocks
 the PR; fix it on the branch and require green checks on the new revision. Protected `next` accepts

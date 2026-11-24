@@ -11,7 +11,7 @@ dependencies:
 id: bb_terms
 label: 'Workspace terms'
 module: views
-description: 'The workspace settings tabs Types, Recipes and Labels: one display per term bundle, filtered to the workspace of the route. Rows carry Edit and Delete operations; terms have no page of their own.'
+description: 'The workspace settings tabs Types, Recipes and Labels: one display per term bundle, filtered to the workspace of the route. Each row links to the term''s page, which carries Edit and Delete.'
 tag: ''
 base_table: bb_term
 base_field: id
@@ -41,7 +41,7 @@ display:
           click_sort_column: value
           type: string
           settings:
-            link_to_entity: false
+            link_to_entity: true
         description:
           id: description
           table: bb_term
@@ -59,17 +59,6 @@ display:
           click_sort_column: value
           type: basic_string
           settings: {  }
-        operations:
-          id: operations
-          table: bb_term
-          field: operations
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_term
-          plugin_id: entity_operations
-          label: ''
-          destination: true
       pager:
         type: full
         options:
@@ -149,8 +138,7 @@ display:
             meta: {  }
             description:
               - description
-            right:
-              - operations
+            right: {  }
             right_meta: {  }
       row:
         type: fields

@@ -1,0 +1,94 @@
+import { describe, expect, it } from 'vitest';
+import { isPullRequest, ticketTopLinks } from '../../src/lib/ticket-links.js';
+import type { TicketDetailDocument } from '../../src/types.js';
+
+const ticket = (
+  attributes: Record<string, unknown>,
+  id = 'uuid-1',
+): TicketDetailDocument => ({
+  data: { id, type: 'bb_ticket--bb_ticket', attributes },
+});
+
+describe('isPullRequest', () => {
+  it('recognises PR and MR URLs and titles', () => {
+    expect(isPullRequest('', 'https://github.com/o/r/pull/1')).toBe(true);
+    expect(isPullRequest('', 'https://g.test/-/merge_requests/2')).toBe(true);
+    expect(isPullRequest('PR', 'https://ci.test/x')).toBe(true);
+    expect(isPullRequest('Merge request', 'https://ci.test/x')).toBe(true);
+    expect(isPullRequest('Result', 'https://example.test/r')).toBe(false);
+    expect(isPullRequest('Preview', 'https://example.test/r')).toBe(false);
+  });
+});
+
+describe('ticketTopLinks', () => {
+  const doc = ticket({
+    identifier: 'BAKERS-332',
+    url: 'https://b.test/bakers/ticket/bakers-332',
+    links: [
+      { title: 'Result', uri: 'https://example.test/a/b/result' },
+      { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
+    ],
+  });
+
+  it('orders the served ticket URL first, then pull requests, then other links', () => {
+    const links = ticketTopLinks(doc);
+    expect(links.map((link) => link.key)).toEqual(['ticket', 'PR', 'Result']);
+    expect(links[0]?.href).toBe('https://b.test/bakers/ticket/bakers-332');
+    expect(links[1]?.href).toBe('https://github.com/o/r/pull/229');
+  });
+
+  it('keeps several pull requests first in stored order', () => {
+    const links = ticketTopLinks(
+      ticket({
+        links: [
+          { title: 'Docs', url: 'https://example.test/docs' },
+          { title: 'PR', uri: 'https://github.com/o/r/pull/1' },
+          { title: 'MR', uri: 'https://g.test/-/merge_requests/2' },
+        ],
+      }),
+    );
+    expect(links.map((link) => link.href)).toEqual([
+      'https://github.com/o/r/pull/1',
+      'https://g.test/-/merge_requests/2',
+      'https://example.test/docs',
+    ]);
+  });
+
+  it('leaves the ticket row out when the server sent no URL', () => {
+    const { url: _served, ...attributes } = doc.data?.attributes ?? {};
+    expect(ticketTopLinks(ticket(attributes)).map((link) => link.key)).toEqual([
+      'PR',
+      'Result',
+    ]);
+  });
+
+  it('returns only the ticket row for a linkless ticket', () => {
+    const links = ticketTopLinks(
+      ticket({
+        identifier: 'BAKERS-1',
+        url: 'https://b.test/bakers/ticket/bakers-1',
+        links: [],
+      }),
+    );
+    expect(links).toEqual([
+      {
+        key: 'ticket',
+        href: 'https://b.test/bakers/ticket/bakers-1',
+        pullRequest: false,
+      },
+    ]);
+  });
+
+  it('keys an untitled link as link and keeps its href', () => {
+    const links = ticketTopLinks(
+      ticket({ links: [{ uri: 'https://example.test/x' }] }),
+    );
+    expect(links).toEqual([
+      {
+        key: 'link',
+        href: 'https://example.test/x',
+        pullRequest: false,
+      },
+    ]);
+  });
+});

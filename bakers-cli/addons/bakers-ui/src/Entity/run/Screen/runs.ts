@@ -13,7 +13,6 @@ import {
   RUN_TABLE,
   type RunPage,
   type RunRow,
-  selectedRunTicketId,
 } from '../Data/runs.js';
 
 export class RunsScreen extends ListScreen<RunRow, number> {
@@ -112,23 +111,16 @@ export class RunsScreen extends ListScreen<RunRow, number> {
 
   protected actions() {
     return [
-      actionItem('runs-enter', 'Enter', 'ticket'),
+      actionItem('runs-enter', 'Enter', 'run'),
       actionItem('runs-tab', 'Tab', 'tabs'),
       ...this.pagingActionItems(),
     ];
   }
+  /** A run row opens the run's own detail (BAKERS-338). */
   activate(index: number, context: ScreenContext): boolean {
-    const id = this.readyValue
-      ? selectedRunTicketId(this.readyValue.rows, index)
-      : null;
-    if (!id || !context.navigate) return false;
-    context.navigate('ticket.runs', { ticketId: id });
-    return true;
-  }
-  select(index: number, context: ScreenContext): boolean {
-    if (index < 0 || index >= this.rows.length) return false;
-    this.selectedIndex = index;
-    context.requestDraw();
+    const row = this.rows[index];
+    if (!row?.ticketId || !context.navigate) return false;
+    context.navigate('run.detail', { ticketId: row.ticketId, runId: row.id });
     return true;
   }
   override handleInput(input: string, context: ScreenContext): boolean {

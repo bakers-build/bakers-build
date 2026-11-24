@@ -103,8 +103,10 @@ export interface ToolRegistry {
   ): Promise<ToolResult>;
 }
 
-/** `hooks.provision_up`: one command, or a command per profile. */
-export type ProvisionHook = string | Record<string, string>;
+/** `hooks.provision_up`: one command, or a command per profile, optionally described for the agent. */
+export type ProvisionHook =
+  | string
+  | Record<string, string | { command: string; description?: string }>;
 
 export const PROVISION_TIMEOUT_MS = 30 * 60_000;
 const OUTPUT_CAP = 64 * 1024;
@@ -153,8 +155,8 @@ export function provisionRuns(timeoutMs = PROVISION_TIMEOUT_MS): ProvisionRuns {
 export interface ProvisionOptions {
   /** `hooks.provision_exec`: commands by key. */
   exec?: Record<string, ProvisionExecCommand>;
-  /** Whether the runtime isolates runs; exported to every host command. */
-  isolates?: boolean;
+  /** Whether the run's runtime isolates, or how to read it per worktree; exported to every host command. */
+  isolates?: boolean | ((worktreePath: string) => boolean);
 }
 
 /**
@@ -177,10 +179,16 @@ export function provisionTools(
     typeof hook !== 'string' &&
     (typeof hook !== 'object' ||
       hook === null ||
-      Object.values(hook).some((cmd) => typeof cmd !== 'string'))
+      Object.values(hook).some(
+        (cmd) =>
+          typeof cmd !== 'string' &&
+          (typeof cmd !== 'object' ||
+            cmd === null ||
+            typeof cmd.command !== 'string'),
+      ))
   )
     throw new Error(
-      'hooks.provision_up must be a command or a { profile: command } map',
+      'hooks.provision_up must be a command or a { profile: command | { command, description? } } map',
     );
   const keys = profiles ? Object.keys(profiles).join(', ') : '';
   const commandFor = (profile: unknown): string => {
@@ -188,12 +196,30 @@ export function provisionTools(
     if (profile === undefined)
       throw new Error(`provision_up: profile required, one of ${keys}`);
     // The input schema's enum has already refused an unknown profile.
-    return profiles[String(profile)] as string;
+    const entry = profiles[String(profile)] as string | { command: string };
+    return typeof entry === 'string' ? entry : entry.command;
   };
+  // One `- name: description` line per described entry, after the tool's sentence.
+  const described = (
+    entries: Record<string, string | { description?: string }>,
+  ) =>
+    Object.entries(entries)
+      .flatMap(([name, entry]) =>
+        typeof entry === 'object' && entry.description
+          ? [`\n- ${name}: ${entry.description}`]
+          : [],
+      )
+      .join('');
   // What a host script needs instead of asking Git in a workspace without one.
   const envFor = (worktreePath: string) => ({
     BAKERS_WORKTREE_PATH: worktreePath,
-    BAKERS_RUNTIME_ISOLATES: options.isolates ? '1' : '0',
+    BAKERS_RUNTIME_ISOLATES: (
+      typeof options.isolates === 'function'
+        ? options.isolates(worktreePath)
+        : options.isolates
+    )
+      ? '1'
+      : '0',
   });
   const report = ({ exitCode, output }: ShellResult) => {
     const text = `exit ${exitCode}\n${output}`;
@@ -204,7 +230,7 @@ export function provisionTools(
   const handlers: Record<string, ToolHandler> = {};
   if (hook !== undefined) {
     tools.provision_up = {
-      description: `Bring this worktree's environment up${profiles ? ` with a configured profile (${keys})` : ''}; the project's command reuses a ready environment. Returns the command's output, including the base URL. The first call on a new worktree can take minutes; the call waits until the command ends, for up to 30 minutes. On a client timeout the command keeps running: call again with the same profile to join it and receive its result, without starting a second one.`,
+      description: `Bring this worktree's environment up${profiles ? ` with a configured profile (${keys})` : ''}; the project's command reuses a ready environment. Returns the command's output, including the base URL. The first call on a new worktree can take minutes; the call waits until the command ends, for up to 30 minutes. On a client timeout the command keeps running: call again with the same profile to join it and receive its result, without starting a second one.${profiles ? described(profiles) : ''}`,
       input: {
         type: 'object',
         properties: {
@@ -229,7 +255,7 @@ export function provisionTools(
       (key) => typeof exec[key] === 'object' && exec[key].args === true,
     );
     tools.provision_exec = {
-      description: `Run one of the project's configured commands (${Object.keys(exec).join(', ')}) for this worktree, such as a command in its site container. Each key is a fixed command; only ${withArgs.length ? withArgs.join(', ') : 'none'} also take \`args\`, passed as separate arguments after \`--\`, never through a shell. Returns the exit code and the output tail.`,
+      description: `Run one of the project's configured commands (${Object.keys(exec).join(', ')}) for this worktree, such as a command in its site container. Each key is a fixed command; only ${withArgs.length ? withArgs.join(', ') : 'none'} also take \`args\`, passed as separate arguments after \`--\`, never through a shell. Returns the exit code and the output tail.${described(exec)}`,
       input: {
         type: 'object',
         required: ['key'],

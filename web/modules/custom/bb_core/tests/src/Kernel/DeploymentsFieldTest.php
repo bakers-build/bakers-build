@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * A ticket lists the deployment tickets that carry it.
+ * A ticket lists the ship tickets that carry it.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -19,7 +19,7 @@ final class DeploymentsFieldTest extends BakersToolTestBase {
    * Deployments referencing a ticket are listed oldest first; others are not.
    */
   public function testListsReferencingDeploymentsOnly(): void {
-    $deployment = $this->term('type', 'deployment')->id();
+    $deployment = $this->term('type', 'ship')->id();
     $ticket = $this->ticket('DF-T');
     $unreferenced = $this->ticket('DF-U');
     $first = $this->ticket('DF-D1', ['ticket_type' => $deployment, 'referenced_tickets' => [$ticket->id()]]);

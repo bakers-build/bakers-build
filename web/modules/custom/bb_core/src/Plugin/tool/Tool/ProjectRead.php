@@ -84,8 +84,7 @@ use Drupal\tool\TypedData\OutputDefinition;
         'default_branch' => new OutputDefinition(
           data_type: 'string',
           label: new TranslatableMarkup('Default branch'),
-          description: new TranslatableMarkup('The default branch; null means main.'),
-          nullable: TRUE,
+          description: new TranslatableMarkup('The branch work bases on.'),
         ),
         'branch_convention' => new OutputDefinition(
           data_type: 'string',

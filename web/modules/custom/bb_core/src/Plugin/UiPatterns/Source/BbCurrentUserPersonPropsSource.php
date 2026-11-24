@@ -6,13 +6,10 @@ namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\file\FileInterface;
 use Drupal\bb_core\Navigation\AccountWorkspaceContext;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
-use Drupal\image\ImageStyleInterface;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
@@ -44,7 +41,7 @@ final class BbCurrentUserPersonPropsSource extends SourcePluginBase {
   /**
    * The validated account navigation context.
    */
-  private AccountWorkspaceContext $workspaceContext;
+  protected AccountWorkspaceContext $workspaceContext;
 
   /**
    * Fallback for the anonymous branch, so a required prop is never empty.
@@ -61,17 +58,12 @@ final class BbCurrentUserPersonPropsSource extends SourcePluginBase {
   /**
    * The current-session account proxy, injected in `create()`.
    */
-  private AccountProxyInterface $currentUser;
+  protected AccountProxyInterface $currentUser;
 
   /**
    * The entity type manager, to load the full `user` entity and image style.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
-
-  /**
-   * The URL generator, for the fallback path when no `avatar` style exists.
-   */
-  private FileUrlGeneratorInterface $fileUrlGenerator;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * {@inheritdoc}
@@ -80,7 +72,6 @@ final class BbCurrentUserPersonPropsSource extends SourcePluginBase {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->currentUser = $container->get('current_user');
     $instance->entityTypeManager = $container->get('entity_type.manager');
-    $instance->fileUrlGenerator = $container->get('file_url_generator');
     $instance->workspaceContext = $container->get(AccountWorkspaceContext::class);
     return $instance;
   }
@@ -114,9 +105,9 @@ final class BbCurrentUserPersonPropsSource extends SourcePluginBase {
 
     return match ($this->getPropId()) {
       self::PROP_DISPLAY_NAME => $this->personDisplayName($account),
-      self::PROP_INITIALS => $this->personInitials((string) $account->label()),
-      self::PROP_COLOR => $this->personColor((int) $account->id()),
-      self::PROP_PICTURE => $this->pictureUrl($account),
+      self::PROP_INITIALS => (string) $account->get('person_initials')->value,
+      self::PROP_COLOR => (string) $account->get('person_color')->value,
+      self::PROP_PICTURE => (string) $account->get('person_picture')->value,
       self::PROP_URL => $this->accountUrl($account),
       default => '',
     };
@@ -132,23 +123,6 @@ final class BbCurrentUserPersonPropsSource extends SourcePluginBase {
       $url->setOption('query', ['workspace' => $workspace->uuid()]);
     }
     return $url->toString();
-  }
-
-  /**
-   * The account's profile picture, styled through `avatar`, or empty.
-   */
-  private function pictureUrl(UserInterface $account): string {
-    if (!$account->hasField('user_picture') || $account->get('user_picture')->isEmpty()) {
-      return '';
-    }
-    $file = $account->get('user_picture')->entity;
-    if (!$file instanceof FileInterface) {
-      return '';
-    }
-    $style = $this->entityTypeManager->getStorage('image_style')->load('avatar');
-    return $style instanceof ImageStyleInterface
-      ? $style->buildUrl($file->getFileUri())
-      : $this->fileUrlGenerator->generateAbsoluteString($file->getFileUri());
   }
 
   /**

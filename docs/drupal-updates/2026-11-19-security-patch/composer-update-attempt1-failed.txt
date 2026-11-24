@@ -1,0 +1,14 @@
+Gathering patches for root package.
+Removing package drupal/ui_patterns so that it can be re-installed and re-patched.
+  - Removing drupal/ui_patterns (2.0.23)
+Deleting /var/www/html/web/modules/contrib/ui_patterns - deleted
+Loading composer repositories with package information
+Updating dependencies
+Your requirements could not be resolved to an installable set of packages.
+
+  Problem 1
+    - Root composer.json requires drupal/migrate_tools ^6 -> satisfiable by drupal/migrate_tools[6.1.5].
+    - drush/drush is locked to version 13.6.2 and an update of this package was not requested.
+    - drupal/migrate_tools 6.1.5 conflicts with drush/drush <13.7.
+
+[31mFailed to execute command `composer update -W --no-interaction drupal/core:11.3.22 drupal/core-recommended:11.3.22 drupal/core-composer-scaffold:11.3.22 drupal/core-project-message:11.3.22 drupal/core-recipe-unpack:11.3.22 drupal/core-dev:11.3.22 drupal/config_inspector:2.1.12 drupal/facets:3.0.7 drupal/migrate_plus:6.0.11 drupal/migrate_tools:6.1.5 drupal/tagify:1.2.55 drupal/views_autocomplete_filters:2.0.4 drupal/views_filters_summary:3.4.1 drupal/ui_patterns_library:2.0.23`: exit status 2[0m

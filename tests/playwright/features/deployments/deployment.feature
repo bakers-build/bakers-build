@@ -1,14 +1,14 @@
 @functional @api
-Feature: Deployment and verification API contracts
+Feature: Shipment and verification API contracts
   Release batches and verification targets survive a fresh resource read.
 
-  Scenario: Deployment ticket keeps its type and both referenced tickets
+  Scenario: Ship ticket keeps its type and both referenced tickets
     Given the API client is "north-contributor"
     When the API client creates a "bb_work" ticket in "home" as "first"
     And the API client creates a "bb_work" ticket in "home" as "second"
     And the API client sends "POST" to "/jsonapi/bb_ticket/bb_ticket":
       """
-      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API release","workflow":"bb_work"},"relationships":{"ticket_type":{"data":{"type":"bb_term--type","id":"{term.deployment}"}},"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"referenced_tickets":{"data":[{"type":"bb_ticket--bb_ticket","id":"{saved.first}"},{"type":"bb_ticket--bb_ticket","id":"{saved.second}"}]}}}}
+      {"data":{"type":"bb_ticket--bb_ticket","attributes":{"title":"API release","workflow":"bb_work"},"relationships":{"ticket_type":{"data":{"type":"bb_term--type","id":"{term.ship}"}},"project_id":{"data":{"type":"bb_project--bb_project","id":"{project.home}"}},"referenced_tickets":{"data":[{"type":"bb_ticket--bb_ticket","id":"{saved.first}"},{"type":"bb_ticket--bb_ticket","id":"{saved.second}"}]}}}}
       """
     Then the API response status is 201
     When the API resource is remembered as "release"
@@ -16,7 +16,7 @@ Feature: Deployment and verification API contracts
     Then the API response status is 200
     And the API document contains:
       """
-      {"data":{"attributes":{"workflow":"bb_work","state":"qualification"},"relationships":{"ticket_type":{"data":{"id":"{term.deployment}"}},"referenced_tickets":{"data":[{"id":"{saved.first}"},{"id":"{saved.second}"}]}}}}
+      {"data":{"attributes":{"workflow":"bb_work","state":"qualification"},"relationships":{"ticket_type":{"data":{"id":"{term.ship}"}},"referenced_tickets":{"data":[{"id":"{saved.first}"},{"id":"{saved.second}"}]}}}}
       """
 
   Scenario: Verification ticket keeps its type, parent and environment

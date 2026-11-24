@@ -36,8 +36,8 @@ import {
 } from './pane-layout.js';
 import { AGENT_SHELL_ENV, envArgs } from './panes.js';
 import { deriveHerdrRoot } from './root-anchor.js';
+import { parseWorkspaceList } from './workspace-list.js';
 import {
-  cloneWorkspaceId,
   listWorktrees,
   openCloneWorkspace,
   resolveWorktreeEntry,
@@ -235,11 +235,16 @@ export class HerdrExecutor implements BbExecutor {
         ctx.branch,
         path,
       );
-      // A run clone is no herdr worktree: its plain workspace is opened by label.
+      // A run clone is a worktree only the host registered: open it by path.
       const open =
         entry?.open_workspace_id ??
         (loadRunClone(path)
-          ? await openCloneWorkspace(this.execHerdr, ctx.branch, path)
+          ? await openCloneWorkspace(
+              this.execHerdr,
+              this.options.root,
+              ctx.branch,
+              path,
+            )
           : undefined);
       if (open) {
         root = parseFirstPane(
@@ -285,10 +290,11 @@ export class HerdrExecutor implements BbExecutor {
     //    branch is mutable (a coding agent may switch/rename it) and herdr
     //    reports `null` for a detached HEAD, so a branch match is unreliable.
     let workspaceId = await this.findOpenWorkspace(branchName, workspacePath);
-    // A run clone is no herdr worktree: its plain workspace is opened by label.
+    // A run clone is a worktree only the host registered: open it by path.
     if (!workspaceId && loadRunClone(workspacePath))
       workspaceId = await openCloneWorkspace(
         this.execHerdr,
+        this.options.root,
         branchName,
         workspacePath,
       );
@@ -383,7 +389,7 @@ export class HerdrExecutor implements BbExecutor {
       // caller does not (BB-64). commandFor / writeLaunchScript sit inside
       // the try so an invalid env key or a temp-dir write error still closes
       // the tab.
-      launch = writeLaunchScript(this.commandFor(input));
+      launch = writeLaunchScript(this.commandFor(input), input.agent);
       await applyPaneLayout(
         this.execHerdr,
         rootPaneId,
@@ -436,11 +442,14 @@ export class HerdrExecutor implements BbExecutor {
    * The branch worktree is untouched (that is `HerdrWorkspace.remove`).
    */
   async cleanupRun(branch: string, runId: number): Promise<void> {
-    // A branch without a herdr worktree may be a run clone, found by its label.
+    // A branch without a herdr worktree may be an older run clone's plain
+    // workspace, found by its label.
     const entry = await this.findWorktreeByBranch(branch);
     const workspaceId = entry
       ? (entry.open_workspace_id ?? null)
-      : await cloneWorkspaceId(this.execHerdr, branch);
+      : (parseWorkspaceList(await this.execHerdr(['workspace', 'list'])).find(
+          (workspace) => workspace.label === branch,
+        )?.workspaceId ?? null);
     if (!workspaceId) {
       return;
     }

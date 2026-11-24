@@ -3,9 +3,9 @@ Feature: User Machines listing and View
   Opening the person mark swaps the rail to Account, Conductors and
   Machines. Machines is this account's machines. Opening a row shows
   View at `/user/{user}/machine/{id}`: the Activities of its conductors'
-  runs beside one Identity card (name and max parallel editable by the owner;
-  host key, owner and current load read-only); there is no Settings tab and
-  the old edit address leads to the View. Navigation
+  runs beside one read-only Identity card. The owner's Settings tab edits
+  name, max parallel and assignment, and the old edit address leads to the
+  View. Navigation
   runs inside the content island, so a navigating
   scenario clicks twice.
 
@@ -39,23 +39,51 @@ Feature: User Machines listing and View
     Then the address is the detail of the machine "e2e default host"
     And the page heading is "e2e default host"
     And the machine Overview shows its host key, max parallel and current load
-    And there is no tab "Settings"
+    And the tab "Settings" is offered
 
-  Scenario: The owner edits the machine on its View, and the old edit address leads there
+  Scenario: The owner reads the machine on its View, edits it on Settings, and the old edit address leads to View
     Given I am signed in as a member of the "bakers" workspace
     When I visit the machine "e2e default host"
-    Then there is no tab "Settings"
-    And the "Identity" card offers "Name" with Save
-    And the "Identity" card offers "Max parallel" with Save
+    Then the "Identity" card offers no Save and no inputs
+    And the "Identity" card shows "Max parallel" as "1"
+    When I click the tab "Settings"
+    Then the Settings offer "Name"
+    And the Settings offer "Max parallel"
+    And the Settings offer "Assignment"
     When I visit the former edit address of the machine "e2e default host"
     Then the address is the detail of the machine "e2e default host"
     And the page heading is "e2e default host"
-    And the "Identity" card offers "Name" with Save
+    And the "Identity" card offers no Save and no inputs
 
   Scenario: A machine lists the claims of its conductors' runs
     Given I am signed in as a member of the "bakers" workspace
     When I visit the machine "e2e default host"
     Then the Activities list "BB-142 started work in plan"
+
+  Scenario: The owner sees its conductors and opens Restart runs behind a confirmation
+    Given I am signed in as a member of the "bakers" workspace
+    When I visit the machine "e2e default host"
+    Then the machine Overview lists the conductor "srv01-bakers" as one link
+    And the machine Overview lists the conductor "srv01-bakers" in the project "bakers.build Platform"
+    When I open "Restart runs" on the machine
+    Then a dialog asks "e2e default host"
+    When I choose "Cancel" in the dialog
+    Then the machine Overview lists the conductor "srv01-bakers" as one link
+    When I open the conductor "srv01-bakers" from the machine Overview
+    And I open "Restart runs" on the conductor page
+    Then a dialog asks "srv01-bakers"
+    When I press Escape in the Restart runs dialog
+    Then the page heading is "srv01-bakers"
+
+  Scenario Outline: Restart runs is the owner's alone
+    Given I am logged in as the account "<account>"
+    When I request Restart runs on the machine "e2e default host"
+    Then the Restart runs address answers 404
+
+    Examples:
+      | account           |
+      | north-contributor |
+      | north-guest       |
 
   @machine-connection
   Scenario: A lead sees and selects the connection address saved at start

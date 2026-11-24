@@ -320,7 +320,12 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
    *
    * @var array<string, int>
    */
-  private array $supersededLogFiles = [];
+  protected array $supersededLogFiles = [];
+
+  /**
+   * The failure line of this render, read once; cleared on save.
+   */
+  protected ?string $failureLineMemo = NULL;
 
   /**
    * {@inheritdoc}
@@ -393,6 +398,7 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
    */
   public function postSave(EntityStorageInterface $storage, $update = TRUE): void {
     parent::postSave($storage, $update);
+    $this->failureLineMemo = NULL;
     if ($this->supersededLogFiles === []) {
       return;
     }
@@ -468,10 +474,30 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
     if ($this->getRunState() !== 'failed') {
       return NULL;
     }
-    $file = $this->get('error_log_file')->entity;
+    return $this->failureLineMemo ??= $this->readFailureLine();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasLog(string $kind): bool {
+    if ((string) ($this->get($kind . '_bytes')->value ?? '') === '') {
+      return FALSE;
+    }
+    $file = $this->get($kind . '_file')->entity;
+    return $file instanceof FileInterface && file_exists((string) $file->getFileUri());
+  }
+
+  /**
+   * The first error-log line without "Error: ", or the no-reason copy.
+   */
+  private function readFailureLine(): string {
     $line = '';
     try {
-      if ($file instanceof FileInterface) {
+      if ($this->hasLog('error_log')) {
+        $file = $this->get('error_log_file')->entity;
+        // hasLog() loaded it.
+        assert($file instanceof FileInterface);
         $line = \Drupal::service(RunLogStore::class)->firstLine($file, $this);
       }
     }
@@ -482,10 +508,13 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
         '@message' => $e->getMessage(),
       ]);
     }
-    $line = preg_replace('/^Error: /', '', $line);
-    return $line === '' || $line === NULL
+    $line = (string) preg_replace('/^Error: /', '', $line);
+    if ($line !== '') {
+      return $line;
+    }
+    return $this->hasLog('log') || $this->hasLog('error_log')
       ? (string) new TranslatableMarkup('No reason was recorded. Open the log for details.')
-      : $line;
+      : (string) new TranslatableMarkup('No reason and no log were recorded.');
   }
 
   /**

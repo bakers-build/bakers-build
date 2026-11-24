@@ -26,7 +26,7 @@ final class BbTimeFormatter extends FormatterBase {
   /**
    * The product time formatter.
    */
-  private BbDate $date;
+  protected BbDate $date;
 
   /**
    * {@inheritdoc}

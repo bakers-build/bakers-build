@@ -10,18 +10,19 @@ use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbTicketTemplateInterface;
+use Drupal\bb_core\Form\BbContentEntityFormBase;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 
 /**
- * The detail screen's footer: Create ticket, opened in the overlay.
+ * The detail screen's footer: Create ticket and Delete, each in the overlay.
  *
  * Editing is the template's Settings tab, not a footer action.
  */
 #[Source(
   id: 'bb_ticket_template_actions',
   label: new TranslatableMarkup('[bakers.build] Ticket template actions'),
-  description: new TranslatableMarkup('Create a ticket from a ticket template.'),
+  description: new TranslatableMarkup('Create a ticket from a ticket template, or delete it.'),
   prop_types: ['slot'],
   context_definitions: [
     'entity' => new EntityContextDefinition('entity:bb_ticket_template', label: new TranslatableMarkup('Ticket template'), required: TRUE),
@@ -58,6 +59,7 @@ final class TicketTemplateActionsSource extends SourcePluginBase {
         ->target('#' . CreateActionSourceBase::TARGET_ID)->select('dialog:not(dialog dialog)')->swap('innerHTML')->getAttributes();
       $build['create']['#attached']['library'] = ['core/drupal.htmx'];
     }
+    $build += BbContentEntityFormBase::deleteAction($template);
     $cache->applyTo($build);
     return $build;
   }

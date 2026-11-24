@@ -44,6 +44,8 @@ placements:
     enabled: true
     events:
       - bakers.team.created
+      - bakers.entity.renamed
+      - bakers.favorites.changed
     configuration:
       component:
         component_id: 'bb_theme:sidebar'
@@ -197,6 +199,9 @@ placements:
                 source: {  }
               - source_id: bb_project_create_action
                 source: {  }
+              - source_id: island_placement
+                source:
+                  placement: shell_project_favorite
               - source_id: bb_ticket_template_create_action
                 source: {  }
               - source_id: bb_term_create_action
@@ -204,6 +209,10 @@ placements:
               - source_id: bb_ticket_trigger_create_action
                 source: {  }
               - source_id: bb_group_create_action
+                source: {  }
+              - source_id: bb_member_invite_action
+                source: {  }
+              - source_id: bb_team_member_add_action
                 source: {  }
               - source_id: bb_worklog_create_action
                 source: {  }
@@ -213,6 +222,15 @@ placements:
                 source: {  }
       boost: true
       target_placement: shell_content_island
+    data: {  }
+  # The project overview's favorite toggle, embedded in the page header's
+  # actions; its toggle announces `bakers.favorites.changed` to the rail.
+  shell_project_favorite:
+    plugin_id: bb_project_favorite
+    slot: embedded
+    weight: 0
+    enabled: true
+    configuration: {  }
     data: {  }
   shell_content_island:
     plugin_id: page_content

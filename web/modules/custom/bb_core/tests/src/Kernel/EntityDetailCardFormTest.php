@@ -14,7 +14,6 @@ use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\Routing\Route;
 
 /**
  * Detail cards save their own fields only, onto fresh data.
@@ -75,16 +74,17 @@ final class EntityDetailCardFormTest extends KernelTestBase {
   }
 
   /**
-   * A machine is edited on one card: name and capacity, the rest read-only.
+   * The owner reads a machine on one card; its Settings edit it.
    */
-  public function testMachineEditsNameAndCapacityOnOneCard(): void {
+  public function testMachineCardOnlyShowsItsOwner(): void {
     [$identity] = $this->open('identity');
-    self::assertArrayHasKey('name', $identity);
-    self::assertArrayHasKey('max_parallel', $identity);
-    self::assertArrayNotHasKey('current_load', $identity);
-    self::assertArrayHasKey('submit', $identity['actions']);
-    self::assertStringContainsString('host-alpha', $this->readOnlyText($identity));
-    self::assertStringContainsString('Current load', $this->readOnlyText($identity));
+    foreach (['name', 'max_parallel', 'assignment', 'current_load'] as $field) {
+      self::assertArrayNotHasKey($field, $identity);
+    }
+    self::assertEmpty($identity['actions'] ?? [], 'No Save and no Delete on the card.');
+    foreach (['Alpha', 'Max parallel', 'Assignment', 'host-alpha', 'Current load'] as $text) {
+      self::assertStringContainsString($text, $this->readOnlyText($identity));
+    }
     self::assertSame(['identity'], BbEntityDetailCardForm::operations('bb_machine'));
   }
 
@@ -107,82 +107,20 @@ final class EntityDetailCardFormTest extends KernelTestBase {
   }
 
   /**
-   * A save applies only the card's changed fields onto the stored entity.
-   */
-  public function testSaveKeepsChangesMadeElsewhereSinceOpening(): void {
-    [$form, $state, $builder] = $this->open('identity');
-    $this->machine->set('max_parallel', 9)->save();
-    $this->post($form, $state);
-    $state->setValue('name', [['value' => 'Renamed']]);
-    $state->setValue('max_parallel', [['value' => 4]]);
-
-    $entity = $builder->buildEntity($form, $state);
-
-    self::assertSame('Renamed', $entity->label());
-    self::assertSame(9, (int) $entity->get('max_parallel')->value);
-  }
-
-  /**
-   * A rename announces itself once and retitles the routed entity.
-   *
-   * The page around a native POST titles the request's entity, so the saved
-   * one replaces it there. A save that keeps the label announces nothing.
-   */
-  public function testRenameAnnouncesOnceAndRetitlesTheRoutedEntity(): void {
-    [$form, $state, $builder] = $this->open('identity');
-    $this->post($form, $state);
-    $state->setValue('name', [['value' => 'Renamed']]);
-    $state->setValue('max_parallel', [['value' => 4]]);
-    $builder->validateForm($form, $state);
-    $builder->submitForm($form, $state);
-    $builder->save($form, $state);
-
-    $routed = $this->container->get('request_stack')->getCurrentRequest()->attributes->get('bb_machine');
-    self::assertSame('Renamed', $routed?->label());
-    self::assertSame([['HX-Trigger', BbEntityDetailCardForm::RENAMED_EVENT]], $builder->form([], $state)['#attached']['http_header'] ?? NULL);
-    self::assertArrayNotHasKey('http_header', $builder->form([], $state)['#attached'] ?? [], 'A later answer of the same card announces nothing.');
-
-    $this->container->get('request_stack')->getCurrentRequest()->setMethod('GET');
-    [$form, $state, $builder] = $this->open('identity');
-    $this->post($form, $state);
-    $state->setValue('name', [['value' => 'Renamed']]);
-    $state->setValue('max_parallel', [['value' => 5]]);
-    $builder->validateForm($form, $state);
-    $builder->submitForm($form, $state);
-    $builder->save($form, $state);
-    self::assertArrayNotHasKey('http_header', $builder->form([], $state)['#attached'] ?? [], 'A label-keeping save announces nothing.');
-  }
-
-  /**
-   * A snapshot opened for one machine cannot be replayed against another.
-   */
-  public function testSnapshotIsBoundToItsEntity(): void {
-    [$alpha, $state] = $this->open('identity');
-    $this->machine = $this->machine->createDuplicate();
-    $this->machine->set('host_key', 'host-beta')->save();
-    [$beta, , $builder] = $this->open('identity');
-    $state->setFormObject($builder);
-    $this->post($alpha, $state);
-    $state->setValue('max_parallel', [['value' => 2]]);
-
-    $this->expectException(AccessDeniedHttpException::class);
-    $builder->buildEntity($beta, $state);
-  }
-
-  /**
-   * Only cards that edit a field have a POST route; the others only show.
+   * Cards without editable fields have no POST route; Settings edit instead.
    */
   public function testCardsWithoutEditableFieldsHaveNoPostRoute(): void {
     $routes = $this->container->get('router.route_provider');
-    self::assertInstanceOf(Route::class, $routes->getRouteByName('entity.bb_machine.identity_form'));
     self::assertSame([], $routes->getRoutesByNames([
       'entity.bb_project.identity_form',
       'entity.bb_project.properties_form',
       'entity.bb_group.identity_form',
       'entity.bb_group.properties_form',
+      'entity.bb_machine.identity_form',
+      'entity.bb_conductor.identity_form',
     ]));
-    // Project and group Settings edit them; their detail cards only show.
-    foreach (['bb_project', 'bb_group'] as $type) {
+    // Their Settings edit them; their detail cards only show.
+    foreach (['bb_project', 'bb_group', 'bb_machine', 'bb_conductor'] as $type) {
       foreach (BbEntityDetailCardForm::operations($type) as $operation) {
         self::assertSame([], BbEntityDetailCardForm::fields($type, $operation)['edit']);
       }
@@ -227,26 +165,12 @@ final class EntityDetailCardFormTest extends KernelTestBase {
   }
 
   /**
-   * The opening snapshot survives a theme that filters markup from values.
-   *
-   * A field holding `<b>` or `&` must not change the signed payload on its
-   * way through the hidden input, or the card's Save is refused.
-   */
-  public function testSnapshotCarriesNoMarkupCharacters(): void {
-    $this->machine->set('name', 'A <b>bold</b> & "quoted" name')->save();
-
-    [$form] = $this->open('identity');
-
-    self::assertDoesNotMatchRegularExpression('/[<>&"\']/', $form['property_baseline']['#default_value']);
-  }
-
-  /**
    * Only registered cards exist.
    */
   public function testUnknownCardIsRefused(): void {
     self::assertNull(BbEntityDetailCardForm::fields('bb_machine', 'settings'));
     self::assertNull(BbEntityDetailCardForm::fields('bb_machine', 'capacity'));
-    self::assertSame(['name', 'max_parallel'], BbEntityDetailCardForm::fields('bb_machine', 'identity')['edit']);
+    self::assertSame([], BbEntityDetailCardForm::fields('bb_machine', 'identity')['edit']);
   }
 
   /**
@@ -264,23 +188,6 @@ final class EntityDetailCardFormTest extends KernelTestBase {
     $state->setFormObject($builder);
     $form = $builder->buildForm([], $state);
     return [$form, $state, $builder];
-  }
-
-  /**
-   * Turns the request into the card's POST with its opening snapshot.
-   *
-   * @param array<string, mixed> $form
-   *   The opened form.
-   * @param \Drupal\Core\Form\FormState $state
-   *   Its form state.
-   */
-  private function post(array $form, FormState $state): void {
-    $this->container->get('request_stack')->getCurrentRequest()->setMethod('POST');
-    $state->setUserInput([
-      'form_build_id' => $form['#build_id'],
-      'property_baseline' => $form['property_baseline']['#default_value'],
-      'property_signature' => $form['property_signature']['#default_value'],
-    ]);
   }
 
   /**

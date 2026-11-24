@@ -42,6 +42,34 @@ const envFlags = (argv: string[]) =>
   argv.flatMap((a, i) => (a === '-e' ? [argv[i + 1] as string] : []));
 
 describe('dockerArgs', () => {
+  it("passes the pane's terminal and locale variables by name only", () => {
+    const { argv, env } = dockerArgs(launch, opts, where);
+    const flags = envFlags(argv);
+    for (const key of [
+      'TERM',
+      'COLORTERM',
+      'TERM_PROGRAM',
+      'TERM_PROGRAM_VERSION',
+      'LANG',
+      'LANGUAGE',
+      'LC_ALL',
+      'LC_CTYPE',
+      'LC_MESSAGES',
+      'NO_COLOR',
+      'FORCE_COLOR',
+    ])
+      expect(flags.filter((flag) => flag === key)).toEqual([key]);
+    expect(flags.some((flag) => /^(TERM|LANG|LC_)\w*=/.test(flag))).toBe(false);
+    expect(Object.keys(env)).not.toContain('TERM');
+  });
+  it('does not repeat a terminal variable the run already forwards', () => {
+    const { argv } = dockerArgs(
+      { ...launch, env: { ...launch.env, LANG: 'de_DE.UTF-8' } },
+      opts,
+      where,
+    );
+    expect(envFlags(argv).filter((flag) => flag === 'LANG')).toEqual(['LANG']);
+  });
   it('mounts the run Git directory as .git and nothing of the parent repository', () => {
     const mounts = volumes(dockerArgs(launch, opts, where).argv);
     expect(mounts).toContain('/cache/run.git:/w/tree/.git');
@@ -189,5 +217,23 @@ describe('dockerArgs in allowlist mode', () => {
     const { argv } = dockerArgs(withCred, allow, where);
     expect(envFlags(argv)).not.toContain('MODEL_TOKEN');
     expect(argv.join(' ')).not.toContain('oauth');
+  });
+});
+
+describe('dockerArgs on a global install', () => {
+  it("leaves the image's global node_modules uncovered", async () => {
+    const { cliRootOf } = await import('../src/index.js');
+    const cli = '/usr/local/lib/node_modules/@bakers-build/bakers';
+    const cliRoot = cliRootOf(
+      `${cli}/node_modules/@bakers-build/addon-runtime-docker`,
+      `${cli}/node_modules/@bakers-build/conductor`,
+      '/home/op',
+    );
+    const { argv } = dockerArgs(launch, opts, { ...where, cliRoot });
+    const targets = volumes(argv).map((v) => v.split(':')[1] as string);
+    const image = '/usr/local/lib/node_modules';
+    expect(targets).toContain(cli);
+    for (const t of targets)
+      expect(image === t || image.startsWith(`${t}/`)).toBe(false);
   });
 });

@@ -7,7 +7,6 @@ namespace Drupal\bb_core\Onboarding;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
-use Drupal\user\UserStorageInterface;
 
 /**
  * Whether onboarding still must run for an account, and where it lives.
@@ -31,22 +30,13 @@ final class OnboardingDestination {
   public const COMPLETION_FIELD = 'field_onboarding_completed';
 
   /**
-   * The user storage, loaded lazily from the injected entity type manager.
-   */
-  private UserStorageInterface $userStorage;
-
-  /**
    * Constructs the destination rule.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   Resolves the user storage, which loads the full user entity a bare
    *   `AccountInterface` may not carry the onboarding fields on.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
-    $storage = $entityTypeManager->getStorage('user');
-    assert($storage instanceof UserStorageInterface);
-    $this->userStorage = $storage;
-  }
+  public function __construct(private readonly EntityTypeManagerInterface $entityTypeManager) {}
 
   /**
    * Whether the account has finished the onboarding wizard.
@@ -65,7 +55,7 @@ final class OnboardingDestination {
    *   exist on this site.
    */
   public function isComplete(AccountInterface $account): bool {
-    $user = $this->userStorage->load($account->id());
+    $user = $this->entityTypeManager->getStorage('user')->load($account->id());
     if ($user === NULL) {
       return FALSE;
     }
@@ -96,7 +86,7 @@ final class OnboardingDestination {
    *   The account that finished the wizard.
    */
   public function markComplete(AccountInterface $account): void {
-    $user = $this->userStorage->load($account->id());
+    $user = $this->entityTypeManager->getStorage('user')->load($account->id());
     if ($user === NULL || !$user->hasField(self::COMPLETION_FIELD)) {
       return;
     }

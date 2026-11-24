@@ -53,7 +53,7 @@ final class OnboardingFirstProjectStepTest extends KernelTestBase {
     parent::setUp();
     $this->installReadScopeEnvironment();
     $this->buildTwoWorkspaceWorld();
-    $this->installSchema('user', ['users_data']);
+    $this->installEntitySchema('bb_profile');
     $this->container->get('router.builder')->rebuild();
     $this->installOnboardingFields();
 
@@ -248,7 +248,7 @@ final class OnboardingFirstProjectStepTest extends KernelTestBase {
   private function installOnboardingFields(): void {
     $this->container->get('config.typed')->clearCachedDefinitions();
     $storage = new FileStorage(dirname($this->root) . '/config/sync');
-    foreach (['field_full_name', 'field_developer_title', 'field_bb_background', 'field_onboarding_completed'] as $name) {
+    foreach (['field_full_name', 'field_onboarding_completed'] as $name) {
       $storageData = $storage->read("field.storage.user.$name");
       $fieldData = $storage->read("field.field.user.user.$name");
       self::assertIsArray($storageData);

@@ -24,4 +24,4 @@ Feature: Activity mails reach the accounts that opted in
     And I save the notification settings
     And "north-lead" is made the assignee of the disposable ticket
     Then "north-lead" receives exactly one activity mail for the disposable ticket
-    And that mail says "You were assigned to this ticket" and links to the disposable ticket
+    And that mail says "bakers.build assigned you to your ticket" and links to the disposable ticket

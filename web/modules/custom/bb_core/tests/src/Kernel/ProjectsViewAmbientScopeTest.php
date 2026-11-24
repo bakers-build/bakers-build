@@ -73,12 +73,6 @@ final class ProjectsViewAmbientScopeTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installReadScopeEnvironment();
-    // Deleting an account touches `users_data`, which the entity schema does
-    // not carry. The B1 regression below deletes a real account rather than
-    // pointing the reference at a missing uid, because a dangling target is
-    // the CONSEQUENCE under test and faking it would also hide the fact that
-    // Drupal cleans up no such reference.
-    $this->installSchema('user', ['users_data']);
     $this->buildTwoWorkspaceWorld();
     $this->installConfig(['views']);
     $this->installShippedView('views.view.projects');

@@ -67,7 +67,7 @@ final class BbBoardColumn extends Attachment {
   /**
    * The Details and Done preferences of this request.
    */
-  private BoardPreferences $preferences;
+  protected BoardPreferences $preferences;
 
   /**
    * {@inheritdoc}

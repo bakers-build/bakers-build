@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Unit;
 
+use Drupal\bb_core\Access\WorkspaceResolverInterface;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -13,6 +15,7 @@ use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Derive\TicketRunDeriver;
 use Drupal\bb_core\Time\BbDate;
 use Drupal\Tests\UnitTestCase;
+use Drupal\user\UserDataInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -49,6 +52,8 @@ final class TicketRunDeriverInitialsTest extends UnitTestCase {
       $this->createMock(EntityTypeManagerInterface::class),
       $this->createMock(TimeInterface::class),
       new BbDate($this->createMock(DateFormatterInterface::class), $this->createMock(TimeInterface::class)),
+      $this->createMock(WorkspaceResolverInterface::class),
+      new Profiles($this->createMock(EntityTypeManagerInterface::class), $this->createMock(UserDataInterface::class)),
     );
 
     $this->assertSame($expected, $deriver->assignee($ticket)['initials']);

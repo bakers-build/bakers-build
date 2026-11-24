@@ -8,6 +8,7 @@ import { ConductorLogScreen } from '../../src/Entity/conductor/Screen/conductor-
 import { ConductorOverviewScreen } from '../../src/Entity/conductor/Screen/conductor-overview.js';
 import { ConductorRunsScreen } from '../../src/Entity/conductor/Screen/conductor-runs.js';
 import { ConductorsScreen } from '../../src/Entity/conductor/Screen/conductors.js';
+import { MachinesScreen } from '../../src/Entity/conductor/Screen/machines.js';
 import { ConductorTicketsScreen } from '../../src/Entity/ticket/Screen/conductor-tickets.js';
 import { renderPipe } from '../../src/Kernel/pipe.js';
 import { defineRoutes } from '../../src/Routing/registry.js';
@@ -117,6 +118,7 @@ function fakeContext(): ScreenContext {
 
 async function pipeConductor(): Promise<string[]> {
   const routes = defineRoutes([
+    MachinesScreen,
     ConductorsScreen,
     ConductorOverviewScreen,
     ConductorRunsScreen,

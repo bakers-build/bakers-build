@@ -1,5 +1,6 @@
-// Ticket trigger steps: the template's Triggers tab. The Add trigger action
-// opens the form in the dialog; Pause and Resume confirm on a page. Tab, page
+// Ticket trigger steps: the template's Triggers tab and a trigger's page. The
+// Add trigger action opens the form in the dialog; Pause and Resume, on the
+// trigger's page, confirm in the dialog or, without JavaScript, on a page. Tab, page
 // text and template address steps are shared (support/steps/shell.steps.ts,
 // steps/tickets/ticket-templates.steps.ts).
 import { createBdd } from 'playwright-bdd';
@@ -27,7 +28,7 @@ After({ tags: '@feature:ticket-template-triggers' }, async () => {
 /** The add form: inside the dialog with JavaScript, the page without. */
 async function addForm(page: Page): Promise<Locator> {
   const dialog = page.locator('dialog[open]');
-  await expect(dialog.or(page.locator('form[id^="bb-ticket-trigger-add-form"]')).first()).toBeVisible();
+  await expect(page.getByLabel('Frequency', { exact: true })).toBeVisible();
   return (await dialog.count()) > 0 ? dialog : page.locator('main');
 }
 
@@ -126,47 +127,84 @@ When(
   },
 );
 
-/** Opens a row's action menu and returns its item for the action. */
-async function rowAction(page: Page, summary: string, action: string): Promise<Locator> {
-  const row = triggerRow(page, summary);
-  const item = row.getByRole('menuitem', { name: action, exact: true });
-  // A dismissed dialog leaves the menu as it was; clicking again would close it.
-  if (!(await item.isVisible())) {
-    await row.getByLabel(`Actions for ${summary}`, { exact: true }).click();
-  }
-  await expect(item).toBeVisible();
-  return item;
+When('I type {string} into the trigger time and leave it', async ({ page }, value: string) => {
+  const field = (await addForm(page)).getByLabel('Time', { exact: true });
+  await field.fill(value);
+  await field.blur();
+});
+
+Then('the trigger time shows {string}', async ({ page }, value: string) => {
+  await expect((await addForm(page)).getByLabel('Time', { exact: true })).toHaveValue(value);
+});
+
+/** The seeded trigger's page. */
+function seededTriggerUrl(): string {
+  return php(
+    `print \\Drupal::service("entity.repository")->loadEntityByUuid("bb_ticket_trigger", "${SEEDED_TRIGGER_UUID}")->toUrl()->toString();`,
+  ).trim();
 }
 
-When('I {string} the trigger {string}', async ({ page }, action: string, summary: string) => {
-  const link = await rowAction(page, summary, action);
-  const scripted = await page.evaluate(() => 'htmx' in window);
-  if (scripted) {
+/** The trigger page's inspector: its properties and its actions. */
+function triggerPage(page: Page): Locator {
+  return page.locator('aside.inspector');
+}
+
+When('I open the trigger {string}', async ({ page }, summary: string) => {
+  await triggerRow(page, summary).getByRole('link', { name: summary, exact: true }).click();
+  await expect(page).toHaveURL(/\/trigger\/\d+(\?|$)/);
+});
+
+When('I visit the seeded trigger by its address', async ({ page }) => {
+  await page.goto(seededTriggerUrl());
+});
+
+Then('the trigger page shows the state {string}', async ({ page }, state: string) => {
+  await expect(triggerPage(page).getByText(state, { exact: true })).toBeVisible();
+});
+
+/** A footer action of the trigger page, once htmx owns it. */
+async function pageAction(page: Page, action: string): Promise<Locator> {
+  const link = triggerPage(page).getByRole('link', { name: action, exact: true });
+  await expect(link).toBeVisible();
+  if (await page.evaluate(() => 'htmx' in window)) {
     // Clicked before htmx owns it, the link navigates to the page form.
     await expect
       .poll(() => link.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']))
       .toBe(true);
   }
-  await link.click();
+  return link;
+}
+
+When('I {string} on the trigger page', async ({ page }, action: string) => {
+  const detail = page.url();
+  await (await pageAction(page, action)).click();
   // With JavaScript the confirmation opens in the overlay, as Create ticket does.
+  const scripted = await page.evaluate(() => 'htmx' in window);
   const scope = scripted ? page.locator('dialog[open]') : page.locator('main');
   await expect(scope.getByRole('button', { name: action, exact: true })).toBeVisible();
   await scope.getByRole('button', { name: action, exact: true }).click();
   await expect(page.locator('dialog[open]')).toHaveCount(0);
-  // Back on the Triggers tab; the shell renders no status message there.
-  await expect(page).toHaveURL(/\/triggers(\?|$)/);
+  // Back on the trigger's page.
+  await expect(page).toHaveURL(detail);
 });
 
-When('I open {string} for the trigger {string} and close the dialog', async ({ page }, action: string, summary: string) => {
-  const link = await rowAction(page, summary, action);
-  await expect
-    .poll(() => link.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']))
-    .toBe(true);
-  await link.click();
+When('I open {string} on the trigger page and close the dialog', async ({ page }, action: string) => {
+  await (await pageAction(page, action)).click();
   const dialog = page.locator('dialog[open]');
   await expect(dialog.getByRole('button', { name: action, exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await expect(dialog).toHaveCount(0);
+});
+
+Then('the page offers no trigger action', async ({ page }) => {
+  for (const action of ['Edit', 'Pause', 'Resume', 'Delete']) {
+    await expect(page.getByRole('link', { name: action, exact: true })).toHaveCount(0);
+  }
+});
+
+Then('the Pause page of the seeded trigger answers {int}', async ({ page }, status: number) => {
+  const response = await page.goto(`${seededTriggerUrl()}/toggle`);
+  expect(response?.status()).toBe(status);
 });
 
 Then('the trigger {string} is listed as {string}', async ({ page }, summary: string, status: string) => {

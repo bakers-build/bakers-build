@@ -40,6 +40,18 @@ check `config/sync` last at the same revision, and always name the `ddev init` p
 explicit `ddev init` reinstalls the selected database. Reuse/bootstrap preserves existing data.
 Project-owned QA wrappers require Composer dependencies, not addon installation or repair.
 
+## Lists only open, details act
+
+In the web UI and in `bakers ui`, a list row only opens its entity's detail: one link in the
+primary cell (the whole row is the hit area), or Enter and a click in `bakers ui`. A row carries no
+other action: no row button, ⋯ menu, row submit, inline control or row key. Every action on an
+entity lives on its detail page or screen. List-level controls not tied to a row stay: filters,
+search, reload, workspace switch and create new. `ListRowActionsConfigTest` (bb_core) keeps the
+Views free of row operations.
+
+Exempt: the time-sheet grids (Submission review, Worklog week) and the `bakers ui` ticket Addons
+tab, whose rows are the actions; Drupal core admin views under `/admin/*`; the global keys `R` and `W`.
+
 ## Designbook owns the theme's artifacts
 
 Components, stories, scenes, entity mappings and design tokens go through the Designbook skills
@@ -68,3 +80,10 @@ After editing any bakers-CLI source: `cd bakers-cli && pnpm install && pnpm -r r
 `bakers-cli/` is a layered acyclic package graph (kernel → surface contract → addons → sinks)
 enforced by `bakers-cli/scripts/assert-acyclic.mjs` through a vitest test; `bakers-cli/biome.json` is
 the formatter and linter and `pnpm lint` the gate.
+
+A site tool that skills rely on and that is added to `SITE_TOOLS`
+(`bakers-cli/conductor/src/core/site-tools.ts`) raises `min_client_version` in both
+`bb_core.settings` homes to the first published `next` prerelease (`X.Y.Z-next.N`) that contains
+it, never to a stable version that is not yet published; an older conductor silently drops the
+tool from every run it starts. Every later stable satisfies that minimum, because it is cut from
+`next` and sorts above its own prereleases, while the `next` channel can install it at once.

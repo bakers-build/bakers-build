@@ -4,12 +4,15 @@ name: Action Menu
 status: stable
 group: Action
 description: >-
-  A row action menu: a more-horizontal trigger that discloses a role="menu"
-  panel of menu_item links. Built on native <details>/<summary>, so it opens and
-  every action stays reachable without JavaScript; Alpine only closes it on an
-  outside click or Escape. Use it when a list row carries several actions. An
-  item's optional attributes are merged onto its link, so an action can open in
-  the dialog.
+  An overflow action menu: a more-horizontal trigger that discloses a
+  role="menu" panel of menu_item links. Built on native <details>/<summary>, so
+  it opens and every action stays reachable without JavaScript; Alpine only
+  closes it on an outside click or Escape. Use it for the overflow of actions on
+  a detail page or in a page header, or on a row of the exempt time-sheet grids
+  (Submission review, Worklog week), whose rows are the actions. NEVER ON A LIST
+  ROW: a list row only opens its entity's detail page, and the actions live on
+  that page. An item's optional attributes are merged onto its link, so an
+  action can open in the dialog.
 provider: bb_theme
 props:
   type: object
@@ -21,8 +24,8 @@ props:
       type: string
       title: Label
       description: >-
-        Accessible name of the trigger, naming the row, e.g. "Actions for
-        service-ci-1a2b3c4d".
+        Accessible name of the trigger, naming the record the actions act on,
+        e.g. "Actions for service-ci-1a2b3c4d".
     items:
       type: array
       title: Items
@@ -56,7 +59,8 @@ props:
       default: end
       description: >-
         Which edge of the trigger the panel lines up with: end for a menu at the
-        end of a row (it opens toward the row), start for one at the start.
+        end of a header or grid row (it opens inward), start for one at the
+        start.
     open:
       type: boolean
       title: Open

@@ -55,10 +55,32 @@ one of them: the command's first word, or the word after `bash`, `sh` or `node`.
 hooks: { before_run: 'bash .bakers/provision.sh deps' },
 ```
 
-Otherwise the config fails to load with an error naming the hook. Only that entry point is checked.
+Otherwise the config fails to load with an error naming the hook; `bakers config check` reports
+it offline, as well as a `runtime.read_only` path that does not exist. Only that entry point is checked.
+
+A bare host binary such as `ddev …`, `bash ddev …` or `npm run …` is refused even when `.ddev` is
+protected: the binary itself may execute files the run can write, such as `package.json` scripts or
+build steps a tool reads from repository config. Call it from a wrapper script under `.bakers/`
+that runs fixed commands. For DDEV:
+
+```sh
+#!/usr/bin/env bash
+# .bakers/ddev-init.sh
+set -euo pipefail
+cd "$BAKERS_WORKTREE_PATH"
+ddev start
+```
+
+```js
+runtime: { read_only: ['.ddev'] },
+hooks: { after_create: 'bash .bakers/ddev-init.sh' },
+```
+
 The script should call only protected code and run anything the run can write, such as dependency
 installs and builds, in a container. Host scripts read `BAKERS_WORKTREE_PATH` and
-`BAKERS_RUNTIME_ISOLATES` instead of asking Git: an isolated workspace has no Git on the host.
+`BAKERS_RUNTIME_ISOLATES` instead of asking Git: on the host an isolated workspace's `.git` is
+only a stub, without the run's commits; under [herdr](/addons/herdr#isolated-runs) it answers as the
+parent repository.
 
 A maintainer makes and delivers changes to protected files outside the isolated run. The host
 runtime has no such check and no such protection.

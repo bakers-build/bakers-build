@@ -140,4 +140,49 @@ const runningWeek = periodRange({ kind: 'week', date: '2026-10-24', today: '2026
 runningWeek.rovingDay = '2026-10-25'
 assert.equal(runningWeek.dayTabindex('2026-10-25'), 0)
 
+// A day: one UTC date, compared with the day before (mirrors PeriodResolver).
+assert.deepEqual(periodOf('day', '2026-10-24'), range('2026-10-24', '2026-10-24'))
+assert.deepEqual(shift('day', range('2026-03-01', '2026-03-01'), -1), range('2026-02-28', '2026-02-28'))
+assert.deepEqual(comparisonOf('day', range('2026-10-24', '2026-10-24')), range('2026-10-23', '2026-10-23'))
+assert.equal(labelOf('day', range('2026-10-24', '2026-10-24')), '24 Oct 2026')
+
+// The kind menu opens with Today and Yesterday; both choose the day kind.
+const today = periodRange({ kind: 'week', date: '2026-11-19', today: '2026-11-19' })
+assert.deepEqual(today.menu.map((entry) => entry.label), ['Today', 'Yesterday', 'Week', 'Month', 'Quarter', 'Year', 'All time', 'Custom'])
+assert.deepEqual(today.menu.slice(0, 2).map((entry) => entry.hint), ['19 Nov', '18 Nov'])
+assert.equal(today.menu[2].selected, true, 'the week entry is the selected one')
+today.choose(today.menu[0])
+assert.equal(today.kind, 'day')
+assert.deepEqual(today.range, range('2026-11-19', '2026-11-19'))
+assert.equal(today.kindLabel(today.kind), 'Day')
+assert.equal(today.label, 'Today · 19 Nov 2026 (UTC)')
+assert.equal(today.comparisonLabel, 'vs. 18 Nov 2026')
+assert.equal(today.prevLabel, 'Previous day')
+assert.equal(today.nextDisabled, true, 'no day after today')
+assert.deepEqual(today.menu.map((entry) => entry.selected), [true, false, false, false, false, false, false, false])
+today.choose(today.menu[1])
+assert.equal(today.label, 'Yesterday · 18 Nov 2026 (UTC)')
+assert.equal(today.nextDisabled, false)
+assert.deepEqual(today.menu.slice(0, 2).map((entry) => entry.selected), [false, true])
+today.step(-1)
+assert.equal(today.label, '17 Nov 2026 (UTC)')
+assert.equal(today.canReturn, true)
+assert.equal(today.returnLabel, 'Return to today')
+today.returnToCurrent()
+assert.deepEqual(today.range, range('2026-11-19', '2026-11-19'))
+assert.equal(today.canReturn, false)
+
+// The day picker is a plain day calendar: any past day, no week rows.
+const dayPicker = periodRange({ kind: 'day', date: '2026-11-18', today: '2026-11-19', open: 'picker' })
+assert.equal(dayPicker.weekPicker, false)
+assert.equal(dayPicker.dayTabindex('2026-11-18'), 0, 'the chosen day is the tab stop')
+dayPicker.pickDay('2026-11-03')
+assert.deepEqual(dayPicker.range, range('2026-11-03', '2026-11-03'))
+assert.equal(periodRange({ kind: 'week', today: '2026-11-19', open: 'picker' }).weekPicker, true)
+
+// Today switches at midnight UTC: the same instant is a different day elsewhere.
+assert.equal(periodRange({ kind: 'day', today: '2026-11-19' }).label, 'Today · 19 Nov 2026 (UTC)')
+assert.equal(periodRange({ kind: 'day', today: '2026-11-20' }).label, 'Today · 20 Nov 2026 (UTC)')
+assert.equal(periodRange({ kind: 'day', date: '2026-11-19', today: '2026-11-20' }).label, 'Yesterday · 19 Nov 2026 (UTC)')
+
 console.log('period-range contract: ok')

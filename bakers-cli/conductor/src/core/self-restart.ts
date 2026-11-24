@@ -1,10 +1,19 @@
 // The foreground conductor restarts itself when a file it loaded changes:
-// its config files, the machine config, or a configured addon's build. This
-// module only watches, debounces and serializes; the caller decides whether a
-// change becomes a restart (config check, drain, execve).
+// its config files, the machine config, the secrets file, or a configured
+// addon's build. This module only watches, debounces and serializes; the
+// caller decides whether a change becomes a restart (config check, drain,
+// execve).
 
-import { type FSWatcher, watch } from 'node:fs';
+import { type FSWatcher, statSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+
+/**
+ * File mtimes come from the kernel's coarse clock and trail `Date.now()` by up
+ * to one tick (measured 5.6 ms on Linux), and a sub-millisecond `mtimeMs` can
+ * lead the whole-millisecond `Date.now()`. Well under one restart, so the slack
+ * on both sides adds at most one checked restart and never a loop.
+ */
+const MTIME_LAG_MS = 50;
 
 /** What the running conductor loaded: single files and addon build dirs. */
 export interface WatchPaths {
@@ -13,20 +22,25 @@ export interface WatchPaths {
 }
 
 /**
- * Call `trigger` with the last changed path after `debounceMs` without a
- * further change. Files are watched through their parent directory, so an
+ * Call `trigger` with every path changed since the last trigger, after
+ * `debounceMs` without a further change. Files are watched through their parent directory, so an
  * editor's rename-replace save and a newly created file both count; dirs are
  * watched recursively. At most one trigger runs at a time; changes during one
- * re-arm the debounce once it returns.
+ * re-arm the debounce once it returns. With `since` (when the config was
+ * read), a watched file modified after it counts as changed at once, so a
+ * write during start-up, before watching began, is not lost.
+ * shortcut: dirs (addon builds) are not mtime-checked; walk them if a build
+ * during start-up is ever missed.
  */
 export function watchForRestart(
   paths: WatchPaths,
-  trigger: (path: string) => Promise<void>,
+  trigger: (paths: string[]) => Promise<void>,
   debounceMs = 2000,
+  since?: number,
 ): { close(): void } {
   const watchers: FSWatcher[] = [];
   let timer: NodeJS.Timeout | undefined;
-  let last: string | undefined;
+  const changedPaths = new Set<string>();
   let running = false;
   let pending = false;
   let closed = false;
@@ -35,7 +49,9 @@ export function watchForRestart(
     timer = undefined;
     running = true;
     try {
-      await trigger(last as string);
+      const paths = [...changedPaths];
+      changedPaths.clear();
+      await trigger(paths);
     } finally {
       running = false;
       if (pending && !closed) {
@@ -50,7 +66,7 @@ export function watchForRestart(
   };
   const changed = (path: string) => {
     if (closed) return;
-    last = path;
+    changedPaths.add(path);
     if (running) pending = true;
     else arm();
   };
@@ -82,6 +98,13 @@ export function watchForRestart(
     });
   for (const dir of new Set(paths.dirs))
     tryWatch(dir, true, (f) => changed(join(dir, f)));
+  if (since !== undefined)
+    for (const file of new Set(paths.files)) {
+      const mtime = statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? 0;
+      // A future mtime (clock stepped back, touched or extracted file) would fire on every start.
+      if (mtime > since - MTIME_LAG_MS && mtime <= Date.now() + MTIME_LAG_MS)
+        changed(file);
+    }
 
   return {
     close() {

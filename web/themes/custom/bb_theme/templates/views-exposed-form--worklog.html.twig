@@ -1,0 +1,23 @@
+{# The time calendar's toolbar, one row as Figma L&T 5 draws it: Day/Week,
+   ‹ period › (the label leads to today), the project, ticket and person
+   pills, and the week total at the row's end. Apply is the submit without
+   JavaScript; with it, the toolbar submits a picked value itself. #}
+{% embed 'bb_theme:filters' with {
+  layout: 'toolbar',
+  label: 'Time filters'|t,
+  pinned_width: 'auto',
+  mode: form.mode_switch,
+  previous: form.previous,
+  period: form.period,
+  next: form.next,
+  project: form.project,
+  ticket: form.ticket,
+  person: form.person,
+  total: form.week_total,
+  submit: form.actions,
+} only %}
+  {% block pinned %}{{ mode }}{% endblock %}
+  {% block controls %}{{ previous }}{{ period }}{{ next }}{{ project }}{{ ticket }}{{ person }}<noscript>{{ submit }}</noscript>{% endblock %}
+  {% block actions %}{{ total }}{% endblock %}
+{% endembed %}
+{{ form|without('mode_switch', 'previous', 'period', 'next', 'project', 'ticket', 'person', 'week_total', 'actions') }}

@@ -22,8 +22,10 @@ export const INSTANT_WATCH = { timeout_ms: 0, poll_ms: 1 } as const;
 export function plantStarted(args: string[]): void {
   if (args[0] !== 'pane' || args[1] !== 'run') return;
   const typed = args[3] ?? '';
-  if (!typed.startsWith("sh '") || !typed.endsWith("'")) return;
-  const dir = dirname(typed.slice(4, -1));
+  // `sh '<dir>/run.sh'`, or `'<dir>/<agent>'` for a launcher named after its agent.
+  const quoted = typed.startsWith("sh '") ? typed.slice(3) : typed;
+  if (!quoted.startsWith("'") || !quoted.endsWith("'")) return;
+  const dir = dirname(quoted.slice(1, -1));
   leftoverDirs.add(dir);
   try {
     writeFileSync(join(dir, 'started'), 'started');

@@ -5,20 +5,21 @@ The bakers.build terminal UI: a dropsh `tui` renderer plugin (`bakers ui`). It o
 project current work, a searchable/filterable ticket list, and ticket
 detail.
 
-## Navigation — five scopes
+## Navigation — six scopes
 
-Navigation has five tab scopes. Tabbed screens show the bar for their current
+Navigation has six tab scopes. Tabbed screens show the bar for their current
 scope; compact ticket views, forms and run detail have no separate tab bar. `Tab`/`Shift-Tab` cycle the tabs of the current level, and
 a **left click on a tab** goes straight to it; there are no letter shortcuts for
 tab navigation.
 
 | Level | Screens | Tabs |
 |-------|---------|------|
-| Root | Personal work, projects, conductors, and workspace members for leads | **My work** · **Projects** · **Members** (workspace lead only) · **Conductors** |
+| Root | Personal work, projects, machines, and workspace members for leads | **My work** · **Projects** · **Members** (workspace lead only) · **Machines** |
 | Project | Project-scoped screens | **Overview** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | Independent ticket screens | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
 | Workspace member | A selected workspace member, for workspace leads only | **Overview** · **Tickets** · **Runs** |
-| Conductor | A selected conductor, reached with Enter from any Conductors list | **Overview** · **Held work** · **Assigned** · **Log** |
+| Machine | A selected machine, reached with Enter from Machines | **Overview** · **Conductors** |
+| Conductor | A selected conductor, reached with Enter from any Conductors list (a machine's, or a project's) | **Overview** · **Held work** · **Assigned** · **Log** |
 | — | Run detail | none — `Esc` returns to the preceding screen |
 
 Built-in and addon tabs are derived from the same route registry. Addons can
@@ -48,8 +49,10 @@ is a rounded **BORDER** frame with **no** fill (content scrolls inside);
 active/selection wash **237**, ordinary text / borders **245**, highlight /
 border emphasis **231**, active / selection fg **15** (full white). Header, tab bar and
 footer have **no** background fill. No cyan slots. Interactive TTY boots show a
-timed **bakers** ASCIIFont splash (`SPLASH_MS = 500`); piped / non-TTY runs never
-enter it, and injected-renderer harnesses skip it by default.
+timed **bakers.build** splash (`SPLASH_MS = 500`); piped / non-TTY runs never
+enter it, and injected-renderer harnesses skip it by default. The wordmark uses
+the `block` ASCIIFont from 125 columns, `tiny` from 70 and plain text below, so
+the frame never wraps or clips.
 
 Each ticket tab is an independent screen and route. Switching tabs performs
 router navigation without adding a back-history entry. Each screen retains its
@@ -75,14 +78,25 @@ member routes use workspace-wide user lists.
 
 ## Screens & keys
 
+**A list only opens.** On every list screen `Enter` (or a click) opens the row's own detail: a
+ticket row its ticket, a run row its run detail, a machine row its machine, a conductor row its
+conductor. No key acts on a row. List-level controls stay: filters, search, paging, `R` reload and
+`W` workspace. The actions live on the detail screens: `e`, `y`/`Y`, `x`, `r` and `f` on a ticket,
+`x` on a run detail, `r` on a machine's Overview, `r`/`s`/`x` on a conductor's Overview. The ticket
+**Addons** tab is the one exception: its rows are the actions.
+
 | Screen | Keys |
 |--------|------|
 | Workspace Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | Projects | `↑↓` select · `Enter` open project · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | Project | `↑↓` select · `Enter` open ticket · `Tab`/`Shift-Tab` cycle tabs · `/` search · `s` status filter · `t` type filter · `p` parent filter · `x` closed filter · `c` clear · `R` reload · `←`/`→` previous/next page · `Esc` back |
-| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · cancel); on Runs, `e` edits the selected claimed or running run · `Esc` back |
-| Run detail | `↑↓` scroll · `e` cancel a claimed/running run · `Esc` back to the ticket's Runs tab · `q` quit |
-| Runs | `↑↓` select · `Enter` open the run's ticket (Runs sub-tab) · `Tab`/`Shift-Tab` cycle tabs · `x` closed filter · `R` reload · `←`/`→` previous/next page · `Esc` back |
+| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens its run detail · `e` edit ticket (assignee · conductor · estimate/spent · parent · labels) · `y`/`Y` copy the identifier/link · `x` cancel the ticket (Overview, Planning, History) · `r` restart runs of an open, unfrozen ticket · each cancel and restart asks in a confirmation dialog with **Confirm** and **Close** buttons, **OK** and **Cancel** for Restart runs (`←→`/`Tab` button · `Enter` press · `Esc` close, writes nothing) · `Esc` back |
+| Run detail | `↑↓` scroll · `x` cancel a claimed or running run, or the ticket's newest failed run (confirmation dialog) · `Esc` back to the screen it was opened from · `q` quit |
+| Runs | `↑↓` select · `Enter` open the run detail · `Tab`/`Shift-Tab` cycle tabs · `x` closed filter · `R` reload · `←`/`→` previous/next page · `Esc` back |
+| Machines | `↑↓` select · `Enter` open the machine · `Tab`/`Shift-Tab` cycle tabs · `R` reload |
+| Machine | Overview: `r` restart the runs of a machine you own (confirmation dialog) · Conductors: `↑↓` select · `Enter` open the conductor · `m` mine · `c` clear · `Tab`/`Shift-Tab` switch tab · `R` reload · `Esc` back |
+| Conductors | `↑↓` select · `Enter` open the conductor · `m` mine · `c` clear · `R` reload · `←`/`→` previous/next page · `Esc` back |
+| Conductor | Overview: `s` start and `x` stop a conductor of this machine · `r` restart the runs of a conductor whose machine you own (confirmation dialog) · each reloads the Overview · Held work: `Enter` open the run detail · `Tab`/`Shift-Tab` switch tab · `Esc` back |
 
 ### Auto-refresh (`.bakers/ui-refresh`)
 
@@ -185,6 +199,9 @@ The header box keeps identifier, title, labels, state, **Assigned** and
 lists them as `Type` / `Recipe` sections after `Labels` (`No type.` /
 `No recipe.` when unset). Creator has no authoritative
 ticket field, so ordinary records show `Created by: unknown`.
+
+A click on a parent, sub-ticket, blocked-by or referenced row of the Related pane
+opens that ticket's own detail; there is no inline preview.
 
 **Relationships** lists the parent too, and a **Blocked by** section between sub-tickets
 and referenced tickets (BB-369): one identity row `<identifier> · <title>` per
@@ -306,14 +323,17 @@ include already ships each run's full attribute set. No runs ⇒ *"No runs for t
 ticket."*
 
 `Enter` (or a click) on a run row opens the **run detail screen**, rendered from
-that same sideloaded resource — again no read, so nothing there can fail — with
+that same sideloaded resource — again no read, so nothing there can fail; opened from
+the project Runs, a member's Runs or a conductor's Held work it reads the ticket with
+its runs itself — with
 sections **Run** (`#<id> · <uuid>`, the owning ticket) · **State** (state, phase,
 agent, conductor) · **Timing** (started, heartbeat, claim expiry, duration) ·
 **Footprint** (tokens, tool calls, agent turns, user prompts, prompt words) ·
 **Worktree** · **Log** / **Error log** (the `text_long` values, uncapped and
 scrollable — a truncated log would be a silent lie; *"No log captured."* when they
-never were). Completed runs are read-only; claimed and running runs expose `e`
-to open the cancel confirmation. `Esc` returns to the ticket's Runs tab.
+never were). Completed runs are read-only; claimed and running runs, and the
+ticket's newest failed run, expose `x` to open the cancel confirmation; the Runs
+tab's rows only open. `Esc` returns to the screen the run was opened from.
 
 `bakers ui run:<uuid>` opens that run's screen directly, with its ticket's Runs tab
 one `Esc` underneath; piped (`| cat`) it prints the same run block, so the target

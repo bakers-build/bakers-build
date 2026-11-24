@@ -11,7 +11,7 @@ Feature: AI proposals are reviewed before anything is booked
     When I open the proposal review link
     Then the week grid row "Bread · Time capture" shows "1:30" on "Mon 14"
     And the week grid row "Bread · Time capture" on "Mon 14" is marked Proposed
-    And the page shows "Proposed — not yet recorded: 3:30"
+    And the week grid row "Proposed — not yet recorded" reads "3:30" on "Total"
     And the overview total is "0:00"
     And "north-lead" of "Time capture" on "2026-09-14" totals 0 seconds
     When I type "1:15" into the week grid row "Bread · Time capture" on "Mon 14"
@@ -151,7 +151,7 @@ Feature: AI proposals are reviewed before anything is booked
     And I change the first submission entry to "25:61" described as "Keep this correction"
     And I save the submission
     Then the proposal is "proposed"
-    And the page shows "Enter duration as hours:minutes, for example 0:30 or 1:15."
+    And the page shows "Enter duration as whole hours or hours:minutes, for example 8, 0:30 or 1:15."
     And the first submission duration is "25:61"
     When I change the first submission entry to "1:15" described as "Keep this correction"
     And I save the submission

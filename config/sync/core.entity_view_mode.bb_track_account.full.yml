@@ -1,0 +1,11 @@
+uuid: f420bb25-3f0a-4aed-9278-4e63cec95517
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_track
+id: bb_track_account.full
+label: Full
+description: ''
+targetEntityType: bb_track_account
+cache: true

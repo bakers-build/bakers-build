@@ -13,17 +13,16 @@ use Symfony\Component\Routing\RouteCollection;
  * One POST route per editable detail card, derived from the canonical route.
  *
  * Deriving keeps the canonical route's parameters, workspace and owner
- * requirements; only the form operation and the update gate are added. The
- * product Settings routes the cards replace now lead to the detail page.
+ * requirements; only the form operation and the update gate are added.
+ * Retired edit urls lead to the detail page.
  */
 final class EntityDetailCardRouteSubscriber extends RouteSubscriberBase {
 
   /**
-   * Former product Settings routes, keyed by route name, valued by entity type.
+   * Retired product edit routes, keyed by route name, valued by entity type.
    */
   private const RETIRED = [
-    'bb_core.bb_team.settings' => 'bb_team',
-    'bb_core.bb_machine.settings' => 'bb_machine',
+    'bb_core.bb_machine.edit_retired' => 'bb_machine',
   ];
 
   /**

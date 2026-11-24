@@ -36,10 +36,12 @@ describe('ownership', () => {
     expect(derivedBase('feat/bb-7-work-2', run)).toBe('feat/bb-7-work');
   });
 
-  it('merges the ticket branch into target_branch when the run names one', () => {
-    const deploy = { ...run, branchName: 'release/bb-9', targetBranch: 'main' };
-    expect(derivedBase('release/bb-9', deploy)).toBe('main');
-    expect(derivedBase('release/bb-9-2', deploy)).toBe('release/bb-9');
+  it('merges a ship into target_branch and its variant into base_branch', () => {
+    const ship = { ...run, branchName: 'release/bb-9', targetBranch: 'main' };
+    expect(derivedBase('release/bb-9', ship)).toBe('main');
+    expect(derivedBase('release/bb-9-fix', ship)).toBe('next');
+    const plain = { ...run, targetBranch: 'next' };
+    expect(derivedBase('feat/bb-7-work-2', plain)).toBe('feat/bb-7-work');
   });
 });
 

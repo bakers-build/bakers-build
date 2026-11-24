@@ -35,7 +35,7 @@ Shared lists apply only while an agent's effective mode is `sandbox`. A shared v
 | Harness | Shared mode | Shared `allow_write` | Shared `deny_read` / `trusted_commands` | Direct-entry restrictions |
 |---|---|---|---|---|
 | Claude | Applied; entry overrides | Applied in sandbox mode | Applied in sandbox mode | `sandbox` object requires sandbox mode; `custom` requires `config` |
-| Codex | Applied; entry overrides | Applied in sandbox mode | Skipped with a warning | Nonempty `deny_read` / `trusted_commands` rejected; network is empty/off or nonempty/all hosts |
+| Codex | Applied; entry overrides | Applied in sandbox mode | `trusted_commands` applied; `deny_read` skipped with a warning | Nonempty `deny_read` rejected; network is empty/off or nonempty/all hosts |
 | Grok | Applied; entry overrides | Applied in sandbox mode through managed profiles | Skipped with a warning | Nonempty read-deny/trusted-command lists, restricted network, selective MCP grants and `custom` rejected |
 | OpenCode | Ignored; entry defaults to `system` | Ignored | Ignored | `sandbox` and `custom` rejected |
 | Pi | Ignored; entry defaults to `system` | Ignored | Ignored | `sandbox` and `yolo` rejected; `custom` accepts explicit extensions |
@@ -55,7 +55,7 @@ Without Forge, shell-based delivery needs an explicitly supported permission pat
 
 ## Verify
 
-From a connected project checkout, run `bakers agents` and inspect each alias's effective mode, sources and `not_applied` entries. Run `bakers conductor check` for sandbox prerequisites on the host. With a runtime configured, check and startup warn that its environment is not checked. A successful host check does not establish that the sandbox can start inside a container. These checks do not prove that an addon tool or application container has the same limits as the agent.
+From a connected project checkout, run `bakers agents` and inspect each alias's effective mode, sources and `not_applied` entries. Run `bakers conductor check` for sandbox prerequisites on the host. With a runtime other than Docker configured, check and startup warn that its environment is not checked. A successful host check does not establish that the sandbox can start inside a container. These checks do not prove that an addon tool or application container has the same limits as the agent.
 
 Runtime selection preserves these settings. Rules apply inside the runtime filesystem: `~` names
 the private run home, and `allow_write` does not mount an otherwise hidden host path. Native sandbox
@@ -87,17 +87,16 @@ a script in a protected path; otherwise the config fails to load. See
 [the entry-point rule](/provision/hooks#protect-host-executed-files). The run installs dependencies
 and builds in its own container, not on the host.
 
-A legitimate change to a protected path is made and delivered by a maintainer outside an isolated
-run. If the target branch changed a protected path, merging it fails inside the run as read-only.
-The run reports that; a maintainer merges the target into the ticket branch once, outside the run,
-and the next run starts from that state.
+A change to a protected path is made by a maintainer outside an isolated run. A run merges the
+target with `forge_update_branch` on the host; when that changes a protected path, it answers
+`sync: restart`, refuses `forge_push`, and the next run's fresh clone starts at the merge.
 
 ### DDEV tool protection
 
 Your project's own containers must protect the same paths: bakers.build does not propagate
 `runtime.read_only` into them. This repository uses ordinary DDEV Compose configuration in
 `.ddev/docker-compose.protection.yaml`. It mounts `.bakers`, `.github`, `.ddev` and the host's
-`.git` stub read-only into the web container. Mount whole directories: protecting only one
+`.git` stub read-only into the web container, where Git answers nothing. Mount whole directories: protecting only one
 file leaves a writable ancestor that can be renamed and replaced. Apply Compose changes by
 recreating the containers.
 
@@ -109,9 +108,10 @@ Host-side DDEV and provisioning can still write generated, ignored files there, 
 At every isolated run start, the [Git workspace](/addons/workspace-git#isolated-runs) or
 [herdr](/addons/herdr) creates a fresh **run clone** of the ticket branch at the stable worktree
 path. Its Git directory lives in the conductor's cache, at
-`$XDG_CACHE_HOME/bakers/run-git/<hash>.git` (default `~/.cache`), and is mounted as `.git` only
-inside the run's container. On the host, the workspace's `.git` is a stub the host rewrites at every run start: it names
-the ticket branch and holds no objects. The parent repository is not mounted in the run.
+`$XDG_CACHE_HOME/bakers/run-git/<hash>.git`, and is mounted as `.git` only
+inside the run. The host's `.git` is a stub rewritten per run, without
+objects; under [herdr](/addons/herdr#isolated-runs) a linked worktree of the parent, its hooks and
+Git drivers off. The run never sees the parent repository.
 
 The clone carries the ticket's target branch as `origin/<target>`; nothing is merged. Tracked files
 are reset and untracked files removed; ignored files such as `node_modules` and `vendor` are kept.

@@ -183,6 +183,7 @@ function piSecurity(options: PiAgentOptions): {
 
 export class PiAgent implements BbAgent {
   readonly id = 'pi';
+  readonly herdrAgent = 'pi';
   readonly runEnvPolicy: RunEnvPolicy;
   readonly security: SecurityReport;
   private readonly args: string[];

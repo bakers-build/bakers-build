@@ -4,7 +4,6 @@ import type { ListFilterBadge } from '../../../Component/list-chrome/index.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
 import { ListScreen } from '../../../Screen/list-screen.js';
-import { runRowAction } from '../../../Screen/row-action.js';
 import type { ScreenContext } from '../../../Screen/screen.js';
 import type { Page } from '../../collection.js';
 import { resolveWhoCandidate } from '../../user/Data/users.js';
@@ -27,7 +26,8 @@ import { createConductorProcessHost } from '../Data/process.js';
 
 /**
  * Conductors list — an ordinary {@link ListScreen}, paged and filtered to the
- * operator's own conductors by default (BB-460 D1).
+ * operator's own conductors by default (BB-460 D1). A row only opens its
+ * conductor's detail; start, stop and Restart runs live there (BAKERS-338).
  *
  * Refresh is the shared mechanism (BB-376 `ui-refresh` file + `R`), not a
  * screen-private timer. Enter loads; navigation away cancels in-flight reads
@@ -40,19 +40,12 @@ export class ConductorsScreen extends ListScreen<
   static readonly route = {
     id: 'conductors',
     path: '/conductors',
-    tab: { id: 'conductors', label: 'Conductors', scope: 'root', weight: 50 },
+    parent: 'machines',
   } satisfies RouteMetadata;
-  readonly id = ConductorsScreen.route.id;
+  readonly id: string = ConductorsScreen.route.id;
   readonly frameId = 'conductors';
   protected readonly table = CONDUCTOR_TABLE;
-  private readonly busyIds = new Set<string>();
-  /**
-   * BB-460 review — how `mine` failed to resolve, not an action's outcome.
-   * Sharing a field with the action toast let `loadRows()` blank a start/stop
-   * result on every refresh and let a standing identity reason permanently
-   * block {@link viewOnlyNotice}; kept apart, each notice source has its own
-   * lifecycle. Action results go on {@link toast}.
-   */
+  /** BB-460 review — how `mine` failed to resolve. */
   private identityReason = '';
   private mine = DEFAULT_CONDUCTOR_MINE;
   private readonly identity = new OwnerIdentity(resolveWhoCandidate);
@@ -63,7 +56,7 @@ export class ConductorsScreen extends ListScreen<
   protected tableContext(context: ScreenContext): ConductorListContext {
     return {
       nowSeconds: context.nowSeconds?.() ?? Math.floor(Date.now() / 1000),
-      busyIds: this.busyIds,
+      busyIds: new Set(),
       projectNames: this.projectNames,
     };
   }
@@ -100,9 +93,11 @@ export class ConductorsScreen extends ListScreen<
         this.identityReason = outcome.reason;
       }
     }
-    const query: ConductorQuery = this.ownerId
-      ? { ownerUserId: this.ownerId }
-      : {};
+    const machineId = context.params?.machineId;
+    const query: ConductorQuery = {
+      ...(this.ownerId ? { ownerUserId: this.ownerId } : {}),
+      ...(machineId ? { machineId } : {}),
+    };
     const rowCtx = {
       now: context.nowSeconds?.() ?? Math.floor(Date.now() / 1000),
       exists: existsSync,
@@ -113,10 +108,10 @@ export class ConductorsScreen extends ListScreen<
     // row count is bounded by the page, so it would under-report exactly when
     // the collection is large enough for the question to matter.
     this.hidden =
-      this.ownerId === undefined || rows.total === null
+      !query.ownerUserId || rows.total === null
         ? null
         : ((total) => (total === null ? null : total - (rows.total ?? 0)))(
-            await countConductors(client, {}),
+            await countConductors(client, machineId ? { machineId } : {}),
           );
     return rows;
   }
@@ -145,49 +140,19 @@ export class ConductorsScreen extends ListScreen<
     };
   }
 
-  /**
-   * BB-450 review B9 — `s`/`x` are advertised only when the SELECTED row can
-   * actually be acted on: `mine` is the identity gate (B10), not `isLocal`'s
-   * filesystem check, so a foreign conductor whose workspace happens to exist
-   * on this disk (BB-281 Finding 2) is correctly excluded too.
-   *
-   * `Enter open` is no longer gated on `mine`: it opens the conductor detail
-   * scope for every row, and the log tab inside it is the one place that still
-   * withholds a foreign conductor's log (its `mine` derivation lives there).
-   */
   protected actions() {
-    const canAct = this.rows[this.selectedIndex]?.mine ?? false;
     return [
-      ...(canAct
-        ? [
-            actionItem('conductors-start', 's', 'start'),
-            actionItem('conductors-stop', 'x', 'stop'),
-          ]
-        : []),
       actionItem('conductors-enter', 'Enter', 'open'),
       actionItem('conductors-tab', 'Tab', 'tabs'),
       ...this.pagingActionItems(),
     ];
   }
 
-  /**
-   * BB-450 review B6/B10 — a row this screen cannot act on states so,
-   * before any key is pressed: `!mine` is the identity gate `act()` uses too.
-   * The row's own MARKS cell already carries `elsewhere`; this is the
-   * footer's copy of the same fact for the row currently selected.
-   */
-  private viewOnlyNotice(): string | undefined {
-    const row = this.rows[this.selectedIndex];
-    return row && !row.mine
-      ? `${row.label} runs on another machine — view-only`
-      : undefined;
-  }
-
   protected override notice(): string | undefined {
-    return this.viewOnlyNotice() || this.identityReason;
+    return this.identityReason || undefined;
   }
 
-  select(index: number, context: ScreenContext): boolean {
+  override select(index: number, context: ScreenContext): boolean {
     if (index < 0 || index >= this.rows.length) return false;
     this.selectedIndex = index;
     this.toast = '';
@@ -209,10 +174,6 @@ export class ConductorsScreen extends ListScreen<
 
   override handleInput(input: string, context: ScreenContext): boolean {
     if (super.handleInput(input, context)) return true;
-    if (input === 's' || input === 'x') {
-      void this.act(input === 's' ? 'start' : 'stop', context);
-      return true;
-    }
     if (input === 'enter') return this.activate(this.selectedIndex, context);
     if (input === 'm') {
       this.mine = !this.mine;
@@ -241,59 +202,24 @@ export class ConductorsScreen extends ListScreen<
     this.identity.reset();
     this.ownerId = undefined;
     this.hidden = null;
-    this.busyIds.clear();
     this.identityReason = '';
     super.reset();
   }
+}
 
-  /**
-   * BB-450 review B6 — every outcome is now stated in the footer: the two
-   * refusals this screen can decide on its own (foreign row, already-online),
-   * the `{ok, message}` `host.start()`/`host.stop()` returns (previously
-   * discarded at the call site — the host-mismatch refusal `start` gained in
-   * the prior rework was composed only to be dropped here), and a thrown
-   * failure.
-   */
-  private act(action: 'start' | 'stop', context: ScreenContext): void {
-    const row = this.rows[this.selectedIndex];
-    if (!row) return;
-    if (!row.mine) {
-      context.requestDraw();
-      return;
-    }
-    if (action === 'start' && row.derivedStatus === 'online') {
-      this.toast = `${row.label} is already online`;
-      context.requestDraw();
-      return;
-    }
-    const host =
-      context.services?.conductorProcess ?? createConductorProcessHost();
-    runRowAction({
-      rowId: row.id,
-      busy: this.busyIds,
-      context,
-      perform: () =>
-        action === 'start'
-          ? host.start({
-              workspaceRoot: row.workspaceRoot,
-              conductorName: row.conductorName,
-              hostKey: row.hostKey,
-              id: row.id,
-              priorLastSeen: row.lastSeen || undefined,
-              client: context.services?.client,
-            })
-          : host.stop({
-              pid: row.lastPid,
-              hostKey: row.hostKey,
-            }),
-      refresh: (ctx) => this.reload(ctx),
-      setStatus: (status) => {
-        this.toast = status;
-      },
-      captureLifecycle: () => this.captureLifecycle(context),
-      lifecycleIsCurrent: (guard, ctx) => this.lifecycleIsCurrent(guard, ctx),
-      statusIsCurrent: (guard, ctx) => this.actionStillCurrent(guard, ctx),
-      failPrefix: `${action} failed`,
-    });
-  }
+/** The machine detail scope's Conductors tab: the list above, one machine's. */
+export class MachineConductorsScreen extends ConductorsScreen {
+  static override readonly route = {
+    id: 'machine.conductors',
+    path: '/machines/:machineId/conductors',
+    parent: 'machines',
+    tab: {
+      id: 'conductors',
+      label: 'Conductors',
+      scope: 'machine',
+      weight: 20,
+    },
+    fallback: { routeId: 'machines' },
+  } satisfies RouteMetadata;
+  override readonly id: string = MachineConductorsScreen.route.id;
 }

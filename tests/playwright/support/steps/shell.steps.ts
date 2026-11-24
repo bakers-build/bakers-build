@@ -178,6 +178,24 @@ Then('every tab fits within the viewport', async ({ page }) => {
 
 // The tab row sits on the header's bottom rule with no band between them. On a
 // wrapped row the last line meets the rule, so the lowest link box is measured.
+// On a phone the row stays one line and scrolls inside itself (BAKERS-57), so a
+// long row never pushes the list down; the page itself never scrolls sideways.
+Then('the tab row is one line that scrolls inside itself', async ({ page }) => {
+  const links = primaryTabLinks(page);
+  expect(await links.count()).toBeGreaterThan(1);
+  const tops = await links.evaluateAll((all) => all.map((a) => Math.round(a.getBoundingClientRect().top)));
+  expect(Math.max(...tops) - Math.min(...tops), `tab tops ${tops.join(', ')}`).toBeLessThanOrEqual(2);
+  const overflowX = await page.locator(PAGE_HEADER_ISLAND).locator('[data-tabs]').first()
+    .evaluate((nav) => getComputedStyle(nav).overflowX);
+  expect(['auto', 'scroll']).toContain(overflowX);
+  const width = await page.evaluate(() => document.documentElement.scrollWidth);
+  expect(width).toBeLessThanOrEqual(page.viewportSize()!.width);
+});
+
+Then('the current tab is in view', async ({ page }) => {
+  await expect(primaryTabLinks(page).and(page.locator('[aria-current="page"]'))).toBeInViewport({ ratio: 1 });
+});
+
 Then('the tab row rests on the header rule', async ({ page }) => {
   const links = primaryTabLinks(page);
   expect(await links.count()).toBeGreaterThan(1);
@@ -217,7 +235,8 @@ When('I activate the tab {string} with the keyboard', async ({ page }, tab: stri
 });
 
 Then('the address ends with {string}', async ({ page }, suffix: string) => {
-  expect(new URL(page.url()).pathname.endsWith(suffix)).toBe(true);
+  // Polled: a mutation that navigates (HX-Location) moves the address after its response.
+  await expect.poll(() => new URL(page.url()).pathname.endsWith(suffix)).toBe(true);
 });
 
 Then('the document was not reloaded', async ({ page }) => {

@@ -20,6 +20,7 @@ use Drupal\bb_core\Routing\BbRunRouteProvider;
 use Drupal\bb_core\Run\BbRunInspectorRows;
 use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\bb_core\RunLog\RunLogStore;
+use Drupal\file\FileInterface;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
@@ -378,6 +379,56 @@ final class RunCanonicalViewTest extends KernelTestBase {
     $html = $this->renderBuild($this->inspector()->status($this->run));
     self::assertStringContainsString('plugins: claude install failed: 401', $html);
     self::assertSame([], $this->buttonLabels($html), 'A guest sees the reason and no action.');
+  }
+
+  /**
+   * The reason and every Log follow the log files that exist.
+   */
+  public function testLogActionsFollowTheStoredFiles(): void {
+    $this->assignConductors();
+    $this->run->set('state', 'failed')->save();
+    $this->assertLogSurfaces('No reason and no log were recorded.', FALSE);
+
+    // The error log's size stays recorded, but its file is gone.
+    $this->run->set('error_log', 'Error: boom')->save();
+    $file = $this->run->get('error_log_file')->entity;
+    self::assertInstanceOf(FileInterface::class, $file);
+    unlink((string) $file->getFileUri());
+    self::assertNotNull($this->run->get('error_log_bytes')->value);
+    $this->assertLogSurfaces('No reason and no log were recorded.', FALSE);
+
+    // A run log only.
+    $this->run->set('error_log_file', NULL)
+      ->set('error_log_bytes', NULL)
+      ->set('log', "step 1\nstep 2\n")
+      ->save();
+    $this->assertLogSurfaces('No reason was recorded. Open the log for details.', TRUE);
+  }
+
+  /**
+   * Asserts the reason and the Log of the inspector and the run row.
+   */
+  private function assertLogSurfaces(string $reason, bool $log): void {
+    $status = $this->renderBuild($this->inspector()->status($this->run));
+    self::assertStringContainsString($reason, $status);
+    self::assertSame($log, in_array('Log', $this->buttonLabels($status), TRUE), 'Inspector Log button.');
+    $downloads = $this->inspector()->downloads($this->run);
+    if ($log) {
+      self::assertStringContainsString('Run log', $this->renderBuild($downloads));
+    }
+    else {
+      self::assertSame([], $downloads, 'No Downloads zone.');
+    }
+
+    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
+      ->getDefinition('unknown')['schema'] ?? ['type' => 'array'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_run_row', SourcePluginBase::buildConfiguration('items', $definition, ['source' => []], []));
+    self::assertInstanceOf(BbRunRowSource::class, $source);
+    $source->setContextValue('entity', $this->run);
+    $item = $source->getPropValue()[0];
+    self::assertSame($reason, $item['detail']);
+    self::assertArrayNotHasKey('log', $item['cells'], 'The run row offers no Log: the detail does.');
   }
 
   /**

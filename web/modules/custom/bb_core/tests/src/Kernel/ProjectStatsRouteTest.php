@@ -121,6 +121,17 @@ final class ProjectStatsRouteTest extends KernelTestBase {
   }
 
   /**
+   * Yesterday opens as a day period anchored on that UTC date.
+   */
+  public function testYesterdayIsDayPeriod(): void {
+    $yesterday = gmdate('Y-m-d', \Drupal::time()->getRequestTime() - 86400);
+    $build = $this->page(['filter' => ['period' => 'day', 'date' => $yesterday]]);
+    $range = $this->components($build, 'bb_theme:period-range')[0]['#props'];
+    self::assertSame('day', $range['kind']);
+    self::assertSame($yesterday, $range['date']);
+  }
+
+  /**
    * The replaced figures, hours and the export never appear.
    */
   public function testReplacedFiguresAreGone(): void {
@@ -179,10 +190,17 @@ final class ProjectStatsRouteTest extends KernelTestBase {
    * A tick fetches this tab and refreshes the project's filter parts only.
    */
   public function testFiltersApplyToThisTabThroughHtmx(): void {
-    $attributes = $this->page([])['controls']['#slots']['content']['filters']['#attributes'];
+    $attributes = $this->page([])['controls']['#slots']['content']['bar']['#slots']['controls']['#attributes'];
     self::assertSame('/north/project/atl/stats', $attributes['data-hx-get']);
     self::assertSame(
-      ['#insights-filter-epic', '#insights-filter-user', '#insights-period', '#insights-clear'],
+      [
+        '#insights-filter-epic',
+        '#insights-filter-user',
+        '#insights-period',
+        '#insights-clear',
+        '#insights-chips',
+        '#insights-filters-opener',
+      ],
       explode(',', $attributes['data-hx-select-oob']),
     );
   }

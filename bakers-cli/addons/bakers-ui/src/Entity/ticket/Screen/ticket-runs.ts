@@ -9,11 +9,10 @@ import { columnNode } from '../../../lib/vnode.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import { AsyncScreen } from '../../../Screen/async-screen.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
-import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
+import type { ScreenContext } from '../../../Screen/screen.js';
 import type { TicketDetailDocument } from '../../../types.js';
 import { listRowIds, listTableRows, listTableTree } from '../../collection.js';
 import { TICKET_RUN_TABLE, ticketRunRows } from '../../run/Data/runs.js';
-import { isRunCancellable } from '../../run/Form/edit.js';
 import {
   handleTicketCopy,
   ticketCopyActions,
@@ -169,33 +168,7 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
       return this.select(view.selectable - 1, context);
     return false;
   }
-  /** The selected run, when it can still be edited (claimed or running). */
-  private editableRun(): { id: string } | undefined {
-    if (!this.document) return undefined;
-    const run = ticketRunRows(this.document)[this.cursor.index];
-    return run?.id && isRunCancellable(run.state) ? { id: run.id } : undefined;
-  }
-  commandForInput(input: string): string | undefined {
-    return this.state === 'ready' && input === 'e' && this.editableRun()
-      ? 'edit-run'
-      : undefined;
-  }
-  actionForInput(
-    input: string,
-    context: ScreenContext,
-  ): ScreenAction | undefined {
-    const run = this.editableRun();
-    if (this.commandForInput(input) !== 'edit-run' || !run) return undefined;
-    return {
-      type: 'navigate',
-      routeId: 'run.edit',
-      params: {
-        ticketId: this.document?.data?.id ?? context.params?.ticketId ?? '',
-        runId: run.id,
-      },
-      result: this.document,
-    };
-  }
+  /** A run cancelled on its detail repaints here too (BB-536). */
   receiveResult(result: unknown, context: ScreenContext): void {
     if (
       result &&
@@ -234,9 +207,6 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
     const view = this.currentView(context);
     return [
       actionItem('detail-tab', 'Tab', 'section'),
-      ...(this.editableRun()
-        ? [actionItem('detail-edit', 'e', 'edit run')]
-        : []),
       ...ticketCopyActions(),
       actionItem(
         'detail-arrows',

@@ -20,6 +20,12 @@ When('I type {string} into the week grid row {string} on {string}', async ({ pag
   await (await gridCell(page, row, column)).locator('input[type="text"]').fill(value);
 });
 
+When('I type {string} into the week grid row {string} on {string} and leave it', async ({ page }, value: string, row: string, column: string) => {
+  const input = (await gridCell(page, row, column)).locator('input[type="text"]');
+  await input.fill(value);
+  await input.blur();
+});
+
 When('I save the week', async ({ page }) => {
   await page.getByRole('button', { name: 'Save week', exact: true }).click();
   await page.waitForLoadState('domcontentloaded');
@@ -63,13 +69,13 @@ Given('the AI proposes {string} on {string} and {string} on {string} for project
     return { source_system: 'browser', source_key: `proposal-${randomUUID()}`, source_version: '1', work_date: date,
       description: `Proposed ${date}`, duration_seconds: hours * 3600 + minutes * 60 };
   });
-  const result = await callTool(page.request, 'bakers_time_propose', { project: projectUuid, entries: proposalEntries });
+  const result = await callTool(page.request, 'bakers_worklog_propose', { project: projectUuid, entries: proposalEntries });
   expect(result.isError, result.message).toBe(false);
   proposalUuid = result.structuredContent?.submission as string;
 });
 
 When('the AI sends the proposal again', async ({ page }) => {
-  resent = await callTool(page.request, 'bakers_time_propose', { project: projectUuid, entries: proposalEntries });
+  resent = await callTool(page.request, 'bakers_worklog_propose', { project: projectUuid, entries: proposalEntries });
 });
 
 Then('the repeated proposal is refused as already recorded', async () => {

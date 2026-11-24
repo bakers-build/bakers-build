@@ -142,7 +142,12 @@
 {%- else -%}
 {#- `inline` keeps the chips and the meta in one wrapping row, as the Board filter bar shows them. -#}
 {%- set bb_flow = variant|default('') == 'inline' ? ['flex-row', 'flex-wrap', 'items-center'] : ['flex-col', 'items-start'] -%}
-<div{{ (attributes ?: create_attribute()).addClass(['flex']|merge(bb_flow)|merge(['gap-inline', 'px-stack', 'pb-group'])) }}
+{#- BELOW `lg` THE UNFILTERED STATEMENT IS HIDDEN, and only it (BAKERS-57): on a
+    phone it cost ~44px above the first row and the phone frame shows no such
+    line. Chips and the meta stay at every width. When that statement is all
+    there is, the wrapper hides too, so no empty padded box keeps the space. -#}
+{%- set bb_empty = bb_slot is empty and bb_facets is empty -%}
+<div{{ (attributes ?: create_attribute()).addClass(['flex']|merge(bb_flow)|merge(['gap-inline', 'px-stack', 'pb-group'])|merge(bb_empty and not meta ? ['max-lg:hidden'] : [])) }}
   {%- if label %} aria-label="{{ label }}"{% endif %}>
   <div data-active-filters="chips" class="flex flex-row flex-wrap items-center gap-x-inline gap-y-inline">
     {%- if bb_slot is not empty %}
@@ -150,7 +155,7 @@
     {%- elseif bb_facets is not empty %}
       {{- bb_own -}}
     {%- else %}
-      <span data-active-filters="empty" class="text-meta text-text-light">{{ empty_label|default('All results') }}</span>
+      <span data-active-filters="empty" class="max-lg:hidden text-meta text-text-light">{{ empty_label|default('All results') }}</span>
     {%- endif %}
   </div>
   {%- if meta %}

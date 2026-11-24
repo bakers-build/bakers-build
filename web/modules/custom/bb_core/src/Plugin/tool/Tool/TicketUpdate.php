@@ -30,7 +30,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[Tool(
   id: 'bakers_ticket_update',
   label: new TranslatableMarkup('Update a ticket'),
-  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added or removed by name, every other one kept), frozen flag, reviewers (added or removed by e-mail), links (upserted by exact URI or removed), environments and referenced tickets (both add-only, existing ones kept); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.'),
+  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, assignee (a user UUID, empty to clear), labels (added or removed by name, every other one kept), frozen flag, reviewers (added or removed by user UUID), links (upserted by exact URI or removed), environments and referenced tickets (both add-only, existing ones kept), blockers (added or removed by ticket identifier or UUID; an added blocker must be a readable, open ticket of the same project that creates no cycle, else nothing is saved); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner, also after the assignee is cleared; changing the assignee keeps the conductor. Returns the saved values.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -57,6 +57,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
       data_type: 'string',
       label: new TranslatableMarkup('Conductor'),
       description: new TranslatableMarkup('UUID of an active conductor of the ticket’s project.'),
+      required: FALSE,
+    ),
+    'assignee' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Assignee'),
+      description: new TranslatableMarkup('UUID of the user to assign, when they may be assigned in the ticket’s workspace; empty clears the assignee. The conductor is kept.'),
       required: FALSE,
     ),
     'labels_add' => new ListInputDefinition(
@@ -111,24 +117,24 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
     ),
     'reviewers_add' => new ListInputDefinition(
       label: new TranslatableMarkup('Reviewers to add'),
-      description: new TranslatableMarkup('Reviewer e-mail addresses to add; other reviewers stay. Omitted, null and empty lists change nothing.'),
+      description: new TranslatableMarkup('Reviewer user UUIDs to add; other reviewers stay. Omitted, null and empty lists change nothing.'),
       required: FALSE,
       item_definition: new InputDefinition(
         data_type: 'string',
-        label: new TranslatableMarkup('Reviewer e-mail address'),
-        description: new TranslatableMarkup('One active workspace account’s e-mail address.'),
-        constraints: ['Email' => [], 'NotBlank' => []],
+        label: new TranslatableMarkup('Reviewer'),
+        description: new TranslatableMarkup('One active workspace user’s UUID.'),
+        constraints: ['NotBlank' => []],
       ),
     ),
     'reviewers_remove' => new ListInputDefinition(
       label: new TranslatableMarkup('Reviewers to remove'),
-      description: new TranslatableMarkup('Reviewer e-mail addresses to remove; other reviewers stay. Omitted, null and empty lists change nothing.'),
+      description: new TranslatableMarkup('Reviewer user UUIDs to remove; other reviewers stay. Omitted, null and empty lists change nothing.'),
       required: FALSE,
       item_definition: new InputDefinition(
         data_type: 'string',
-        label: new TranslatableMarkup('Reviewer e-mail address'),
-        description: new TranslatableMarkup('One active workspace account’s e-mail address.'),
-        constraints: ['Email' => [], 'NotBlank' => []],
+        label: new TranslatableMarkup('Reviewer'),
+        description: new TranslatableMarkup('One active workspace user’s UUID.'),
+        constraints: ['NotBlank' => []],
       ),
     ),
     'links_add' => new ListInputDefinition(
@@ -165,6 +171,28 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
         constraints: ['NotBlank' => []],
       ),
     ),
+    'blocked_by_add' => new ListInputDefinition(
+      label: new TranslatableMarkup('Blockers to add'),
+      description: new TranslatableMarkup('Identifiers or UUIDs of readable, open tickets of the same project this ticket waits for. Existing blockers are kept; a refused blocker refuses the whole call.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Ticket'),
+        description: new TranslatableMarkup('One ticket identifier or UUID.'),
+        constraints: ['NotBlank' => []],
+      ),
+    ),
+    'blocked_by_remove' => new ListInputDefinition(
+      label: new TranslatableMarkup('Blockers to remove'),
+      description: new TranslatableMarkup('Identifiers or UUIDs of blockers to remove; tickets that are not blockers are ignored. Every other blocker is kept.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Ticket'),
+        description: new TranslatableMarkup('One ticket identifier or UUID.'),
+        constraints: ['NotBlank' => []],
+      ),
+    ),
   ],
   output_definitions: [
     'reviewers' => new ListOutputDefinition(
@@ -174,6 +202,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
         label: new TranslatableMarkup('Reviewer'),
         description: new TranslatableMarkup('The saved account.'),
         property_definitions: [
+          'uuid' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('UUID'),
+            description: new TranslatableMarkup('The user UUID.'),
+          ),
           'name' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('Name'),
@@ -185,6 +218,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
             description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
             nullable: TRUE,
           ),
+          'service_account' => new OutputDefinition(
+            data_type: 'boolean',
+            label: new TranslatableMarkup('Service account'),
+            description: new TranslatableMarkup('Whether the account is a workspace service account, not a person.'),
+          ),
         ],
       ),
     ),
@@ -193,6 +231,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
       description: new TranslatableMarkup('The saved account.'),
       nullable: TRUE,
       property_definitions: [
+        'uuid' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('UUID'),
+          description: new TranslatableMarkup('The user UUID.'),
+        ),
         'name' => new OutputDefinition(
           data_type: 'string',
           label: new TranslatableMarkup('Name'),
@@ -203,6 +246,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
           label: new TranslatableMarkup('Mail'),
           description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
           nullable: TRUE,
+        ),
+        'service_account' => new OutputDefinition(
+          data_type: 'boolean',
+          label: new TranslatableMarkup('Service account'),
+          description: new TranslatableMarkup('Whether the account is a workspace service account, not a person.'),
         ),
       ],
     ),
@@ -280,6 +328,31 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
         ],
       ),
     ),
+    'blocked_by' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Blocked by'),
+      description: new TranslatableMarkup('The readable tickets this one waits for; unreadable blockers are omitted.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Blocker'),
+        description: new TranslatableMarkup('One blocking ticket.'),
+        property_definitions: [
+          'identifier' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Identifier'),
+            description: new TranslatableMarkup('The ticket identifier, e.g. BAKERS-15.'),
+          ),
+          'title' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Title'),
+            description: new TranslatableMarkup('The ticket title.'),
+          ),
+          'state' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('State'),
+            description: new TranslatableMarkup('The ticket’s workflow state id.'),
+          ),
+        ],
+      ),
+    ),
   ],
 )]
 final class TicketUpdate extends ToolBase {
@@ -289,7 +362,7 @@ final class TicketUpdate extends ToolBase {
   /**
    * Rolls back a refused update together with labels it created.
    */
-  private Connection $database;
+  protected Connection $database;
 
   /**
    * {@inheritdoc}
@@ -307,6 +380,7 @@ final class TicketUpdate extends ToolBase {
     'title' => 'title',
     'description' => 'description',
     'conductor' => 'conductor_id',
+    'assignee' => 'assignee_user_id',
     'labels_add' => 'labels',
     'labels_remove' => 'labels',
     'frozen' => 'frozen',
@@ -316,6 +390,8 @@ final class TicketUpdate extends ToolBase {
     'reviewers_remove' => 'reviewers',
     'links_add' => 'links',
     'links_remove' => 'links',
+    'blocked_by_add' => 'blocked_by',
+    'blocked_by_remove' => 'blocked_by',
   ];
 
   /**
@@ -328,7 +404,7 @@ final class TicketUpdate extends ToolBase {
       static fn ($value) => $value !== NULL,
     );
     if (!$given) {
-      throw new \InvalidArgumentException('Give a title, a description, a conductor, labels to add or remove, frozen, environments to add or referenced tickets to add.');
+      throw new \InvalidArgumentException('Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, environments to add, referenced tickets to add or blockers to add or remove.');
     }
     $this->assertDisjointLists($given);
     // Closed tickets deny every field edit; say why before the access check.
@@ -341,8 +417,9 @@ final class TicketUpdate extends ToolBase {
     }
     // A label created on the way must not outlive a refused update.
     $transaction = $this->database->startTransaction();
-    // List inputs change their field in place; the rest replace the value.
+    // Inputs with their own handler; the rest replace the value.
     $lists = [
+      'assignee' => $this->setAssignee(...),
       'links_add' => $this->addLinks(...),
       'links_remove' => $this->removeLinks(...),
       'reviewers_add' => $this->addReviewers(...),
@@ -351,6 +428,8 @@ final class TicketUpdate extends ToolBase {
       'labels_remove' => $this->removeLabels(...),
       'environments_add' => $this->addEnvironments(...),
       'referenced_tickets_add' => $this->addReferencedTickets(...),
+      'blocked_by_add' => $this->addBlockers(...),
+      'blocked_by_remove' => $this->removeBlockers(...),
     ];
     try {
       foreach ($given as $input => $value) {
@@ -375,7 +454,11 @@ final class TicketUpdate extends ToolBase {
     unset($transaction);
     $saved = $this->entities()->getStorage('bb_ticket')->loadUnchanged($ticket->id());
     assert($saved instanceof BbTicketInterface);
-    return ExecutableResult::success(new TranslatableMarkup('Ticket updated.'), [
+    // BbTicket::preSave() refills a cleared assignee from the conductor.
+    $message = ($given['assignee'] ?? NULL) === '' && !$saved->get('assignee_user_id')->isEmpty()
+      ? new TranslatableMarkup("Ticket updated; the assignee was refilled from the conductor's owner.")
+      : new TranslatableMarkup('Ticket updated.');
+    return ExecutableResult::success($message, [
       'links' => array_map(static fn (array $link): array => [
         'uri' => $link['uri'],
         'title' => (string) $link['title'],
@@ -389,6 +472,7 @@ final class TicketUpdate extends ToolBase {
       'frozen' => $saved->isFrozen(),
       'environments' => array_map(static fn ($env) => (string) $env->label(), $saved->get('environments')->referencedEntities()),
       'referenced_tickets' => array_map(static fn (BbTicketInterface $ref) => $ref->getIdentifier(), $saved->getReferencedTickets()),
+      'blocked_by' => $this->blockers($saved),
     ]);
   }
 
@@ -403,15 +487,32 @@ final class TicketUpdate extends ToolBase {
     if ($both) {
       throw new \InvalidArgumentException(sprintf('Label %s is both added and removed.', reset($both)));
     }
-    $bothReviewers = array_intersect(
-      array_map('strtolower', $given['reviewers_add'] ?? []),
-      array_map('strtolower', $given['reviewers_remove'] ?? []),
-    );
-    if ($bothReviewers) {
+    if (array_intersect($given['reviewers_add'] ?? [], $given['reviewers_remove'] ?? [])) {
       throw new \InvalidArgumentException('A reviewer is both added and removed.');
     }
     if (array_intersect(array_column($given['links_add'] ?? [], 'uri'), $given['links_remove'] ?? [])) {
       throw new \InvalidArgumentException('A link URI is both added and removed.');
+    }
+    // Compare tickets, not strings: an identifier and a UUID may name one.
+    if (array_intersect($this->ticketIds($given['blocked_by_add'] ?? []), $this->ticketIds($given['blocked_by_remove'] ?? []))) {
+      throw new \InvalidArgumentException('A blocker is both added and removed.');
+    }
+  }
+
+  /**
+   * Assigns an eligible user by UUID, or clears the assignee on empty.
+   *
+   * The conductor is left alone; BbTicket::preSave() refills an empty
+   * assignee from it.
+   *
+   * @throws \InvalidArgumentException
+   */
+  private function setAssignee(BbTicketInterface $ticket, string $uuid): void {
+    if ($uuid === '') {
+      $ticket->set('assignee_user_id', NULL);
+    }
+    elseif (!$this->assign($ticket, $uuid)) {
+      throw new \InvalidArgumentException('No such user can be assigned in this workspace.');
     }
   }
 
@@ -454,32 +555,32 @@ final class TicketUpdate extends ToolBase {
    *
    * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
    *   The ticket being changed.
-   * @param array<string> $emails
-   *   Reviewer e-mail addresses.
+   * @param array<string> $uuids
+   *   Reviewer user UUIDs.
    */
-  private function addReviewers(BbTicketInterface $ticket, array $emails): void {
-    foreach (array_unique($emails) as $email) {
-      if (!$this->addReviewer($ticket, $email)) {
-        throw new \InvalidArgumentException('No account with this e-mail address can be a reviewer in this workspace.');
+  private function addReviewers(BbTicketInterface $ticket, array $uuids): void {
+    foreach (array_unique($uuids) as $uuid) {
+      if (!$this->addReviewer($ticket, $uuid)) {
+        throw new \InvalidArgumentException('No such user can be a reviewer in this workspace.');
       }
     }
   }
 
   /**
-   * Removes eligible accounts by address, keeping every other reviewer.
+   * Removes eligible users by UUID, keeping every other reviewer.
    *
    * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
    *   The ticket being changed.
-   * @param array<string> $emails
-   *   Reviewer e-mail addresses.
+   * @param array<string> $uuids
+   *   Reviewer user UUIDs.
    */
-  private function removeReviewers(BbTicketInterface $ticket, array $emails): void {
-    foreach (array_unique($emails) as $email) {
+  private function removeReviewers(BbTicketInterface $ticket, array $uuids): void {
+    foreach (array_unique($uuids) as $uuid) {
       $original = $ticket->get('reviewers')->getValue();
-      if (!$this->addReviewer($ticket, $email)) {
-        throw new \InvalidArgumentException('No account with this e-mail address can be a reviewer in this workspace.');
+      if (!$this->addReviewer($ticket, $uuid)) {
+        throw new \InvalidArgumentException('No such user can be a reviewer in this workspace.');
       }
-      $account = $this->activeAccount($email);
+      $account = $this->activeAccount($uuid);
       assert($account !== NULL);
       $ticket->set('reviewers', $original);
       $ticket->get('reviewers')->filter(static fn ($item) => $item->target_id != $account->id());
@@ -571,6 +672,45 @@ final class TicketUpdate extends ToolBase {
         $present[] = $id;
       }
     }
+  }
+
+  /**
+   * Drops the named blockers, keeping every other one in its order.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed.
+   * @param array<string> $values
+   *   Ticket identifiers or UUIDs; unknown or unreadable ones are ignored.
+   */
+  private function removeBlockers(BbTicketInterface $ticket, array $values): void {
+    $ids = $this->ticketIds($values);
+    $ticket->get('blocked_by')->filter(static fn ($item) => !in_array((string) $item->target_id, $ids, TRUE));
+  }
+
+  /**
+   * The ids of the readable tickets with these identifiers or UUIDs.
+   *
+   * @param array<string> $values
+   *   Ticket identifiers or UUIDs.
+   *
+   * @return array<string>
+   *   Ticket ids as strings; unknown values match nothing.
+   */
+  private function ticketIds(array $values): array {
+    if (!$values) {
+      return [];
+    }
+    $query = $this->entities()->getStorage('bb_ticket')->getQuery()->accessCheck(TRUE);
+    $uuids = array_values(array_filter($values, Uuid::isValid(...)));
+    $identifiers = array_values(array_diff($values, $uuids));
+    $match = $query->orConditionGroup();
+    if ($uuids) {
+      $match->condition('uuid', $uuids, 'IN');
+    }
+    if ($identifiers) {
+      $match->condition('identifier', $identifiers, 'IN');
+    }
+    return array_map('strval', array_values($query->condition($match)->execute()));
   }
 
   /**

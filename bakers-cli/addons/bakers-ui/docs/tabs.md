@@ -74,8 +74,8 @@ Expose that preset and UI module as `./preset` and `./ui` package exports.
 
 ## Scope and placement
 
-The existing scopes are `root`, `project`, `ticket`, `workspace-member` and
-`conductor`. Tab navigation preserves route parameters in entity scopes; root
+The existing scopes are `root`, `project`, `ticket`, `workspace-member`,
+`machine` and `conductor`. Tab navigation preserves route parameters in entity scopes; root
 navigation clears them. The member scope retains both the selected user and
 their workspace. Tab changes do not add
 browser-style back-history entries.
@@ -203,4 +203,4 @@ with `context.requestDraw()` after a change. No JSX compiler setting is needed.
 
 ### Brand mark
 
-The startup splash pairs the bakers wordmark with the bread-slice mark of `docs/public/logo.svg`, drawn in half blocks: a butter tile, a dark outline with eyes and a white slice. The persistent header uses `╳ bakers.build`. Non-interactive output skips the splash.
+The startup splash pairs the `bakers.build` wordmark with the bread-slice mark of `docs/public/logo.svg`, drawn in half blocks: a butter tile, a dark outline with eyes and a white slice. The wordmark takes the largest size that fits: the `block` ASCIIFont from 125 columns, `tiny` from 70, plain text on narrower terminals. The persistent header uses `╳ bakers.build`. Non-interactive output skips the splash.

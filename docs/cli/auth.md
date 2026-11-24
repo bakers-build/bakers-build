@@ -1,6 +1,6 @@
 # bakers auth
 
-`bakers auth` signs you in to the bakers.build server of a connection, switches between its auth profiles and shows the session state. `bakers tools`, `bakers ui` and the conductor all use the session it stores.
+`bakers auth` signs you in to the bakers.build server of a connection, switches between its auth profiles, shows the session state and prints an access token for other clients. `bakers tools`, `bakers ui` and the conductor all use the session it stores.
 
 ## Synopsis
 
@@ -9,6 +9,7 @@ bakers auth [<global options>] login [--provider <id>]
 bakers auth [<global options>] use <id>
 bakers auth [<global options>] logout [--profile <id>] [--all]
 bakers auth [<global options>] status [--json] [--profile <id>]
+bakers auth [<global options>] token
 ```
 
 | Subcommand | What it does |
@@ -17,6 +18,7 @@ bakers auth [<global options>] status [--json] [--profile <id>]
 | `use <id>` | Set the active auth profile for this host |
 | `logout` | Clear the active profile's session; `--profile <id>` clears another one, `--all` every profile of this host |
 | `status` | List the host's profiles and their session state; `--json` for machine-readable output, `--profile <id>` for one profile |
+| `token` | Print a short-lived access token as JSON for direct API calls: [Tokens for other clients](#tokens-for-other-clients) |
 
 ## Select the connection
 
@@ -40,9 +42,26 @@ bakers auth login
 bakers auth status
 ```
 
-The default sign-in is a device code: `auth login` prints a URL and a short code, you confirm on any device, and it waits until you are signed in. A browser-redirect profile opens the browser and listens on its callback port. Connections set up for unattended use sign in with client credentials instead.
+The default sign-in is a device code: `auth login` prints a URL and a short code, you confirm on any device, and it waits until you are signed in. The URL opens a page with the code already filled in: compare it with your terminal, check the client, the account and the teams and workspaces it acts in, each with your rank, then confirm. A browser-redirect profile opens the browser and listens on its callback port. Connections set up for unattended use sign in with client credentials instead.
 
 Tokens renew automatically. [Connection storage](/configuration/connection#files) owns their location and private-file requirements.
+
+## Tokens for other clients
+
+A client outside the CLI, such as an editor extension, can call the server's JSON:API (`/jsonapi/...`) and MCP tool endpoint directly with your sign-in. `bakers auth token` prints the access token of the selected connection and profile as one JSON object on stdout:
+
+```json
+{"base_url": "https://app.bakers.build", "token": "<access token>", "token_type": "Bearer", "expires_at": "2026-11-16T10:00:00.000Z"}
+```
+
+```sh
+TOKEN=$(bakers auth token --connection staging | jq -r .token)
+curl -H "Authorization: Bearer $TOKEN" https://app.bakers.build/jsonapi/bb_ticket/bb_ticket/<uuid>
+```
+
+- The token carries your permissions and lives as long as the server's access tokens. An expired or nearly expired session is renewed first, so the printed token works.
+- Only the access token is printed, never the refresh token or a client secret. Keep it in memory, and ask again after a `401`.
+- When nobody is signed in or the renewal fails, the command exits nonzero, prints nothing on stdout and writes `{"error": {"code": "E_AUTH", "message": "..."}}` to stderr; run `bakers auth login`.
 
 ## Diagnose
 

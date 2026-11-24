@@ -4,6 +4,7 @@ import { actionItem } from '../../../Component/footer-actions/index.js';
 import { defineContext } from '../../../Routing/context.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
 import { AsyncScreen } from '../../../Screen/async-screen.js';
+import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import type { FullScreenChrome } from '../../../Screen/full-screen.js';
 import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
 import type { TicketDetailDocument } from '../../../types.js';
@@ -13,7 +14,9 @@ import {
   runDetailTree,
   runResource,
 } from '../Component/run-detail/index.js';
-import { isRunCancellable } from '../Form/edit.js';
+import { ticketRunRows } from '../Data/runs.js';
+import { offersCancelRun } from '../Form/edit.js';
+import { cancelRunRequest } from './run-actions.js';
 
 export interface RunDetailInput {
   readonly document: TicketDetailDocument;
@@ -26,7 +29,7 @@ export const runDetailInputContext = defineContext<RunDetailInput>(
 
 /**
  * Run detail — normal {@link AsyncScreen}. The document arrives via navigation
- * context (or empty); refresh is the shared R / ui-refresh path, which refetches
+ * context, or is read here when a run list opens the run without one; refresh is the shared R / ui-refresh path, which refetches
  * the ticket with its runs so a new run state shows.
  */
 export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
@@ -44,7 +47,7 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
         : base,
   } satisfies RouteMetadata;
   readonly id = RunDetailScreen.route.id;
-  private editable = false;
+  private cancellable = false;
   /**
    * A `run-cancelled` result received here (BB-536) is re-armed as this
    * screen's own `back` result, so the ticket's Runs tab — the *next* screen
@@ -62,7 +65,11 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
 
   protected load(context: ScreenContext): Promise<TicketDetailDocument> {
     const id = context.params?.ticketId;
-    if (this.refetch && context.services && id) {
+    const snapshot = context.contexts?.has(runDetailInputContext)
+      ? context.contexts.get(runDetailInputContext).document
+      : undefined;
+    // A run list opens the run without a snapshot (BAKERS-338): read it then.
+    if ((this.refetch || !snapshot) && context.services && id) {
       this.refetch = false;
       // Fetched here, not through the ticket slice's store: ticket imports run.
       return context.services.client.get(
@@ -70,11 +77,7 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
         new DrupalJsonApiParams().addInclude(['runs']),
       ) as Promise<TicketDetailDocument>;
     }
-    if (context.contexts?.has(runDetailInputContext))
-      return Promise.resolve(
-        context.contexts.get(runDetailInputContext).document,
-      );
-    return Promise.resolve({});
+    return Promise.resolve(snapshot ?? {});
   }
 
   protected renderLoading(): string[] {
@@ -103,16 +106,22 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
     context: ScreenContext,
   ): void {
     const run = runResource(document, context.params?.runId);
-    this.editable =
-      !!run && isRunCancellable(String(run.attributes?.state ?? ''));
+    this.cancellable =
+      !!run &&
+      offersCancelRun(
+        String(run.attributes?.state ?? ''),
+        ticketRunRows(document)[0]?.id === run.id,
+      );
   }
 
   protected actions() {
-    return this.editable ? [actionItem('run-edit', 'e', 'edit')] : [];
+    return this.cancellable
+      ? [actionItem('run-cancel', 'x', 'cancel run')]
+      : [];
   }
 
   commandForInput(input: string): string | undefined {
-    return input === 'e' && this.editable ? 'edit-run' : undefined;
+    return input === 'x' && this.cancellable ? 'cancel-run' : undefined;
   }
 
   receiveResult(result: unknown, context: ScreenContext): void {
@@ -123,7 +132,7 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
     ) {
       const document = (result as { document?: TicketDetailDocument }).document;
       if (document) this.replaceReady(document);
-      this.editable = false;
+      this.cancellable = false;
       this.forwardResult = { type: 'back', result };
       context.requestDraw();
     }
@@ -141,17 +150,14 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
   }
 
   actionForInput(input: string, context: ScreenContext) {
-    if (this.commandForInput(input) !== 'edit-run' || !context.navigate)
+    const runId = context.params?.runId;
+    if (
+      this.commandForInput(input) !== 'cancel-run' ||
+      !runId ||
+      !this.readyValue
+    )
       return undefined;
-    return {
-      type: 'navigate' as const,
-      routeId: 'run.edit',
-      params: {
-        ticketId: context.params?.ticketId ?? '',
-        runId: context.params?.runId ?? '',
-      },
-      result: this.readyValue,
-    };
+    return confirmNavigation(cancelRunRequest(this.readyValue, runId));
   }
 
   /**

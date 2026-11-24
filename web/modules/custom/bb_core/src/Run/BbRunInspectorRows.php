@@ -211,7 +211,7 @@ final class BbRunInspectorRows extends InspectorRows {
    * Downloads zone: captured logs as `link-group` doc rows.
    *
    * @return array<string, mixed>
-   *   The zone, or empty when neither log is captured.
+   *   The zone, or empty when neither log is stored.
    */
   public function downloads(BbRunInterface $run): array {
     if (!$run->access('view_log')) {
@@ -219,8 +219,7 @@ final class BbRunInspectorRows extends InspectorRows {
     }
     $links = [];
     foreach (['log' => 'Run log', 'error_log' => 'Error log'] as $kind => $title) {
-      $bytes = $run->get($kind . '_bytes')->value;
-      if ($bytes === NULL || $bytes === '') {
+      if (!$run->hasLog($kind)) {
         continue;
       }
       $links[] = [
@@ -302,7 +301,7 @@ final class BbRunInspectorRows extends InspectorRows {
         $buttons['redispatch'] = $this->button((string) $this->t('Re-dispatch'), 'neutral', TicketInterventions::runActionUrl($ticket, $run, TicketInterventions::REDISPATCH, FALSE), TicketInterventions::runActionHx($ticket, $run, TicketInterventions::REDISPATCH));
       }
       foreach (['log', 'error_log'] as $kind) {
-        if ((string) ($run->get($kind . '_bytes')->value ?? '') !== '') {
+        if ($run->hasLog($kind)) {
           // A download: a boosted request would swap the file into the island.
           $buttons['log'] = $this->button((string) $this->t('Log'), 'ghost', Url::fromRoute('bb_core.run_log_download_api', [
             'bb_run' => $run->uuid(),

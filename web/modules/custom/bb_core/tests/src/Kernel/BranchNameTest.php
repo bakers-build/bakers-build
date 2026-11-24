@@ -84,10 +84,10 @@ final class BranchNameTest extends KernelTestBase {
   }
 
   /**
-   * A deployment ticket runs on release/<identifier>, title ignored.
+   * A ship ticket runs on release/<identifier>, title ignored.
    */
-  public function testDeploymentTicketGetsReleaseBranch(): void {
-    $ticket = $this->createTicket('BB-12', 'Deploy to stage', 'Deployment');
+  public function testShipTicketGetsReleaseBranch(): void {
+    $ticket = $this->createTicket('BB-12', 'Deploy to stage', 'Ship');
     $this->assertSame('release/bb-12', $ticket->get('branch_name')->value);
   }
 
@@ -208,6 +208,11 @@ final class BranchNameTest extends KernelTestBase {
       'lock segment' => ['a/.lock/b', 'feat/gl-7-a/b'],
       'double lock suffix' => ['x.lock.lock', 'feat/gl-7-x'],
       'cut ends in lock' => ['abcdefghijklmno.lockxyz', 'feat/gl-7-abcdefghijklmno'],
+      'apostrophe' => ["a's b", 'feat/gl-7-a-s-b'],
+      'ampersand' => ['a & b', 'feat/gl-7-a-b'],
+      'double quote' => ['a "b"', 'feat/gl-7-a-b'],
+      'angle brackets' => ['a <b>', 'feat/gl-7-a-b'],
+      'reported title' => ["A project's creator can edit the project's settings", 'feat/gl-7-a-project-s-creator'],
     ];
   }
 

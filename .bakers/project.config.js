@@ -64,16 +64,26 @@ export default {
       'existing-config-fresh': 'bash .bakers/provision.sh existing-config-fresh',
     },
     // The `provision_exec(key, args?)` agent tool: each key is one fixed
-    // command in the DDEV web container. Only keys with `args: true` take
+    // command in the DDEV web container, except `down`, which stops this
+    // worktree's site on the host and drops its reuse marker. Only keys with `args: true` take
     // arguments, which .bakers/provision.sh validates; none reaches a shell.
     provision_exec: {
       phpcs: 'bash .bakers/provision.sh exec phpcs',
       phpmd: 'bash .bakers/provision.sh exec phpmd',
       phpstan: 'bash .bakers/provision.sh exec phpstan',
+      phpunit: { command: 'bash .bakers/provision.sh exec phpunit', args: true },
+      'phpunit-mariadb': { command: 'bash .bakers/provision.sh exec phpunit-mariadb', args: true },
+      paratest: { command: 'bash .bakers/provision.sh exec paratest', args: true },
       uli: { command: 'bash .bakers/provision.sh exec uli', args: true },
       playwright: { command: 'bash .bakers/provision.sh exec playwright', args: true },
       'playwright-cli': { command: 'bash .bakers/provision.sh exec playwright-cli', args: true },
+      designbook: { command: 'bash .bakers/provision.sh exec designbook', args: true },
       'playground-ticket': { command: 'bash .bakers/provision.sh exec playground-ticket', args: true },
+      down: {
+        command: 'bash .bakers/provision.sh exec down',
+        description:
+          'Stops this worktree site and drops its reuse marker; the next provision_up reinstalls. Use when the database is behind the code.',
+      },
     },
   },
   // Under an isolating runtime a run sees these read-only and cannot change

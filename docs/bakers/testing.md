@@ -16,7 +16,7 @@ for the gate:
 
 | When | Command |
 |---|---|
-| PHP implementation | `ddev exec ./vendor/bin/phpunit --configuration=phpunit.xml <path/to/AffectedTest.php> …` |
+| PHP implementation | `ddev exec ./vendor/bin/phpunit --configuration=phpunit.xml <path/to/AffectedTest.php> …`; from a run `provision_exec('phpunit', ['<path/to/AffectedTest.php>', …])` |
 | Web UI implementation or Playwright behavior changes | `cd tests/playwright && npm test -- --list <affected-generated-feature-path> … && npm test -- <affected-generated-feature-path> …` |
 
 ## Setup
@@ -78,6 +78,13 @@ project rulesets. Other addon QA commands and generic snapshot, multisite and co
 machinery have been removed. The standalone playground uses its own `ddev init` for a minimal
 Drupal installation; it is not a full recipe-test control plane.
 
+## Config export check at commit
+
+`.githooks/pre-commit` runs `scripts/check-config-export-clean.sh` in DDEV, only when the commit touches
+`config/sync/`, `composer.lock`, module config or recipes, and skips when DDEV is down. Enable it once per
+clone with `git config core.hooksPath .githooks`. Run worktrees pin `core.hooksPath=/dev/null` on purpose,
+so there run `ddev exec scripts/check-config-export-clean.sh` before committing config changes.
+
 ## Test selection
 
 Select tests by affected behavior: include created/changed tests **and every affected consumer of
@@ -90,12 +97,13 @@ these can report `No tests executed!` with exit 0. An empty discovery is a faile
 PASS. Use discovery output for counts; the CI merge gate owns the full `unit-kernel` suite. A full local run, when
 required by impact or the ticket's verification plan, uses ParaTest with **four workers** and one
 path or suite (never a path list):
-`ddev exec ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 4`
+`ddev exec ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 4` (from a run `provision_exec('paratest', ['unit-kernel'])`, or one path)
 
 PHPUnit uses sqlite `:memory:` by default. Production uses MariaDB, so a MariaDB-dependent defect
 can pass here: assert on values, not on the database's formatting (e.g. decimal scale `'0.8'` vs
 `'0.8000'`). A check that needs MariaDB (every Functional test) sets it **inside the container**:
-`ddev exec bash -c 'SIMPLETEST_DB=mysql://db:db@db/db ./vendor/bin/phpunit --configuration=phpunit.xml <path>'`;
+`ddev exec bash -c 'SIMPLETEST_DB=mysql://db:db@db/db ./vendor/bin/phpunit --configuration=phpunit.xml <path>'`
+(from a run `provision_exec('phpunit-mariadb', ['<path>'])`);
 exporting it on the host silently keeps sqlite.
 
 Browser E2E uses Playwright, never PHPUnit. Navigation scenarios click twice. List the affected
@@ -146,6 +154,7 @@ section is absent on every other site.
 | `fixture-onboarding-guest` | Northside guest; onboarding not completed (scenarios reset it) | Onboarding wizard without the first-project step |
 | `fixture-app` | Northside lead, North Crew | Registers conductors, which grants it the app rank |
 | `fixture-lead` | Northside lead, North Crew | JSON:API lead matrix; lead of the disposable detail-card worlds |
+| `fixture-workspace-owner` | none; each scenario provisions and owns its own workspace | Deletes its own workspace from Settings |
 | `fixture-conductor-owner` | Northside contributor, only in Conductor Owner Crew (not in API home's team) | Owns the edit and conductor-properties conductors and their machine |
 | `fixture-claim-owner` | Northside contributor in API home's team | Owns the assignable JSON:API contract conductors and claims with them |
 | `fixture-foreign-lead` | Northside member, North Crew, Southside lead | A lead rank in another workspace grants nothing here |
@@ -159,8 +168,10 @@ section is absent on every other site.
 | `fixture-api-session` | site role `api_session`, Northside contributor, North Crew | Session writeback and comments over JSON:API |
 | `fixture-api-stats-outsider` | site role `api_statistics_outsider` | Statistics access matrix |
 | `fixture-crew-mate` | North Crew and South Crew, no workspace | Personal and team time across workspaces; scenarios grant it the team lead rank |
-| `fixture-profile` | no workspace | Saves its own position and background on the Profile tab |
+| `fixture-profile` | Northside member, Southside member | Saves its own position and background per workspace on the Profile tab |
+| `fixture-favorites` | Northside lead, Southside member | Marks and unmarks its own favorite projects |
 | `fixture-team-lead` | Northside contributor, North Crew lead | Team-lead edit rights and team time |
+| `fixture-project-owner` | Northside contributor, North Crew | Edits the Settings of the project it owns |
 | `fixture-workspace-only` | Northside member, no team | Workspace membership without project authority |
 | `fixture-time-contributor` | Northside contributor, owner of Personal time crew | Personal time, work schedule and activity input; owns a crew, so it may read its own statistics |
 | `fixture-settings` | Northside lead, Southside lead | Writes its own notification settings and work schedule |

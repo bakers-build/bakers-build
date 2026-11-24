@@ -440,11 +440,17 @@ describe('Overview — open Description, header identity, no carets', () => {
     expect(body.join('\n')).not.toContain('Latest summary');
     expect(body.join('\n')).not.toContain('No summary comment.');
     const header = body.findIndex((line) => line.includes('Description'));
+    // Only the links section (BAKERS-332) sits above the first document.
+    expect(body[0]).toContain(' links');
+    expect(header, 'Description is the first overview entry').toBeGreaterThan(
+      0,
+    );
+    // Only `* <URL>` link rows; no other headline above Description.
     expect(
-      header,
-      'Description is the first overview entry',
-    ).toBeGreaterThanOrEqual(0);
-    expect(header).toBeLessThanOrEqual(1);
+      body
+        .slice(1, header)
+        .filter((line) => line.includes('* ') && !/\* https?:\/\//.test(line)),
+    ).toEqual([]);
     expect(body[header]).not.toMatch(NATIVE_CARET);
     await quit(tui);
   });
@@ -515,10 +521,10 @@ describe('Overview — parent on the sidebar, links in the left column', () => {
     expect(chrome).not.toContain('Created by:');
     expect(bodyRows(tui).join('\n')).toMatch(/parent\s+:\s+BB-200/);
     const body = bodyRows(tui);
-    // Links render full-width in the left column, so the URL is painted
-    // directly — no sidebar tab to click, no wrapping into the narrow column.
-    expect(body.some((row) => row.includes('* links'))).toBe(true);
-    expect(body.join('\n')).toMatch(/git\.example\/mr/);
+    // Links render at the top of the left column, one `* <URL>` row each.
+    expect(body.some((row) => row.includes(' links'))).toBe(true);
+    expect(body.join('\n')).toContain('* https://git.example/mr/255');
+    expect(body.join('\n')).not.toContain('MR:');
     await quit(tui);
   });
 
@@ -528,7 +534,7 @@ describe('Overview — parent on the sidebar, links in the left column', () => {
     expect(text).not.toContain('No parent ticket.');
     expect(text).toMatch(/parent\s+:\s+none/);
     expect(text).not.toContain('No links.');
-    expect(text).not.toContain('* links');
+    expect(text).not.toContain(' links');
     await quit(tui);
   });
 });
@@ -725,7 +731,7 @@ describe('BB-255 D9 — ↑↓ scroll unless the tab has MORE THAN ONE entry', (
       bodyRows(tui).join('\n'),
       'Description stayed expanded while selection moved',
     ).toContain('TAIL-ONLY-LINE');
-    expect(bodyRows(tui).slice(0, 2).join('\n')).toContain('Description');
+    expect(bodyRows(tui).slice(0, 2).join('\n')).toContain(' links');
     await tui.press('\r');
     expect(
       bodyRows(tui).join('\n'),
@@ -974,7 +980,7 @@ describe('BB-255 AC-11 — the run detail screen honours only what it advertises
   it('S14: the hint row names exactly the keys the README’s Run detail row names', async () => {
     const tui = await boot(RUN_OLD_ROUTE);
     // BB-375 — kernel owns ↑↓ / Esc / q basics; a terminal run publishes no
-    // action ladder of its own. BB-536 — a claimed/running run now does: `e`.
+    // action ladder of its own. BB-536 — a claimed/running run now does: `x`.
     const frame = drawnRows(tui).join('\n');
     expect(frame).toMatch(/↑↓/);
     expect(frame).toMatch(/Esc:back|Esc back/);
@@ -982,14 +988,16 @@ describe('BB-255 AC-11 — the run detail screen honours only what it advertises
     expect(
       frame,
       'a terminal run must not advertise an activation key',
-    ).not.toMatch(/Enter open|Space expand|↑↓ scroll|e:Edit/);
+    ).not.toMatch(/Enter open|Space expand|↑↓ scroll|e:Edit|x:Cancel run/);
     await quit(tui);
 
     const cancellable = await boot(RUN_ROUTE);
     const cancellableFrame = drawnRows(cancellable).join('\n');
-    expect(cancellableFrame, 'a claimed/running run advertises e:Edit').toMatch(
-      /e:Edit/,
-    );
+    expect(
+      cancellableFrame,
+      'a claimed/running run advertises x:Cancel run',
+    ).toMatch(/x:Cancel run/);
+    expect(cancellableFrame).not.toMatch(/e:Edit/);
     await quit(cancellable);
 
     const readme = readFileSync(
@@ -1009,7 +1017,7 @@ describe('BB-255 AC-11 — the run detail screen honours only what it advertises
     if (/↑↓/.test(frame)) rendered.add('↑↓');
     if (/Esc:back|Esc back/.test(frame)) rendered.add('Esc');
     if (frame.includes('q:quit')) rendered.add('q');
-    if (/e:Edit/.test(cancellableFrame)) rendered.add('e');
+    if (/x:Cancel run/.test(cancellableFrame)) rendered.add('x');
 
     expect(
       [...documented].sort(),

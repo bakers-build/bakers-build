@@ -36,7 +36,7 @@ final class DeploymentIndexHooks {
     }
     $ids = [];
     foreach ([$entity->getOriginal(), $entity] as $ticket) {
-      if ($ticket instanceof BbTicketInterface && $ticket->get('ticket_type')->entity?->label() === 'deployment') {
+      if ($ticket instanceof BbTicketInterface && $ticket->get('ticket_type')->entity?->label() === 'ship') {
         $ids = [...$ids, ...array_column($ticket->get('referenced_tickets')->getValue(), 'target_id')];
       }
     }

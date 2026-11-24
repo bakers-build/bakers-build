@@ -67,6 +67,15 @@ table above.
 |---|---|---|---|---|---|
 | Invite members | `bb_core.workspace_invite` | `/{ws}/invite` | Form (island dialog) | `bb_workspace.update` | `_entity_access` |
 
+## Team member add — a dialog, not a tab
+
+The **Add member** button in the team page header opens a dialog on its own
+route; without JavaScript it is its own page.
+
+| Place | Route name | Path | Renders | Gate | Mechanism |
+|---|---|---|---|---|---|
+| Add member | `bb_core.bb_team.member_add` | `/{ws}/team/{id}/members/add` | Form (island dialog) | `bb_team.update` | `_entity_access` |
+
 ## Project detail — eight tabs, Overview default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
@@ -78,7 +87,7 @@ table above.
 | Runs | `view.runs.project_runs` | `/{ws}/project/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Conductors | `view.conductors.project_list` | `/{ws}/project/{id}/conductors` | View (page display) | `view bb_conductor` | view's own `access: type: perm`. Rows are this project's conductors, any owner. |
 | Templates | `view.bb_ticket_templates.project_list` | `/{ws}/project/{id}/templates` | View (page display) | `view bb_ticket_template` | view's own `access: type: perm`; rows are scoped by the template read scope. Its *Add template* header action opens the project-scoped add form. |
-| Settings | `bb_core.bb_project.settings` | `/{ws}/project/{id}/settings` | Controller | `bb_project.update` (→ `edit bb_project`) | `_entity_access` |
+| Settings | `bb_core.bb_project.settings` | `/{ws}/project/{id}/settings` | Controller | `bb_project.update` (→ `edit bb_project`, or `update own bb_project` as owner) | `_entity_access` |
 
 ## Team detail — five tabs, Overview default
 
@@ -89,6 +98,7 @@ table above.
 | Tickets | `view.tickets.team_tickets` | `/{ws}/team/{id}/tickets` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
 | Runs | `view.runs.team_runs` | `/{ws}/team/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Members | `bb_core.bb_team.members` | `/{ws}/team/{id}/members` | Controller (island) | `bb_team.view` | `_entity_access` |
+| Settings | `bb_core.bb_team.settings` | `/{ws}/team/{id}/settings` | Entity form | `bb_team.update` (→ `update any bb_team`, workspace lead) | `_entity_form` + `_entity_access` |
 
 ## Group detail — two tabs, Overview default
 
@@ -97,17 +107,19 @@ table above.
 | Overview (default) | `entity.bb_group.canonical` | `/{ws}/group/{id}` | View mode (`_entity_view: bb_group.full`) | `bb_group.view` | `_entity_access` |
 | Settings | `bb_core.bb_group.settings` | `/{ws}/group/{id}/settings` | Entity form | `bb_group.update` (→ `update any bb_group`, workspace lead) | `_entity_form` + `_entity_access` |
 
-## Conductor detail — one tab, Overview default
+## Conductor detail — two tabs, Overview default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
 | Overview (default) | `entity.bb_conductor.canonical` | `/{ws}/conductor/{id}` | View mode (`_entity_view: bb_conductor.full`) | `bb_conductor.view` | `_entity_access` |
+| Settings | `bb_core.bb_conductor.settings` | `/{ws}/conductor/{id}/settings` | Entity form | `bb_conductor.update` | `_entity_form` + `_entity_access` |
 
-## Machine detail — one tab, View default
+## Machine detail — two tabs, View default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
 | View (default) | `entity.bb_machine.canonical` | `/user/{user}/machine/{id}` | View mode (`_entity_view: bb_machine.full`) | `bb_machine.view` | `_entity_access` |
+| Settings | `bb_core.bb_machine.settings` | `/user/{user}/machine/{id}/settings` | Entity form | `bb_machine.update` (owner only) | `_entity_form` + `_entity_access` + owner match |
 
 ## Admin routes
 
@@ -116,6 +128,16 @@ config entities (figures, figure groups, measurements, island apps and
 profiles) keep their admin pages, reachable by URL and never from the rail.
 
 ## Entity types with no nav home of their own
+
+- A member's page (`bb_core.bb_workspace.member`, `/{ws}/members/{uid}`, and
+  `bb_core.bb_team.member`, `/{ws}/team/{id}/members/{uid}`), an invitation
+  (`entity.bb_invite.canonical`, `/{ws}/invite/{id}`) and a billing account
+  (`entity.bb_track_account.canonical`, `/{ws}/project/{id}/accounts/{id}`)
+  are opened from their Members or Billing row, under the list's own gate.
+- A term (`entity.bb_term.canonical`, `/{ws}/term/{id}`) and a ticket trigger
+  (`entity.bb_ticket_trigger.canonical`,
+  `/{ws}/ticket-template/{id}/trigger/{id}`) are opened from their Terms or
+  Triggers row, under the entity's own view access.
 
 ## User area
 

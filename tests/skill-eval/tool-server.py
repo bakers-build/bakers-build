@@ -421,7 +421,7 @@ class Simulation:
                                       'workflow': args.get('workflow') or template['workflow'], 'description': args.get('description')})
         return {'uuid': created['id'], 'identifier': created['identifier']}
 
-    def ticket_runs_list(self, args):
+    def run_list(self, args):
         t = self.find(args['ticket'])
         return {'runs': copy.deepcopy(t.get('runs', [])), 'next_offset': None}
 
@@ -449,7 +449,7 @@ class Simulation:
                 t['links'].append({'uri': link['uri'], 'title': link.get('title') or ''})
         return {'state': t['state'], 'links': copy.deepcopy(t['links'])}
 
-    def comment_publish(self, args):
+    def comment_create(self, args):
         t = self.find(args['ticket'])
         comment = {'id': f'22222222-2222-4222-8222-{len(self.comments) + 1:012d}', 'ticket': t['id'], 'type': args['type'], 'body': args['body']}
         self.comments.append(comment)
@@ -474,7 +474,7 @@ class Simulation:
                 t['labels'].append(args['label'])
         return {'metrics': copy.deepcopy(t['metrics'])}
 
-    def time_propose(self, args):
+    def worklog_propose(self, args):
         for position, entry in enumerate(args['entries'], 1):
             seconds = entry['duration_seconds']
             if not DATE.match(entry['work_date']) or not 60 <= seconds <= 86400 or seconds % 60 or len(entry['description']) > 2000:

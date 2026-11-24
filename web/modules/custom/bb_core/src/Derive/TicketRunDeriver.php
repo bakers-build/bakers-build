@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Derive;
 
+use Drupal\bb_core\Access\WorkspaceResolverInterface;
+use Drupal\bb_core\Entity\BbProfileInterface;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\Query\QueryInterface;
@@ -44,6 +47,8 @@ final class TicketRunDeriver {
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TimeInterface $time,
     private readonly BbDate $date,
+    private readonly WorkspaceResolverInterface $workspaceResolver,
+    private readonly Profiles $profiles,
   ) {
   }
 
@@ -259,13 +264,11 @@ final class TicketRunDeriver {
   }
 
   /**
-   * The assignee's onboarding profile, rendered as a context block.
+   * The assignee's profile in the ticket's workspace, as a context block.
    *
-   * Reads `field_developer_title` and `field_bb_background` off the assignee
-   * account. Each line is emitted only when its source field exists and is
-   * non-empty; the closing caveat paragraph is emitted only when at least one
-   * line was produced, so a ticket without an assignee — or an assignee who
-   * skipped the whole profile — yields the empty string.
+   * Each line is emitted only when its value is non-empty; the closing caveat
+   * paragraph only when at least one line was produced, so a ticket without
+   * an assignee, or an assignee without a profile there, yields ''.
    */
   public function recipientProfile(BbTicketInterface $ticket): string {
     if ($ticket->get('assignee_user_id')->isEmpty()) {
@@ -276,7 +279,8 @@ final class TicketRunDeriver {
       return '';
     }
 
-    $lines = $this->recipientProfileLines($user);
+    $workspace = $this->workspaceResolver->resolve($ticket);
+    $lines = $workspace === NULL ? [] : $this->recipientProfileLines($this->profiles->forAccount((int) $user->id(), (int) $workspace->id()));
     if ($lines === []) {
       return '';
     }
@@ -289,26 +293,16 @@ final class TicketRunDeriver {
   }
 
   /**
-   * The non-empty profile lines of a user.
-   *
-   * Each field is guarded on its own, so a site that lacks one of them still
-   * renders the other rather than throwing.
+   * The non-empty lines of a profile.
    *
    * @return array<int, string>
-   *   One line per non-empty field, in the order they render.
+   *   One line per non-empty value, in the order they render.
    */
-  private function recipientProfileLines(UserInterface $user): array {
+  private function recipientProfileLines(BbProfileInterface $profile): array {
     $lines = [];
-    if ($user->hasField('field_developer_title')) {
-      $title = trim((string) $user->get('field_developer_title')->value);
-      if ($title !== '') {
-        $lines[] = 'Position: ' . $title;
-      }
-    }
-    if ($user->hasField('field_bb_background')) {
-      $background = trim((string) $user->get('field_bb_background')->value);
-      if ($background !== '') {
-        $lines[] = 'Background: ' . $background;
+    foreach (['Position' => $profile->position(), 'Background' => $profile->background()] as $label => $value) {
+      if (trim($value) !== '') {
+        $lines[] = $label . ': ' . trim($value);
       }
     }
     return $lines;

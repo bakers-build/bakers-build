@@ -43,26 +43,31 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
    * Card fields keyed by entity type and form operation.
    */
   private const CARDS = [
+    // Team Settings edit a team; its card only shows it.
     'bb_team' => [
-      'identity' => ['edit' => ['name'], 'show' => ['workspace_id', 'owner_user_id']],
+      'identity' => ['edit' => [], 'show' => ['name', 'workspace_id', 'owner_user_id']],
     ],
     // Group Settings edit a group; its detail cards only show it.
     'bb_group' => [
       'properties' => ['edit' => [], 'show' => ['name', 'workspace_id', 'owner_user_id']],
       'identity' => ['edit' => [], 'show' => ['description']],
     ],
+    // Machine Settings edit a machine; its card only shows it.
     'bb_machine' => [
       'identity' => [
-        'edit' => ['name', 'max_parallel'],
-        'show' => ['host_key', 'owner_user_id', 'current_load', 'connection_url'],
+        'edit' => [],
+        'show' => ['name', 'max_parallel', 'assignment', 'host_key', 'owner_user_id', 'current_load', 'connection_url'],
       ],
     ],
-    // The heartbeat writes status and load; the served states are set at
-    // registration and edited here.
+    // Conductor Settings edit the label, served states and assignment; the
+    // heartbeat writes status and load. Its card only shows them.
     'bb_conductor' => [
       'identity' => [
-        'edit' => ['label', 'states'],
-        'show' => ['conductor_id', 'project_id', 'machine', 'owner_user_id'],
+        'edit' => [],
+        'show' => [
+          'label', 'states', 'assignment', 'conductor_id', 'project_id', 'machine',
+          'owner_user_id', 'assignment_effective',
+        ],
       ],
     ],
     // Project Settings edit a project; its detail cards only show it.

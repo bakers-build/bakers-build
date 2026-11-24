@@ -278,8 +278,8 @@ When('I cancel the delete', async ({ page }) => {
 
 When('I confirm the delete', async ({ page }) => {
   await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+  // The landing page depends on the destination; each scenario asserts its own address.
   await expect(page.getByText('Time entry deleted.').first()).toBeVisible();
-  await expect(timeScope(page).getByLabel('Date', { exact: true })).toBeVisible();
 });
 
 Then('the time entry described as {string} is gone', async ({}, description: string) => {

@@ -96,3 +96,20 @@ it('forwards the host model credential through the run env', () => {
   expect(out.env.CLAUDE_CODE_OAUTH_TOKEN).toBe('selected-token');
   expect(existsSync(join(homePath, '.claude/.credentials.json'))).toBe(false);
 });
+
+it('takes the token from the secrets the conductor hands out', async () => {
+  const { ClaudeAgent } = await import('../src/index.js');
+  const agent = new ClaudeAgent({}, root);
+  agent.configDir = source;
+  expect(agent.secretEnv).toEqual([
+    'CLAUDE_CODE_OAUTH_TOKEN',
+    'ANTHROPIC_API_KEY',
+  ]);
+  const out = await agent.prepareRun({
+    homePath,
+    workspacePath: '/w/tree',
+    env: {},
+    secrets: { CLAUDE_CODE_OAUTH_TOKEN: 'from-file' },
+  });
+  expect(out.env.CLAUDE_CODE_OAUTH_TOKEN).toBe('from-file');
+});

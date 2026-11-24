@@ -1,12 +1,11 @@
 @feature:settings-tabs
 Feature: Settings tabs edit their entity
-  A Settings tab is the entity's own edit form. Workspace, project and group
-  Settings save on an explicit Save through a native page round trip, never
+  A Settings tab is the entity's own edit form. Workspace, project, group and
+  team Settings save on an explicit Save through a native page round trip, never
   on blur, and land back on the same Settings screen with Drupal's ordinary
   status message. An edit left unsaved is discarded, with no warning. Each
   scenario edits a disposable workspace world of its own, so no seeded
-  fixture name changes under a concurrent worker. Teams have no Settings tab:
-  they are edited on their detail page cards (features/entity-detail).
+  fixture name changes under a concurrent worker.
 
   Scenario Outline: <surface> Settings changes wait for Save
     Given I lead a disposable workspace world
@@ -27,6 +26,7 @@ Feature: Settings tabs edit their entity
       | workspace |
       | project   |
       | group     |
+      | team      |
 
   Scenario: Settings opened by its tab save with the page's own assets
     Given I lead a disposable workspace world
@@ -42,6 +42,12 @@ Feature: Settings tabs edit their entity
     And I submit the name empty past browser validation
     Then the name is reported as required
     And the page loaded its own assets without htmx transport keys
+
+  Scenario: A renamed team shows its new name in the rail
+    Given I lead a disposable workspace world
+    When I open the team Settings
+    And I set the name to "Renamed team" and save the Settings
+    Then the rail links "Renamed team"
 
   Scenario: The workspace slug and Settings address survive a rename
     Given I lead a disposable workspace world

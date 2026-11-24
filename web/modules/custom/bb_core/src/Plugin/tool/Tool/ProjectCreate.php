@@ -75,7 +75,7 @@ use Drupal\tool\TypedData\OutputDefinition;
         'default_branch' => new InputDefinition(
           data_type: 'string',
           label: new TranslatableMarkup('Default branch'),
-          description: new TranslatableMarkup('The branch work bases on; main when omitted.'),
+          description: new TranslatableMarkup('The branch work bases on, the repository’s integration branch; main when omitted.'),
           required: FALSE,
         ),
         'branch_convention' => new InputDefinition(
@@ -143,8 +143,7 @@ use Drupal\tool\TypedData\OutputDefinition;
         'default_branch' => new OutputDefinition(
           data_type: 'string',
           label: new TranslatableMarkup('Default branch'),
-          description: new TranslatableMarkup('The default branch; null means main.'),
-          nullable: TRUE,
+          description: new TranslatableMarkup('The branch work bases on.'),
         ),
         'branch_convention' => new OutputDefinition(
           data_type: 'string',

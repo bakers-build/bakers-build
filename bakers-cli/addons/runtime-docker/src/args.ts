@@ -33,6 +33,38 @@ export const PROXY_PORTS = { egress: 3128, api: 8081, tools: 8082 } as const;
 /** What the run sends as its API key in allowlist mode; the proxy swaps in the real one. */
 export const API_KEY_PLACEHOLDER = 'bb-runtime-placeholder';
 
+/**
+ * The pane's terminal and locale variables, passed by name so the docker client
+ * forwards only those set in its shell. Docker has no wildcard, hence the glibc
+ * `LC_*` categories. shortcut: kept apart from runtime-bwrap's regex, move into
+ * core if a third runtime needs it.
+ */
+const TERMINAL = [
+  'TERM',
+  'COLORTERM',
+  'TERM_PROGRAM',
+  'TERM_PROGRAM_VERSION',
+  'LANG',
+  'LANGUAGE',
+  'NO_COLOR',
+  'FORCE_COLOR',
+  ...[
+    'ALL',
+    'CTYPE',
+    'NUMERIC',
+    'TIME',
+    'COLLATE',
+    'MONETARY',
+    'MESSAGES',
+    'PAPER',
+    'NAME',
+    'ADDRESS',
+    'TELEPHONE',
+    'MEASUREMENT',
+    'IDENTIFICATION',
+  ].map((category) => `LC_${category}`),
+];
+
 /** Keys whose host value means nothing inside the container. */
 const HOST_ONLY = (key: string) =>
   key === 'PATH' ||
@@ -81,6 +113,7 @@ export function dockerArgs(
       // Allowlist mode keeps the model credential in the proxy only.
       !(allowlist && credentials.includes(k)),
   );
+  forwarded.push(...TERMINAL.filter((k) => !forwarded.includes(k)));
   const ro = (path: string) => bind(path, path, ':ro');
   const argv = [
     opts.docker,

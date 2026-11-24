@@ -6,6 +6,7 @@ namespace Drupal\island\Plugin\Island;
 
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\island\Attribute\Island;
+use Drupal\island\IslandEvent;
 use Drupal\island\IslandPluginBase;
 
 /**
@@ -62,6 +63,28 @@ final class ConfiguredForm extends IslandPluginBase {
     // form reaches its host's data through `IslandFormTrait::resolveIsland()`,
     // the same path every other island form already uses.
     return $this->getForm($form_class);
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * The configured `events`; each one refreshes the island on the client.
+   */
+  public function getSubscribedEvents(): array {
+    $events = array_filter((array) ($this->configuration['events'] ?? []), 'is_string');
+    return array_fill_keys($events, 'refreshOnClient');
+  }
+
+  /**
+   * Leaves the render to the client refresh (`island.events.js`).
+   *
+   * An event carries no host data to build the form from, and a server
+   * render here would answer the dialog's POST with a form posting there.
+   *
+   * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+   */
+  public function refreshOnClient(IslandEvent $event): null {
+    return NULL;
   }
 
 }

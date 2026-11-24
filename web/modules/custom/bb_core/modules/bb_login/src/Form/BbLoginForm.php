@@ -51,9 +51,9 @@ final class BbLoginForm extends FormBase {
    *   e-mail address is.
    */
   public function __construct(
-    private readonly EmailLogin $emailLogin,
-    private readonly FloodInterface $flood,
-    private readonly EmailValidatorInterface $emailValidator,
+    protected readonly EmailLogin $emailLogin,
+    protected readonly FloodInterface $flood,
+    protected readonly EmailValidatorInterface $emailValidator,
   ) {}
 
   /**

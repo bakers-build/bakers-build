@@ -1,10 +1,11 @@
 @feature:billing-accounts
 Feature: Managing a project's billing accounts
   A project keeps several billing accounts on its Billing tab, exactly one
-  of them the Default. New accounts are created in a dialog; Make default
-  and Archive are row actions. The default offers no Archive (make another
-  account the default first), and an account that tickets link offers no
-  Make default. Only project editors reach the tab at all.
+  of them the Default. New accounts are created in a dialog. Each row only
+  opens its account's page, which offers Edit, Make default and Archive. The
+  default offers no Archive (make another account the default first), an
+  account that tickets link offers no Make default, and an archived account
+  is read-only. Only project editors reach the tab or an account's page.
 
   Each scenario works on a project of its own (`a fresh project ... set up
   like ...` deletes and recreates it), so a second run starts from the same
@@ -30,17 +31,24 @@ Feature: Managing a project's billing accounts
     And I click the tab "Overview"
     And I click the tab "Billing"
     Then the tab "Billing" is current
-    And the billing account "Ledger editor" is the default without Archive
+    And the billing account "Ledger editor" is listed as the default
     When I create the billing account "Ledger retainer" with external ID "00123" in the dialog
-    Then the billing account "Ledger retainer" offers Make default and Archive
-    And the billing account "Ledger retainer" shows external ID "00123" as text
-    When I edit the billing account "Ledger retainer" to external ID "<b>evil</b>"
-    Then the billing account "Ledger retainer" shows external ID "<b>evil</b>" as text
-    When I edit the billing account "Ledger retainer" to external ID ""
-    Then the billing account "Ledger retainer" no longer shows external ID "<b>evil</b>"
-    When I make "Ledger retainer" the default billing account
-    Then the billing account "Ledger retainer" is the default without Archive
-    When I archive the billing account "Ledger editor"
+    Then the billing account row "Ledger retainer" only opens its page
+    When I open the billing account "Ledger retainer"
+    Then the billing account page offers "Edit, Make default, Archive"
+    And the billing account page shows external ID "00123" as text
+    When I edit the billing account to external ID "<b>evil</b>"
+    Then the billing account page shows external ID "<b>evil</b>" as text
+    When I edit the billing account to external ID ""
+    Then the billing account page no longer shows external ID "<b>evil</b>"
+    When I make the billing account the default
+    Then the billing account page offers "Edit"
+    When I visit the billing route for the project "Ledger editor"
+    Then the billing account "Ledger retainer" is listed as the default
+    When I open the billing account "Ledger editor"
+    And I archive the billing account
+    Then the billing account page offers ""
+    When I visit the billing route for the project "Ledger editor"
     Then the archived billing account "Ledger editor" is still listed
 
   Scenario: An editor picks a project type and the dialog shows only its fields
@@ -81,10 +89,15 @@ Feature: Managing a project's billing accounts
     And I am signed in as a member of the "bakers" workspace
     When I visit the billing route for the project "Retainer nojs"
     And I create the billing account "Retainer, no JS" on its own page
-    Then the billing account "Retainer, no JS" offers Make default and Archive
-    When I make "Retainer, no JS" the default billing account
-    Then the billing account "Retainer, no JS" is the default without Archive
-    When I archive the billing account "Retainer nojs"
+    And I open the billing account "Retainer, no JS"
+    Then the billing account page offers "Edit, Make default, Archive"
+    When I make the billing account the default
+    Then the billing account page offers "Edit"
+    When I visit the billing route for the project "Retainer nojs"
+    And I open the billing account "Retainer nojs"
+    And I archive the billing account
+    Then the billing account page offers ""
+    When I visit the billing route for the project "Retainer nojs"
     Then the archived billing account "Retainer nojs" is still listed
 
   Scenario: A denied contributor gets neither the tab nor the face, even after an editor warmed the page
@@ -94,10 +107,14 @@ Feature: Managing a project's billing accounts
     Then the tab "Billing" is offered
     When I request the billing route for the project "Guarded ledger"
     Then the billing route answers 200
+    When I request the page of the billing account "Guarded ledger"
+    Then the billing route answers 200
     Given I am logged in as the account "north-guest"
     When I visit the project "Guarded ledger"
     Then there is no tab "Billing"
     When I request the billing route for the project "Guarded ledger"
+    Then the billing route answers 403
+    When I request the page of the billing account "Guarded ledger"
     Then the billing route answers 403
 
   Scenario: An anonymous visitor is sent to sign in

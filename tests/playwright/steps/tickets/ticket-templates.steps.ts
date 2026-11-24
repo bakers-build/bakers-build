@@ -138,16 +138,6 @@ Then('the template offers the action {string}', async ({ page }, action: string)
   await expect(page.locator('aside').getByRole('link', { name: action, exact: true })).toBeVisible();
 });
 
-When('I open the settings of the template {string} from the list and save it', async ({ page }, name: string) => {
-  await (await rowAction(page, name, `Settings ${name}`)).click();
-  await expect(page.locator('form[id^="bb-ticket-template-edit-form"]')).toBeVisible();
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  // A page save is a full navigation; htmx state in the address would leave
-  // the landing page without its assets.
-  await expect(page.locator('form[id^="bb-ticket-template-edit-form"]')).toHaveCount(0);
-  expect(page.url()).not.toContain('ajax_page_state');
-});
-
 When('I save the template settings', async ({ page }) => {
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   // A page save is a full navigation; htmx state in the address would leave
@@ -179,18 +169,11 @@ async function createInDialog(page: Page, create: Locator, edits: { project?: st
   await expect(page).not.toHaveURL(/\/(ticket-template\/|templates(\?|$))/);
 }
 
-/** Opens a listed template's action menu and returns one of its actions. */
-async function rowAction(page: Page, name: string, action: string): Promise<Locator> {
-  const row = page.locator('li[data-list-item]').filter({ hasText: name });
-  await row.locator('details[data-action-menu] > summary').click();
-  const item = row.getByRole('menuitem', { name: action, exact: true });
-  await expect(item).toBeVisible();
-  return item;
-}
-
-/** The Create ticket action of a listed template, its menu opened. */
+/** Opens a listed template's page and returns its Create ticket action. */
 async function createLinkOf(page: Page, name: string): Promise<Locator> {
-  return rowAction(page, name, 'Create ticket');
+  await page.locator('li[data-list-item]').filter({ hasText: name }).getByRole('link', { name, exact: true }).click();
+  await expect(page.locator('h1').filter({ hasText: name })).toBeVisible();
+  return page.locator('aside').getByRole('link', { name: 'Create ticket', exact: true });
 }
 
 When('I create a ticket from the template in the dialog', async ({ page }) => {

@@ -1,0 +1,19 @@
+component: bb_theme:zone
+name: Narrow measure
+props:
+  inset: none
+  gap: md
+  direction: column
+  columns: 1
+  measure: narrow
+slots:
+  heading:
+    - type: element
+      tag: span
+      value: Members
+  content:
+    - type: element
+      tag: p
+      value: >-
+        A narrow section stays at most 960px wide, so its rows remain readable
+        on a wide screen.

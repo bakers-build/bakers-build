@@ -34,7 +34,8 @@
   },
   "expect": {
     "stop": "question",
-    "review_status": "OK"
+    "review_status": "OK",
+    "asks": "rita"
   },
   "simulation": {
     "ticket": {
@@ -62,7 +63,8 @@
       ],
       "reviewers": [
         {
-          "name": "rita"
+          "name": "rita",
+          "service_account": false
         }
       ]
     },
