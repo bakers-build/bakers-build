@@ -642,7 +642,9 @@ async function cmdStartForeground(
   choice: TakeoverChoice = {},
 ): Promise<void> {
   // A watched file changed after this instant was not loaded: the watcher restarts on it.
-  const loadedAt = Date.now();
+  // A self-restart hands over when its watcher stopped looking, so a write during its drain counts.
+  const loadedAt = Number(process.env.BAKERS_RESTART_SINCE) || Date.now();
+  delete process.env.BAKERS_RESTART_SINCE;
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
   const logger = loggerFor(checkoutRoot, log);
@@ -713,8 +715,9 @@ async function cmdStartForeground(
   };
   // Config changes a bad secrets file held back, re-checked on the next change.
   const heldBack = new Set<string>();
-  const restartNow = () => {
+  const restartNow = (since = Date.now()) => {
     restart = true;
+    process.env.BAKERS_RESTART_SINCE = String(since);
     watcher?.close();
     clearInterval(versionTimer);
     controller.abort();
@@ -740,6 +743,8 @@ async function cmdStartForeground(
       watcher = (deps.watchForRestart ?? watchForRestart)(
         config.watch_paths,
         async (paths) => {
+          // Changes after this batch was taken are lost when the watcher closes.
+          const cut = Date.now();
           if (controller.signal.aborted) return;
           const secretsPath = secretsFilePath();
           for (const p of paths) if (p !== secretsPath) heldBack.add(p);
@@ -761,7 +766,7 @@ async function cmdStartForeground(
               { path: secretsPath },
               'secrets file changed; restarting conductor',
             );
-            restartNow();
+            restartNow(cut);
             return;
           }
           const path = [
@@ -783,7 +788,7 @@ async function cmdStartForeground(
             return;
           }
           logger.info({ path }, 'config check passed; restarting conductor');
-          restartNow();
+          restartNow(cut);
         },
         undefined,
         loadedAt,

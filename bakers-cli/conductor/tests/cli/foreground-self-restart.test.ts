@@ -67,6 +67,7 @@ describe('bakers conductor start --foreground self-restart', () => {
 
   afterEach(() => {
     rmSync(home, { recursive: true, force: true });
+    delete process.env.BAKERS_RESTART_SINCE;
     if (originalHome === undefined) delete process.env.BAKERS_HOME;
     else process.env.BAKERS_HOME = originalHome;
     if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
@@ -213,6 +214,42 @@ describe('bakers conductor start --foreground self-restart', () => {
 
     expect(log()).toContain('config check passed; restarting conductor');
     expect(h.execve).toHaveBeenCalledTimes(1);
+  });
+
+  it('the restarted process picks up a machine-config write made while the old one restarted', async () => {
+    const machine = join(home, '.bakers', 'machine.config.js');
+    writeFileSync(machine, 'export default { plugins: false };');
+    // Old process: the write lands after its change batch, before its re-exec.
+    const old = new TickRemote();
+    const first = harness(old, async () => {
+      writeFileSync(machine, 'export default { plugins: true };');
+      return undefined;
+    });
+    old.onTick = (n) => {
+      if (n === 1) void first.change();
+    };
+    await first.run();
+    expect(first.execve).toHaveBeenCalledTimes(1);
+
+    // New process: same env (execve passes process.env), started later.
+    await new Promise((r) => setTimeout(r, 200)); // a drain, beyond the mtime slack
+    const next = new TickRemote();
+    next.onTick = (n) => {
+      if (n === 200) process.emit('SIGTERM'); // never restarted: end the test
+    };
+    const second = harness(
+      next,
+      async () => undefined,
+      { watch_paths: { files: [machine], dirs: [] } },
+      true,
+      {
+        watchForRestart: (paths, onChange, _debounce, since) =>
+          watchForRestart(paths, onChange, 20, since),
+      },
+    );
+    await second.run();
+
+    expect(second.execve).toHaveBeenCalledTimes(1);
   });
 
   describe('when the secrets file changes', () => {
