@@ -75,6 +75,7 @@ ddev start
 runtime: { read_only: ['.ddev'] },
 hooks: { after_create: 'bash .bakers/ddev-init.sh' },
 ```
+
 The script should call only protected code and run anything the run can write, such as dependency
 installs and builds, in a container. Host scripts read `BAKERS_WORKTREE_PATH` and
 `BAKERS_RUNTIME_ISOLATES` instead of asking Git: on the host an isolated workspace's `.git` is
