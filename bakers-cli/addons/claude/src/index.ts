@@ -253,6 +253,7 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
+  readonly herdrAgent = 'claude';
   readonly secretEnv = CLAUDE_SECRET_ENV;
   readonly installCommand = claudeInstallCommand;
   readonly modelApi = claudeModelApi;

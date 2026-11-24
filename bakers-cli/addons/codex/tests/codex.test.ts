@@ -904,3 +904,10 @@ describe('CodexAgent conductor tools', () => {
     expect(command).not.toContain('mcp_servers.bakers');
   });
 });
+
+describe('herdr agent name', () => {
+  it('declares codex so herdr identifies an isolated run', async () => {
+    const agent = new CodexAgent({});
+    expect(agent.herdrAgent).toBe('codex');
+  });
+});
