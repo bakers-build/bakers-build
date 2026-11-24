@@ -88,7 +88,7 @@ function softwarePaths(env: BwrapDeps['env']): string[] {
   return paths;
 }
 
-/** Build an explicit filesystem view; no blanket bind of the host root or home. */
+/** True only when the host reads `legacy_tiocsti` as 0; unreadable keeps `--new-session`. */
 function tiocstiBlocked(deps: BwrapDeps): boolean {
   try {
     const read =
@@ -100,6 +100,7 @@ function tiocstiBlocked(deps: BwrapDeps): boolean {
   }
 }
 
+/** Build an explicit filesystem view; no blanket bind of the host root or home. */
 function argv(
   input: RuntimeLaunch,
   options: BwrapOptions,

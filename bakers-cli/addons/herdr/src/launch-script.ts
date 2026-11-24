@@ -22,7 +22,7 @@ export interface LaunchScript {
 }
 
 /**
- * Write a run-scoped launch script so a fresh pane is typed only `sh '<file>'`.
+ * Write a run-scoped launch script so a fresh pane is typed only its path (`sh '<file>'` without an agent).
  *
  * The assembled command (env prefixes + agent argv) lives in a `0600` file
  * inside a fresh `0700` directory under the OS temp dir. The typed line stays
