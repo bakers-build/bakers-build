@@ -98,12 +98,11 @@ export function watchForRestart(
   for (const dir of new Set(paths.dirs))
     tryWatch(dir, true, (f) => changed(join(dir, f)));
   if (since !== undefined)
-    for (const file of new Set(paths.files))
-      if (
-        (statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? 0) >
-        since - MTIME_LAG_MS
-      )
-        changed(file);
+    for (const file of new Set(paths.files)) {
+      const mtime = statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? 0;
+      // A future mtime (clock stepped back, touched or extracted file) would fire on every start.
+      if (mtime > since - MTIME_LAG_MS && mtime <= Date.now()) changed(file);
+    }
 
   return {
     close() {

@@ -80,7 +80,7 @@ A failed step is logged as `config upgrade failed` or `config check failed` with
 
 ### stop
 
-`stop` sends `SIGTERM` to the pid recorded on the control plane, after checking that the pid is a conductor process of this host and user (Linux and macOS only). The exiting conductor writes its own `offline` status. `--now` sends `SIGKILL` instead; a killed process writes nothing, so the status follows when its lease expires. If another record names the same checkout it is reported and left untouched.
+`stop` sends `SIGTERM` to the pid recorded on the control plane once verified as this host and user's conductor (Linux and macOS only); the exiting conductor writes its own `offline` status. `--now` sends `SIGKILL`; a killed process writes nothing, so the status follows at lease expiry. A conductor on another machine cannot be stopped. Another record naming the same checkout is reported and left untouched.
 
 ### status and ls
 
