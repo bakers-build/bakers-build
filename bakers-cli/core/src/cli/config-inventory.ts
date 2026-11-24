@@ -8,6 +8,7 @@ import {
   homeBbDir,
   stemForConfigFile,
 } from './bakers-dir.js';
+import { protectedPathProblems } from './config-protected-paths.js';
 import {
   type ConfigFileKind,
   type ConfigFileReport,
@@ -613,6 +614,26 @@ export function inventoryConfig(
             column: problem.column,
           });
       }
+    }
+    if (kind === 'project' && projectRoot) {
+      const flagged = new Set(
+        report.findings.slice(startFindings).map((finding) => finding.key),
+      );
+      for (const problem of protectedPathProblems(
+        source,
+        sources.get(machinePath),
+        projectRoot,
+      ))
+        if (!flagged.has(problem.key))
+          add(
+            'invalid_value',
+            problem.key,
+            problem.expected,
+            problem.remediation,
+            'schema',
+            'error',
+            problem.property,
+          );
     }
     const findings = report.findings.slice(startFindings);
     if (findings.some((finding) => finding.severity === 'error'))
