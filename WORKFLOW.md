@@ -49,7 +49,9 @@ Apply all matching rows.
 
 *Ship*: version command `pnpm --dir bakers-cli run release:version <SHA> --notes -`; npm package
 `@bakers-build/bakers`. Block when a breaking (`!`) server commit is in the batch and none raises
-`min_client_version`: raise it in a merge request on the source branch, then freeze again.
+`min_client_version`. Its fix, made by the ship: set it to the planned release version in both
+`bb_core.settings` homes and in the client version the Playwright features send, title
+`fix(server): require bakers <version> or newer to claim work`.
 
 ## bb-phase-validate
 
