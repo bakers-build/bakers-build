@@ -68,7 +68,6 @@ that runs fixed commands. For DDEV:
 # .bakers/ddev-init.sh
 set -euo pipefail
 cd "$BAKERS_WORKTREE_PATH"
-ddev config --auto
 ddev start
 ```
 

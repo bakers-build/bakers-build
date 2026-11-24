@@ -64,7 +64,17 @@ export function protectedPathProblems(
         property,
       });
   }
-  if (!isolating(project, machine)) return problems;
+  // A computed runtime block hides read_only or enabled: judge no hook against a guess.
+  const runtimeComputed =
+    project.unknownKeys ||
+    [...project.properties.values()].some(
+      (p) =>
+        (p.key === 'runtime' ||
+          p.key.startsWith('runtime.read_only') ||
+          p.key.startsWith('runtime.enabled')) &&
+        !p.staticallyDetermined,
+    );
+  if (runtimeComputed || !isolating(project, machine)) return problems;
   const commands = new Map<string, ConfigSourceProperty>();
   for (const property of staticStrings(
     project,

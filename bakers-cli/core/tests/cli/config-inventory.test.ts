@@ -904,6 +904,15 @@ describe('offline configuration inventory', () => {
       expect(findings).toEqual([]);
     });
 
+    it.each([
+      "{runtime:{read_only:[process.env.X ?? '.ddev']},hooks:{after_create:'bash .ddev/x.sh'}}",
+      "{runtime:{read_only:[...ro]},hooks:{after_create:'bash .ddev/x.sh'}}",
+      '{runtime,hooks:{after_create:"bash .ddev/x.sh"}}',
+    ])('reports no entry point when the runtime settings are computed: %s', (config) => {
+      mkdirSync(join(project, '.ddev'));
+      expect(check(isolating, config).findings).toEqual([]);
+    });
+
     it('skips computed hook commands and read_only paths', () => {
       const { findings } = check(
         isolating,
