@@ -236,6 +236,33 @@ describe('ClaudeAgent with plugins on', () => {
     ).toContain("--setting-sources 'project,local'");
   });
 
+  it('lets a sandbox run read its agent home plugins and nothing more', () => {
+    const permissions = (agent: ClaudeAgent) =>
+      JSON.parse(
+        agent
+          .launchCommand('go', undefined, root)
+          .match(/--settings '([^']*)'/)![1]!,
+      ).permissions;
+    const base = ['Bash', 'Edit(./**)', 'AskUserQuestion', 'mcp__bakers'];
+    const deny = [
+      'Read(~/.ssh)',
+      'Read(~/.ssh/**)',
+      'Read(~/.bakers)',
+      'Read(~/.bakers/**)',
+    ];
+    const on = new ClaudeAgent({ permissions: 'sandbox' }, user);
+    on.useMarketplaces([probe]);
+    // `//` is Claude's absolute form; the home's `.credentials.json` stays outside the rule.
+    expect(on.configDir.startsWith(join(root, 'cache', 'bakers'))).toBe(true);
+    expect(permissions(on)).toEqual({
+      allow: [...base, `Read(/${on.configDir}/plugins/**)`],
+      deny,
+    });
+    expect(
+      permissions(new ClaudeAgent({ permissions: 'sandbox' }, user)),
+    ).toEqual({ allow: base, deny });
+  });
+
   it('reads transcripts from the agent home it installed into', async () => {
     const agent = await agentFor();
     expect(agent.configDir).toMatch(
