@@ -8,6 +8,18 @@
 // executor and the worktree. The server comes from the connection, by default
 // @bakers-build/addon-remote-drupal.
 
+import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+
+// frp admin settings come from each machine's own frpc.json (webServer block), so no secret is
+// committed. Without a readable frpc.json the ports entry has no transport: list works, sharing
+// does not.
+const frpc = `${homedir()}/.config/frp/frpc.json`;
+let web;
+try {
+  web = JSON.parse(readFileSync(frpc, 'utf8')).webServer;
+} catch {}
+
 /** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
   schema_version: 1,
@@ -124,10 +136,8 @@ export default {
   // addon-ddev serves the `ddev_status` and `ddev_start` agent tools, so runs
   // reach DDEV only through the conductor, never directly; commands in the
   // web container run through `provision_exec('web', …)`.
-  // Preview links: the project names its services; each machine adds the
-  // transport in its own ~/.bakers/machine.config.js ports entry, e.g.
-  // { use: '@bakers-build/addon-ports', with: { transport: { use:
-  // '@bakers-build/addon-ports-frp', with: { … } } } }, merged with this one.
+  // Preview links: services, claimers and the frp transport all live here; a machine adds no
+  // ports entry, whose `with` would override this one.
   addons: [
     '@bakers-build/addon-ddev',
     // Layout per workflow state: project = workspace, run = tab.
@@ -159,6 +169,18 @@ export default {
         services: [{ key: 'docs', match: 'vitepress' }],
         // DDEV's containers are claimed by the addon-ddev claimer.
         claimers: ['@bakers-build/addon-ddev'],
+        ...(web && {
+          transport: {
+            use: '@bakers-build/addon-ports-frp',
+            with: {
+              zone: 'preview.keytec.de',
+              client_config_path: frpc,
+              admin_port: web.port,
+              admin_user: web.user,
+              admin_password: web.password,
+            },
+          },
+        }),
       },
     },
     // Runs fetch, push, open PRs, read checks and merge only through the forge
