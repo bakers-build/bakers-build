@@ -95,6 +95,7 @@ function securityFlags(
   workspacePath: string | undefined,
   pluginsOn = false,
   isolatedGit = false,
+  configDir = '',
 ): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
@@ -134,6 +135,8 @@ function securityFlags(
         'Edit(./**)',
         'AskUserQuestion',
         `mcp__${CONDUCTOR_TOOLS_SERVER}`,
+        // The plugins' skills live in the agent home, outside the worktree; `//` is absolute.
+        ...(pluginsOn ? [`Read(/${join(configDir, 'plugins')}/**)`] : []),
       ],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
@@ -535,6 +538,7 @@ export class ClaudeAgent implements BbAgent {
           workspacePath,
           this.pluginsOn,
           isolatedGit,
+          this.configDir,
         ),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
