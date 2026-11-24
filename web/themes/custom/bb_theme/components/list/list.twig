@@ -30,13 +30,12 @@
    items and the cells are identical in both, which is exactly why this is `layout`
    and not a second component.
 
-   `pattern` IS THE LISTING ROW. With it, an item is one GitLab-style row — a
+   `pattern` IS THE LISTING ROW. With it, an item is one `list_item` row — a
    headline line and a meta line on the left, one compact column on the right —
-   and the prop names which cell keys fill which region, so the four operator
-   listings share this one implementation and differ only in their props. An
-   optional leading `avatar` and a `description` line beneath the meta line
-   make a project or group row recognisable at a glance.
-   Without it, the cell flow below is exactly what it was. #}
+   and the prop names which cell keys fill which region. Listings themselves
+   hand finished `list_item` rows to the `rows` slot instead (an entity in its
+   row view mode), so both paths draw the same row from one template.
+   Without `pattern` and `rows`, the cell flow below is exactly what it was. #}
 {% import 'bb_theme:table' as cells %}
 
 {% set cards = layout == 'cards' %}
@@ -82,132 +81,53 @@
   : (cards
   ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'min-h-row', 'pl-stack', 'pr-inline', roomy ? 'py-stack' : 'py-inline', 'bg-surface-2', 'border', 'border-border-2', 'rounded-xs', 'transition-colors', 'duration-fast', 'hover:bg-surface-3']
   : ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-stack', 'pl-stack', 'pr-inline', 'py-inline', 'border-b', 'border-border-2', 'last:border-b-0', 'transition-colors', 'duration-fast', 'hover:bg-surface']) %}
-{% if items is not empty %}
+{#- `rows` IS THE LISTING'S OWN SLOT: rendered rows (`list_item`, one entity each
+    in Drupal's row view mode) go into the list as they are. It wins over `items`. #}
+{% if rows is not empty %}
+  <ul{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'list-none', 'p-0', 'm-0', 'gap-0']) }} role="list">
+    {{- rows -}}
+  </ul>
+{% elseif items is not empty %}
   <ul{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'list-none', 'p-0', 'm-0', cards ? (roomy ? 'gap-stack' : 'gap-inline') : 'gap-0']) }} role="list">
     {% for item in items %}
+      {% if pattern %}
+        {#- A PATTERNED ITEM IS A `list_item` ROW: each region's present cells, in
+            the pattern's order, become `list_cell`s in that region's slot, so the
+            row markup has one home for these items and for entity rows. The
+            headline's first present cell carries the row's link. -#}
+        {% set captions = pattern.captions|default({}) %}
+        {% set slots = {} %}
+        {% for region in ['avatar', 'headline', 'meta', 'description', 'right', 'right_meta'] %}
+          {% set first = true %}
+          {%- set region_markup -%}
+            {%- for key in pattern[region]|default([]) -%}
+              {%- if item.cells[key]|default(null) -%}
+                {{- include('bb_theme:list_cell', {
+                  key: key,
+                  caption: captions[key]|default(''),
+                  align: region in ['right', 'right_meta'] ? 'end' : 'start',
+                  primary: region == 'headline' and first,
+                  value: cells.cell(item.cells[key]),
+                }, with_context = false) -}}
+                {%- set first = false -%}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endset -%}
+          {% set slots = slots|merge({ (region): region_markup }) %}
+        {% endfor %}
+        {{ include('bb_theme:list_item', slots|merge({ accent: item.accent|default(null), url: item.url|default(null) }), with_context = false) }}
+      {% else %}
       {% set item_classes = item_base %}
       {% if item.accent in ['wait', 'critical'] %}
         {% set item_classes = item_classes|merge(['bg-state-unassigned-tint']) %}
       {% endif %}
       {#- A detail line sits close under its cells: the line gap shrinks, the
           gap between cells stays. -#}
-      {% if item.detail and not cards and not plain and not pattern %}
+      {% if item.detail and not cards and not plain %}
         {% set item_classes = item_classes|filter(c => c != 'gap-stack')|merge(['gap-x-stack', 'gap-y-inline-xs']) %}
       {% endif %}
-      {#- THE WHOLE PATTERNED ROW IS A CLICK TARGET FOR ITS IDENTITY LINK. A click on
-          the row's own surface forwards to the first link in the headline, so htmx
-          boost, the second click and the keyboard stay the real link's; a click on
-          any control or link inside the row, or one that ends a text selection, is
-          left alone. No overlay anchor and no new tab stop. Only a row whose
-          headline carries a link opts in, and the cursor says so. -#}
-      {%- set row_link = false -%}
-      {%- if pattern -%}
-        {%- for key in pattern.headline|default([]) -%}
-          {%- set c = item.cells[key]|default(null) -%}
-          {%- if c and (c.kind|default('') == 'link' or (c.kind|default('') == 'rendered' and '<a' in (c.markup ~ ''))) -%}{%- set row_link = true -%}{%- endif -%}
-        {%- endfor -%}
-      {%- endif -%}
-      {#- The regions a patterned row fills, read before the item opens: the
-          number of lines decides the row's inset. -#}
-      {% set left = [] %}
-      {% if pattern %}
-        {% set captions = pattern.captions|default({}) %}
-        {% set right = [] %}
-        {% set right_meta = [] %}
-        {% set avatar = [] %}
-        {% for region in ['avatar', 'headline', 'meta', 'description', 'right', 'right_meta'] %}
-          {% set present = [] %}
-          {% for key in pattern[region]|default([]) %}
-            {% if item.cells[key]|default(null) %}{% set present = present|merge([key]) %}{% endif %}
-          {% endfor %}
-          {% if region == 'right' %}
-            {% set right = present %}
-          {% elseif region == 'right_meta' %}
-            {% set right_meta = present %}
-          {% elseif region == 'avatar' %}
-            {% set avatar = present %}
-          {% elseif present is not empty %}
-            {% set left = left|merge([{ 'region': region, 'keys': present }]) %}
-          {% endif %}
-        {% endfor %}
-      {% endif %}
-      {#- A PATTERNED ROW IN `lines` IS AT LEAST ONE LIST ROW HIGH (`min-h-list-row`,
-          56px at compact). A row of one or two lines sits without a line gap in the
-          `inline-xs` inset, so a meta line with an avatar or badge still fits; a row
-          of three lines keeps the line gap and inset, and a wrapping title grows any row. -#}
-      {% set line_row = pattern and not cards and not plain %}
-      {% set tight = line_row and left|length <= 2 %}
-      {% if line_row %}
-        {% set item_classes = item_classes|merge(['min-h-list-row']) %}
-      {% endif %}
-      {% if tight %}
-        {% set item_classes = item_classes|filter(c => c != 'py-inline')|merge(['py-inline-xs']) %}
-      {% endif %}
-      {%- if row_link %}{% set item_classes = item_classes|merge(['cursor-pointer']) %}{% endif %}
-      <li data-list-item class="{{ item_classes|join(' ') }}"{% if item.url %} data-item-url="{{ item.url }}"{% endif %}{% if row_link %} x-data @click="$event.target.closest('a, button, input, select, textarea, label, summary, [role=button]') || String(window.getSelection()) || $el.querySelector('[data-list-region=headline] a')?.click()"{% endif %}>
+      <li data-list-item class="{{ item_classes|join(' ') }}"{% if item.url %} data-item-url="{{ item.url }}"{% endif %}>
         <span class="{{ (rail_classes|merge([accent_map[item.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>
-        {%- if pattern %}
-          {#- THE PATTERNED ROW (BB-592): a headline line (one type step up, `text-item-title`) and a meta line in a
-              flexible left block, one compact right block that never exceeds the row. Each region walks its
-              own key list in order and skips absent cells, so an optional fact
-              leaves no gap. The left block's basis is what makes the right block
-              flow beneath it on a narrow viewport and sit at the right edge on a
-              wide one; `min-w-0` keeps a long unbroken identity
-              inside the row instead of widening the document. `wrap-anywhere` lets an
-              unbroken word wrap and `*:min-w-0` lets a cell's own element (a plain
-              owner link, say) shrink as a flex item; `person` keeps its truncation. #}
-          {#- `avatar` leads the row as its own non-shrinking block, before the text
-              column; `description` is the text column's last line, beneath meta,
-              and wraps inside the row. Both are optional regions like the rest. #}
-          {#- With an avatar, avatar and text share one non-wrapping block that takes
-              the left basis, so the avatar stays beside the headline on a phone
-              and only the right block flows beneath. A headline alone centres on the
-              avatar; once a meta or description line follows, both align at the top. -#}
-          {% if avatar is not empty %}
-            <div class="flex min-w-0 flex-1 basis-80 {{ left|length > 1 ? 'items-start' : 'items-center' }} gap-stack">
-            <div data-list-region="avatar" class="flex shrink-0 items-center gap-inline-xs">
-              {% for key in avatar %}
-                <span class="flex shrink-0" data-cell="{{ key }}">{{ cells.cell(item.cells[key]) }}</span>
-              {% endfor %}
-            </div>
-          {% endif %}
-          {% if left is not empty %}
-            <div class="flex min-w-0 flex-1 {{ avatar is empty ? 'basis-80' : 'basis-0' }} flex-col {{ tight ? 'gap-0' : 'gap-inline-xs' }}">
-              {% for line in left %}
-                <div data-list-region="{{ line.region }}" class="{{ (line.region == 'headline' ? ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-inline', 'gap-y-inline-xs', 'text-item-title', 'text-text'] : (line.region == 'description' ? ['flex', 'min-w-0', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'text-body', 'text-text-light'] : ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-stack', 'gap-y-inline-xs', 'text-meta', 'text-text-faint']))|join(' ') }}">
-                  {#- The headline's first cell carries the row's primary link: a touch target below md. -#}
-                  {% for key in line.keys %}
-                    <span class="min-w-0 wrap-anywhere *:min-w-0{{ line.region == 'headline' and loop.first ? ' max-md:[&>a]:inline-flex max-md:[&>a]:items-center max-md:[&>a]:min-h-touch' : '' }}" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-inline-xs text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
-                  {% endfor %}
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-          {% if avatar is not empty %}</div>{% endif %}
-          {#- THE RIGHT BLOCK IS A SMALL COLUMN: the `right` cells on top and the
-              `right_meta` line beneath them, right-aligned and faint like a caption.
-              It still flows beneath the left block on a narrow viewport. A cell
-              wraps its own children too: one multi-value field (a badge per
-              conductor) must wrap, not shrink each badge until its label is cut. -#}
-          {% if right is not empty or right_meta is not empty %}
-            <div class="ml-auto flex min-w-0 max-w-full flex-col items-end gap-inline-xs">
-              {% if right is not empty %}
-                <div data-list-region="right" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline">
-                  {% for key in right %}
-                    <span class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline-xs wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
-                  {% endfor %}
-                </div>
-              {% endif %}
-              {% if right_meta is not empty %}
-                <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-stack gap-y-inline-xs text-meta text-text-faint">
-                  {% for key in right_meta %}
-                    <span class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline-xs wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            </div>
-          {% endif %}
-        {%- else %}
         {#- ONE CELL PER ENTRY OF THE MAP, in the order the mapping wrote them.
             There are no columns here, so the key names the value instead of
             addressing a column, and the item's own order is the only order there
@@ -243,8 +163,8 @@
         {% if item.detail %}
           <span data-list-detail class="basis-full min-w-0 wrap-anywhere text-meta {{ detail_map[item.accent]|default('text-text-light') }}"{% if item.detail_title %} title="{{ item.detail_title }}"{% endif %}>{{ item.detail }}</span>
         {% endif %}
-        {%- endif %}
       </li>
+      {% endif %}
     {% endfor %}
   </ul>
 {% elseif empty %}

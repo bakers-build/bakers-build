@@ -1,0 +1,180 @@
+component: "bb_theme:list"
+name: "Rows"
+props:
+  layout: "lines"
+slots:
+  rows:
+    - type: "component"
+      component: "bb_theme:list_item"
+      slots:
+        avatar:
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "icon"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:person"
+                  props:
+                    variant: "compact"
+                    initials: "P"
+                    color: "attention"
+                    size: "md"
+                    image_fit: "contain"
+        headline:
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "label"
+              primary: true
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "Ports"
+                    as: "span"
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "name"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "ports"
+                    as: "span"
+        meta:
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "versions"
+              caption: "Versions"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "1.2.3, 1.1.0"
+                    as: "span"
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "contract"
+              caption: "Contract"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "1"
+                    as: "span"
+        right:
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "conductors"
+              align: "end"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:badge"
+                  props:
+                    label: "srv01-bakers 1.2.3"
+                    tone: "running"
+                    dot: true
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "conductors_2"
+              align: "end"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:badge"
+                  props:
+                    label: "laptop-cw 1.1.0"
+                    tone: "offline"
+                    dot: true
+    - type: "component"
+      component: "bb_theme:list_item"
+      slots:
+        avatar:
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "icon"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:person"
+                  props:
+                    variant: "compact"
+                    initials: "B"
+                    color: "unassigned"
+                    size: "md"
+                    image_fit: "contain"
+        headline:
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "label"
+              primary: true
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "Bare"
+                    as: "span"
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "name"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "bare"
+                    as: "span"
+        meta:
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "versions"
+              caption: "Versions"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "1.0.0"
+                    as: "span"
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "contract"
+              caption: "Contract"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "1"
+                    as: "span"
+        right:
+          - type: "component"
+            component: "bb_theme:list_cell"
+            props:
+              key: "conductors"
+              align: "end"
+            slots:
+              value:
+                - type: "component"
+                  component: "bb_theme:text"
+                  props:
+                    text: "No conductor in this workspace"
+                    as: "span"

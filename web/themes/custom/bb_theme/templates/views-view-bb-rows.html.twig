@@ -1,0 +1,9 @@
+{# EVERY `bb_rows` VIEW IN THIS THEME, AS `bb_theme:list` WITH ITS `rows` SLOT.
+
+   Each row is already an entity rendered in its row view mode (a
+   `bb_theme:list_item`), so the row's look lives on the entity and this file
+   only hands the rows over. It emits no markup of its own.
+
+   @see \Drupal\bb_core\Plugin\views\style\BbRows
+#}
+{{ include('bb_theme:list', { rows: rows }, with_context = false) }}

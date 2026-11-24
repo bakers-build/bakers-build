@@ -24,12 +24,16 @@ description: >-
   the markup it used to own lives in one place for every listing in the theme.
 
 
-  `items` IS A PROP AND NOT A SLOT, for the same reason `table`'s `rows` is: a
-  slot is how the previous architecture injected an already-rendered entry, and
-  a cell is DATA — props carry scalar data only and never rendered content. The
-  one slot is `empty`, and it is a sentence a screen writes rather than a value
-  a listing carries. A value shape the nine cell kinds cannot express is the
-  signal to add a tenth kind, once, in the macro — never to reopen a slot here.
+  LISTINGS HAND OVER ROWS THROUGH THE `rows` SLOT, and that reverses the old
+  rule that `items` is a prop and never a slot. A listing row is an entity
+  rendered in its row view mode (a `list_item` filled with field output), so
+  its look lives on the entity, not in each view, and a mapping can bind a field
+  to a slot. When `rows` is filled the list renders the `<ul role="list">`
+  around those rows and ignores `items`. `items` stays for lists that are
+  not listings — a block's property rows, the run history, the admin views —
+  where a cell is DATA keyed by name. A patterned item renders through the same
+  `list_item`, so the row markup has one home. The other slot is `empty`, a
+  sentence a screen writes rather than a value a listing carries.
 
 
   A CELL IS THE SAME NINE KINDS `table` DECLARES — `text` (`value`, `emphasis:
@@ -259,12 +263,17 @@ props:
                     - time
                   title: Cell kind
 slots:
+  rows:
+    title: Rows
+    description: >-
+      The listing's rendered rows, each one `list_item` (`<li>`): in Drupal the
+      entities of a View in their row view mode. Filled, it wins over `items`.
   empty:
     title: Empty
     description: >-
       What to show when there is nothing to list — a sentence that names WHAT is
       absent, which is a thing a screen knows and a listing does not. It is the
-      only slot, and it is content because a sentence is content.
+      second slot, and it is content because a sentence is content.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

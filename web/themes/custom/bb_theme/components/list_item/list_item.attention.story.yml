@@ -1,0 +1,56 @@
+component: "bb_theme:list_item"
+name: "Attention"
+props:
+  accent: "attention"
+slots:
+  headline:
+    - type: "component"
+      component: "bb_theme:list_cell"
+      props:
+        key: "title"
+        primary: true
+      slots:
+        value:
+          - type: "component"
+            component: "bb_theme:text"
+            props:
+              text: "Listing rows render as entity view modes"
+              as: "span"
+  meta:
+    - type: "component"
+      component: "bb_theme:list_cell"
+      props:
+        key: "identifier"
+      slots:
+        value:
+          - type: "component"
+            component: "bb_theme:text"
+            props:
+              text: "BAKERS-365"
+              as: "span"
+    - type: "component"
+      component: "bb_theme:list_cell"
+      props:
+        key: "created"
+        caption: "Created"
+      slots:
+        value:
+          - type: "component"
+            component: "bb_theme:text"
+            props:
+              text: "2 hours ago"
+              as: "span"
+  right:
+    - type: "component"
+      component: "bb_theme:list_cell"
+      props:
+        key: "assignee"
+        align: "end"
+        fallback: "—"
+      slots:
+        value:
+          - type: "component"
+            component: "bb_theme:text"
+            props:
+              text: ""
+              as: "span"

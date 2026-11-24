@@ -354,7 +354,14 @@ DELETED_ALLOWLIST=''
 # textarea or multiple select the form still submits. No component drew
 # removable values in a text field: `property_pill` picks from a fixed set.
 # Form (snake_case). 71 + 1 = 72.
-TARGET_COMPONENT_COUNT=72
+# 74 SINCE BAKERS-365: `list_item` and `list_cell`. A listing row is now its
+# entity rendered in a row view mode, so the row needs a component a field can
+# be bound to: `list_item` is the one `<li>` (moved out of `list.twig`, whose
+# patterned items render through it too) with one slot per region, and
+# `list_cell` is one value in a region with its caption and fallback, which a
+# slot of field output cannot carry. `list` hands them through its `rows` slot.
+# Data Display (snake_case). 72 + 2 = 74.
+TARGET_COMPONENT_COUNT=74
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'

@@ -1,0 +1,61 @@
+$schema: "https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json"
+name: "List item"
+status: "stable"
+group: "Data Display"
+provider: "bb_theme"
+description: >-
+  ONE LISTING ROW, the GitLab-style row every listing shares: an optional
+  leading `avatar`, a `headline` line (identity and key facts), a faint `meta`
+  line, an optional `description` line, and a compact right-hand column of
+  `right` cells over a faint `right_meta` caption line that flows beneath the
+  left block on a narrow viewport. It is one `<li>` and lives in `list`'s
+  `rows` slot. Each region is a slot of `list_cell` values in display order;
+  an empty cell renders nothing and a region whose cells are all empty is
+  omitted, so an optional fact leaves no gap. A row of one or two left lines
+  sits tight at least one list row high. A row whose headline carries a link
+  is clickable as a whole: a click on the row's own surface (not on a control,
+  a link or a text selection) forwards to that first headline link. In Drupal
+  a row is an entity rendered in a row view mode; `list`'s patterned `items`
+  render through this component too, so the row markup has one home.
+props:
+  type: "object"
+  properties:
+    accent:
+      type: "string"
+      title: "Status accent"
+      description: >-
+        The leading status rail: `running` (teal, a conductor holds the row),
+        `attention` (amber, in review), `critical` and `wait` (red, which also
+        tint the row), `idle` (none). Omitted means no rail.
+      enum:
+        - "running"
+        - "attention"
+        - "critical"
+        - "wait"
+        - "idle"
+    url:
+      type: "string"
+      title: "Item target"
+      description: "Machine-readable target, carried as `data-item-url`; the visible link is a headline cell."
+slots:
+  avatar:
+    title: "Avatar"
+    description: "A compact mark leading the row, before the text; it never shrinks."
+  headline:
+    title: "Headline"
+    description: "Identity and key facts on one wrapping line; its first link is the row's link."
+  meta:
+    title: "Meta"
+    description: "Secondary facts on a faint caption line beneath the headline."
+  description:
+    title: "Description"
+    description: "One short plain-text line beneath the meta line."
+  right:
+    title: "Right"
+    description: "Compact values at the right edge."
+  right_meta:
+    title: "Right meta"
+    description: "A faint caption line beneath the right values, right-aligned."
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

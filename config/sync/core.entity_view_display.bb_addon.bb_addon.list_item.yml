@@ -1,0 +1,234 @@
+uuid: 56624f66-1041-40e2-9d4d-3f28fa9ea1d0
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_addon.list_item
+  module:
+    - bb_addon
+    - display_builder
+    - ui_patterns
+    - ui_patterns_field_formatters
+  theme:
+    - bb_theme
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:list_item'
+            variant_id: null
+            props: {  }
+            slots:
+              avatar:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: icon
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_addon:bb_addon:definition'
+                                  'field:bb_addon:bb_addon:definition':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_addon:bb_addon:definition'
+                                          source:
+                                            type: bb_addon_definition
+                                            settings:
+                                              part: icon
+                                            third_party_settings: {  }
+                    node_id: list_item_icon
+              headline:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: label
+                          primary:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_addon:bb_addon:definition'
+                                  'field:bb_addon:bb_addon:definition':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_addon:bb_addon:definition'
+                                          source:
+                                            type: bb_addon_definition
+                                            settings:
+                                              part: label
+                                            third_party_settings: {  }
+                    node_id: list_item_label
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: name
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_addon:bb_addon:name'
+                                  'field:bb_addon:bb_addon:name':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_addon:bb_addon:name'
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: false
+                                            third_party_settings: {  }
+                    node_id: list_item_name
+              meta:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: versions
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Versions
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_addon:bb_addon:definition'
+                                  'field:bb_addon:bb_addon:definition':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_addon:bb_addon:definition'
+                                          source:
+                                            type: bb_addon_definition
+                                            settings:
+                                              part: versions
+                                            third_party_settings: {  }
+                    node_id: list_item_versions
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: contract
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Contract
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_addon:bb_addon:contract'
+                                  'field:bb_addon:bb_addon:contract':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_addon:bb_addon:contract'
+                                          source:
+                                            type: number_integer
+                                            settings:
+                                              thousand_separator: ''
+                                              prefix_suffix: false
+                                            third_party_settings: {  }
+                    node_id: list_item_contract
+              right:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: conductors
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_addon:bb_addon:conductors'
+                                  'field:bb_addon:bb_addon:conductors':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_addon:bb_addon:conductors'
+                                          source:
+                                            type: bb_addon_conductors
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_conductors
+        node_id: bb_addon_list_item
+id: bb_addon.bb_addon.list_item
+targetEntityType: bb_addon
+bundle: bb_addon
+mode: list_item
+content: {  }
+hidden: {  }

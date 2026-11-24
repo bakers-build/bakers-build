@@ -1,0 +1,12 @@
+{#
+/**
+ * @file
+ * Fallback for the `bb_rows` Views style outside `bb_theme`.
+ *
+ * `bb_theme` overrides this template and puts the rows into the `rows` slot
+ * of `bb_theme:list`; any other theme prints the rows in order.
+ */
+#}
+{% for row in rows %}
+  {{ row }}
+{% endfor %}

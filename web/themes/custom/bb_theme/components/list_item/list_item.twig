@@ -1,0 +1,88 @@
+{# ONE LISTING ROW (BB-592's patterned row), moved here from `list.twig` so the
+   row has one home: a Drupal row view mode fills these slots with fields, and
+   `list`'s patterned `items` fill them with cells.
+
+   Every region is rendered once and read before the row opens: a region whose
+   cells all render nothing is absent, and the number of left lines decides the
+   row's inset. A row of one or two left lines sits without a line gap in the
+   `inline-xs` inset, at least one list row high (`min-h-list-row`); a row of
+   three lines keeps the line gap and inset, and a wrapping title grows any row.
+
+   THE WHOLE ROW IS A CLICK TARGET FOR ITS IDENTITY LINK. A click on the row's
+   own surface forwards to the first link in the headline, so htmx boost, the
+   second click and the keyboard stay the real link's; a click on any control or
+   link inside the row, or one that ends a text selection, is left alone. No
+   overlay anchor and no new tab stop. Only a row whose headline carries a link
+   opts in, and the cursor says so. #}
+{% set bb_tags = '<a><button><img><input><select><svg><textarea>' %}
+{%- set bb_avatar -%}{{ avatar }}{%- endset -%}
+{%- set bb_headline -%}{{ headline }}{%- endset -%}
+{%- set bb_meta -%}{{ meta }}{%- endset -%}
+{%- set bb_description -%}{{ description }}{%- endset -%}
+{%- set bb_right -%}{{ right }}{%- endset -%}
+{%- set bb_right_meta -%}{{ right_meta }}{%- endset -%}
+{% set has_avatar = bb_avatar|striptags(bb_tags)|trim is not empty %}
+{% set has_right = bb_right|striptags(bb_tags)|trim is not empty %}
+{% set has_right_meta = bb_right_meta|striptags(bb_tags)|trim is not empty %}
+{% set left = [] %}
+{% for line in [
+  { 'region': 'headline', 'markup': bb_headline },
+  { 'region': 'meta', 'markup': bb_meta },
+  { 'region': 'description', 'markup': bb_description },
+] %}
+  {% if line.markup|striptags(bb_tags)|trim is not empty %}
+    {% set left = left|merge([line]) %}
+  {% endif %}
+{% endfor %}
+{% set tight = left|length <= 2 %}
+{% set row_link = '<a' in (bb_headline ~ '') %}
+{% set accent_map = {
+  'running': 'bg-state-running',
+  'attention': 'bg-state-attention-mark',
+  'critical': 'bg-state-unassigned',
+  'wait': 'bg-state-unassigned',
+  'idle': 'bg-transparent'
+} %}
+{% set item_classes = ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-stack', 'pl-stack', 'pr-inline', tight ? 'py-inline-xs' : 'py-inline', 'border-b', 'border-border-2', 'last:border-b-0', 'transition-colors', 'duration-fast', 'hover:bg-surface', 'min-h-list-row'] %}
+{% if accent in ['wait', 'critical'] %}
+  {% set item_classes = item_classes|merge(['bg-state-unassigned-tint']) %}
+{% endif %}
+{% if row_link %}
+  {% set item_classes = item_classes|merge(['cursor-pointer']) %}
+{% endif %}
+{% set item_attributes = (attributes ?: create_attribute()).addClass(item_classes).setAttribute('data-list-item', true) %}
+{% if url %}{% set item_attributes = item_attributes.setAttribute('data-item-url', url) %}{% endif %}
+<li{{ item_attributes }}{% if row_link %} x-data @click="$event.target.closest('a, button, input, select, textarea, label, summary, [role=button]') || String(window.getSelection()) || $el.querySelector('[data-list-region=headline] a')?.click()"{% endif %}>
+  <span class="{{ ['absolute', 'left-0', 'top-2', 'bottom-2', 'w-1', 'rounded-xs', accent_map[accent]|default('bg-transparent')]|join(' ') }}" aria-hidden="true"></span>
+  {#- With an avatar, avatar and text share one non-wrapping block that takes
+      the left basis, so the avatar stays beside the headline on a phone and
+      only the right block flows beneath. A headline alone centres on the
+      avatar; once a meta or description line follows, both align at the top. -#}
+  {% if has_avatar %}
+    <div class="flex min-w-0 flex-1 basis-80 {{ left|length > 1 ? 'items-start' : 'items-center' }} gap-stack">
+    <div data-list-region="avatar" class="flex shrink-0 items-center gap-inline-xs [&>[data-cell]]:flex [&>[data-cell]]:shrink-0">{{ bb_avatar }}</div>
+  {% endif %}
+  {#- The left block's basis makes the right block flow beneath it on a narrow
+      viewport and sit at the right edge on a wide one; `min-w-0` keeps a long
+      unbroken identity inside the row instead of widening the document. -#}
+  {% if left is not empty %}
+    <div class="flex min-w-0 flex-1 {{ has_avatar ? 'basis-0' : 'basis-80' }} flex-col {{ tight ? 'gap-0' : 'gap-inline-xs' }}">
+      {% for line in left %}
+        <div data-list-region="{{ line.region }}" class="{{ (line.region == 'headline' ? ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-inline', 'gap-y-inline-xs', 'text-item-title', 'text-text'] : (line.region == 'description' ? ['flex', 'min-w-0', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'text-body', 'text-text-light'] : ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-stack', 'gap-y-inline-xs', 'text-meta', 'text-text-faint']))|join(' ') }}">{{ line.markup }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% if has_avatar %}</div>{% endif %}
+  {#- THE RIGHT BLOCK IS A SMALL COLUMN: the `right` cells on top and the
+      `right_meta` line beneath them, right-aligned and faint like a caption. -#}
+  {% if has_right or has_right_meta %}
+    <div class="ml-auto flex min-w-0 max-w-full flex-col items-end gap-inline-xs">
+      {% if has_right %}
+        <div data-list-region="right" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline">{{ bb_right }}</div>
+      {% endif %}
+      {% if has_right_meta %}
+        <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-stack gap-y-inline-xs text-meta text-text-faint">{{ bb_right_meta }}</div>
+      {% endif %}
+    </div>
+  {% endif %}
+</li>

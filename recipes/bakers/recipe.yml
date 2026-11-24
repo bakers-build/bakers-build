@@ -724,6 +724,9 @@ config:
     # The billing account's detail; its display ships in `recipes/bakers/config/`.
     bb_track:
       - core.entity_view_mode.bb_track_account.full
+    # The addon's listing row; its display ships in `recipes/bakers/config/`.
+    bb_addon:
+      - core.entity_view_mode.bb_addon.list_item
     bb_api_key:
       # The team "Reporter" rank: lets a team member — human or a
       # workspace service account — create tickets in that team's projects,
