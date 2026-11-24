@@ -4,8 +4,15 @@
 // caller decides whether a change becomes a restart (config check, drain,
 // execve).
 
-import { type FSWatcher, watch } from 'node:fs';
+import { type FSWatcher, statSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+
+/**
+ * File mtimes come from the kernel's coarse clock and trail `Date.now()` by up
+ * to one tick (measured 5.6 ms on Linux). Well under one restart, so the slack
+ * adds at most one checked restart and never a loop.
+ */
+const MTIME_LAG_MS = 50;
 
 /** What the running conductor loaded: single files and addon build dirs. */
 export interface WatchPaths {
@@ -18,12 +25,17 @@ export interface WatchPaths {
  * `debounceMs` without a further change. Files are watched through their parent directory, so an
  * editor's rename-replace save and a newly created file both count; dirs are
  * watched recursively. At most one trigger runs at a time; changes during one
- * re-arm the debounce once it returns.
+ * re-arm the debounce once it returns. With `since` (when the config was
+ * read), a watched file modified after it counts as changed at once, so a
+ * write during start-up, before watching began, is not lost.
+ * shortcut: dirs (addon builds) are not mtime-checked; walk them if a build
+ * during start-up is ever missed.
  */
 export function watchForRestart(
   paths: WatchPaths,
   trigger: (paths: string[]) => Promise<void>,
   debounceMs = 2000,
+  since?: number,
 ): { close(): void } {
   const watchers: FSWatcher[] = [];
   let timer: NodeJS.Timeout | undefined;
@@ -85,6 +97,13 @@ export function watchForRestart(
     });
   for (const dir of new Set(paths.dirs))
     tryWatch(dir, true, (f) => changed(join(dir, f)));
+  if (since !== undefined)
+    for (const file of new Set(paths.files))
+      if (
+        (statSync(file, { throwIfNoEntry: false })?.mtimeMs ?? 0) >
+        since - MTIME_LAG_MS
+      )
+        changed(file);
 
   return {
     close() {

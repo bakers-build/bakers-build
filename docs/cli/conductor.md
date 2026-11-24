@@ -57,7 +57,7 @@ A start on a machine where an enabled agent cannot start its sandbox prints `war
 
 #### Restart on change
 
-A running conductor (the detached default and `--foreground`) restarts itself when a file it loaded changes: the project `project.config.js` (or its variant), `~/.bakers/machine.config.js`, `~/.bakers/.bakers.env`, and the build directory of each configured addon (`pnpm build` counts). After 2 quiet seconds, it checks the new config with `bakers conductor start --dry-run` in a child process. A `.bakers.env` change alone skips the check, or waits for a pending [upgrade](#restart-after-an-upgrade).
+A running conductor restarts itself when a file it loaded changes: the project `project.config.js` (or its variant), `~/.bakers/machine.config.js`, `~/.bakers/.bakers.env`, and the build directory of each configured addon (`pnpm build` counts). After 2 quiet seconds it checks the config with `bakers conductor start --dry-run` in a child process. A `.bakers.env` change alone skips the check, or waits for a pending [upgrade](#restart-after-an-upgrade). A file changed during start-up counts too; an addon build does not.
 
 - the check passes: the log shows `config check passed; restarting conductor`. The loop stops claiming, drains its queue and stops its tools as on `SIGTERM`, writes no `offline`, and replaces itself in place: same pid and log. Running agent sessions keep going and are adopted again.
 - the check fails: the log shows `config check failed; keeping the running conductor` with the error, and the next change checks again.
@@ -80,7 +80,7 @@ A failed step is logged as `config upgrade failed` or `config check failed` with
 
 ### stop
 
-`stop` sends `SIGTERM` to the pid recorded on the control plane, after checking that the pid belongs to a conductor process of this host; the exiting conductor writes its own `offline` status. `--now` sends `SIGKILL` instead; a killed process writes nothing, so the status follows when its lease expires. `stop` cannot stop a conductor that runs on another machine. If another record names the same checkout it is reported and left untouched.
+`stop` sends `SIGTERM` to the pid recorded on the control plane, after checking that the pid is a conductor process of this host and user (Linux and macOS only). The exiting conductor writes its own `offline` status. `--now` sends `SIGKILL` instead; a killed process writes nothing, so the status follows when its lease expires. If another record names the same checkout it is reported and left untouched.
 
 ### status and ls
 

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 
 /**
@@ -189,17 +190,63 @@ export function signalVerifiedProcess(
   return { ok: true, pid: identified.pid, signal: input.signal };
 }
 
+/** Runs a command and returns its stdout; throws on a non-zero exit. */
+export type RunCommand = (file: string, args: string[]) => string;
+
+const runCommand: RunCommand = (file, args) =>
+  execFileSync(file, args, {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+
 /**
  * The real probe: `/proc/<pid>/cmdline` and the owning uid of `/proc/<pid>`
- * itself on Linux.
+ * on Linux; one `ps -ww -o uid= -o command= -p <pid>` line on macOS (`-ww`
+ * keeps the command untruncated, so the markers are always in it).
  *
- * Only Linux is claimed as supported. macOS could shell out to `ps`, but a
- * wrong answer here signals the wrong process, so an unimplemented platform
- * reports `supported: false` and stop degrades with a message rather than
- * guessing. Start is unaffected everywhere.
+ * Any other platform reports `supported: false`: a wrong answer here signals
+ * the wrong process, so stop degrades with a message rather than guessing.
+ * Start is unaffected everywhere.
  */
-export function defaultProcProbe(): ProcProbe {
-  const supported = process.platform === 'linux';
+export function defaultProcProbe(
+  platform: NodeJS.Platform = process.platform,
+  run: RunCommand = runCommand,
+): ProcProbe {
+  const send = (pid: number, signal: NodeJS.Signals): void => {
+    process.kill(pid, signal);
+  };
+  if (platform === 'darwin') {
+    const psOf = (
+      pid: number,
+    ): { uid: number; command: string } | undefined => {
+      try {
+        const match = /^\s*(\d+)\s+(\S.*)$/.exec(
+          run('ps', [
+            '-ww',
+            '-o',
+            'uid=',
+            '-o',
+            'command=',
+            '-p',
+            String(pid),
+          ]).trim(),
+        );
+        return match
+          ? { uid: Number(match[1]), command: match[2] as string }
+          : undefined;
+      } catch {
+        // ps exits non-zero when the pid is gone.
+        return undefined;
+      }
+    };
+    return {
+      supported: true,
+      cmdlineOf: (pid) => psOf(pid)?.command,
+      uidOf: (pid) => psOf(pid)?.uid,
+      send,
+    };
+  }
+  const supported = platform === 'linux';
   return {
     supported,
     cmdlineOf(pid: number): string | undefined {
@@ -224,9 +271,7 @@ export function defaultProcProbe(): ProcProbe {
         return undefined;
       }
     },
-    send(pid: number, signal: NodeJS.Signals): void {
-      process.kill(pid, signal);
-    },
+    send,
   };
 }
 
@@ -241,12 +286,16 @@ export interface RunProcessProbe {
   send(pid: number, signal: NodeJS.Signals): void;
 }
 
-export function defaultRunProcessProbe(): RunProcessProbe {
-  const base = defaultProcProbe();
+/** Linux only: it lists and reads `/proc`. */
+export function defaultRunProcessProbe(
+  platform: NodeJS.Platform = process.platform,
+): RunProcessProbe {
+  const base = defaultProcProbe(platform);
+  const supported = platform === 'linux';
   return {
-    supported: base.supported,
+    supported,
     pids() {
-      if (!base.supported) return [];
+      if (!supported) return [];
       return readdirSync('/proc')
         .filter((name) => /^\d+$/.test(name))
         .map(Number);

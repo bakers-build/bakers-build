@@ -641,6 +641,8 @@ async function cmdStartForeground(
   force = false,
   choice: TakeoverChoice = {},
 ): Promise<void> {
+  // A watched file changed after this instant was not loaded: the watcher restarts on it.
+  const loadedAt = Date.now();
   const config = await resolveConfig(deps, undefined, true);
   const checkoutRoot = await checkoutRootOf(config);
   const logger = loggerFor(checkoutRoot, log);
@@ -783,6 +785,8 @@ async function cmdStartForeground(
           logger.info({ path }, 'config check passed; restarting conductor');
           restartNow();
         },
+        undefined,
+        loadedAt,
       );
     }
   }
