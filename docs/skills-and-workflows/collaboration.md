@@ -11,7 +11,7 @@ Choose how far the agent may go on a ticket. Without an automation label, a pers
 | Accept the result before delivery | `human-accept` | You accept the result at one link; a planned risky change also needs the assignee’s or a reviewer’s verdict |
 | Let the agent finish independently | `auto` | Only choices left to you by the criteria; result acceptance is due only if you had such a choice |
 
-Pick one mode. If `auto` and one `human-*` label are both present, the human mode wins. Both `human-*` labels together stop with a question. Deployment and verification tickets support `auto` or no automation label, not the two human modes.
+Pick one mode. If `auto` and one `human-*` label are both present, the human mode wins. Both `human-*` labels together stop with a question. Ship and verification tickets support `auto` or no automation label, not the two human modes.
 
 Under the human modes, the assignee or any reviewer decides unresolved criteria, confirms the verdict and authorizes the merge; a service-account assignee cannot confirm. If nobody is eligible, the run asks for a reviewer. Any custom recipe gates still need a person. A change to dependencies, data models, public interfaces, authentication, permissions or build/deployment configuration counts as risky. An unplanned risky change stops automated work as a technical problem.
 

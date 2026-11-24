@@ -6,7 +6,7 @@ import { Drush, php } from '../drush';
 import { safe } from '../listing';
 import { requireWorld } from '../project-world';
 
-Given('the world has an open deployment to {string} carrying {string}', async ({}, environment: string, titles: string) => {
+Given('the world has an open shipment to {string} carrying {string}', async ({}, environment: string, titles: string) => {
   const world = requireWorld();
   const identifiers = titles.split(', ').map((title) => {
     const identifier = world.identifiers[title];
@@ -17,7 +17,7 @@ Given('the world has an open deployment to {string} carrying {string}', async ({
     '$etm = \\Drupal::entityTypeManager(); $ts = $etm->getStorage("bb_ticket");',
     `$p = current($etm->getStorage("bb_project")->loadByProperties(["group_id" => ${world.ids.group}]));`,
     `$env = $etm->getStorage("bb_environment")->create(["name" => "${safe(environment)}", "project_id" => $p->id()]); $env->save();`,
-    `$type = $etm->getStorage("bb_term")->create(["vid" => "type", "name" => "deployment", "workspace_id" => ${world.ids.workspace}]); $type->save();`,
+    `$type = $etm->getStorage("bb_term")->create(["vid" => "type", "name" => "ship", "workspace_id" => ${world.ids.workspace}]); $type->save();`,
     `$tickets = $ts->loadByProperties(["identifier" => ${JSON.stringify(identifiers)}]);`,
     '$d = $ts->create(["title" => "World release", "workflow" => "bb_work", "project_id" => $p->id(), "ticket_type" => $type->id(), "environments" => [$env->id()], "referenced_tickets" => array_keys($tickets)]); $d->save();',
     'print $d->getIdentifier();',
@@ -41,24 +41,24 @@ When('I open the world ticket {string}', async ({ page }, title: string) => {
   expect(response?.status()).toBe(200);
 });
 
-Then('the Overview deployment shows {string} and {string}', async ({ page }, environment: string, count: string) => {
-  const section = page.getByRole('heading', { name: 'Deployments', exact: true }).locator('..').locator('..').locator('..');
+Then('the Overview shipment shows {string} and {string}', async ({ page }, environment: string, count: string) => {
+  const section = page.getByRole('heading', { name: 'Shipments', exact: true }).locator('..').locator('..').locator('..');
   await expect(section.getByRole('link', { name: 'World release', exact: true })).toBeVisible();
   await expect(section.getByText(environment, { exact: true })).toBeVisible();
   await expect(section.getByRole('link', { name: count, exact: true })).toBeVisible();
   await expect(section.locator('time')).toHaveCount(1);
 });
 
-When('I follow the deployment ticket count {string}', async ({ page }, count: string) => {
+When('I follow the shipment ticket count {string}', async ({ page }, count: string) => {
   await page.getByRole('link', { name: count, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`deployment=${requireWorld().identifiers['World release']}`));
 });
 
-Then('the deployment ticket list shows only {string}', async ({ page }, titles: string) => {
+Then('the shipment ticket list shows only {string}', async ({ page }, titles: string) => {
   const rows = page.locator('[data-canvas-region="main"] [data-list-item]');
   await expect(rows).toHaveCount(titles.split(', ').length);
   for (const title of titles.split(', ')) await expect(rows.getByText(title, { exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Remove the Deployment filter', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Remove the Shipment filter', exact: true })).toBeVisible();
   await expect(page.locator('select[name="deployment"]')).toHaveCount(0);
 });
 
@@ -81,12 +81,12 @@ Then(/^the ticket header (shows|does not show) the deployed badge "([^"]+)"$/, a
 });
 
 When('I clear the deployment filter', async ({ page }) => {
-  await page.getByRole('link', { name: 'Remove the Deployment filter', exact: true }).click();
+  await page.getByRole('link', { name: 'Remove the Shipment filter', exact: true }).click();
 });
 
 Then('the deployment filter is cleared', async ({ page }) => {
   await expect.poll(() => new URL(page.url()).searchParams.has('deployment')).toBe(false);
-  await expect(page.getByRole('link', { name: 'Remove the Deployment filter', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Remove the Shipment filter', exact: true })).toHaveCount(0);
   const rows = page.locator('[data-canvas-region="main"] [data-list-item]');
   await expect(rows).toHaveCount(3);
   await expect(rows.getByText('Other work', { exact: true })).toBeVisible();

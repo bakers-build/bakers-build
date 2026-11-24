@@ -3469,7 +3469,7 @@ display:
           exposed: true
           expose:
             operator_id: ''
-            label: Deployment
+            label: Shipment
             description: ''
             use_operator: false
             operator: ''

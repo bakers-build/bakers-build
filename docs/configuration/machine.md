@@ -51,7 +51,7 @@ export default {
 | `permissions` | Optional run permissions for every agent on this host. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/provision/security/shared-settings). |
 | `permissions.mode` | `sandbox`, `system` or `yolo`. |
 | `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists. |
-| `executor` | Optional single executor slot `{ use, export?, with? }`, e.g. [herdr-core](/addons/herdr-core), overriding every project executor on this machine; omitted uses the project's. Server and worktree stay project-owned. |
+| `executor` | Optional single executor slot `{ use, export?, with? }`, e.g. [herdr-core](/addons/herdr-core) or [Rex](/addons/rex), overriding every project executor on this machine; omitted uses the project's. Server and worktree stay project-owned. |
 | `executor.use`, `executor.export`, `executor.with` | The slot's package, its named factory and the factory's options. |
 
 Unknown keys fail. The run budget (**Max parallel**) is set on the machine in the backend; a new machine starts with 5. Every conductor on this host shares it and picks up a change on its next tick.

@@ -44,7 +44,7 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   },
   forge_pr_upsert: {
     description:
-      "Create the PR/MR of an owned branch into its base (target_branch, which is base_branch unless a deployment names its environment branch; the ticket branch for a variant), or update the open one's title and body. The title must be a Conventional Commits subject.",
+      "Create the PR/MR of an owned branch into its base (target_branch, which is base_branch unless a ship names its environment branch; the ticket branch for a variant, base_branch for a ship's variant), or update the open one's title and body. The title must be a Conventional Commits subject.",
     input: {
       type: 'object',
       properties: {

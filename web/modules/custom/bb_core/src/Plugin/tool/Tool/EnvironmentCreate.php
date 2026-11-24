@@ -42,7 +42,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'branch' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Branch'),
-      description: new TranslatableMarkup('The branch it deploys, e.g. main; a deployment ticket with this environment targets it.'),
+      description: new TranslatableMarkup('The branch it deploys, e.g. main; a ship ticket with this environment targets it.'),
       constraints: ['NotBlank' => []],
     ),
     'base_url' => new InputDefinition(

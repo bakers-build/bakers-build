@@ -28,7 +28,7 @@ final class DeploymentLookup {
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
     $ids = $storage->getQuery()->accessCheck(TRUE)
       ->condition('project_id', $project->id())
-      ->condition('ticket_type.entity.name', 'deployment')
+      ->condition('ticket_type.entity.name', 'ship')
       ->sort('created', 'DESC')->sort('id', 'DESC')->execute();
     $rows = [];
     foreach ($storage->loadMultiple($ids) as $deployment) {
@@ -41,7 +41,7 @@ final class DeploymentLookup {
           ->condition('project_id', $project->id());
         $query->condition($query->orConditionGroup()
           ->notExists('ticket_type')
-          ->condition('ticket_type.entity.name', 'deployment', '<>'));
+          ->condition('ticket_type.entity.name', 'ship', '<>'));
         $count = (int) $query->count()->execute();
       }
       $rows[] = [
@@ -86,7 +86,7 @@ final class DeploymentLookup {
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
     $ids = $storage->getQuery()->accessCheck(TRUE)
       ->condition('referenced_tickets', array_keys($result), 'IN')
-      ->condition('ticket_type.entity.name', 'deployment')
+      ->condition('ticket_type.entity.name', 'ship')
       ->condition('closed', TRUE)
       ->sort('created', 'ASC')->sort('id', 'ASC')->execute();
     foreach ($storage->loadMultiple($ids) as $deployment) {

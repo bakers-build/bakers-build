@@ -203,9 +203,9 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
   }
 
   /**
-   * A non-owner lead sees no project/group danger zone unless they created it.
+   * The creator or workspace owner sees the danger zone; for projects any lead.
    */
-  public function testProjectAndGroupDangerZoneIsTheCreatorsOrOwners(): void {
+  public function testProjectAndGroupDangerZoneIsTheCreatorsOwnersOrLeads(): void {
     $workspace = $this->provision();
     $etm = $this->container->get('entity_type.manager');
     // Created by someone else, so the owner passes as owner, not as creator.
@@ -238,19 +238,25 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
     self::assertInstanceOf(UserInterface::class, $lead);
     $this->addMembership($workspace, $lead, ['lead']);
     $this->setCurrentUser($lead);
-    foreach ([$project, $group] as $entity) {
-      self::assertInstanceOf(ContentEntityInterface::class, $entity);
-      $type = $entity->getEntityTypeId();
-      $etm->getAccessControlHandler($type)->resetCache();
-      $form = $this->container->get('entity.form_builder')->getForm($entity, 'settings');
-      self::assertArrayNotHasKey('danger_zone', $form, "$type: a non-owner lead sees none");
-      self::assertArrayNotHasKey('delete', $form['actions'] ?? [], "$type: nor a Delete action");
 
-      $entity->set('owner_user_id', $lead->id())->save();
-      $etm->getAccessControlHandler($type)->resetCache();
-      $form = $this->container->get('entity.form_builder')->getForm($entity, 'settings');
-      self::assertArrayHasKey('danger_zone', $form, "$type: its creator does");
-    }
+    // Any lead of the workspace deletes its projects.
+    $etm->getAccessControlHandler('bb_project')->resetCache();
+    $form = $this->container->get('entity.form_builder')->getForm($project, 'settings');
+    self::assertArrayHasKey('danger_zone', $form, 'bb_project: a non-owner lead sees it');
+    self::assertSame($project->toUrl('delete-form')->toString(), $form['danger_zone']['#slots']['action']['delete']['#props']['href']);
+    self::assertArrayNotHasKey('delete', $form['actions'] ?? [], 'bb_project: no Delete in the action row');
+
+    // A group stays its creator's or the workspace owner's.
+    self::assertInstanceOf(ContentEntityInterface::class, $group);
+    $etm->getAccessControlHandler('bb_group')->resetCache();
+    $form = $this->container->get('entity.form_builder')->getForm($group, 'settings');
+    self::assertArrayNotHasKey('danger_zone', $form, 'bb_group: a non-owner lead sees none');
+    self::assertArrayNotHasKey('delete', $form['actions'] ?? [], 'bb_group: nor a Delete action');
+
+    $group->set('owner_user_id', $lead->id())->save();
+    $etm->getAccessControlHandler('bb_group')->resetCache();
+    $form = $this->container->get('entity.form_builder')->getForm($group, 'settings');
+    self::assertArrayHasKey('danger_zone', $form, 'bb_group: its creator does');
   }
 
 }

@@ -28,7 +28,7 @@ final class ProjectBoardCardsTest extends ClaimKernelTestBase {
     $this->installEntitySchema('bb_environment');
     $etm = $this->container->get('entity_type.manager');
     $ticket = $this->seedAssignedTicket('working');
-    $type = $etm->getStorage('bb_term')->create(['vid' => 'type', 'name' => 'deployment']);
+    $type = $etm->getStorage('bb_term')->create(['vid' => 'type', 'name' => 'ship']);
     $type->save();
     $ids = [];
     foreach (['develop', 'production'] as $name) {

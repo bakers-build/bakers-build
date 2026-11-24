@@ -50,7 +50,7 @@ Human approval stays the merge gate.
 
 ## Ownership and merge
 
-Tools take the ticket, `branch_name` and `base_branch` from the calling run and refuse a call without one. A run owns `<branch_name>` and `<branch_name>-<suffix>`. A variant merges into the ticket branch, the ticket branch into the server's current `target_branch` (else `base_branch`). The merge sends method and source deletion explicitly, ends the body with `Merged-by: bakers.build` and `ref:<identifier>`, and keeps a source another open PR/MR targets.
+Tools take the ticket, `branch_name` and `base_branch` from the calling run, else refuse. A run owns `<branch_name>` and variants `<branch_name>-<suffix>`. The ticket branch merges into the server's current `target_branch`, a variant into the ticket branch, a ship's variant into `base_branch`. The merge sends method and source deletion explicitly, ends the body with `Merged-by: bakers.build` and `ref:<identifier>`, and keeps a source another open PR/MR targets.
 
 ## Isolation
 

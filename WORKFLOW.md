@@ -47,6 +47,12 @@ Apply all matching rows.
 | Scenes or screens built from a design reference | `designbook:design-verify` last, `designbook:repair` for its findings |
 | Skills, frontmatter or plugin manifests | `mattpocock-skills:writing-for-agents`, `ponytail:ponytail` |
 
+*Ship*: version command `pnpm --dir bakers-cli run release:version <SHA> --notes -`; npm package
+`@bakers-build/bakers`. Block when a breaking (`!`) server commit is in the batch and none raises
+`min_client_version`. Its fix, made by the ship: set it to the planned release version in both
+`bb_core.settings` homes and in the client version the Playwright features send, title
+`fix(server): require bakers <version> or newer to claim work`.
+
 ## bb-phase-validate
 
 Apply all matching rows to the plan and final diff. Run each distinct command once per revision and
