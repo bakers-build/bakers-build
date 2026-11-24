@@ -579,3 +579,39 @@ it('refuses a shared file targeted outside the run home or sourced from a protec
   ).rejects.toThrow(/protected/);
   await runtime.cleanup(run);
 });
+
+it.each([
+  ['0\n', false],
+  ['1', true],
+  ['2', true],
+  [new Error('ENOENT'), true],
+] as const)('legacy_tiocsti %j decides --new-session (absent only for 0); --cap-drop ALL always stays', async (tiocsti, keepsNewSession) => {
+  const runtime = bwrapRuntime(
+    { readPaths: [] },
+    {
+      cachePath: join(root, 'cache'),
+      cliRoot: join(root, 'cli'),
+      env: process.env,
+      readTiocsti: () => {
+        if (tiocsti instanceof Error) throw tiocsti;
+        return tiocsti;
+      },
+    },
+  );
+  const context = await runtime.prepareRun!(run);
+  await runtime.wrap({
+    command: 'true',
+    env: {},
+    workspacePath: ws,
+    gitDir: clone.gitDir,
+    run,
+    harness: 'any',
+    ...context,
+  });
+  const { argv } = JSON.parse(
+    readFileSync(join(root, 'cache/test-run.launch.json'), 'utf8'),
+  ) as { argv: string[] };
+  expect(argv.includes('--new-session')).toBe(keepsNewSession);
+  expect(argv[argv.indexOf('--cap-drop') + 1]).toBe('ALL');
+  await runtime.cleanup(run);
+});
