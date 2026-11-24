@@ -1,0 +1,5246 @@
+{
+  "source_kind": "url-dom",
+  "source_ref": "http://localhost:6006/iframe.html?id=designbook-sections-projects-scenes--addons&viewMode=story",
+  "captured_at": "2026-11-24T20:53:27.159Z",
+  "viewport": {
+    "width": 1440,
+    "height": 1600
+  },
+  "adapter_version": "url-playwright/0.1.0",
+  "nodes": [
+    {
+      "id": "n_6443d400",
+      "child_ids": [
+        "n_582977c8",
+        "n_76abddf4",
+        "n_eee4d680"
+      ],
+      "label": "body",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1600
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "#f7f2e8",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body"
+      }
+    },
+    {
+      "id": "n_582977c8",
+      "parent_id": "n_6443d400",
+      "child_ids": [
+        "n_bb9f956a"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1600
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "#f7f2e8",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5)"
+      }
+    },
+    {
+      "id": "n_bb9f956a",
+      "parent_id": "n_582977c8",
+      "child_ids": [
+        "n_900d46b8",
+        "n_f6653334",
+        "n_b0a5ac58"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 1600
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "stretch",
+        "padding": "0",
+        "margin": "0",
+        "background": "#fffdf8",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div"
+      }
+    },
+    {
+      "id": "n_900d46b8",
+      "parent_id": "n_bb9f956a",
+      "child_ids": [
+        "n_b159fb28"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 232,
+        "height": 1600
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_b159fb28",
+      "parent_id": "n_900d46b8",
+      "child_ids": [
+        "n_4946bfa4",
+        "n_afe3e5d8",
+        "n_2c3c08a8",
+        "n_989bcdb0"
+      ],
+      "label": "Workspace navigation",
+      "kind": "container",
+      "role": "complementary",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 232,
+        "height": 1600
+      },
+      "style": {
+        "layout": "flex-col",
+        "padding": "0",
+        "margin": "0",
+        "background": "#f7f2e8",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside"
+      }
+    },
+    {
+      "id": "n_4946bfa4",
+      "parent_id": "n_b159fb28",
+      "child_ids": [
+        "n_88b5f420"
+      ],
+      "label": "Collapse sidebar",
+      "kind": "button",
+      "bbox": {
+        "x": 217,
+        "y": 8,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "grid",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "border": "1px solid #e0d6c4",
+        "border_radius": "3.35544e+07px",
+        "background": "#f0e9dc",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > button"
+      }
+    },
+    {
+      "id": "n_88b5f420",
+      "parent_id": "n_4946bfa4",
+      "child_ids": [
+        "n_aa9f96a4"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 223,
+        "y": 14,
+        "width": 16,
+        "height": 16
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > button > svg"
+      }
+    },
+    {
+      "id": "n_aa9f96a4",
+      "parent_id": "n_88b5f420",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 225,
+        "y": 16,
+        "width": 12,
+        "height": 12
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#panel-left",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > button > svg > use"
+      }
+    },
+    {
+      "id": "n_afe3e5d8",
+      "parent_id": "n_b159fb28",
+      "child_ids": [
+        "n_445e55f8"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 0,
+        "width": 231,
+        "height": 65
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "16 12",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_445e55f8",
+      "parent_id": "n_afe3e5d8",
+      "child_ids": [
+        "n_0912dc2e"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 16,
+        "width": 207,
+        "height": 32
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div"
+      }
+    },
+    {
+      "id": "n_0912dc2e",
+      "parent_id": "n_445e55f8",
+      "child_ids": [
+        "n_9e0e25f0"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 16,
+        "width": 207,
+        "height": 32
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div > div"
+      }
+    },
+    {
+      "id": "n_9e0e25f0",
+      "parent_id": "n_0912dc2e",
+      "child_ids": [
+        "n_e7a2f748",
+        "n_8b091e30",
+        "n_86de1575"
+      ],
+      "label": "button",
+      "kind": "button",
+      "bbox": {
+        "x": 12,
+        "y": 16,
+        "width": 207,
+        "height": 32
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "8px",
+        "padding": "0 4",
+        "margin": "0",
+        "border_radius": "5px",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div > div > button"
+      }
+    },
+    {
+      "id": "n_e7a2f748",
+      "parent_id": "n_9e0e25f0",
+      "child_ids": [
+        "n_61ee4f9c"
+      ],
+      "label": "span",
+      "kind": "text",
+      "bbox": {
+        "x": 16,
+        "y": 20,
+        "width": 24,
+        "height": 24
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div > div > button > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_61ee4f9c",
+      "parent_id": "n_e7a2f748",
+      "child_ids": [],
+      "label": "img",
+      "kind": "image",
+      "bbox": {
+        "x": 16,
+        "y": 20,
+        "width": 24,
+        "height": 24
+      },
+      "src": "/themes/custom/bb_theme/logo.svg",
+      "style": {
+        "layout": "grid",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "border": "1px solid #ede6d8",
+        "border_radius": "3.35544e+07px",
+        "background": "#f0e9dc",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div > div > button > span:nth-of-type(1) > img"
+      }
+    },
+    {
+      "id": "n_8b091e30",
+      "parent_id": "n_9e0e25f0",
+      "child_ids": [],
+      "label": "keytec",
+      "kind": "text",
+      "bbox": {
+        "x": 48,
+        "y": 22,
+        "width": 145,
+        "height": 20
+      },
+      "text": "keytec",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div > div > button > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_86de1575",
+      "parent_id": "n_9e0e25f0",
+      "child_ids": [
+        "n_94084e2c"
+      ],
+      "label": "span",
+      "kind": "text",
+      "bbox": {
+        "x": 201,
+        "y": 25,
+        "width": 14,
+        "height": 14
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div > div > button > span:nth-of-type(3)"
+      }
+    },
+    {
+      "id": "n_94084e2c",
+      "parent_id": "n_86de1575",
+      "child_ids": [
+        "n_fb6fc081"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 201,
+        "y": 25,
+        "width": 14,
+        "height": 14
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div > div > button > span:nth-of-type(3) > svg"
+      }
+    },
+    {
+      "id": "n_fb6fc081",
+      "parent_id": "n_94084e2c",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 204.5,
+        "y": 30.25,
+        "width": 7,
+        "height": 3.5
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#chevron-down",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(1) > div > div > button > span:nth-of-type(3) > svg > use"
+      }
+    },
+    {
+      "id": "n_2c3c08a8",
+      "parent_id": "n_b159fb28",
+      "child_ids": [
+        "n_2a57942c"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 65,
+        "width": 231,
+        "height": 1481
+      },
+      "style": {
+        "layout": "flex-col",
+        "padding": "12",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_2a57942c",
+      "parent_id": "n_2c3c08a8",
+      "child_ids": [
+        "n_7bf7b6f0"
+      ],
+      "label": "Primary",
+      "kind": "container",
+      "role": "navigation",
+      "bbox": {
+        "x": 12,
+        "y": 77,
+        "width": 207,
+        "height": 1457
+      },
+      "style": {
+        "layout": "flex-col",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav"
+      }
+    },
+    {
+      "id": "n_7bf7b6f0",
+      "parent_id": "n_2a57942c",
+      "child_ids": [
+        "n_53b67134",
+        "n_bdb4cdd4",
+        "n_a442c49c",
+        "n_8f229014",
+        "n_0cf24526"
+      ],
+      "label": "ul",
+      "kind": "list",
+      "bbox": {
+        "x": 12,
+        "y": 77,
+        "width": 207,
+        "height": 1457
+      },
+      "style": {
+        "layout": "flex-col",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul"
+      }
+    },
+    {
+      "id": "n_53b67134",
+      "parent_id": "n_7bf7b6f0",
+      "child_ids": [
+        "n_3b695060"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "bbox": {
+        "x": 12,
+        "y": 77,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_3b695060",
+      "parent_id": "n_53b67134",
+      "child_ids": [
+        "n_8fcf83d4"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 77,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(1) > div"
+      }
+    },
+    {
+      "id": "n_8fcf83d4",
+      "parent_id": "n_3b695060",
+      "child_ids": [
+        "n_08d6a536",
+        "n_0308589e"
+      ],
+      "label": "My work",
+      "kind": "link",
+      "bbox": {
+        "x": 12,
+        "y": 77,
+        "width": 207,
+        "height": 40
+      },
+      "href": "/bakers/work",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0 12",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "oklab(0.256128 0.0088519 0.0230798 / 0.1)",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(1) > div > a"
+      }
+    },
+    {
+      "id": "n_08d6a536",
+      "parent_id": "n_8fcf83d4",
+      "child_ids": [
+        "n_41eb7bb0"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 24,
+        "y": 89,
+        "width": 16,
+        "height": 16
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(1) > div > a > svg"
+      }
+    },
+    {
+      "id": "n_41eb7bb0",
+      "parent_id": "n_08d6a536",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 25.33333396911621,
+        "y": 92.33333587646484,
+        "width": 13.333333969116211,
+        "height": 9.333328247070312
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#ticket",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(1) > div > a > svg > use"
+      }
+    },
+    {
+      "id": "n_0308589e",
+      "parent_id": "n_8fcf83d4",
+      "child_ids": [],
+      "label": "My work",
+      "kind": "text",
+      "bbox": {
+        "x": 52,
+        "y": 87,
+        "width": 52,
+        "height": 20
+      },
+      "text": "My work",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(1) > div > a > span"
+      }
+    },
+    {
+      "id": "n_bdb4cdd4",
+      "parent_id": "n_7bf7b6f0",
+      "child_ids": [
+        "n_33b9f150"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "bbox": {
+        "x": 12,
+        "y": 121,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_33b9f150",
+      "parent_id": "n_bdb4cdd4",
+      "child_ids": [
+        "n_fcb04f84"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 121,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(2) > div"
+      }
+    },
+    {
+      "id": "n_fcb04f84",
+      "parent_id": "n_33b9f150",
+      "child_ids": [
+        "n_5c607ec4",
+        "n_361d3718"
+      ],
+      "label": "Groups",
+      "kind": "link",
+      "bbox": {
+        "x": 12,
+        "y": 121,
+        "width": 207,
+        "height": 40
+      },
+      "href": "/bakers/group",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0 12",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(2) > div > a"
+      }
+    },
+    {
+      "id": "n_5c607ec4",
+      "parent_id": "n_fcb04f84",
+      "child_ids": [
+        "n_5a03f8a8"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 24,
+        "y": 133,
+        "width": 16,
+        "height": 16
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(2) > div > a > svg"
+      }
+    },
+    {
+      "id": "n_5a03f8a8",
+      "parent_id": "n_5c607ec4",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 26,
+        "y": 135,
+        "width": 12,
+        "height": 12
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#dashboard",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(2) > div > a > svg > use"
+      }
+    },
+    {
+      "id": "n_361d3718",
+      "parent_id": "n_fcb04f84",
+      "child_ids": [],
+      "label": "Groups",
+      "kind": "text",
+      "bbox": {
+        "x": 52,
+        "y": 131,
+        "width": 45,
+        "height": 20
+      },
+      "text": "Groups",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(2) > div > a > span"
+      }
+    },
+    {
+      "id": "n_a442c49c",
+      "parent_id": "n_7bf7b6f0",
+      "child_ids": [
+        "n_cd78d19c"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "bbox": {
+        "x": 12,
+        "y": 165,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(3)"
+      }
+    },
+    {
+      "id": "n_cd78d19c",
+      "parent_id": "n_a442c49c",
+      "child_ids": [
+        "n_abded7bc"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 165,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(3) > div"
+      }
+    },
+    {
+      "id": "n_abded7bc",
+      "parent_id": "n_cd78d19c",
+      "child_ids": [
+        "n_7656364a",
+        "n_5387b59a"
+      ],
+      "label": "Projects",
+      "kind": "link",
+      "bbox": {
+        "x": 12,
+        "y": 165,
+        "width": 207,
+        "height": 40
+      },
+      "href": "/bakers/project",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0 12",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(3) > div > a"
+      }
+    },
+    {
+      "id": "n_7656364a",
+      "parent_id": "n_abded7bc",
+      "child_ids": [
+        "n_a3fdc9e8"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 24,
+        "y": 177,
+        "width": 16,
+        "height": 16
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(3) > div > a > svg"
+      }
+    },
+    {
+      "id": "n_a3fdc9e8",
+      "parent_id": "n_7656364a",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 25.33333396911621,
+        "y": 179,
+        "width": 13.333333969116211,
+        "height": 12
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#project",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(3) > div > a > svg > use"
+      }
+    },
+    {
+      "id": "n_5387b59a",
+      "parent_id": "n_abded7bc",
+      "child_ids": [],
+      "label": "Projects",
+      "kind": "text",
+      "bbox": {
+        "x": 52,
+        "y": 175,
+        "width": 52,
+        "height": 20
+      },
+      "text": "Projects",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(3) > div > a > span"
+      }
+    },
+    {
+      "id": "n_8f229014",
+      "parent_id": "n_7bf7b6f0",
+      "child_ids": [
+        "n_f76c8014"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "bbox": {
+        "x": 12,
+        "y": 209,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(4)"
+      }
+    },
+    {
+      "id": "n_f76c8014",
+      "parent_id": "n_8f229014",
+      "child_ids": [
+        "n_ae278bcc"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 209,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(4) > div"
+      }
+    },
+    {
+      "id": "n_ae278bcc",
+      "parent_id": "n_f76c8014",
+      "child_ids": [
+        "n_de3de460",
+        "n_0db840e0"
+      ],
+      "label": "Settings",
+      "kind": "link",
+      "bbox": {
+        "x": 12,
+        "y": 209,
+        "width": 207,
+        "height": 40
+      },
+      "href": "/bakers/settings",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0 12",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(4) > div > a"
+      }
+    },
+    {
+      "id": "n_de3de460",
+      "parent_id": "n_ae278bcc",
+      "child_ids": [
+        "n_50cb2840"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 24,
+        "y": 221,
+        "width": 16,
+        "height": 16
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(4) > div > a > svg"
+      }
+    },
+    {
+      "id": "n_50cb2840",
+      "parent_id": "n_de3de460",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 24.66666603088379,
+        "y": 221.6666717529297,
+        "width": 14.666666030883789,
+        "height": 14.666656494140625
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#settings",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(4) > div > a > svg > use"
+      }
+    },
+    {
+      "id": "n_0db840e0",
+      "parent_id": "n_ae278bcc",
+      "child_ids": [],
+      "label": "Settings",
+      "kind": "text",
+      "bbox": {
+        "x": 52,
+        "y": 219,
+        "width": 51,
+        "height": 20
+      },
+      "text": "Settings",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(4) > div > a > span"
+      }
+    },
+    {
+      "id": "n_0cf24526",
+      "parent_id": "n_7bf7b6f0",
+      "child_ids": [
+        "n_aa2c9134",
+        "n_8da027b4"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "bbox": {
+        "x": 12,
+        "y": 253,
+        "width": 207,
+        "height": 128
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5)"
+      }
+    },
+    {
+      "id": "n_aa2c9134",
+      "parent_id": "n_0cf24526",
+      "child_ids": [
+        "n_75dd0d98",
+        "n_f4292afc"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 253,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div"
+      }
+    },
+    {
+      "id": "n_75dd0d98",
+      "parent_id": "n_aa2c9134",
+      "child_ids": [
+        "n_bffb64f8",
+        "n_90b0d08a",
+        "n_8f1835da"
+      ],
+      "label": "Teams",
+      "kind": "button",
+      "bbox": {
+        "x": 12,
+        "y": 253,
+        "width": 173,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0 12",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > button"
+      }
+    },
+    {
+      "id": "n_bffb64f8",
+      "parent_id": "n_75dd0d98",
+      "child_ids": [
+        "n_29909182"
+      ],
+      "label": "span",
+      "kind": "text",
+      "bbox": {
+        "x": 24,
+        "y": 265,
+        "width": 14,
+        "height": 16
+      },
+      "style": {
+        "layout": "flex-row",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > button > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_29909182",
+      "parent_id": "n_bffb64f8",
+      "child_ids": [
+        "n_e18e5350"
+      ],
+      "label": "span",
+      "kind": "text",
+      "bbox": {
+        "x": 24,
+        "y": 265,
+        "width": 14,
+        "height": 16
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > button > span:nth-of-type(1) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_e18e5350",
+      "parent_id": "n_29909182",
+      "child_ids": [
+        "n_1f947b0c"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 24,
+        "y": 266.734375,
+        "width": 14,
+        "height": 14
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > button > span:nth-of-type(1) > span:nth-of-type(1) > svg"
+      }
+    },
+    {
+      "id": "n_1f947b0c",
+      "parent_id": "n_e18e5350",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 27.5,
+        "y": 271.984375,
+        "width": 7,
+        "height": 3.5
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#chevron-down",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > button > span:nth-of-type(1) > span:nth-of-type(1) > svg > use"
+      }
+    },
+    {
+      "id": "n_90b0d08a",
+      "parent_id": "n_75dd0d98",
+      "child_ids": [
+        "n_1468dd48"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 42,
+        "y": 265,
+        "width": 16,
+        "height": 16
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > button > svg"
+      }
+    },
+    {
+      "id": "n_1468dd48",
+      "parent_id": "n_90b0d08a",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 43.33333206176758,
+        "y": 267,
+        "width": 13.333335876464844,
+        "height": 12
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#team",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > button > svg > use"
+      }
+    },
+    {
+      "id": "n_8f1835da",
+      "parent_id": "n_75dd0d98",
+      "child_ids": [],
+      "label": "Teams",
+      "kind": "text",
+      "bbox": {
+        "x": 62,
+        "y": 265,
+        "width": 38,
+        "height": 16
+      },
+      "text": "Teams",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > button > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_f4292afc",
+      "parent_id": "n_aa2c9134",
+      "child_ids": [
+        "n_e01bc484"
+      ],
+      "label": "span",
+      "kind": "text",
+      "bbox": {
+        "x": 189,
+        "y": 258,
+        "width": 30,
+        "height": 30
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > span"
+      }
+    },
+    {
+      "id": "n_e01bc484",
+      "parent_id": "n_f4292afc",
+      "child_ids": [
+        "n_88ee74e4"
+      ],
+      "label": "New team",
+      "kind": "button",
+      "bbox": {
+        "x": 189,
+        "y": 258,
+        "width": 30,
+        "height": 30
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "center",
+        "cross_axis_align": "center",
+        "gap": "6px",
+        "padding": "0",
+        "margin": "0",
+        "border": "1px solid rgba(0, 0, 0, 0)",
+        "border_radius": "7px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > span > button"
+      }
+    },
+    {
+      "id": "n_88ee74e4",
+      "parent_id": "n_e01bc484",
+      "child_ids": [
+        "n_4582d12c"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 197,
+        "y": 266,
+        "width": 14,
+        "height": 14
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > span > button > svg"
+      }
+    },
+    {
+      "id": "n_4582d12c",
+      "parent_id": "n_88ee74e4",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 199.9166717529297,
+        "y": 268.9166564941406,
+        "width": 8.166656494140625,
+        "height": 8.16668701171875
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#plus",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > div > span > button > svg > use"
+      }
+    },
+    {
+      "id": "n_8da027b4",
+      "parent_id": "n_0cf24526",
+      "child_ids": [
+        "n_c411f7dc",
+        "n_c1f512e4"
+      ],
+      "label": "ul",
+      "kind": "list",
+      "bbox": {
+        "x": 12,
+        "y": 293,
+        "width": 207,
+        "height": 88
+      },
+      "style": {
+        "layout": "flex-col",
+        "gap": "4px",
+        "padding": "4 0 0 0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul"
+      }
+    },
+    {
+      "id": "n_c411f7dc",
+      "parent_id": "n_8da027b4",
+      "child_ids": [
+        "n_85d8bde8"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "bbox": {
+        "x": 12,
+        "y": 297,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_85d8bde8",
+      "parent_id": "n_c411f7dc",
+      "child_ids": [
+        "n_8e4e1644"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 297,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(1) > div"
+      }
+    },
+    {
+      "id": "n_8e4e1644",
+      "parent_id": "n_85d8bde8",
+      "child_ids": [
+        "n_22413720",
+        "n_4e65d9b8"
+      ],
+      "label": "Team A",
+      "kind": "link",
+      "bbox": {
+        "x": 12,
+        "y": 297,
+        "width": 207,
+        "height": 40
+      },
+      "href": "/bakers/team/team-a",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0 12",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(1) > div > a"
+      }
+    },
+    {
+      "id": "n_22413720",
+      "parent_id": "n_8e4e1644",
+      "child_ids": [
+        "n_e5a656b8"
+      ],
+      "label": "span",
+      "kind": "text",
+      "bbox": {
+        "x": 24,
+        "y": 305,
+        "width": 24,
+        "height": 24
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(1) > div > a > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_e5a656b8",
+      "parent_id": "n_22413720",
+      "child_ids": [],
+      "label": "TA",
+      "kind": "text",
+      "bbox": {
+        "x": 24,
+        "y": 305,
+        "width": 24,
+        "height": 24
+      },
+      "text": "TA",
+      "style": {
+        "layout": "grid",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "3.35544e+07px",
+        "background": "#cfe69a",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(1) > div > a > span:nth-of-type(1) > span"
+      }
+    },
+    {
+      "id": "n_4e65d9b8",
+      "parent_id": "n_8e4e1644",
+      "child_ids": [],
+      "label": "Team A",
+      "kind": "text",
+      "bbox": {
+        "x": 60,
+        "y": 307,
+        "width": 43,
+        "height": 20
+      },
+      "text": "Team A",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(1) > div > a > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_c1f512e4",
+      "parent_id": "n_8da027b4",
+      "child_ids": [
+        "n_e702515c"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "bbox": {
+        "x": 12,
+        "y": 341,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_e702515c",
+      "parent_id": "n_c1f512e4",
+      "child_ids": [
+        "n_3ce679ec"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 12,
+        "y": 341,
+        "width": 207,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(2) > div"
+      }
+    },
+    {
+      "id": "n_3ce679ec",
+      "parent_id": "n_e702515c",
+      "child_ids": [
+        "n_1fa20758",
+        "n_fc63dbf0"
+      ],
+      "label": "Team B",
+      "kind": "link",
+      "bbox": {
+        "x": 12,
+        "y": 341,
+        "width": 207,
+        "height": 40
+      },
+      "href": "/bakers/team/team-b",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0 12",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(2) > div > a"
+      }
+    },
+    {
+      "id": "n_1fa20758",
+      "parent_id": "n_3ce679ec",
+      "child_ids": [
+        "n_b8a9e358"
+      ],
+      "label": "span",
+      "kind": "text",
+      "bbox": {
+        "x": 24,
+        "y": 349,
+        "width": 24,
+        "height": 24
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(2) > div > a > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_b8a9e358",
+      "parent_id": "n_1fa20758",
+      "child_ids": [],
+      "label": "TB",
+      "kind": "text",
+      "bbox": {
+        "x": 24,
+        "y": 349,
+        "width": 24,
+        "height": 24
+      },
+      "text": "TB",
+      "style": {
+        "layout": "grid",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "3.35544e+07px",
+        "background": "#eac6a4",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(2) > div > a > span:nth-of-type(1) > span"
+      }
+    },
+    {
+      "id": "n_fc63dbf0",
+      "parent_id": "n_3ce679ec",
+      "child_ids": [],
+      "label": "Team B",
+      "kind": "text",
+      "bbox": {
+        "x": 60,
+        "y": 351,
+        "width": 43,
+        "height": 20
+      },
+      "text": "Team B",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(2) > nav > ul > li:nth-of-type(5) > ul > li:nth-of-type(2) > div > a > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_989bcdb0",
+      "parent_id": "n_b159fb28",
+      "child_ids": [
+        "n_86795b58",
+        "n_90a56cb0"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 1546,
+        "width": 231,
+        "height": 53
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "space-between",
+        "cross_axis_align": "center",
+        "gap": "8px",
+        "padding": "12",
+        "margin": "0",
+        "border": "1px 0px 0px solid #ede6d8",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(3)"
+      }
+    },
+    {
+      "id": "n_86795b58",
+      "parent_id": "n_989bcdb0",
+      "child_ids": [
+        "n_7ae0eb20",
+        "n_055610a8"
+      ],
+      "label": "span",
+      "kind": "text",
+      "bbox": {
+        "x": 12,
+        "y": 1559,
+        "width": 55,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "8px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(3) > span"
+      }
+    },
+    {
+      "id": "n_7ae0eb20",
+      "parent_id": "n_86795b58",
+      "child_ids": [],
+      "label": "CW",
+      "kind": "text",
+      "bbox": {
+        "x": 12,
+        "y": 1559,
+        "width": 28,
+        "height": 28
+      },
+      "text": "CW",
+      "style": {
+        "layout": "grid",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "3.35544e+07px",
+        "background": "#f4afc0",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(3) > span > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_055610a8",
+      "parent_id": "n_86795b58",
+      "child_ids": [],
+      "label": "cw",
+      "kind": "text",
+      "bbox": {
+        "x": 48,
+        "y": 1563,
+        "width": 19,
+        "height": 20
+      },
+      "text": "cw",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(3) > span > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_90a56cb0",
+      "parent_id": "n_989bcdb0",
+      "child_ids": [
+        "n_6ab68cc8"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 191,
+        "y": 1559,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(3) > div"
+      }
+    },
+    {
+      "id": "n_6ab68cc8",
+      "parent_id": "n_90a56cb0",
+      "child_ids": [
+        "n_e234cd86"
+      ],
+      "label": "Choose appearance",
+      "kind": "button",
+      "bbox": {
+        "x": 191,
+        "y": 1559,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "grid",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "3.35544e+07px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(3) > div > button"
+      }
+    },
+    {
+      "id": "n_e234cd86",
+      "parent_id": "n_6ab68cc8",
+      "child_ids": [
+        "n_1c24a8d2"
+      ],
+      "label": "svg",
+      "kind": "container",
+      "bbox": {
+        "x": 197,
+        "y": 1565,
+        "width": 16,
+        "height": 16
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(3) > div > button > svg"
+      }
+    },
+    {
+      "id": "n_1c24a8d2",
+      "parent_id": "n_e234cd86",
+      "child_ids": [],
+      "label": "use",
+      "kind": "container",
+      "bbox": {
+        "x": 198.3333282470703,
+        "y": 1566.3333740234375,
+        "width": 13.333343505859375,
+        "height": 13.333251953125
+      },
+      "href": "/themes/custom/bb_theme/dist/assets/icons/sprite.svg#sun-moon",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(1) > aside > div:nth-of-type(3) > div > button > svg > use"
+      }
+    },
+    {
+      "id": "n_f6653334",
+      "parent_id": "n_bb9f956a",
+      "child_ids": [
+        "n_f04831c2",
+        "n_80e0b238"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 232,
+        "y": 0,
+        "width": 1208,
+        "height": 1600
+      },
+      "style": {
+        "layout": "flex-col",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_f04831c2",
+      "parent_id": "n_f6653334",
+      "child_ids": [
+        "n_1558703a"
+      ],
+      "label": "main",
+      "kind": "container",
+      "role": "main",
+      "bbox": {
+        "x": 232,
+        "y": 0,
+        "width": 1208,
+        "height": 1572
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main"
+      }
+    },
+    {
+      "id": "n_1558703a",
+      "parent_id": "n_f04831c2",
+      "child_ids": [
+        "n_c6fb46f0",
+        "n_0d9599ac"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 232,
+        "y": 0,
+        "width": 1208,
+        "height": 332
+      },
+      "style": {
+        "layout": "flex-col",
+        "gap": "16px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div"
+      }
+    },
+    {
+      "id": "n_c6fb46f0",
+      "parent_id": "n_1558703a",
+      "child_ids": [
+        "n_2977822a"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 232,
+        "y": 0,
+        "width": 1208,
+        "height": 103
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_2977822a",
+      "parent_id": "n_c6fb46f0",
+      "child_ids": [
+        "n_5cfc8730",
+        "n_9a49a130"
+      ],
+      "label": "header",
+      "kind": "container",
+      "role": "banner",
+      "bbox": {
+        "x": 232,
+        "y": 0,
+        "width": 1208,
+        "height": 103
+      },
+      "style": {
+        "layout": "flex-col",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header"
+      }
+    },
+    {
+      "id": "n_5cfc8730",
+      "parent_id": "n_2977822a",
+      "child_ids": [
+        "n_6c68db88",
+        "n_40ff3100"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 232,
+        "y": 0,
+        "width": 1208,
+        "height": 62
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "space-between",
+        "cross_axis_align": "center",
+        "gap": "16px",
+        "padding": "16 24",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_6c68db88",
+      "parent_id": "n_5cfc8730",
+      "child_ids": [
+        "n_9d3e56a4"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 256,
+        "y": 16,
+        "width": 87.5625,
+        "height": 30
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(1) > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_9d3e56a4",
+      "parent_id": "n_6c68db88",
+      "child_ids": [
+        "n_44bdf41c"
+      ],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 256,
+        "y": 16,
+        "width": 87.5625,
+        "height": 30
+      },
+      "style": {
+        "layout": "flex-col",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_44bdf41c",
+      "parent_id": "n_9d3e56a4",
+      "child_ids": [],
+      "label": "Addons",
+      "kind": "heading",
+      "bbox": {
+        "x": 256,
+        "y": 16,
+        "width": 87.5625,
+        "height": 30
+      },
+      "text": "Addons",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Bricolage Grotesque\", \"Spline Sans\", system-ui, sans-serif",
+        "font_size": "24px",
+        "font_weight": "700",
+        "line_height": "30px",
+        "letter_spacing": "-0.24px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > h1"
+      }
+    },
+    {
+      "id": "n_40ff3100",
+      "parent_id": "n_5cfc8730",
+      "child_ids": [],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1416,
+        "y": 31,
+        "width": 0,
+        "height": 0
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(1) > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_9a49a130",
+      "parent_id": "n_2977822a",
+      "child_ids": [
+        "n_b87cf330"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 232,
+        "y": 62,
+        "width": 1208,
+        "height": 40
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0 24",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_b87cf330",
+      "parent_id": "n_9a49a130",
+      "child_ids": [
+        "n_6b296428"
+      ],
+      "label": "Workspace settings",
+      "kind": "container",
+      "role": "navigation",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 62,
+        "width": 1160,
+        "height": 40
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2) > nav"
+      }
+    },
+    {
+      "id": "n_6b296428",
+      "parent_id": "n_b87cf330",
+      "child_ids": [
+        "n_6fa042d0",
+        "n_8035a128",
+        "n_8aeb7550"
+      ],
+      "label": "ul",
+      "kind": "list",
+      "role": "list",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 62,
+        "width": 1160,
+        "height": 40
+      },
+      "style": {
+        "layout": "flex-row",
+        "gap": "4px 8px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2) > nav > ul"
+      }
+    },
+    {
+      "id": "n_6fa042d0",
+      "parent_id": "n_6b296428",
+      "child_ids": [
+        "n_6f95cfc4"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "role": "listitem",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 62,
+        "width": 67,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2) > nav > ul > li:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_6f95cfc4",
+      "parent_id": "n_6fa042d0",
+      "child_ids": [],
+      "label": "Settings",
+      "kind": "link",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 62,
+        "width": 67,
+        "height": 40
+      },
+      "text": "Settings",
+      "href": "/?path=/story/designbook-sections-settings-scenes--settings",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "padding": "0 8",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2) > nav > ul > li:nth-of-type(1) > a"
+      }
+    },
+    {
+      "id": "n_8035a128",
+      "parent_id": "n_6b296428",
+      "child_ids": [
+        "n_76c11180"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "role": "listitem",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 331,
+        "y": 62,
+        "width": 75,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2) > nav > ul > li:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_76c11180",
+      "parent_id": "n_8035a128",
+      "child_ids": [],
+      "label": "Members",
+      "kind": "link",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 331,
+        "y": 62,
+        "width": 75,
+        "height": 40
+      },
+      "text": "Members",
+      "href": "/?path=/story/designbook-sections-settings-scenes--workspace-members",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "padding": "0 8",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2) > nav > ul > li:nth-of-type(2) > a"
+      }
+    },
+    {
+      "id": "n_8aeb7550",
+      "parent_id": "n_6b296428",
+      "child_ids": [
+        "n_4a3e2918"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "role": "listitem",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 414,
+        "y": 62,
+        "width": 63,
+        "height": 40
+      },
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2) > nav > ul > li:nth-of-type(3)"
+      }
+    },
+    {
+      "id": "n_4a3e2918",
+      "parent_id": "n_8aeb7550",
+      "child_ids": [],
+      "label": "Addons",
+      "kind": "link",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 414,
+        "y": 62,
+        "width": 63,
+        "height": 40
+      },
+      "text": "Addons",
+      "href": "/?path=/story/designbook-sections-projects-scenes--addons",
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "padding": "0 8",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "500",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(1) > header > div:nth-of-type(2) > nav > ul > li:nth-of-type(3) > a"
+      }
+    },
+    {
+      "id": "n_0d9599ac",
+      "parent_id": "n_1558703a",
+      "child_ids": [
+        "n_01a0d848"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 232,
+        "y": 119,
+        "width": 1208,
+        "height": 213
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "start",
+        "gap": "24px",
+        "padding": "0 24 32 24",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_01a0d848",
+      "parent_id": "n_0d9599ac",
+      "child_ids": [
+        "n_c595728b"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 119,
+        "width": 1160,
+        "height": 181
+      },
+      "style": {
+        "layout": "flex-col",
+        "gap": "32px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div"
+      }
+    },
+    {
+      "id": "n_c595728b",
+      "parent_id": "n_01a0d848",
+      "child_ids": [
+        "n_dc395db0",
+        "n_221e8cc4"
+      ],
+      "label": "section",
+      "kind": "section",
+      "role": "region",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 119,
+        "width": 1160,
+        "height": 181
+      },
+      "style": {
+        "layout": "flex-col",
+        "gap": "12px",
+        "padding": "16 0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section"
+      }
+    },
+    {
+      "id": "n_dc395db0",
+      "parent_id": "n_c595728b",
+      "child_ids": [
+        "n_710c2a0c"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 135,
+        "width": 1160,
+        "height": 16
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_710c2a0c",
+      "parent_id": "n_dc395db0",
+      "child_ids": [
+        "n_5538dbd6"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 135,
+        "width": 516,
+        "height": 16
+      },
+      "style": {
+        "layout": "flex-col",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(1) > div"
+      }
+    },
+    {
+      "id": "n_5538dbd6",
+      "parent_id": "n_710c2a0c",
+      "child_ids": [],
+      "label": "Every registered addon at its newest version, and the conductors of this workspace that run it.",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 135,
+        "width": 516,
+        "height": 16
+      },
+      "text": "Every registered addon at its newest version, and the conductors of this workspace that run it.",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(1) > div > p"
+      }
+    },
+    {
+      "id": "n_221e8cc4",
+      "parent_id": "n_c595728b",
+      "child_ids": [
+        "n_ae5070a4"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 163,
+        "width": 1160,
+        "height": 121
+      },
+      "style": {
+        "layout": "grid",
+        "gap": "20px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_ae5070a4",
+      "parent_id": "n_221e8cc4",
+      "child_ids": [
+        "n_6bbe760b",
+        "n_a8098a8e"
+      ],
+      "label": "ul",
+      "kind": "list",
+      "role": "list",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 163,
+        "width": 1160,
+        "height": 121
+      },
+      "style": {
+        "layout": "flex-col",
+        "gap": "0px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul"
+      }
+    },
+    {
+      "id": "n_6bbe760b",
+      "parent_id": "n_ae5070a4",
+      "child_ids": [
+        "n_d0614840",
+        "n_ef7717aa",
+        "n_8203fae8"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 163,
+        "width": 1160,
+        "height": 61
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "4 8 4 12",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_d0614840",
+      "parent_id": "n_6bbe760b",
+      "child_ids": [],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 171,
+        "width": 4,
+        "height": 44
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "5px",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > span"
+      }
+    },
+    {
+      "id": "n_ef7717aa",
+      "parent_id": "n_6bbe760b",
+      "child_ids": [
+        "n_e9c877e8",
+        "n_7e28a510"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 167,
+        "width": 882,
+        "height": 52
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "start",
+        "gap": "12px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_e9c877e8",
+      "parent_id": "n_ef7717aa",
+      "child_ids": [
+        "n_319c8226"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 167,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_319c8226",
+      "parent_id": "n_e9c877e8",
+      "child_ids": [
+        "n_c17fedde"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 167,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > span"
+      }
+    },
+    {
+      "id": "n_c17fedde",
+      "parent_id": "n_319c8226",
+      "child_ids": [
+        "n_169fe20e"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 167,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "8px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > span > span"
+      }
+    },
+    {
+      "id": "n_169fe20e",
+      "parent_id": "n_c17fedde",
+      "child_ids": [],
+      "label": "img",
+      "kind": "image",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 167,
+        "width": 28,
+        "height": 28
+      },
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iNCIgZmlsbD0iIzJmNmY1ZSIvPjxjaXJjbGUgY3g9IjgiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2ZmZiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iMTIiIHI9IjIiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMTAgMTJoNCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=",
+      "style": {
+        "layout": "grid",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "border": "1px solid #ede6d8",
+        "border_radius": "3.35544e+07px",
+        "background": "#f0e9dc",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > span > span > img"
+      }
+    },
+    {
+      "id": "n_7e28a510",
+      "parent_id": "n_ef7717aa",
+      "child_ids": [
+        "n_5b5ac000",
+        "n_ce82557c"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 167,
+        "width": 842,
+        "height": 52
+      },
+      "style": {
+        "layout": "flex-col",
+        "gap": "0px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_5b5ac000",
+      "parent_id": "n_7e28a510",
+      "child_ids": [
+        "n_880d8712",
+        "n_77eed4bc"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 167,
+        "width": 842,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px 8px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_880d8712",
+      "parent_id": "n_5b5ac000",
+      "child_ids": [
+        "n_1b8881d8"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 167,
+        "width": 37,
+        "height": 20
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_1b8881d8",
+      "parent_id": "n_880d8712",
+      "child_ids": [],
+      "label": "Ports",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 167,
+        "width": 37,
+        "height": 20
+      },
+      "text": "Ports",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(1) > span"
+      }
+    },
+    {
+      "id": "n_77eed4bc",
+      "parent_id": "n_5b5ac000",
+      "child_ids": [
+        "n_a7095230"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 353,
+        "y": 167,
+        "width": 37,
+        "height": 20
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_a7095230",
+      "parent_id": "n_77eed4bc",
+      "child_ids": [],
+      "label": "ports",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 353,
+        "y": 167,
+        "width": 37,
+        "height": 20
+      },
+      "text": "ports",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(2) > span"
+      }
+    },
+    {
+      "id": "n_ce82557c",
+      "parent_id": "n_7e28a510",
+      "child_ids": [
+        "n_a5572b40",
+        "n_6cdc2675"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 187,
+        "width": 842,
+        "height": 32
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px 12px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_a5572b40",
+      "parent_id": "n_ce82557c",
+      "child_ids": [
+        "n_0b3627ac",
+        "n_75bf016b"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 187,
+        "width": 53,
+        "height": 32
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_0b3627ac",
+      "parent_id": "n_a5572b40",
+      "child_ids": [],
+      "label": "Versions",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 187,
+        "width": 49,
+        "height": 15
+      },
+      "text": "Versions",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0 4 0 0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_75bf016b",
+      "parent_id": "n_a5572b40",
+      "child_ids": [],
+      "label": "1.2.3, 1.1.0",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 203,
+        "width": 53,
+        "height": 16
+      },
+      "text": "1.2.3, 1.1.0",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1) > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_6cdc2675",
+      "parent_id": "n_ce82557c",
+      "child_ids": [
+        "n_7aaf526c",
+        "n_1d09d2f8"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 373,
+        "y": 187,
+        "width": 54,
+        "height": 32
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_7aaf526c",
+      "parent_id": "n_6cdc2675",
+      "child_ids": [],
+      "label": "Contract",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 373,
+        "y": 187,
+        "width": 50,
+        "height": 15
+      },
+      "text": "Contract",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0 4 0 0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_1d09d2f8",
+      "parent_id": "n_6cdc2675",
+      "child_ids": [],
+      "label": "1",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 373,
+        "y": 203,
+        "width": 54,
+        "height": 16
+      },
+      "text": "1",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2) > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_8203fae8",
+      "parent_id": "n_6bbe760b",
+      "child_ids": [
+        "n_c361ef60"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1162,
+        "y": 183,
+        "width": 246,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-col",
+        "cross_axis_align": "end",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_c361ef60",
+      "parent_id": "n_8203fae8",
+      "child_ids": [
+        "n_24923598",
+        "n_7cefc678"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1162,
+        "y": 183,
+        "width": 246,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "end",
+        "cross_axis_align": "center",
+        "gap": "8px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div"
+      }
+    },
+    {
+      "id": "n_24923598",
+      "parent_id": "n_c361ef60",
+      "child_ids": [
+        "n_0ad45d7e"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1162,
+        "y": 183,
+        "width": 129,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "end",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_0ad45d7e",
+      "parent_id": "n_24923598",
+      "child_ids": [
+        "n_19f71098",
+        "n_9ecfabb0"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1162,
+        "y": 183,
+        "width": 129,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0 8",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "#efe9de",
+        "foreground": "#3d3224",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div > span:nth-of-type(1) > span"
+      }
+    },
+    {
+      "id": "n_19f71098",
+      "parent_id": "n_0ad45d7e",
+      "child_ids": [],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1170,
+        "y": 189,
+        "width": 8,
+        "height": 8
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "3.35544e+07px",
+        "background": "#8a7860",
+        "foreground": "#3d3224",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div > span:nth-of-type(1) > span > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_9ecfabb0",
+      "parent_id": "n_0ad45d7e",
+      "child_ids": [],
+      "label": "srv01-bakers 1.2.3",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1182,
+        "y": 186,
+        "width": 101,
+        "height": 14
+      },
+      "text": "srv01-bakers 1.2.3",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#3d3224",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div > span:nth-of-type(1) > span > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_7cefc678",
+      "parent_id": "n_c361ef60",
+      "child_ids": [
+        "n_9411e938"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1299,
+        "y": 183,
+        "width": 109,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "end",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_9411e938",
+      "parent_id": "n_7cefc678",
+      "child_ids": [
+        "n_3ce30d3c",
+        "n_e8679e38"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1299,
+        "y": 183,
+        "width": 109,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0 8",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "#e6ddcd",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div > span:nth-of-type(2) > span"
+      }
+    },
+    {
+      "id": "n_3ce30d3c",
+      "parent_id": "n_9411e938",
+      "child_ids": [],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1307,
+        "y": 189,
+        "width": 8,
+        "height": 8
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "border": "2px solid #8a7860",
+        "border_radius": "3.35544e+07px",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div > span:nth-of-type(2) > span > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_e8679e38",
+      "parent_id": "n_9411e938",
+      "child_ids": [],
+      "label": "laptop-cw 1.1.0",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1319,
+        "y": 186,
+        "width": 81,
+        "height": 14
+      },
+      "text": "laptop-cw 1.1.0",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div > span:nth-of-type(2) > span > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_a8098a8e",
+      "parent_id": "n_ae5070a4",
+      "child_ids": [
+        "n_e009b7f4",
+        "n_25dcbe58",
+        "n_5836131a"
+      ],
+      "label": "li",
+      "kind": "list-item",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 224,
+        "width": 1160,
+        "height": 60
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "12px",
+        "padding": "4 8 4 12",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_e009b7f4",
+      "parent_id": "n_a8098a8e",
+      "child_ids": [],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 256,
+        "y": 232,
+        "width": 4,
+        "height": 44
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "5px",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > span"
+      }
+    },
+    {
+      "id": "n_25dcbe58",
+      "parent_id": "n_a8098a8e",
+      "child_ids": [
+        "n_d7ea9f28",
+        "n_2800c0a0"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 228,
+        "width": 943,
+        "height": 52
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "start",
+        "gap": "12px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_d7ea9f28",
+      "parent_id": "n_25dcbe58",
+      "child_ids": [
+        "n_1ae6c670"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 228,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_1ae6c670",
+      "parent_id": "n_d7ea9f28",
+      "child_ids": [
+        "n_5088366e"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 228,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > span"
+      }
+    },
+    {
+      "id": "n_5088366e",
+      "parent_id": "n_1ae6c670",
+      "child_ids": [
+        "n_abbd0498"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 228,
+        "width": 28,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "8px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > span > span"
+      }
+    },
+    {
+      "id": "n_abbd0498",
+      "parent_id": "n_5088366e",
+      "child_ids": [],
+      "label": "B",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 268,
+        "y": 228,
+        "width": 28,
+        "height": 28
+      },
+      "text": "B",
+      "style": {
+        "layout": "grid",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "3.35544e+07px",
+        "background": "#f4afc0",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(1) > span > span > span"
+      }
+    },
+    {
+      "id": "n_2800c0a0",
+      "parent_id": "n_25dcbe58",
+      "child_ids": [
+        "n_1e6ba90e",
+        "n_22fcd9ca"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 228,
+        "width": 903,
+        "height": 52
+      },
+      "style": {
+        "layout": "flex-col",
+        "gap": "0px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_1e6ba90e",
+      "parent_id": "n_2800c0a0",
+      "child_ids": [
+        "n_18227a2c",
+        "n_ac08443e"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 228,
+        "width": 903,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px 8px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_18227a2c",
+      "parent_id": "n_1e6ba90e",
+      "child_ids": [
+        "n_201e35dc"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 228,
+        "width": 32,
+        "height": 20
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_201e35dc",
+      "parent_id": "n_18227a2c",
+      "child_ids": [],
+      "label": "Bare",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 228,
+        "width": 32,
+        "height": 20
+      },
+      "text": "Bare",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(1) > span"
+      }
+    },
+    {
+      "id": "n_ac08443e",
+      "parent_id": "n_1e6ba90e",
+      "child_ids": [
+        "n_322d3c30"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 348,
+        "y": 228,
+        "width": 32,
+        "height": 20
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_322d3c30",
+      "parent_id": "n_ac08443e",
+      "child_ids": [],
+      "label": "bare",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 348,
+        "y": 228,
+        "width": 32,
+        "height": 20
+      },
+      "text": "bare",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "14px",
+        "font_weight": "600",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > span:nth-of-type(2) > span"
+      }
+    },
+    {
+      "id": "n_22fcd9ca",
+      "parent_id": "n_2800c0a0",
+      "child_ids": [
+        "n_5c7f6ed8",
+        "n_1b2760b8"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 248,
+        "width": 903,
+        "height": 32
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px 12px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_5c7f6ed8",
+      "parent_id": "n_22fcd9ca",
+      "child_ids": [
+        "n_1987f9e8",
+        "n_4e8cc4be"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 248,
+        "width": 53,
+        "height": 32
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_1987f9e8",
+      "parent_id": "n_5c7f6ed8",
+      "child_ids": [],
+      "label": "Versions",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 248,
+        "width": 49,
+        "height": 15
+      },
+      "text": "Versions",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0 4 0 0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_4e8cc4be",
+      "parent_id": "n_5c7f6ed8",
+      "child_ids": [],
+      "label": "1.0.0",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 308,
+        "y": 264,
+        "width": 53,
+        "height": 16
+      },
+      "text": "1.0.0",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(1) > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_1b2760b8",
+      "parent_id": "n_22fcd9ca",
+      "child_ids": [
+        "n_f1fdd364",
+        "n_66df4be8"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 373,
+        "y": 248,
+        "width": 54,
+        "height": 32
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_f1fdd364",
+      "parent_id": "n_1b2760b8",
+      "child_ids": [],
+      "label": "Contract",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 373,
+        "y": 248,
+        "width": 50,
+        "height": 15
+      },
+      "text": "Contract",
+      "style": {
+        "layout": "none",
+        "padding": "0",
+        "margin": "0 4 0 0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2) > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_66df4be8",
+      "parent_id": "n_1b2760b8",
+      "child_ids": [],
+      "label": "1",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 373,
+        "y": 264,
+        "width": 54,
+        "height": 16
+      },
+      "text": "1",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > span:nth-of-type(2) > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_5836131a",
+      "parent_id": "n_a8098a8e",
+      "child_ids": [
+        "n_9a259d6a"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1223,
+        "y": 244,
+        "width": 185,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-col",
+        "cross_axis_align": "end",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_9a259d6a",
+      "parent_id": "n_5836131a",
+      "child_ids": [
+        "n_0f7caa48"
+      ],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1223,
+        "y": 244,
+        "width": 185,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "end",
+        "cross_axis_align": "center",
+        "gap": "8px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(2) > div"
+      }
+    },
+    {
+      "id": "n_0f7caa48",
+      "parent_id": "n_9a259d6a",
+      "child_ids": [
+        "n_c636e178"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1223,
+        "y": 244,
+        "width": 185,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "end",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(2) > div > span"
+      }
+    },
+    {
+      "id": "n_c636e178",
+      "parent_id": "n_0f7caa48",
+      "child_ids": [],
+      "label": "No conductor in this workspace",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1223,
+        "y": 244,
+        "width": 185,
+        "height": 20
+      },
+      "text": "No conductor in this workspace",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > section > div:nth-of-type(2) > ul > li:nth-of-type(2) > div:nth-of-type(2) > div > span > span"
+      }
+    },
+    {
+      "id": "n_80e0b238",
+      "parent_id": "n_f6653334",
+      "child_ids": [
+        "n_9d300300"
+      ],
+      "label": "footer",
+      "kind": "container",
+      "role": "contentinfo",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 232,
+        "y": 1572,
+        "width": 1208,
+        "height": 28
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > footer"
+      }
+    },
+    {
+      "id": "n_9d300300",
+      "parent_id": "n_80e0b238",
+      "child_ids": [
+        "n_edb8b07a"
+      ],
+      "label": "div",
+      "kind": "container",
+      "role": "status",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 232,
+        "y": 1572,
+        "width": 1208,
+        "height": 28
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "8px",
+        "padding": "0 12",
+        "margin": "0",
+        "border": "1px 0px 0px solid #e0d6c4",
+        "background": "#f7f2e8",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > footer > div"
+      }
+    },
+    {
+      "id": "n_edb8b07a",
+      "parent_id": "n_9d300300",
+      "child_ids": [
+        "n_f02a6a88"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 244,
+        "y": 1576.5,
+        "width": 1184,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "main_axis_align": "start",
+        "cross_axis_align": "center",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "12px",
+        "font_weight": "400",
+        "line_height": "16px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > footer > div > span"
+      }
+    },
+    {
+      "id": "n_f02a6a88",
+      "parent_id": "n_edb8b07a",
+      "child_ids": [
+        "n_44c00078",
+        "n_603f5eec",
+        "n_11c38570"
+      ],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 244,
+        "y": 1576.5,
+        "width": 206,
+        "height": 20
+      },
+      "style": {
+        "layout": "flex-row",
+        "cross_axis_align": "center",
+        "gap": "4px",
+        "padding": "0 8",
+        "margin": "0",
+        "border_radius": "7px",
+        "background": "#efe9de",
+        "foreground": "#3d3224",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > footer > div > span > span"
+      }
+    },
+    {
+      "id": "n_44c00078",
+      "parent_id": "n_f02a6a88",
+      "child_ids": [],
+      "label": "span",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 252,
+        "y": 1582.5,
+        "width": 8,
+        "height": 8
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "border_radius": "3.35544e+07px",
+        "background": "#8a7860",
+        "foreground": "#3d3224",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > footer > div > span > span > span:nth-of-type(1)"
+      }
+    },
+    {
+      "id": "n_603f5eec",
+      "parent_id": "n_f02a6a88",
+      "child_ids": [],
+      "label": "Auto-refresh on",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 264,
+        "y": 1579.5,
+        "width": 90,
+        "height": 14
+      },
+      "text": "Auto-refresh on",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#3d3224",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > footer > div > span > span > span:nth-of-type(2)"
+      }
+    },
+    {
+      "id": "n_11c38570",
+      "parent_id": "n_f02a6a88",
+      "child_ids": [],
+      "label": "updated 4s ago",
+      "kind": "text",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 358,
+        "y": 1579.5,
+        "width": 84,
+        "height": 14
+      },
+      "text": "updated 4s ago",
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#63584a",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "11px",
+        "font_weight": "600",
+        "line_height": "14px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(2) > footer > div > span > span > span:nth-of-type(3)"
+      }
+    },
+    {
+      "id": "n_b0a5ac58",
+      "parent_id": "n_bb9f956a",
+      "child_ids": [],
+      "label": "div",
+      "kind": "container",
+      "heading_context": "Addons",
+      "bbox": {
+        "x": 1440,
+        "y": 0,
+        "width": 0,
+        "height": 1600
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(5) > div > div:nth-of-type(3)"
+      }
+    },
+    {
+      "id": "n_76abddf4",
+      "parent_id": "n_6443d400",
+      "child_ids": [],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 1600,
+        "width": 1440,
+        "height": 0
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(7)"
+      }
+    },
+    {
+      "id": "n_eee4d680",
+      "parent_id": "n_6443d400",
+      "child_ids": [],
+      "label": "div",
+      "kind": "container",
+      "bbox": {
+        "x": 0,
+        "y": 1600,
+        "width": 1440,
+        "height": 0
+      },
+      "style": {
+        "layout": "stack",
+        "padding": "0",
+        "margin": "0",
+        "background": "",
+        "foreground": "#2b2116",
+        "font_family": "\"Spline Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+        "font_size": "13px",
+        "font_weight": "400",
+        "line_height": "20px"
+      },
+      "source": {
+        "locator": "body > div:nth-of-type(8)"
+      }
+    }
+  ],
+  "font_faces": [
+    {
+      "family": "Spline Sans",
+      "weight": "300 700",
+      "style": "normal",
+      "urls": [
+        "http://localhost:6006/css/fonts/spline-sans.woff2"
+      ]
+    },
+    {
+      "family": "Bricolage Grotesque",
+      "weight": "200 800",
+      "style": "normal",
+      "urls": [
+        "http://localhost:6006/css/fonts/bricolage-grotesque.woff2"
+      ]
+    }
+  ]
+}

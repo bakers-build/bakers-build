@@ -1,0 +1,9 @@
+fingerprint: 39011951152b0c23907ba3edfeef287331eada059ab6b64ef0630ff3b6ec10fd
+scope:
+  states:
+    - default
+  subjects:
+    - ticket-create-unresolved-context
+  views:
+    - desktop
+status: pending

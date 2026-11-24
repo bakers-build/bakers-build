@@ -1,0 +1,9 @@
+fingerprint: 5070cd6ffaf3c8ae8cfb4e6c3437d27537046ce164fcb20ebad6094c29691559
+scope:
+  states:
+    - default
+  subjects:
+    - ticket-create
+  views:
+    - desktop
+status: pending

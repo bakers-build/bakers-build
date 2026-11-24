@@ -1,0 +1,32 @@
+{
+ "role": "reference",
+ "source": {
+  "kind": "storybook",
+  "identity": "http://localhost:6006/iframe.html?id=designbook-sections-my-work-scenes--ticket-create-rejected&viewMode=story",
+  "revision": null
+ },
+ "elements": [
+  {
+   "id": "ticket-create-rejected",
+   "locator": {
+    "kind": "css",
+    "value": "body > div:nth-of-type(5) > div"
+   },
+   "states": [
+    {
+     "name": "default",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "desktop",
+     "width": 1440,
+     "height": 900
+    }
+   ]
+  }
+ ],
+ "prelude_digest": "1dacaf2071d1ce018c4361c290a1dc427342432fb3fcd1c3b0ff4d1c21558943",
+ "assets_dir": "assets"
+}

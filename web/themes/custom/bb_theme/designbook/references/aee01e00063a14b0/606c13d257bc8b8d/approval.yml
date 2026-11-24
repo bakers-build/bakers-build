@@ -1,0 +1,9 @@
+fingerprint: 85b1756ebdf31fd6d74d89813cfe225da65364a1503c9ff8c7479efd20b9eea7
+scope:
+  states:
+    - default
+  subjects:
+    - ticket-create-empty
+  views:
+    - desktop
+status: pending

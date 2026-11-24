@@ -1,0 +1,9 @@
+fingerprint: 8131f4fa4066ae3fefcc40ae7ead5b7fb9dd6c6cc99b5be36242d1a80be250ac
+scope:
+  states:
+    - default
+  subjects:
+    - addons
+  views:
+    - desktop
+status: pending

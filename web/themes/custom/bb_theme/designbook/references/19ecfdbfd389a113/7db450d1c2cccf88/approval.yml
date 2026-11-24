@@ -1,0 +1,9 @@
+fingerprint: 720848c9a403508f705afdbd8704be5dce121d5a06b7c135a128db3d886ae8d2
+scope:
+  states:
+    - default
+  subjects:
+    - ticket-list-add-action
+  views:
+    - desktop
+status: pending

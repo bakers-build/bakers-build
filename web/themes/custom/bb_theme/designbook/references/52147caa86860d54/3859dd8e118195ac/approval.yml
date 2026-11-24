@@ -1,0 +1,9 @@
+fingerprint: c5059caca1a089693bfd04e7dc356e77689c1df6c6a436efa2f5e92d609b8066
+scope:
+  states:
+    - default
+  subjects:
+    - project-detail-board-details
+  views:
+    - desktop
+status: pending
