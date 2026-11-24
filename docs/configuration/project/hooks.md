@@ -65,7 +65,7 @@ Lifecycle commands and listeners are best effort. Failures are logged (`lifecycl
 
 ## Provision on an agent's request
 
-`provision_up` never runs on its own. The conductor offers it to runs as the [tool](/addons/build/tools#shipped-tools) `provision_up(profile?)`, so a sandboxed agent can bring its environment up without trusting the runtime's CLI. An agent calls it before a check that needs a running environment, with the profile your `WORKFLOW.md` `bb-phase-provision` hint names. The value is one command string, or a map of profile names to commands. A profile's command is a string, or `{ command, description }`: the optional `description` is one line the tool definition lists as `- <profile>: <description>`, so the agent knows what each profile does without reading `WORKFLOW.md`. Omitted means the tool is unavailable. With a string, `profile` is optional and ignored; with a map it must name a configured key. A missing or unknown profile fails. The agent picks a profile, never the command:
+`provision_up` never runs on its own. The conductor offers it to runs as the [tool](/addons/build/tools#shipped-tools) `provision_up(profile?)`, so a sandboxed agent can bring its environment up without trusting the runtime's CLI. An agent calls it before a check that needs a running environment, with the profile your `WORKFLOW.md` `bb-phase-provision` hint names. The value is one command string, or a map of profile names to commands. A profile's command is a string, or `{ command, description }`: the optional `description` is one line the tool definition lists as `- <profile>: <description>`, so the agent knows what each profile does without reading `WORKFLOW.md`. `description` needs bakers 0.13.0 or newer; older releases reject the object entry (`invalid_value hooks.provision_up`). Omitted means the tool is unavailable. With a string, `profile` is optional and ignored; with a map it must name a configured key. A missing or unknown profile fails. The agent picks a profile, never the command:
 
 ```js
 hooks: {
@@ -101,7 +101,7 @@ At 30 minutes, ticket teardown or conductor shutdown, the conductor sends `SIGTE
 
 ## Run a configured command
 
-`hooks.provision_exec` maps keys (letters, digits, `_`, `-`) to commands and offers the tool `provision_exec(key, args?)`. A string is a fixed command: the run picks the key, never the command, and `args` are refused. `{ command, args: true }` also passes `args`, a list of strings, as separate arguments after `--`, never through a shell; the script must validate them. An object entry may carry `description`, one line the tool definition lists as `- <key>: <description>`; name what the key runs and which `args` it accepts. An unknown key is refused. The result carries the exit code and the output tail, and a non-zero exit is a tool error.
+`hooks.provision_exec` maps keys (letters, digits, `_`, `-`) to commands and offers the tool `provision_exec(key, args?)`. A string is a fixed command: the run picks the key, never the command, and `args` are refused. `{ command, args: true }` also passes `args`, a list of strings, as separate arguments after `--`, never through a shell; the script must validate them. An object entry may carry `description`, one line the tool definition lists as `- <key>: <description>`; name what the key runs and which `args` it accepts (bakers 0.13.0 or newer). An unknown key is refused. The result carries the exit code and the output tail, and a non-zero exit is a tool error.
 
 ```js
 hooks: {

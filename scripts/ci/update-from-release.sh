@@ -49,7 +49,7 @@ drush() { docker compose run --rm --no-deps --entrypoint /var/www/html/vendor/bi
 export REGISTRY_IMAGE_PHP=$release_image
 docker compose up -d --wait db
 docker compose run --rm install
-# Content as the release stores it: a member, a customer, a project, a billing account and a deployment ticket.
+# Content as the release stores it: a member, a customer, a project, a billing account and a ship ticket.
 drush php:eval '
 $workspaces = \Drupal::entityTypeManager()->getStorage("bb_workspace")->loadMultiple();
 $workspace = reset($workspaces) ?: throw new \RuntimeException("no workspace to join");
@@ -68,7 +68,7 @@ $term = function (string $vid, string $name) use ($types, $workspace) {
   return $term;
 };
 $types->getStorage("bb_ticket")->create(["identifier" => "UPD-1", "title" => "Update shipment", "workflow" => "bb_work", "project_id" => $project->id(),
-  "ticket_type" => $term("type", "deployment")->id(), "recipe" => $term("recipe", "deploy-and-release")->id()])->save();
+  "ticket_type" => $term("type", "ship")->id(), "recipe" => $term("recipe", "ship")->id()])->save();
 echo "seeded\n";'
 
 export REGISTRY_IMAGE_PHP=$branch_image
@@ -83,9 +83,8 @@ $types->getStorage("bb_project")->loadByProperties(["key" => "UPD"]) ?: throw ne
 $types->getStorage("bb_track_account")->loadByProperties(["name" => "Update account"]) ?: throw new \RuntimeException("account lost");
 // The import that ran out of memory on the account display must have landed.
 \Drupal\Core\Entity\Entity\EntityViewDisplay::load("bb_track_account.bb_track_account.full") ?: throw new \RuntimeException("account display not imported");
-// The deployment type and its recipe are now ship.
+// The released ship ticket keeps its type and recipe (the deployment rename shipped in the release).
 $ticket = $types->getStorage("bb_ticket")->loadByProperties(["identifier" => "UPD-1"]);
 $ticket = reset($ticket) ?: throw new \RuntimeException("ship ticket lost");
-$ticket->get("ticket_type")->entity?->label() === "ship" && $ticket->get("recipe")->entity?->label() === "ship" ?: throw new \RuntimeException("ticket not moved to ship");
-$types->getStorage("bb_term")->loadByProperties(["vid" => "type", "name" => "deployment"]) && throw new \RuntimeException("deployment type remains");
+$ticket->get("ticket_type")->entity?->label() === "ship" && $ticket->get("recipe")->entity?->label() === "ship" ?: throw new \RuntimeException("ship ticket lost its type or recipe");
 echo "update checks passed\n";'
