@@ -811,4 +811,114 @@ describe('offline configuration inventory', () => {
     expect(report.machine_policy).toEqual({ tunnel: true, source: path });
     expect(report.result).toBe('ok');
   });
+
+  describe('protected host paths', () => {
+    const isolating =
+      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'fixture',runtime:{catalog:[{alias:'sandbox',use:'@bakers-build/addon-runtime-bwrap'}]}};";
+    const hostOnly =
+      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'fixture'};";
+    const check = (machine: string, projectConfig: string) => {
+      put(join(home, '.bakers/machine.config.js'), machine);
+      const path = put(
+        join(project, '.bakers/project.config.js'),
+        `export default ${projectConfig};`,
+      );
+      const { report } = core.inventoryConfig({
+        scope: 'project',
+        home,
+        cwd: project,
+      });
+      const findings = report.findings.filter(
+        (f) =>
+          f.code === 'invalid_value' &&
+          (f.key?.startsWith('hooks.') ||
+            f.key?.startsWith('runtime.read_only')),
+      );
+      return { path, findings };
+    };
+
+    it('reports a bare host binary as a hook entry point under an isolating runtime', () => {
+      const { path, findings } = check(
+        isolating,
+        "{hooks:{after_create:'ddev init-worktree'}}",
+      );
+      expect(findings).toEqual([
+        expect.objectContaining({
+          key: 'hooks.after_create',
+          observed: 'ddev init-worktree',
+          path,
+          expected: expect.stringContaining('.bakers'),
+        }),
+      ]);
+    });
+
+    it('checks the command of a provision entry given as an object', () => {
+      const { findings } = check(
+        isolating,
+        "{hooks:{provision_up:{up:{command:'bash scripts/up.sh',description:'Up'}}}}",
+      );
+      expect(findings).toEqual([
+        expect.objectContaining({
+          key: 'hooks.provision_up.up',
+          observed: 'bash scripts/up.sh',
+        }),
+      ]);
+    });
+
+    it('reports no entry point on a host-only machine', () => {
+      const { findings } = check(
+        hostOnly,
+        "{hooks:{after_create:'ddev init-worktree'}}",
+      );
+      expect(findings).toEqual([]);
+    });
+
+    it('accepts entry points under .bakers and an existing read_only path', () => {
+      mkdirSync(join(project, '.ddev'));
+      const { findings } = check(
+        isolating,
+        "{runtime:{read_only:['.ddev']},hooks:{before_run:'bash ./.ddev/x.sh',after_run:'bash .bakers/a.sh'}}",
+      );
+      expect(findings).toEqual([]);
+    });
+
+    it('reports a read_only path that does not exist', () => {
+      mkdirSync(join(project, '.ddev'));
+      const { findings } = check(
+        hostOnly,
+        "{runtime:{read_only:['.ddev','.missing']}}",
+      );
+      expect(findings).toEqual([
+        expect.objectContaining({
+          key: 'runtime.read_only[1]',
+          observed: '.missing',
+        }),
+      ]);
+    });
+
+    it('reports no entry point when the project enables only the host runtime', () => {
+      const { findings } = check(
+        isolating,
+        "{runtime:{enabled:['system']},hooks:{after_create:'ddev init-worktree'}}",
+      );
+      expect(findings).toEqual([]);
+    });
+
+    it.each([
+      "{runtime:{read_only:[process.env.X ?? '.ddev']},hooks:{after_create:'bash .ddev/x.sh'}}",
+      "{runtime:{read_only:[...ro]},hooks:{after_create:'bash .ddev/x.sh'}}",
+      '{runtime,hooks:{after_create:"bash .ddev/x.sh"}}',
+    ])('reports no entry point when the runtime settings are computed: %s', (config) => {
+      mkdirSync(join(project, '.ddev'));
+      expect(check(isolating, config).findings).toEqual([]);
+    });
+
+    it('skips computed hook commands and read_only paths', () => {
+      const { findings } = check(
+        isolating,
+        '{runtime:{read_only:[process.env.X]},hooks:{after_create:process.env.Y}}',
+      );
+      expect(findings).toEqual([]);
+    });
+  });
 });

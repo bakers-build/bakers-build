@@ -33,7 +33,7 @@ The operator runs `frps` with a public-CA certificate behind a wildcard TLS prox
 ## Set up
 
 1. **Install `frpc` 0.68.0** per frp's [setup docs](https://gofrp.org/en/docs/setup/), from its [release](https://github.com/fatedier/frp/releases/tag/v0.68.0).
-2. **Add the ports entry** above: the operator's `zone`, a `client_config_path` your user can write, a free `admin_port`, an admin user and password.
+2. **Add the ports entry** above: the operator's `zone`, a `client_config_path` your user can write (an absolute path: `~` is not expanded; a committed config uses `` `${homedir()}/.config/frp/frpc.json` `` with `import { homedir } from 'node:os'`), a free `admin_port`, an admin user and password.
 3. **Write `client_config_path`** with mode `600` from this template. `serverAddr`, `serverPort`, `user` and `token` come from your operator; `webServer` matches the entry.
 
    ```json

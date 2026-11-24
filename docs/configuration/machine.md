@@ -101,7 +101,7 @@ Claude in `system` or `yolo` uses your own `~/.claude`; `home: 'individual'` kee
 
 ## Secrets file
 
-The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start: foreground, detached, the restart after a config change or an update, and `bakers conductor once`. Never put it in the project's committed `.bakers/`.
+The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start, `bakers conductor once` included. Never commit it to the project's `.bakers/`.
 
 ```sh
 # ~/.bakers/.bakers.env
@@ -111,8 +111,9 @@ export OPENAI_API_KEY='sk-...'
 
 | Rule | Behavior |
 |---|---|
-| Format | One `KEY=value` per line; a leading `export ` is accepted, `#` starts a comment line, blank lines are skipped. A value in matching `'…'` or `"…"` loses the quotes. No expansion and no escapes: `$(…)`, backticks and `$VAR` stay literal text, and the file is never run as shell. |
+| Format | One `KEY=value` per line; a leading `export `, `#` comment lines and blank lines are allowed. A value in matching `'…'` or `"…"` loses the quotes. No expansion and no escapes: `$(…)`, backticks and `$VAR` stay literal text, and the file is never run as shell. |
 | Bad line | The start stops and names the line number, never its text. |
+| Config files | Never in `process.env` while config files load: `process.env.X` in `machine.config.js` or `project.config.js` is `undefined`. |
 | Permissions | Only you may read it. A file group or others can read stops the start with `chmod 600 ~/.bakers/.bakers.env` as the fix. A missing file is no error. |
 | Shell wins | A variable exported in the shell that starts the conductor overrides the file, so `( . ~/.bakers/.backer.env; bakers conductor start )` keeps working. To switch, rename that file to `.bakers.env` and `chmod 600` it. |
 | Hand-out | A run receives a value only when its agent addon declares the variable. Every other value stays in the conductor, under every runtime, the host included. |

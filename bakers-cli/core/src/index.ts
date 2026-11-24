@@ -160,6 +160,10 @@ export {
   withoutGitDirs,
 } from './core/git-sandbox.js';
 export {
+  hostCommandEntry,
+  unprotectedEntryPoints,
+} from './core/host-commands.js';
+export {
   changedProtectedPaths,
   refreshRunTarget,
   runCloneTip,
