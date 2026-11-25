@@ -82,7 +82,7 @@ Restart the conductor after changing options, then dispatch a disposable ticket 
 
 ## Verify
 
-Run `bakers conductor check`, then [a first ticket](/get-started/first-ticket). Its agent must open in a herdr tab named after its identifier, within the ticket worktree. A frozen ticket shows a `bb_frozen` sidebar token; resuming clears it.
+Run `bakers conductor check`, then [a first ticket](/get-started/run-the-first-ticket). Its agent must open in a herdr tab named after its identifier, within the ticket worktree. A frozen ticket shows a `bb_frozen` sidebar token; resuming clears it.
 
 Harness commands run through non-interactive `/bin/sh`, so binaries must resolve through `PATH`; shell aliases are not loaded.
 

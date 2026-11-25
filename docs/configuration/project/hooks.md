@@ -1,6 +1,6 @@
 # Lifecycle hook configuration
 
-Configure project preparation and cleanup in the top-level `hooks` object of the selected `.bakers/project.config.js` or a named variant `project.<name>.config.js`. This reference is for maintainers who already have a working conductor; [Add lifecycle hooks](/provision/hooks) explains the practical setup.
+Configure project preparation and cleanup in the top-level `hooks` object of the selected `.bakers/project.config.js` or a named variant `project.<name>.config.js`. This reference is for maintainers who already have a working conductor; [Add lifecycle hooks](/provision/add-lifecycle-hooks) explains the practical setup.
 
 ## Configuration
 
@@ -18,7 +18,7 @@ hooks: {
 },
 ```
 
-These scripts are examples you must supply under `.bakers/scripts/`, including host-side helpers. Under an isolating runtime, every hook and provision command must begin with a script in a protected path, or the config fails to load; see [protect host-executed files](/provision/hooks#protect-host-executed-files). Commands run through `sh -c` in the ticket worktree with the conductor user's permissions. Tools must be on that process's `PATH`. Keep long-running servers out of blocking hooks. Hooks execute worktree code outside the agent sandbox: review that code before giving it credentials or host access.
+These scripts are examples you must supply under `.bakers/scripts/`, including host-side helpers. Under an isolating runtime, every hook and provision command must begin with a script in a protected path, or the config fails to load; see [protect host-executed files](/provision/add-lifecycle-hooks#protect-host-executed-files). Commands run through `sh -c` in the ticket worktree with the conductor user's permissions. Tools must be on that process's `PATH`. Keep long-running servers out of blocking hooks. Hooks execute worktree code outside the agent sandbox: review that code before giving it credentials or host access.
 
 A selected variant is a complete file, not an overlay. Local values apply only through explicit JavaScript imports. The herdr addon's former `with.hooks` option is rejected; move commands to the top level. Addon listeners run before the project command, awaited in addon discovery order (children first). Listener failures do not skip later listeners or the command.
 
@@ -124,4 +124,4 @@ Prefer one fixed key per command. A key that runs any argument list in a site co
 
 Run `bakers config check --scope project`, then execute the selected preparation command twice in a disposable worktree and observe one ticket dispatch. Confirm the expected files/services, readiness, and cleanup of that worktree only. The config check alone does not execute commands or prove their safety.
 
-For addon implementation, see [hook listeners](/addons/build/contracts#surfaces-and-extension-points). For tunnel cleanup, see [Ports](/addons/ports).
+For addon implementation, see [hook listeners](/addons/build/addon-api-reference#surfaces-and-extension-points). For tunnel cleanup, see [Ports](/addons/ports).

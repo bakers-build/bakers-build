@@ -19,10 +19,10 @@ Run a small task from your [prepared project](/get-started/connect-a-project) an
 The path of one ticket:
 
 1. You write a **ticket** with checkable acceptance criteria in a **project** of your **workspace** on the bakers.build server.
-2. A **conductor** on a **worker machine** (your computer or a remote worker) claims it: see [which tickets it takes](/configuration/project/conductors#which-tickets-it-takes) and [where agents run](/provision/machine).
+2. A **conductor** on a **worker machine** (your computer or a remote worker) claims it: see [which tickets it takes](/configuration/project/conductors-and-variants#which-tickets-it-takes) and [where agents run](/provision/machine).
 3. It starts a coding **agent**, Claude Code or Codex under your own sign-in ([Agents](/agents/)).
-4. The agent writes a spec and plan and waits for your approval ([Workflows and states](/skills-and-workflows/states)).
-5. Each attempt is a **run** in its own **worktree**, a separate Git checkout, within [Agent permissions and isolation](/agents/security).
+4. The agent writes a spec and plan and waits for your approval ([Workflows and states](/skills-and-workflows/workflow-reference)).
+5. Each attempt is a **run** in its own **worktree**, a separate Git checkout, within [Agent permissions and isolation](/agents/permissions-and-isolation).
 6. An agent reviews the change, then you review the summary and merge request ([Accept results](/skills-and-workflows/accept-results)).
 7. You authorize the merge.
 

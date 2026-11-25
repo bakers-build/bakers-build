@@ -41,7 +41,7 @@ One run handles one state. The conductor prepares the ticket's workspace and sta
 | outtake | Publish evidence, a summary and review instructions |
 | transition | Apply the gate before moving the ticket |
 
-The state file always runs. Recipe slots add the method; `WORKFLOW.md` adds project hints at the matching phases. A handoff records the result, but does not itself authorize a transition. [Collaboration labels](/skills-and-workflows/collaboration) determine which gates still wait for a person.
+The state file always runs. Recipe slots add the method; `WORKFLOW.md` adds project hints at the matching phases. A handoff records the result, but does not itself authorize a transition. [Collaboration labels](/skills-and-workflows/decide-when-people-approve) determine which gates still wait for a person.
 
 ## What stays fixed
 
@@ -53,7 +53,7 @@ The server owns the states and allowed transitions. The `bb-workflow` frame owns
 
 ## Ticket fields
 
-`recipe` selects the method; `ticket_type` selects a variant supported by that method; `labels` select collaboration behavior, an agent, or ordinary tags. An epic groups child tickets and is a type, not a separate workflow. [Choose a method](/skills-and-workflows/recipes) owns recipe selection; [Agents](/agents/guide) owns agent selection.
+`recipe` selects the method; `ticket_type` selects a variant supported by that method; `labels` select collaboration behavior, an agent, or ordinary tags. An epic groups child tickets and is a type, not a separate workflow. [Choose a method](/skills-and-workflows/recipes) owns recipe selection; [Agents](/agents/configure-and-select-agents) owns agent selection.
 
 Workspace contributors and leads manage the Types, Recipes and Labels vocabularies in workspace settings; guests may view them. Each ticket has one type, one recipe and multiple labels. The API calls the field `ticket_type` because JSON:API reserves `type`.
 

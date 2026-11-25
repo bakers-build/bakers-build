@@ -132,4 +132,4 @@ The example defines the adapter, not a terminal application. You supply the real
 - [Herdr](/addons/herdr): adds workspaces, tabs and pane layouts. See `bakers-cli/addons/herdr/src/index.ts`.
 - [Orca](/addons/orca): adopts worktrees and creates/closes terminals through the Orca CLI. See `bakers-cli/addons/orca/src/index.ts`.
 
-The [executor/workspace contract](/addons/build/executor-workspace) covers the full lifecycle. To build a ticket-management app that does not host agents, use the [bakers.build connector API](/get-started/connector).
+The [executor/workspace contract](/addons/build/executor-and-workspace-api) covers the full lifecycle. To build a ticket-management app that does not host agents, use the [bakers.build connector API](/get-started/connect-your-chat).

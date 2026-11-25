@@ -49,7 +49,7 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
    bakers conductor once
    ```
 
-   `bakers conductor once` registers the conductor for this checkout and runs one cycle. Start it for good with `bakers conductor start`. See [Connect a project by hand](/get-started/connect-a-project) and [bakers conductor](/configuration/project/conductors).
+   `bakers conductor once` registers the conductor for this checkout and runs one cycle. Start it for good with `bakers conductor start`. See [Connect a project by hand](/get-started/connect-a-project) and [bakers conductor](/configuration/project/conductors-and-variants).
 
 5. **Clean up.** After a test ticket succeeds, inspect and back up the old `~/.gaia`, `.gaia` and `.gaia-worktrees` directories. Preserve uncommitted work and data before removing obsolete files; the new CLI does not read them.
 

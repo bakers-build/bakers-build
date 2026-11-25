@@ -5,7 +5,7 @@ description: Implement and register an outer agent execution backend through the
 
 # Write a runtime addon
 
-A **runtime addon** is a package contributing an implementation of the conductor's `runtime` slot. It wraps the agent launch before the executor starts it. A **tool** is a callable operation exposed to the agent; contributing a runtime does not itself create a tool. Review [how permissions, isolation and tools fit together](/agents/security) and the [isolation models](/agents/isolation) before choosing what to implement.
+A **runtime addon** is a package contributing an implementation of the conductor's `runtime` slot. It wraps the agent launch before the executor starts it. A **tool** is a callable operation exposed to the agent; contributing a runtime does not itself create a tool. Review [how permissions, isolation and tools fit together](/agents/permissions-and-isolation) and the [isolation models](/agents/isolation-models) before choosing what to implement.
 
 Use a runtime when you need another **per-run execution environment**. An operator-provided container around the whole conductor needs no runtime addon. Agent permission rules belong to the harness integration; an executor owns the terminal, and a workspace owns the worktree.
 
@@ -44,11 +44,11 @@ The interface is launch plumbing, not a sandbox implementation. Decide and imple
 - **Network/tools:** define egress and conductor connectivity separately. Keep the run-bound tool token, URL and authorization intact. Additional listening addresses expose the server to another network and require deliberate review.
 - **Native policy:** preserve the configured agent permission mode. Inner sandbox tools and namespace support must exist inside your environment. Host-only preflight does not establish that they work there.
 
-Host conductor tools and project hooks remain outside the runtime. With `isolates: true` the conductor accepts only host commands that start in a protected path, but it checks only that entry point, not what the script calls; containers those commands reach, such as DDEV's web container, are as untrusted as the run. [Tools across boundaries](/provision/tools#work-across-permissions-and-isolation) explains the separate authority.
+Host conductor tools and project hooks remain outside the runtime. With `isolates: true` the conductor accepts only host commands that start in a protected path, but it checks only that entry point, not what the script calls; containers those commands reach, such as DDEV's web container, are as untrusted as the run. [Tools across boundaries](/provision/tools-and-integrations#work-across-permissions-and-isolation) explains the separate authority.
 
 ## Package and register it
 
-Follow [Addon contracts](/addons/build/contracts#write-an-addon): create an ESM package, export `./preset`, declare compatible contract dependencies, and ship an options schema. A local addon may live under `.bakers/addons/`; it need not become part of Bakers itself.
+Follow [Addon contracts](/addons/build/addon-api-reference#write-an-addon): create an ESM package, export `./preset`, declare compatible contract dependencies, and ship an options schema. A local addon may live under `.bakers/addons/`; it need not become part of Bakers itself.
 
 Once your tested `myRuntime(options)` factory returns `RuntimePlugin`, register it in `src/preset.ts`:
 

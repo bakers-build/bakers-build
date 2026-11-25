@@ -460,7 +460,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     }
     self::assertSame([
       'Ticket only' => [
-        ['Set up a connector', 'https://bakers.build/docs/get-started/connector', '_blank'],
+        ['Set up a connector', 'https://bakers.build/docs/get-started/connect-your-chat', '_blank'],
       ],
       'Developer' => [
         ['Set up a machine', 'https://bakers.build/docs/provision/machine', '_blank'],
@@ -472,7 +472,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     foreach (['bb_theme:setup_command', 'bb_theme:setup_paths', 'bb_theme:note', 'bakers:bb-init', 'marketplace'] as $absent) {
       self::assertStringNotContainsString($absent, $blob);
     }
-    foreach (['get-started/connector', 'provision/machine', 'get-started/connect-a-project'] as $page) {
+    foreach (['get-started/connect-your-chat', 'provision/machine', 'get-started/connect-a-project'] as $page) {
       self::assertFileExists(dirname($this->root) . "/docs/$page.md");
     }
   }

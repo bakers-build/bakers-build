@@ -13,7 +13,7 @@ Start with the capability your project needs:
 | Give agents an additional operation | A **tool** that an agent can call during a run. |
 | Let someone request an operation from a ticket | A **message** with a button or form and an answer in the control panel. |
 
-One addon can provide several capabilities. You implement the operations in JavaScript and register them through a preset. The [API reference](/addons/build/contracts) defines the supported exports.
+One addon can provide several capabilities. You implement the operations in JavaScript and register them through a preset. The [API reference](/addons/build/addon-api-reference) defines the supported exports.
 
 <span id="what-an-addon-is"></span>
 
@@ -39,9 +39,9 @@ Each example implements a new integration:
 <span id="enable-in-the-project"></span>
 <span id="enable-in-project"></span>
 
-1. <span id="add-an-agent"></span>[Add an agent](/addons/build/agent): write a harness for a program bakers.build does not yet support.
-2. <span id="add-a-client"></span>[Add a client](/addons/build/client): start and close agent terminals in your application through its CLI.
-3. [Extend the control panel](/addons/build/control-panel): implement an operation and make it callable from a ticket.
+1. <span id="add-an-agent"></span>[Add an agent](/addons/build/add-a-new-agent-harness): write a harness for a program bakers.build does not yet support.
+2. <span id="add-a-client"></span>[Add a client](/addons/build/connect-a-new-client): start and close agent terminals in your application through its CLI.
+3. [Extend the control panel](/addons/build/extend-the-control-panel): implement an operation and make it callable from a ticket.
 
 The harness and client guides define a small example CLI/API, then show the complete adapter, registration and verification. Their external programs are hypothetical so you can see which parts must be adapted to your own software.
 
@@ -51,7 +51,7 @@ Use a disposable project and the checks in each guide. First verify the adapter 
 
 ## Add a ticket message
 
-To let someone call an operation from a ticket, declare a **message**. bakers.build displays its button or form and the returned answer. [Extend the control panel](/addons/build/control-panel) implements a read-only worktree check through `tools` and `inbox`.
+To let someone call an operation from a ticket, declare a **message**. bakers.build displays its button or form and the returned answer. [Extend the control panel](/addons/build/extend-the-control-panel) implements a read-only worktree check through `tools` and `inbox`.
 
 ## Remove the example
 
@@ -59,4 +59,4 @@ Remove its addon entry and any catalog entry referring to it, restart the conduc
 
 ## Extend your addon
 
-Continue with [Tools](/addons/build/tools), [Messages](/addons/build/actions), the [preset API](/addons/build/contracts) and the [executor/workspace lifecycle](/addons/build/executor-workspace).
+Continue with [Tools](/addons/build/tools), [Messages](/addons/build/messages), the [preset API](/addons/build/addon-api-reference) and the [executor/workspace lifecycle](/addons/build/executor-and-workspace-api).

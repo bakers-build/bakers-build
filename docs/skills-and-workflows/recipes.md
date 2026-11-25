@@ -31,7 +31,7 @@ A shipped recipe names original skills from an external plugin. Add the recipe's
 
 ## Add your own recipe
 
-Start with the [skills installed for your agent](/skills-and-workflows/skills). Create a discoverable skill named `bb-recipe-<method>` in your repository or a plugin; for example, `.claude/skills/team/skills/bb-recipe-small-change/SKILL.md`.
+Start with the [skills installed for your agent](/skills-and-workflows/install-the-bakers-skills). Create a discoverable skill named `bb-recipe-<method>` in your repository or a plugin; for example, `.claude/skills/team/skills/bb-recipe-small-change/SKILL.md`.
 
 This complete example supports chores with a short plan and a check-first implementation:
 
@@ -83,8 +83,8 @@ A `bb-state-<state>` section supplies the method for that state. A `bb-phase-<ph
 
 A type-specific slot such as `## bug:bb-state-plan` overrides the general slot for that phase. Phases absent there fall back to the general state section. Declare the type and its gates before using it; the example above supports only `chore`.
 
-A recipe supplies method within the [fixed workflow](/skills-and-workflows/states#what-stays-fixed). It can name a replacement deliverable or check, but cannot remove approval gates, the verdict or readbacks. Adding a slot does not add a server state.
+A recipe supplies method within the [fixed workflow](/skills-and-workflows/workflow-reference#what-stays-fixed). It can name a replacement deliverable or check, but cannot remove approval gates, the verdict or readbacks. Adding a slot does not add a server state.
 
 For example, “only diagnose this bug” is a scope and stopping instruction to agree with the agent; it is not a new `diagnosis` state. Keep the diagnosis in plan and do not authorize implementation.
 
-The installed `bb-workflow/references/authoring.md` is the full authoring contract. For who approves the method's results, see [collaboration](/skills-and-workflows/collaboration).
+The installed `bb-workflow/references/authoring.md` is the full authoring contract. For who approves the method's results, see [collaboration](/skills-and-workflows/decide-when-people-approve).

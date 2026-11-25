@@ -29,7 +29,7 @@ flowchart LR
 
 - **Your own machine, your own tickets:** `system`, the default. The agent uses your own harness settings.
 - **A shared or remote worker:** `sandbox`, after its [prerequisites](/provision/security/execution#sandbox-prerequisites).
-- **Stronger isolation:** the [Bubblewrap or Docker runtime](/agents/isolation). Both are **experimental** and run each agent in a fresh clone.
+- **Stronger isolation:** the [Bubblewrap or Docker runtime](/agents/isolation-models). Both are **experimental** and run each agent in a fresh clone.
 
 <span id="configure-and-verify"></span>
 
@@ -43,10 +43,10 @@ flowchart LR
 <DocTiles :tiles="[
   { title: 'Agent permissions', text: 'Modes, native sandbox prerequisites, read and write rules, network and MCP limits per harness.', link: '/provision/security/execution', icon: 'terminal', meta: 'Choose allowed actions →' },
   { title: 'Configure permissions', text: 'Share one permissions block across agents in machine and project config, and see what each harness applies.', link: '/provision/security/shared-settings', icon: 'settings', meta: 'Configure →' },
-  { title: 'Isolation models', text: 'Compare sandboxes, runtimes, containers and VMs, with support by agent and platform and known limits.', link: '/agents/isolation', icon: 'layers', meta: 'Choose a boundary →' },
-  { title: 'Tools and integrations', text: 'How the agent starts the app, runs checks, pushes and shares a preview without leaving its sandbox.', link: '/provision/tools', icon: 'plug', meta: 'Understand tools →' }
+  { title: 'Isolation models', text: 'Compare sandboxes, runtimes, containers and VMs, with support by agent and platform and known limits.', link: '/agents/isolation-models', icon: 'layers', meta: 'Choose a boundary →' },
+  { title: 'Tools and integrations', text: 'How the agent starts the app, runs checks, pushes and shares a preview without leaving its sandbox.', link: '/provision/tools-and-integrations', icon: 'plug', meta: 'Understand tools →' }
 ]" />
 
-Also: [API keys and service accounts](/provision/security/credentials), [Access and data](/provision/security/access-and-data), [Write a runtime addon](/addons/build/runtime).
+Also: [API keys and service accounts](/provision/security/api-keys-and-service-accounts), [Access and data](/provision/security/access-and-data), [Write a runtime addon](/addons/build/write-a-runtime-addon).
 
-**Next:** [verify independent operation](/provision/guide#verify-independent-operation), then [run a ticket](/get-started/first-ticket).
+**Next:** [verify independent operation](/provision/guide#verify-independent-operation), then [run a ticket](/get-started/run-the-first-ticket).

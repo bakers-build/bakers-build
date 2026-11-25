@@ -4,7 +4,7 @@ Copy the content of the block below into a claude.ai Project's **Project instruc
 upload it as Project knowledge). It tells Claude to call the bakers tools that bakers.build serves
 at `/mcp` directly, for the one workflow slice the connector supports: take a feature or chore
 request from prior-art search through qualification to `plan`. See
-[Connect Claude.ai to bakers.build](/get-started/connector) for how to install the connector and
+[Connect Claude.ai to bakers.build](/get-started/connect-your-chat) for how to install the connector and
 this bundle.
 
 **Source of truth.** This bundle derives from `.claude/skills/bakers-build/skills/{bb-create-ticket,

@@ -31,7 +31,7 @@ When the ticket is done, the reaper runs `after_done`, then `workspace.remove(br
 
 Import `BbExecutor`, `ExecutorPlugin` and `SpawnRunInput` from `@bakers-build/conductor/contract`. A plugin has `kind: 'executor'`, an `id`, `requiredModules` and an async `createExecutor(config, deps)` factory. The factory returns an executor implementing the methods below.
 
-The [new client tutorial](/addons/build/client) implements an adapter with two client CLI commands: start and close. For a shipped implementation, inspect `bakers-cli/addons/herdr-core/src/index.ts`. A detached process with empty cleanup methods is not a complete executor: it would leave agents running and cannot recover its terminals after restart.
+The [new client tutorial](/addons/build/connect-a-new-client) implements an adapter with two client CLI commands: start and close. For a shipped implementation, inspect `bakers-cli/addons/herdr-core/src/index.ts`. A detached process with empty cleanup methods is not a complete executor: it would leave agents running and cannot recover its terminals after restart.
 
 The rules each method must keep:
 
@@ -59,7 +59,7 @@ The rules:
 
 ## Package and select it
 
-The following registration fragment assumes your tested `myExecutor` factory exists. Package it as [Addon contracts](/addons/build/contracts#write-an-addon) describes, and export the plugin from `src/preset.ts`:
+The following registration fragment assumes your tested `myExecutor` factory exists. Package it as [Addon contracts](/addons/build/addon-api-reference#write-an-addon) describes, and export the plugin from `src/preset.ts`:
 
 ```ts
 import type { Preset } from '@bakers-build/conductor/contract';
