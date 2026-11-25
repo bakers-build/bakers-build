@@ -13,7 +13,8 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 
 /**
- * Authorizes group, team and template creation in the route's workspace.
+ * Authorizes group, team, template and environment creation in the route's
+ * workspace.
  *
  * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
  */
@@ -47,7 +48,7 @@ final class BbWorkspaceCreateAccess implements AccessInterface {
     $result = AccessResult::forbidden()
       ->addCacheContexts(['user', 'user.permissions', 'route'])
       ->addCacheTags(['og_membership_list', 'config:og_role_list']);
-    if (!in_array($type, ['bb_group', 'bb_team', 'bb_ticket_template'], TRUE) || !$workspace instanceof BbWorkspaceInterface || $workspace->isNew()) {
+    if (!in_array($type, ['bb_group', 'bb_team', 'bb_ticket_template', 'bb_environment'], TRUE) || !$workspace instanceof BbWorkspaceInterface || $workspace->isNew()) {
       return $result;
     }
     // Drupal's configured uid-1 policy is a site-wide grant too. A scoped

@@ -4,21 +4,56 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbEnvironmentInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidget;
 
 /**
  * Environment entity form with a meta header block.
  *
- * Environments are added only from within their project: the project-scoped
- * add route (`entity.bb_environment.add_for_project`) carries a
- * `bb_project` parameter which this form uses to pre-fill and lock the
- * environment's project.
+ * The project-scoped add route (`entity.bb_environment.add_for_project`)
+ * carries a `bb_project` parameter which this form uses to pre-fill and lock
+ * the environment's project. The Catalog add route
+ * (`entity.bb_environment.add_for_workspace`) offers the projects of the
+ * route's workspace instead and refuses any other.
  */
 final class BbEnvironmentForm extends BbContentEntityFormBase {
+
+  /**
+   * The add route on the Catalog Environments tab.
+   */
+  private const WORKSPACE_ADD_ROUTE = 'entity.bb_environment.add_for_workspace';
+
+  /**
+   * The project picker of the workspace add form: this workspace's projects.
+   *
+   * @var array<string, mixed>
+   */
+  private const PROJECT_PICKER = [
+    'type' => 'bb_picker',
+    'weight' => 1,
+    'region' => 'content',
+    'settings' => [
+      'picker_region' => 'pills',
+      'label' => 'Project',
+      'icon' => 'folder',
+      'searchable' => TRUE,
+      'fallback' => TRUE,
+      'clear_label' => '',
+      'create_label' => '',
+      'context_parameter' => '',
+      'default_value' => '',
+      'note_lead' => '',
+      'note_prefix' => '',
+      'note_suffix' => '',
+      'selection_handler' => 'bb_project_in_active_workspace',
+    ],
+  ];
 
   /**
    * {@inheritdoc}
@@ -32,6 +67,25 @@ final class BbEnvironmentForm extends BbContentEntityFormBase {
         'fields' => ['project_id', 'base_url', 'tier', 'created', 'changed'],
       ],
     ];
+  }
+
+  /**
+   * Whether this is the add form of the Catalog Environments tab.
+   */
+  private function onWorkspaceAdd(): bool {
+    return $this->entity->isNew() && $this->getRouteMatch()->getRouteName() === self::WORKSPACE_ADD_ROUTE;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * The workspace add form offers the project as a picker of its projects.
+   */
+  protected function init(FormStateInterface $form_state): void {
+    parent::init($form_state);
+    if ($this->onWorkspaceAdd()) {
+      $this->getFormDisplay($form_state)->setComponent('project_id', self::PROJECT_PICKER);
+    }
   }
 
   /**
@@ -65,12 +119,30 @@ final class BbEnvironmentForm extends BbContentEntityFormBase {
   /**
    * {@inheritdoc}
    *
+   * The project must be one the workspace add form offers: this workspace's.
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
+    $entity = parent::validateForm($form, $form_state);
+    if ($this->onWorkspaceAdd()) {
+      $widget = $this->getFormDisplay($form_state)->getRenderer('project_id');
+      if ($widget instanceof PickerWidget && $widget->rejectedValues($entity->get('project_id')) !== []) {
+        $form_state->setErrorByName('project_id', $this->t('Pick a project of this workspace.'));
+      }
+    }
+    return $entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
    * The parent redirects to the entity collection, which this entity has no
-   * link for. Redirect to the owning project instead.
+   * link for. The Catalog add returns to its tab; any other save to the
+   * owning project.
    */
   public function save(array $form, FormStateInterface $form_state): int {
     $entity = $this->getEntity();
     assert($entity instanceof BbEnvironmentInterface);
+    $from_catalog = $this->onWorkspaceAdd();
     $result = $entity->save();
 
     $this->messenger()->addStatus($this->t('@type %label saved.', [
@@ -78,7 +150,10 @@ final class BbEnvironmentForm extends BbContentEntityFormBase {
       '%label' => $entity->label() ?? $entity->id(),
     ]));
     $project = $entity->getProject();
-    if ($project instanceof BbProjectInterface) {
+    if ($from_catalog) {
+      $form_state->setRedirectUrl(Url::fromRoute('view.bb_environments.catalog'));
+    }
+    elseif ($project instanceof BbProjectInterface) {
       $form_state->setRedirectUrl($project->toUrl());
     }
 
