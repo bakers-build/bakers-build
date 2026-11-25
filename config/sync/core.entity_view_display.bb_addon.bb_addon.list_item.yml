@@ -7,10 +7,6 @@ dependencies:
   module:
     - bb_addon
     - display_builder
-    - ui_patterns
-    - ui_patterns_field_formatters
-  theme:
-    - bb_theme
 third_party_settings:
   display_builder:
     profile: default
