@@ -97,7 +97,7 @@ The plugins a run installs are the project's [`marketplaces`](/configuration/pro
 addons: [{ use: '@bakers-build/addon-claude', with: { plugins: false } }],
 ```
 
-Claude in `system` or `yolo` uses your own `~/.claude`; `home: 'individual'` keeps a separate [agent home](/configuration/project#agent-plugins).
+Claude in `system` or [bypass mode](/provision/security/execution#modes) uses your own `~/.claude`; `home: 'individual'` keeps a separate [agent home](/configuration/project#agent-plugins).
 
 ## Secrets file
 

@@ -40,11 +40,18 @@ The conductor's serve process exposes a loopback MCP server named `bakers`. A ru
 
 - **Claude and Codex:** their launch configuration adds the conductor's MCP server. Claude measured runs omit this server and its run variables.
 - **Grok, Kimi, OpenCode and Pi:** use `bakers tools` from the running agent's shell.
-- **Operator CLI:** addon commands such as `bakers ports up` use the conductor's private endpoint file and bind the selected worktree. An ordinary `bakers tools` invocation without run variables reaches the site's server instead.
 
-See [Tools and integrations](/provision/tools) for user access and [run security](/provision/security/execution) for harness policy. In particular, stripping `BAKERS_CONDUCTOR_TOKEN` from the shell environment prevents the run-bound CLI route; do not treat an operator-credential fallback as equivalent access.
+See [Tools](/provision/tools) for user access and [run security](/provision/security/execution) for harness policy. In particular, stripping `BAKERS_CONDUCTOR_TOKEN` from the shell environment prevents the run-bound CLI route; do not treat an operator-credential fallback as equivalent access.
 
 A conductor restart normally preserves the port and active grants. If that port is occupied, the conductor chooses another and warns; already-running agents need a new dispatch to receive the new endpoint. Endpoint and grant files under `<BAKERS_HOME>/conductors/` are private (0600); do not copy their contents into tickets.
+
+## Call tools from outside an agent
+
+An addon can expose the same functionality through a CLI command or a UI action. The addon must provide that entry point; declaring a tool alone does not create every kind of caller.
+
+Addon commands such as `bakers ports up` call their tool through the conductor's private endpoint file and bind the selected worktree. An ordinary `bakers tools` invocation without run variables reaches the site's server instead; it does not select a local worktree's environment. An addon's UI action can send a message whose handler calls a tool for the selected ticket, and addons can call each other's tools on the same worktree.
+
+See [UI actions and messages](/addons/build/actions). Local CLI access and ticket actions have their own authentication and access checks; a tool is not automatically a public endpoint.
 
 ## Shipped tools
 

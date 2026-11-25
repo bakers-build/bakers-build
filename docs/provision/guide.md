@@ -38,7 +38,7 @@ Repository scripts prepare the application. Identify the commands to put in `.ba
 
 ## Prepare the application on demand
 
-If a task or its checks need a running application, configure the [`provision_up` tool](/provision/tools#prepare-an-environment-with-provision-up) to prepare or reuse it on demand. If they only need source files and installed dependencies, application services can stay stopped. The project script owns installation, readiness checks and the resulting URL.
+If a task or its checks need a running application, configure the [`provision_up` tool](/configuration/project/hooks#provision-on-an-agent-s-request) to prepare or reuse it on demand. If they only need source files and installed dependencies, application services can stay stopped. The project script owns installation, readiness checks and the resulting URL.
 
 Runtime addons can add tools or discover services, but enabling an addon alone does not install your application. Need a concrete pattern? Follow the [example matching your project](/provision/examples), then return to the check below.
 

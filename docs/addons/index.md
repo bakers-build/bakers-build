@@ -24,7 +24,7 @@ Most projects can start with the shipped addons. Developing an addon is a separa
 Addons run code on the worker machine. Understand their operations and review access boundaries before enabling them.
 
 <DocQuickLinks aria-label="Addon tools and access" :items="[
-  { label: 'Tools and integrations', text: 'See how addon operations reach agents and external clients.', link: '/provision/tools' },
+  { label: 'Tools and integrations', text: 'What the agent asks bakers.build to do outside its sandbox.', link: '/provision/tools' },
   { label: 'Permissions and isolation', text: 'How permissions, isolation and tools limit what addons and agents can reach.', link: '/agents/security' }
 ]" />
 

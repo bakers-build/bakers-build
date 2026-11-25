@@ -37,13 +37,13 @@ OpenCode has no OS sandbox, and its permission policies do not sandbox plugin co
 | `permissions` | Launch flags |
 |---|---|
 | `system` (default) | none; your own OpenCode configuration decides |
-| `yolo` | `--auto` (permission auto-approval) |
-| `sandbox` | fails loading: `OpenCode has no OS sandbox, so permissions: 'sandbox' cannot be enforced; leave permissions unset or set 'system' (your own OpenCode configuration) or 'yolo'` |
+| `sandbox` | fails loading: OpenCode has no OS sandbox |
 | `custom` | fails loading: `OpenCode has no config hand-off for permissions: 'custom'; use permissions: 'system' with your own OpenCode configuration` |
+| other modes | see [Agent permissions › Modes](/provision/security/execution#modes) |
 
 A `sandbox` block therefore always fails loading too. `bakers conductor check` reports OpenCode as `sandbox ok`, as for every agent outside `sandbox` mode, which it does not check.
 
-What `system` and `yolo` expose: [Run security › Risk of loosening](/provision/security/execution#risk-of-loosening).
+What `system` and the bypass mode expose: [Run security › Risk of loosening](/provision/security/execution#risk-of-loosening).
 
 ## Check it works
 
@@ -57,7 +57,7 @@ bakers agents
 
 ## Good to know
 
-- Only `yolo` runs with `--auto`; the default `system` does not. `--prompt` and `--auto` are reserved in every mode; putting them in `args` fails loading.
+- Only [the bypass mode](/provision/security/execution#modes) runs with `--auto`; the default `system` does not. `--prompt` and `--auto` are reserved in every mode; putting them in `args` fails loading.
 - The addon starts `opencode`; it does not install it or sign it in. The binary must be on `PATH`.
 - Listed in a project config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
