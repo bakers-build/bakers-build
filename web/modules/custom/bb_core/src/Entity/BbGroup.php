@@ -8,6 +8,7 @@ use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\bb_core\Field\ReferenceCountItemList;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\views\EntityViewsData;
 use Drupal\entity\EntityAccessControlHandler;
@@ -120,6 +121,14 @@ final class BbGroup extends BbContentEntityBase implements BbGroupInterface, Ent
     // never follow the session (R3) — the acting account is the right default
     // here.
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition();
+    // The listing row's project count.
+    $fields['projects'] = BaseFieldDefinition::create('integer')
+      ->setLabel(new TranslatableMarkup('Projects'))
+      ->setComputed(TRUE)
+      ->setClass(ReferenceCountItemList::class)
+      // Per reader, so not in JSON:API, which caches an entity for all.
+      ->setInternal(TRUE)
+      ->setDisplayConfigurable('view', TRUE);
 
     return $fields;
   }

@@ -40,4 +40,15 @@ final class BbRows extends StylePluginBase {
    */
   protected $usesRowClass = FALSE;
 
+  /**
+   * {@inheritdoc}
+   *
+   * The rows never render fields, but a filter may need field handlers: the
+   * `combine` search reads the fields it matches on. A listing keeps those
+   * fields, excluded; without fields this builds nothing.
+   */
+  public function usesFields(): bool {
+    return TRUE;
+  }
+
 }

@@ -10,6 +10,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityViewBuilder;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\bb_core\Field\ReferenceCountItemList;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\views\EntityViewsData;
 use Drupal\bb_core\Access\BbProjectAccessControlHandler;
@@ -198,6 +199,28 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition()
       ->setSetting('handler', 'bb_assignee_in_ticket_workspace')
       ->setRequired(TRUE);
+    // The listing row's ticket counts.
+    $fields['open_tickets'] = BaseFieldDefinition::create('integer')
+      ->setLabel(new TranslatableMarkup('Open tickets'))
+      ->setComputed(TRUE)
+      ->setClass(ReferenceCountItemList::class)
+      // Per reader, so not in JSON:API, which caches an entity for all.
+      ->setInternal(TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+    $fields['conductor_tickets'] = BaseFieldDefinition::create('integer')
+      ->setLabel(new TranslatableMarkup('Open tickets with a conductor'))
+      ->setComputed(TRUE)
+      ->setClass(ReferenceCountItemList::class)
+      // Per reader, so not in JSON:API, which caches an entity for all.
+      ->setInternal(TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+    $fields['closed_tickets'] = BaseFieldDefinition::create('integer')
+      ->setLabel(new TranslatableMarkup('Closed tickets'))
+      ->setComputed(TRUE)
+      ->setClass(ReferenceCountItemList::class)
+      // Per reader, so not in JSON:API, which caches an entity for all.
+      ->setInternal(TRUE)
+      ->setDisplayConfigurable('view', TRUE);
 
     return $fields;
   }
