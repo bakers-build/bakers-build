@@ -1810,7 +1810,9 @@ export class Conductor {
 
   /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
   private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
-    const t = await this.remote.getTicket(run.ticketUuid);
+    const fetched = await this.remote.getTicket(run.ticketUuid);
+    // JSON:API can return the pre-transition state; the run knows the state it was started for.
+    const t = { ...fetched, state: run.stateAtStart || fetched.state };
     // Resolve the ticket alias and machine defaults, or the project selection hook.
     // Persist the package id below so finalize can choose its transcript parser.
     // The project's select_agent wins; then the machine's agents select.
