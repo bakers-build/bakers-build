@@ -154,10 +154,11 @@ test('redirect HTML preserves an incoming fragment unless its target specifies o
 })
 
 test('get started opens with the quick start, then the advanced setup with its old anchors', () => {
-  const html = readFileSync(new URL('../.vitepress/dist/get-started/index.html', import.meta.url), 'utf8')
-  const h2 = [...html.matchAll(/<h2 id="([^"]+)"/g)].map(match => match[1])
+  // The source, not the build: CI runs these tests without a site build; check-site.mjs resolves links.
+  const md = readFileSync(new URL('../get-started/index.md', import.meta.url), 'utf8')
+  const h2 = [...md.matchAll(/^## .*?\{#([\w-]+)\}$/gm)].map(match => match[1])
   assert.deepEqual(h2.slice(0, 2), ['quick-start', 'advanced-setup'], `h2 order: ${h2}`)
   for (const id of ['set-up-your-computer', 'set-up-your-project', 'create-a-ticket', 'run-a-ticket']) {
-    assert.ok(html.includes(`id="${id}"`), `old anchor #${id} must stay`)
+    assert.match(md, new RegExp(`^### .*\\{#${id}\\}$`, 'm'), `old anchor #${id} must stay under Advanced setup`)
   }
 })
