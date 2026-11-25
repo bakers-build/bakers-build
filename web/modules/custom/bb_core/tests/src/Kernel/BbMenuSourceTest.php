@@ -460,6 +460,64 @@ final class BbMenuSourceTest extends KernelTestBase {
   }
 
   /**
+   * Catalog sits between Insights and Settings and opens on Types.
+   *
+   * Every rank that reads terms sees it, so a guest does; it is current on
+   * each of its tabs.
+   */
+  public function testCatalogRailEntrySitsBetweenInsightsAndSettings(): void {
+    $this->installOgScopeFixture();
+    $this->installCatalogTermDisplays();
+    $this->container->get('router.builder')->rebuild();
+    $lead = $this->createUser([], 'acme-lead');
+    // Before the account is current: rank permissions are memoised per account.
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+
+    $titles = array_column($this->emitted(), 'title');
+    self::assertSame(['Insights', 'Catalog', 'Settings'], array_values(array_intersect($titles, ['Insights', 'Catalog', 'Settings'])));
+    $catalog = array_column($this->emitted(), NULL, 'title')['Catalog'];
+    self::assertSame('/acme/catalog/types', $catalog['url']);
+    self::assertSame('tag', $catalog['icon']);
+
+    $this->visit('view.bb_terms.labels', ['bb_workspace' => 'acme']);
+    self::assertTrue(array_column($this->emitted(), NULL, 'title')['Catalog']['in_active_trail']);
+
+    $guest = $this->createUser([], 'acme-guest');
+    $this->addMembership($this->workspace, $guest, ['guest']);
+    $this->setCurrentUser($guest);
+    self::assertContains('Catalog', array_column($this->emitted(), 'title'));
+
+    $this->setUpCurrentUser(['name' => 'acme-outsider']);
+    self::assertNotContains('Catalog', array_column($this->emitted(), 'title'));
+  }
+
+  /**
+   * Stubs the term tab displays at their Catalog paths.
+   */
+  private function installCatalogTermDisplays(): void {
+    $displays = [
+      'default' => [
+        'id' => 'default',
+        'display_title' => 'Default',
+        'display_plugin' => 'default',
+        'position' => 0,
+        'display_options' => ['access' => ['type' => 'perm', 'options' => ['perm' => 'view bb_term']]],
+      ],
+    ];
+    foreach (['types', 'recipes', 'labels'] as $position => $display_id) {
+      $displays[$display_id] = [
+        'id' => $display_id,
+        'display_title' => ucfirst($display_id),
+        'display_plugin' => 'page',
+        'position' => $position + 1,
+        'display_options' => ['path' => '_workspace/%bb_workspace/catalog/' . $display_id],
+      ];
+    }
+    View::create(['id' => 'bb_terms', 'label' => 'bb_terms', 'base_table' => 'users_field_data', 'display' => $displays])->save();
+  }
+
+  /**
    * An account without membership sees no team and no empty Teams heading.
    */
   public function testTeamIsDeniedToAnAccountWithNoMembership(): void {

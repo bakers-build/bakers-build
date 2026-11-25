@@ -190,7 +190,7 @@ bb_core.bb_team.settings:
   weight: 5
 
 
-# --- Workspace settings: Settings, Members, Addons, Templates, Types, Recipes, Labels ---
+# --- Workspace settings: Settings, Members, Addons, Service accounts, Templates ---
 # Settings is the default tab on its own route (same shape as project/team
 # Overview). Members is the invite-and-roster face.
 
@@ -219,24 +219,26 @@ bb_core.bb_workspace.templates:
   base_route: bb_core.bb_workspace.settings
   weight: 4
 
-# The workspace vocabulary, one tab per term bundle, after Templates.
-bb_core.bb_workspace.types:
+# --- Catalog: Types, Recipes, Labels, Environments ---
+# The categories tickets pick from, one rail entry; Types is the default tab.
+
+bb_core.catalog.types:
   title: Types
   route_name: view.bb_terms.types
-  base_route: bb_core.bb_workspace.settings
-  weight: 5
+  base_route: view.bb_terms.types
+  weight: 0
 
-bb_core.bb_workspace.recipes:
+bb_core.catalog.recipes:
   title: Recipes
   route_name: view.bb_terms.recipes
-  base_route: bb_core.bb_workspace.settings
-  weight: 6
+  base_route: view.bb_terms.types
+  weight: 1
 
-bb_core.bb_workspace.labels:
+bb_core.catalog.labels:
   title: Labels
   route_name: view.bb_terms.labels
-  base_route: bb_core.bb_workspace.settings
-  weight: 7
+  base_route: view.bb_terms.types
+  weight: 2
 
 # --- User: Profile after core's View and Edit ---
 # Position and background only; the tab shows where `edit profile` allows.

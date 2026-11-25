@@ -63,12 +63,23 @@ bb_core.rail.insights:
     # The Billing report tab (bb_track) is a page of Insights too.
     active_routes: [bb_track.workspace.insights_billing]
 
+# Types, Recipes, Labels and Environments; shown to whoever reads terms.
+bb_core.rail.catalog:
+  title: 'Catalog'
+  route_name: view.bb_terms.types
+  menu_name: bakers-rail
+  class: '\Drupal\bb_core\Plugin\Menu\WorkspaceMenuLink'
+  weight: 4
+  options:
+    icon: tag
+    active_routes: [view.bb_terms.recipes, view.bb_terms.labels, entity.bb_term.canonical]
+
 bb_core.rail.settings:
   title: 'Settings'
   route_name: bb_core.bb_workspace.settings
   menu_name: bakers-rail
   class: '\Drupal\bb_core\Plugin\Menu\WorkspaceMenuLink'
-  weight: 4
+  weight: 5
   options:
     icon: settings
 

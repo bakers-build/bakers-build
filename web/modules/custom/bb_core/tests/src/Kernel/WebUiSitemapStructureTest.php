@@ -254,8 +254,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
       ],
     ])->save();
 
-    // The workspace vocabulary tabs, one page display per term bundle, with
-    // the shipped display access; the route subscriber adds the lead gate.
+    // The Catalog term tabs, one page display per term bundle, with
+    // the shipped display access; the route subscriber adds the workspace gate.
     $term_displays = [
       'default' => [
         'id' => 'default',
@@ -271,7 +271,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
         'display_title' => ucfirst($display_id),
         'display_plugin' => 'page',
         'position' => $position + 1,
-        'display_options' => ['path' => '_workspace/%bb_workspace/settings/' . $display_id],
+        'display_options' => ['path' => '_workspace/%bb_workspace/catalog/' . $display_id],
       ];
     }
     View::create([
@@ -700,19 +700,32 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   }
 
   /**
-   * Workspace settings tabs: Settings … Templates, Types, Recipes, Labels.
+   * Workspace settings tabs: Settings, Members, Addons, Templates.
    */
   public function testWorkspaceSettingsTabRowMatchesTheAgreedOrder(): void {
     self::assertCount(
-      7,
+      4,
       $this->tabOrder['Workspace settings'],
-      'The sitemap file must parse exactly seven Workspace settings tab rows.',
+      'The sitemap file must parse exactly four Workspace settings tab rows.',
     );
     self::assertSame(
       $this->tabOrder['Workspace settings'],
       $this->tabRoutesOn('bb_core.bb_workspace.settings', $this->accounts['lead']),
-      'The workspace settings tab row is Settings, Members, Addons, Templates, Types, Recipes, Labels.',
+      'The workspace settings tab row is Settings, Members, Addons, Templates.',
     );
+  }
+
+  /**
+   * Catalog tabs: Types, Recipes, Labels, the same row on every tab.
+   */
+  public function testCatalogTabRowMatchesTheAgreedOrder(): void {
+    foreach ($this->tabOrder['Catalog'] as $route_name) {
+      self::assertSame(
+        $this->tabOrder['Catalog'],
+        $this->tabRoutesOn($route_name, $this->accounts['lead']),
+        sprintf('The Catalog tab row on %s is Types, Recipes, Labels.', $route_name),
+      );
+    }
   }
 
   /**
@@ -886,7 +899,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
       $tab_tables = [
         'Project detail — eight tabs, Overview default' => 'Project detail',
         'Team detail — five tabs, Overview default' => 'Team detail',
-        'Workspace settings — seven tabs, Settings default' => 'Workspace settings',
+        'Workspace settings — four tabs, Settings default' => 'Workspace settings',
+        'Catalog — three tabs, Types default' => 'Catalog',
         'Group detail — two tabs, Overview default' => 'Group detail',
         'Conductor detail — two tabs, Overview default' => 'Conductor detail',
         'Machine detail — two tabs, View default' => 'Machine detail',
@@ -904,7 +918,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // table.
     self::assertCount(8, $order['Project detail'] ?? [], 'The sitemap file must declare exactly eight Project detail tabs.');
     self::assertCount(6, $order['Team detail'] ?? [], 'The sitemap file must declare exactly six Team detail tabs.');
-    self::assertCount(7, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly seven Workspace settings tabs.');
+    self::assertCount(4, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly four Workspace settings tabs.');
+    self::assertCount(3, $order['Catalog'] ?? [], 'The sitemap file must declare exactly three Catalog tabs.');
     self::assertCount(2, $order['Group detail'] ?? [], 'The sitemap file must declare exactly two Group detail tabs.');
     self::assertCount(2, $order['Conductor detail'] ?? [], 'The sitemap file must declare exactly two Conductor detail tabs.');
     self::assertCount(2, $order['Machine detail'] ?? [], 'The sitemap file must declare exactly two Machine detail tabs.');
@@ -964,13 +979,14 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // Gated on the workspace's own figure permission, which denies neutrally,
     // so the workspace boundary's 404 wins; no entity to admit exists.
     'bb_core.workspace.insights' => 404,
+    // The Catalog tabs gate the same way, on the kind's right in the workspace.
+    'view.bb_terms.types' => 404,
+    'view.bb_terms.recipes' => 404,
+    'view.bb_terms.labels' => 404,
     // Gated on `_entity_access` — 403, and each one admits the entity exists.
     'bb_core.bb_workspace.settings' => 403,
     'bb_core.bb_workspace.members' => 403,
     'view.addons.settings' => 403,
-    'view.bb_terms.types' => 403,
-    'view.bb_terms.recipes' => 403,
-    'view.bb_terms.labels' => 403,
     'bb_core.workspace_invite' => 403,
     'entity.bb_project.canonical' => 403,
     'view.project_board.project_board' => 403,
@@ -1034,10 +1050,10 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.bb_workspace.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'bb_core.bb_workspace.members' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     'view.addons.settings' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
-    // Every rank reads terms; the settings lead gate is what narrows them.
-    'view.bb_terms.types' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
-    'view.bb_terms.recipes' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
-    'view.bb_terms.labels' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
+    // Every rank reads terms, so every rank lists them under Catalog.
+    'view.bb_terms.types' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
+    'view.bb_terms.recipes' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
+    'view.bb_terms.labels' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'bb_core.workspace_invite' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     // Overview is a VIEW surface as of finding 3 (`bb_project.view`), so
     // every ranked account here — lead, contributor and guest all carry
