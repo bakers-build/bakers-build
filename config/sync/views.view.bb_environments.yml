@@ -6,6 +6,7 @@ dependencies:
     - bb_core
     - better_exposed_filters
     - options
+    - user
 id: bb_environments
 label: 'Workspace environments'
 module: views
