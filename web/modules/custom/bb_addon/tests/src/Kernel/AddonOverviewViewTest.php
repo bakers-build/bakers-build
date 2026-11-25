@@ -8,7 +8,6 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\bb_core\Kernel\ProjectsViewTestTrait;
 use Drupal\Tests\bb_inbox\Kernel\InboxWorldTrait;
-use Drupal\Tests\bb_core\Kernel\RowViewModeTestTrait;
 use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -24,7 +23,6 @@ final class AddonOverviewViewTest extends KernelTestBase {
   use AddonFixtureTrait;
   use InboxWorldTrait;
   use ProjectsViewTestTrait;
-  use RowViewModeTestTrait;
 
   /**
    * {@inheritdoc}
@@ -49,7 +47,6 @@ final class AddonOverviewViewTest extends KernelTestBase {
     $this->buildInboxWorld();
     $this->installEntitySchema('bb_addon');
     $this->installConfig(['system', 'views']);
-    $this->installRowViewMode('bb_addon', 'list_item');
     $this->installShippedView('views.view.addons');
     // The row components live in the theme.
     $this->container->get('theme_installer')->install(['bb_theme']);

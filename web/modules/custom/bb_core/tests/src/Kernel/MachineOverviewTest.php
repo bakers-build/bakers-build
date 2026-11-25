@@ -234,11 +234,13 @@ final class MachineOverviewTest extends KernelTestBase {
    */
   public function testListingNameLinksToTheEntity(): void {
     $this->installShippedView('views.view.machines');
-    $view = $this->container->get('entity_type.manager')->getStorage('view')->load('machines');
-    self::assertNotNull($view);
-    $fields = $view->get('display')['default']['display_options']['fields'];
-    self::assertTrue($fields['name']['settings']['link_to_entity']);
-    self::assertArrayNotHasKey('host_key', $fields);
+    // The row is the machine in its list-item display.
+    $display = $this->container->get('entity_type.manager')->getStorage('entity_view_display')->load('bb_machine.bb_machine.list_item');
+    self::assertNotNull($display);
+    $sources = $display->getThirdPartySetting('display_builder', 'sources');
+    $name = $sources[0]['source']['component']['slots']['headline']['sources'][0]['source']['component']['slots']['value']['sources'][0]['source']['field:bb_machine:bb_machine:name']['value']['sources'][0]['source'];
+    self::assertTrue($name['settings']['link_to_entity']);
+    self::assertStringNotContainsString('host_key', json_encode($sources, JSON_THROW_ON_ERROR));
   }
 
   /**

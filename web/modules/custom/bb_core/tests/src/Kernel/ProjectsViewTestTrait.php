@@ -60,9 +60,42 @@ trait ProjectsViewTestTrait {
     self::assertIsArray($data, "$name did not parse as a YAML mapping.");
     self::assertArrayHasKey('id', $data, "$name carries no view id.");
 
+    // A listing renders its rows in the row view modes it depends on; those
+    // displays need Display Builder's entity view schema, so a test that
+    // does not enable it does not render rows either.
+    if ($this->container->get('module_handler')->moduleExists('display_builder_entity_view')) {
+      foreach ($data['dependencies']['config'] ?? [] as $dependency) {
+        if (preg_match('/^core\.entity_view_mode\.(\w+)\.(\w+)$/', $dependency, $match)) {
+          $this->installRowViewMode($match[1], $match[2]);
+        }
+      }
+    }
     $storage = $this->container->get('entity_type.manager')->getStorage('view');
     if ($storage->load($data['id']) === NULL) {
       $storage->create($data)->save();
+    }
+  }
+
+  /**
+   * Creates a row view mode and its Display Builder display from config/sync.
+   */
+  protected function installRowViewMode(string $entity_type_id, string $mode): void {
+    // The row is built by Display Builder, whose `default` profile it names.
+    $this->installConfig(['display_builder']);
+    // The repository root, seven levels above this file.
+    $dir = dirname(__DIR__, 7) . '/config/sync/';
+    $manager = $this->container->get('entity_type.manager');
+    foreach ([
+      'entity_view_mode' => "core.entity_view_mode.$entity_type_id.$mode",
+      'entity_view_display' => "core.entity_view_display.$entity_type_id.$entity_type_id.$mode",
+    ] as $storage_id => $name) {
+      $data = Yaml::parseFile($dir . $name . '.yml');
+      self::assertIsArray($data, "$name did not parse as a YAML mapping.");
+      unset($data['uuid']);
+      $storage = $manager->getStorage($storage_id);
+      if ($storage->load($data['id']) === NULL) {
+        $storage->create($data)->save();
+      }
     }
   }
 

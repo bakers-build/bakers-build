@@ -243,6 +243,8 @@ final class MachineUserListingTest extends KernelTestBase {
     $view->setArguments([(string) $this->accounts['lead']->id()]);
     $view->preExecute();
     $view->execute();
+    // Entity rows are built in the style's pre-render, as View::render() does.
+    $view->style_plugin->preRender($view->result);
     $build = $view->style_plugin->render();
     $html = (string) $this->container->get('renderer')->renderInIsolation($build);
     $item = $this->itemNamed($html, 'Alpha');
@@ -263,10 +265,11 @@ final class MachineUserListingTest extends KernelTestBase {
    */
   public function testListingNameLinksToTheEntity(): void {
     $this->installShippedView('views.view.machines');
-    $view = $this->container->get('entity_type.manager')->getStorage('view')->load('machines');
-    self::assertNotNull($view);
-    $fields = $view->get('display')['default']['display_options']['fields'];
-    self::assertTrue($fields['name']['settings']['link_to_entity']);
+    // The row is the machine in its list-item display.
+    $display = $this->container->get('entity_type.manager')->getStorage('entity_view_display')->load('bb_machine.bb_machine.list_item');
+    self::assertNotNull($display);
+    $name = $display->getThirdPartySetting('display_builder', 'sources')[0]['source']['component']['slots']['headline']['sources'][0]['source']['component']['slots']['value']['sources'][0]['source']['field:bb_machine:bb_machine:name']['value']['sources'][0]['source'];
+    self::assertTrue($name['settings']['link_to_entity']);
   }
 
   /**

@@ -546,6 +546,7 @@ config:
       # The listing rows; their displays ship in `recipes/bakers/config/`.
       - core.entity_view_mode.bb_group.list_item
       - core.entity_view_mode.bb_project.list_item
+      - core.entity_view_mode.bb_machine.list_item
       # The project detail's Overview body (BB-628); its display ships in
       # `recipes/bakers/config/`, so it needs no entry here.
       - core.entity_view_mode.bb_project.full

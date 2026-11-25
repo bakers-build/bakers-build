@@ -1,0 +1,198 @@
+uuid: a7cec1bf-d416-4fb5-b425-cd939983ce61
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_machine.list_item
+  module:
+    - bb_core
+    - display_builder
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      - source_id: component
+        source:
+          component:
+            component_id: bb_theme:list_item
+            variant_id: null
+            props: {  }
+            slots:
+              headline:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: name
+                          primary:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_machine:bb_machine:name
+                                  field:bb_machine:bb_machine:name:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_machine:bb_machine:name
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: true
+                                            third_party_settings: {  }
+                    node_id: list_item_name
+              right:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: max_parallel
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_machine:bb_machine:max_parallel
+                                  field:bb_machine:bb_machine:max_parallel:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_machine:bb_machine:max_parallel
+                                          source:
+                                            type: bb_integer_badge
+                                            settings:
+                                              icon: machine
+                                              tone: neutral
+                                              singular: 1 parallel slot
+                                              plural: '@count parallel slots'
+                                            third_party_settings: {  }
+                    node_id: list_item_max_parallel
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: current_load
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_machine:bb_machine:current_load
+                                  field:bb_machine:bb_machine:current_load:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_machine:bb_machine:current_load
+                                          source:
+                                            type: bb_integer_badge
+                                            settings:
+                                              icon: run
+                                              tone: neutral
+                                              singular: 1 load
+                                              plural: '@count loads'
+                                            third_party_settings: {  }
+                    node_id: list_item_current_load
+              right_meta:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: owner_user_id
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Owner
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_machine:bb_machine:owner_user_id
+                                  field:bb_machine:bb_machine:owner_user_id:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_machine:bb_machine:owner_user_id
+                                          source:
+                                            type: entity_reference_label
+                                            settings:
+                                              link: false
+                                            third_party_settings: {  }
+                    node_id: list_item_owner_user_id
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: last_run
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Last run
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_machine:bb_machine:last_run
+                                  field:bb_machine:bb_machine:last_run:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_machine:bb_machine:last_run
+                                          source:
+                                            type: bb_time
+                                            settings:
+                                              date_only: false
+                                            third_party_settings: {  }
+                    node_id: list_item_last_run
+        node_id: bb_machine_list_item
+id: bb_machine.bb_machine.list_item
+targetEntityType: bb_machine
+bundle: bb_machine
+mode: list_item
+content: {  }
+hidden:
+  search_api_excerpt: true

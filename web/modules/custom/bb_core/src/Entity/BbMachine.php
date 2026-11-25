@@ -8,6 +8,7 @@ use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\bb_core\Field\MachineLastRunItemList;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
 use Drupal\bb_core\Access\BbMachineAccessControlHandler;
@@ -116,6 +117,12 @@ final class BbMachine extends BbContentEntityBase implements BbMachineInterface,
       ->setDefaultValue('forbid')
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'options_select', 'weight' => 4]);
+    // The listing row's caption: the latest heartbeat of its conductors.
+    $fields['last_run'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(new TranslatableMarkup('Last run'))
+      ->setComputed(TRUE)
+      ->setClass(MachineLastRunItemList::class)
+      ->setInternal(TRUE);
 
     return $fields;
   }

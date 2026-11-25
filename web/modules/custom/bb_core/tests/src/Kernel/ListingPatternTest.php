@@ -30,7 +30,6 @@ final class ListingPatternTest extends KernelTestBase {
   use WorkspaceReadScopeTestTrait;
   use ProjectsViewTestTrait;
   use ShippedImageConfigTrait;
-  use RowViewModeTestTrait;
 
   /**
    * {@inheritdoc}
@@ -62,8 +61,6 @@ final class ListingPatternTest extends KernelTestBase {
     $this->installReadScopeEnvironment();
     $this->buildTwoWorkspaceWorld();
     $this->installConfig(['views']);
-    $this->installRowViewMode('bb_project', 'list_item');
-    $this->installRowViewMode('bb_group', 'list_item');
     $this->installShippedView('views.view.projects');
     $this->installShippedView('views.view.groups');
     $this->installEntitySchema('crop');

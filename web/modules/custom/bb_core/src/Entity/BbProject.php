@@ -205,22 +205,19 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
       ->setComputed(TRUE)
       ->setClass(ReferenceCountItemList::class)
       // Per reader, so not in JSON:API, which caches an entity for all.
-      ->setInternal(TRUE)
-      ->setDisplayConfigurable('view', TRUE);
+      ->setInternal(TRUE);
     $fields['conductor_tickets'] = BaseFieldDefinition::create('integer')
       ->setLabel(new TranslatableMarkup('Open tickets with a conductor'))
       ->setComputed(TRUE)
       ->setClass(ReferenceCountItemList::class)
       // Per reader, so not in JSON:API, which caches an entity for all.
-      ->setInternal(TRUE)
-      ->setDisplayConfigurable('view', TRUE);
+      ->setInternal(TRUE);
     $fields['closed_tickets'] = BaseFieldDefinition::create('integer')
       ->setLabel(new TranslatableMarkup('Closed tickets'))
       ->setComputed(TRUE)
       ->setClass(ReferenceCountItemList::class)
       // Per reader, so not in JSON:API, which caches an entity for all.
-      ->setInternal(TRUE)
-      ->setDisplayConfigurable('view', TRUE);
+      ->setInternal(TRUE);
 
     return $fields;
   }

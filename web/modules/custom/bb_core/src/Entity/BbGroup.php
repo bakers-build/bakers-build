@@ -127,8 +127,7 @@ final class BbGroup extends BbContentEntityBase implements BbGroupInterface, Ent
       ->setComputed(TRUE)
       ->setClass(ReferenceCountItemList::class)
       // Per reader, so not in JSON:API, which caches an entity for all.
-      ->setInternal(TRUE)
-      ->setDisplayConfigurable('view', TRUE);
+      ->setInternal(TRUE);
 
     return $fields;
   }
