@@ -8,7 +8,7 @@
     ".claude/skills/bakers-build/skills/bb-init-project/references/project-setup.md",
     "docs/get-started/index.md"
   ],
-  "max_turns": 60,
+  "max_turns": 70,
   "request": "/bakers:bb-get-started",
   "answers": {
     "project": "Use my existing Git project at `project` (that path, relative to the environment root).",
