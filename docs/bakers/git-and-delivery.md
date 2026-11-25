@@ -24,16 +24,16 @@ scope entirely** (`chore: <subject>`) — the bakers.build identifier is deliber
 into it, because it is already in the trailer. The body is optional and stays proportional:
 enough to explain *why*, not a transcript. **`ref:<identifier>` is always the very last line**,
 where `<identifier>` is the value of the ticket's own `identifier` field, copied verbatim in its
-canonical casing — never a literal prefix plus a number. That field is `<project key>-<number>`,
+canonical casing — never a literal prefix plus a number. That field is `<identifier prefix>-<number>` as of its creation,
 so a ticket whose `identifier` is `SHOP-42` gets `ref:SHOP-42`, and one whose `identifier` is
 `BB-392` gets `ref:BB-392`; on this project the two coincide, which is exactly why the
 distinction has to be stated. The trailer matters because it is what `bakers deployment tickets`
 parses out of the merged commit delta to compute a release batch — a commit with no ticket
-identifier is invisible to it, and silently so. The parse admits any project key rather than
-`bakers.build` alone: an identifier has the shape a project key plus a number (`SHOP-42`), and a key
+identifier is invisible to it, and silently so. The parse admits any identifier prefix rather than
+`bakers.build` alone: an identifier has the shape an identifier prefix plus a number (`SHOP-42`), and a prefix
 counts as admitted once it has appeared in an anchored position — the `ref:` trailer, a
 conventional-commit scope (`feat(BB-134):`), or a subject-leading `BB-375:` — after which
-bare occurrences of that same key are matched too. That parse reads the **whole** delta, so a
+bare occurrences of that same prefix are matched too. That parse reads the **whole** delta, so a
 body citing another ticket's identifier pulls that ticket into the batch: cite neighbouring work
 by branch or commit, not by its ticket number.
 

@@ -60,10 +60,10 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_group_list` | `workspace`; optional `group` | A workspace's groups, or one group's subgroups |
 | `bakers_group_create` | `workspace`, `name`; optional `description` | Create a group |
 | `bakers_team_list` | `workspace` | A workspace's teams |
-| `bakers_project_list` | optional `workspace`, `group`, `query` | Projects you can reach, with `key` and `uuid` |
-| `bakers_project_read` | `project` (key or UUID) | One project: group, teams, repository, coder configuration, environments |
+| `bakers_project_list` | optional `workspace`, `group`, `query` | Projects you can reach, with `key` (identifier prefix) and `uuid` |
+| `bakers_project_read` | `project` (identifier prefix or UUID) | One project: group, teams, repository, coder configuration, environments |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
-| `bakers_project_update` | `project`, `repository` (`url`, `default_branch`, `branch_convention`) | Change a project's repository, keeping omitted keys; needs `edit bb_project` or `update own bb_project` |
+| `bakers_project_update` | `project`; `repository` (`url`, `default_branch`, `branch_convention`), `key` (identifier prefix), at least one | Change a project's repository or identifier prefix, keeping the rest; existing tickets keep their identifier; needs `edit bb_project` or `update own bb_project` |
 | `bakers_environment_create`, `_update`, `_delete` | `project`, `environment`, `name`, `branch`, `base_url` | Manage environments |
 | `bakers_conductor_list` | `project` | A project's conductors and their status, with each conductor's `machine` (machine_id), `owner` and `assignment` |
 | `bakers_machine_list` | optional `workspace` (UUID), `conductor_uuid` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel`, `current_load` and `assignment` |
