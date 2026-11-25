@@ -231,4 +231,5 @@ targetEntityType: bb_addon
 bundle: bb_addon
 mode: list_item
 content: {  }
-hidden: {  }
+hidden:
+  search_api_excerpt: true
