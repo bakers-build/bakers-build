@@ -223,6 +223,10 @@ final class TicketCreate extends ToolBase {
       throw new \InvalidArgumentException('You may not create tickets.');
     }
     $project = $this->readableProject($values['project']);
+    // ToolBase's final constructor injects no more services.
+    if (!\Drupal::service('bb_core.rank_entity_fence')->mayCreateIn($this->currentUser, 'bb_ticket', $project)) {
+      throw new \InvalidArgumentException(sprintf('You may not create tickets in project %s: you lack the create-ticket right there.', $project->getKey()));
+    }
     TicketWriteBudget::check($values['description'] ?? '');
     $fields = [
       'title' => $values['title'],
