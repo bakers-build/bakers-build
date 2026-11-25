@@ -139,11 +139,14 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
    * `9d718d2a`) — that requires overriding the element tree `form()` builds,
    * which no shared base method exposes. The ticket dialog has no such
    * override.
+   *
+   * `flagViolations()` is allowed because the dialog hides the derived
+   * identifier prefix, so a prefix violation is reported on the name instead.
    */
   public function testTheProjectDialogDeclaresOnlyItsSubject(): void {
     self::assertSame([], $this->declaredBeyond(BbProjectCreateForm::class, [
       'create', 'getFormId', 'actionLabels',
-      'copyFormValuesToEntity', 'formDisplayMode', 'form',
+      'copyFormValuesToEntity', 'formDisplayMode', 'form', 'flagViolations',
     ]));
   }
 
