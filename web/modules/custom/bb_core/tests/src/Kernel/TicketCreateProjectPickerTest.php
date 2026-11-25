@@ -186,8 +186,14 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
    */
   public function testNewestOwnTicketProjectIsPreselected(): void {
     $reader = $this->reader('recent', ['contributor']);
-    $this->createEntity('bb_ticket', ['title' => 'older', 'workflow' => 'bb_work', 'project_id' => $this->projects['A'], 'owner_user_id' => $reader->id()]);
-    $this->createEntity('bb_ticket', ['title' => 'newer', 'workflow' => 'bb_work', 'project_id' => $this->projects['S'], 'owner_user_id' => $reader->id()]);
+    foreach (['older' => 'A', 'newer' => 'S'] as $title => $project) {
+      $this->createEntity('bb_ticket', [
+        'title' => $title,
+        'workflow' => 'bb_work',
+        'project_id' => $this->projects[$project],
+        'owner_user_id' => $reader->id(),
+      ]);
+    }
 
     self::assertSame([$this->projects['S']], $this->pickerProps($this->buildForm(NULL), 'project_id')['values']);
   }
@@ -276,6 +282,8 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
    *
    * @param array<string, mixed> $values
    *   Submitted values; a title is added when absent.
+   * @param string|null $project
+   *   The project key the dialog is opened on, or NULL for none.
    */
   private function submitForm(array $values, ?string $project): FormStateInterface {
     $this->pushRequest($project);
@@ -290,6 +298,8 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
    *
    * @param array<string, mixed> $values
    *   Submitted values.
+   * @param string|null $project
+   *   The project key the dialog is opened on, or NULL for none.
    */
   private function submitExpectingSave(array $values, ?string $project): BbTicketInterface {
     $state = $this->submitForm($values, $project);
@@ -308,6 +318,8 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
    *
    * @param array<string, mixed> $input
    *   The raw user input.
+   * @param string|null $project
+   *   The project key the dialog is opened on, or NULL for none.
    *
    * @return array{0: array<string, mixed>, 1: \Drupal\Core\Form\FormStateInterface}
    *   The rebuilt form and its state.
@@ -341,6 +353,8 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
    *
    * @param array<string, mixed> $form
    *   The built form.
+   * @param string $field
+   *   The picker field.
    *
    * @return array<string, mixed>
    *   The pill props.
@@ -358,6 +372,8 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
    *
    * @param array<string, mixed> $form
    *   The built form.
+   * @param string $field
+   *   The picker field.
    *
    * @return list<string>
    *   The option values.

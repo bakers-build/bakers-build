@@ -427,7 +427,9 @@ final class TicketCreateToolTest extends BakersToolTestBase {
     $etm = $this->container->get('entity_type.manager');
     if ($etm->getStorage('user_role')->load('ranked') === NULL) {
       $etm->getStorage('user_role')->create(['id' => 'ranked', 'label' => 'Ranked'])->save();
-      user_role_grant_permissions('ranked', ['view bb_ticket', 'view bb_project', 'view bb_term', 'use text format bb_rich']);
+      user_role_grant_permissions('ranked', [
+        'view bb_ticket', 'view bb_project', 'view bb_term', 'use text format bb_rich',
+      ]);
     }
     $reader = $this->account('ranked-' . implode('-', $workspace_roles), ['ranked']);
     $this->addMembership($this->workspace, $reader, $workspace_roles);

@@ -415,22 +415,17 @@ final class BbRankEntityFence {
    *   TRUE when the account may create the row there.
    */
   public function mayCreateIn(AccountInterface $account, string $entity_type_id, EntityInterface $anchor): bool {
-    $admin_permission = $this->entityTypeManager->getDefinition($entity_type_id)->getAdminPermission();
+    // hasPermission() on purpose: it carries core's uid 1 short-circuit.
+    $admin_permission = (string) $this->entityTypeManager->getDefinition($entity_type_id)->getAdminPermission();
     $permission = 'create ' . $entity_type_id;
-    if ((is_string($admin_permission) && $account->hasPermission($admin_permission))
-      || $this->capability->hasSiteWidePermission($account, $permission)) {
+    if ($account->hasPermission($admin_permission) || $this->capability->hasSiteWidePermission($account, $permission)) {
       return TRUE;
     }
     $groups = $this->chainOf($anchor);
-    if ($groups === []) {
-      return TRUE;
-    }
-    foreach ($groups as $group) {
-      if ($this->capability->hasGroupPermission($account, $permission, $group)) {
-        return TRUE;
-      }
-    }
-    return FALSE;
+    return $groups === [] || array_any(
+      $groups,
+      fn (EntityInterface $group): bool => $this->capability->hasGroupPermission($account, $permission, $group),
+    );
   }
 
   /**

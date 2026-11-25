@@ -123,7 +123,10 @@ final class TicketCreateFormTest extends KernelTestBase {
     uasort($components, static fn (array $a, array $b): int => $a['weight'] <=> $b['weight']);
 
     self::assertSame(
-      ['project_id', 'workflow','title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe', 'ticket_type'],
+      [
+        'project_id', 'workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe',
+        'ticket_type',
+      ],
       array_keys($components),
     );
   }
@@ -167,7 +170,10 @@ final class TicketCreateFormTest extends KernelTestBase {
       $names = $this->submittedNamesOfBuiltForm($build);
 
       self::assertEqualsCanonicalizing(
-        ['project_id', 'workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe', 'ticket_type'],
+        [
+          'project_id', 'workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe',
+          'ticket_type',
+        ],
         $names,
         'Every dialog emits exactly these ten names and no others.',
       );

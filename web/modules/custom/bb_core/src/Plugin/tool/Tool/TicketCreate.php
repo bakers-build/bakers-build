@@ -222,11 +222,7 @@ final class TicketCreate extends ToolBase {
     if (!$this->entities()->getAccessControlHandler('bb_ticket')->createAccess('bb_ticket', $this->currentUser)) {
       throw new \InvalidArgumentException('You may not create tickets.');
     }
-    $project = $this->readableProject($values['project']);
-    // ToolBase's final constructor injects no more services.
-    if (!\Drupal::service('bb_core.rank_entity_fence')->mayCreateIn($this->currentUser, 'bb_ticket', $project)) {
-      throw new \InvalidArgumentException(sprintf('You may not create tickets in project %s: you lack the create-ticket right there.', $project->getKey()));
-    }
+    $project = $this->creatableProject($values['project']);
     TicketWriteBudget::check($values['description'] ?? '');
     $fields = [
       'title' => $values['title'],
@@ -280,6 +276,19 @@ final class TicketCreate extends ToolBase {
       ...$this->ticketPeople($ticket),
       'url' => $ticket->toUrl()->setAbsolute()->toString(),
     ]);
+  }
+
+  /**
+   * The readable project of this key or UUID the caller may create in.
+   *
+   * @throws \InvalidArgumentException
+   */
+  private function creatableProject(string $project): BbProjectInterface {
+    $found = $this->readableProject($project);
+    if (!$this->fence()->mayCreateIn($this->currentUser, 'bb_ticket', $found)) {
+      throw new \InvalidArgumentException(sprintf('You may not create tickets in project %s: you lack the create-ticket right there.', $found->getKey()));
+    }
+    return $found;
   }
 
   /**

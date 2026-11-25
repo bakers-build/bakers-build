@@ -22,7 +22,7 @@ Your agent checks for a similar ticket and asks for missing details. If it finds
 
 With a coding agent, add *and specify it with me* to agree the change, criteria and scope first. An approved feature or chore can enter `working` with its plan and conductor. Bugs enter `plan` for diagnosis. The supplied [chat instructions](/configuration/guides/project-instructions) stop at `plan`.
 
-**Or use the web:** in the project's ticket list choose **New ticket**, fill in the dialog and choose **Create ticket**. **Project** starts on the list's project; pick any other project you may create tickets in. The ticket is saved as typed.
+**Or use the web:** in the project's ticket list choose **New ticket**, fill in the dialog and choose **Create ticket**. Pick another **Project** you may create in. The ticket is saved as typed.
 
 ## 2. Choose where the work runs
 
