@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
@@ -150,5 +150,14 @@ test('redirect HTML preserves an incoming fragment unless its target specifies o
     runInNewContext(script, { location: { hash, replace: to => { destination = to } } })
     assert.equal(destination, expected)
     assert.ok(html.includes(`http-equiv="refresh" content="0;url=${target}"`), 'no-JS fallback remains')
+  }
+})
+
+test('get started opens with the quick start, then the advanced setup with its old anchors', () => {
+  const html = readFileSync(new URL('../.vitepress/dist/get-started/index.html', import.meta.url), 'utf8')
+  const h2 = [...html.matchAll(/<h2 id="([^"]+)"/g)].map(match => match[1])
+  assert.deepEqual(h2.slice(0, 2), ['quick-start', 'advanced-setup'], `h2 order: ${h2}`)
+  for (const id of ['set-up-your-computer', 'set-up-your-project', 'create-a-ticket', 'run-a-ticket']) {
+    assert.ok(html.includes(`id="${id}"`), `old anchor #${id} must stay`)
   }
 })

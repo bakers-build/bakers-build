@@ -5,7 +5,7 @@ import unittest
 import json
 import subprocess
 
-from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, validate_config_write
+from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, relative_argv, validate_config_write
 
 
 class SetupBoundaryTest(unittest.TestCase):
@@ -70,6 +70,19 @@ class SetupBoundaryTest(unittest.TestCase):
             with self.subTest(argv=argv):
                 self.assertIsNone(declared_output(commands, argv))
 
+    def test_declared_evidence_ending_in_a_wildcard_matches_its_prefix(self):
+        commands = {json.dumps(['git', '-C', 'project', 'rev-parse', '*'], separators=(',', ':')): 'top'}
+        self.assertEqual(declared_output(commands, ['git', '-C', 'project', 'rev-parse', '--show-toplevel']), 'top')
+        for argv in [['git', '-C', 'project'], ['git', '-C', 'plain', 'rev-parse', '--show-toplevel']]:
+            with self.subTest(argv=argv):
+                self.assertIsNone(declared_output(commands, argv))
+
+    def test_absolute_case_paths_read_as_relative_for_declared_evidence(self):
+        root = Path('/tmp/case/environment')
+        self.assertEqual(relative_argv(root, ['git', '-C', '/tmp/case/environment/project', 'rev-parse', '/tmp/case/environment']),
+                         ['git', '-C', 'project', 'rev-parse', '.'])
+        self.assertEqual(relative_argv(root, ['git', '-C', '/tmp/case/environment-other']), ['git', '-C', '/tmp/case/environment-other'])
+
     def test_paths_cannot_escape_including_symlinks(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / 'case'
@@ -85,6 +98,7 @@ class SetupBoundaryTest(unittest.TestCase):
             root = Path(temporary)
             args = config_args(root, ['bakers', 'config', 'init', '--scope', 'machine', '--label', 'test-worker'])
             self.assertIn('test-worker', args)
+            self.assertIn('@bakers-build/addon-herdr-core', config_args(root, ['bakers', 'config', 'init', '--scope', 'project', '--executor', '@bakers-build/addon-herdr-core']))
             for argv in [
                 ['bakers', 'auth', 'login'],
                 ['bakers', 'conductor', 'start'],

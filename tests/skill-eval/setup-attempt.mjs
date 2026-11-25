@@ -10,7 +10,7 @@ const original = await read('fixture.json');
 const expectation = async name => JSON.parse(await readFile(new URL(`./fixtures/setup/${name}.json`, import.meta.url), 'utf8'));
 const expectations = { ...await expectation('defaults'), ...await expectation(original.id) };
 const snapshots = await read('sources.json');
-const skill = original.request.includes('bb-init-project') ? 'bb-init-project' : 'bb-init';
+const skill = ['bb-get-started', 'bb-init-project'].find(name => original.request.includes(name)) ?? 'bb-init';
 const fixture = { synthetic: true, id: original.id, skill, profile: 'setup', references: [],
   input: { expected_files: expectations.expected_files ?? {}, preserved_files: expectations.preserved_files ?? {},
     forbidden_fragments: expectations.forbidden_fragments ?? {},
@@ -18,7 +18,9 @@ const fixture = { synthetic: true, id: original.id, skill, profile: 'setup', ref
     no_writes: expectations.no_writes ?? false, no_questions: expectations.no_questions ?? false,
     max_questions: expectations.max_questions, derived_sources: expectations.derived_sources ?? [],
     previewed_keys: expectations.previewed_keys ?? [],
-    asked_values: expectations.asked_values ?? [], max_doc_loads: expectations.max_doc_loads },
+    asked_values: expectations.asked_values ?? [], max_doc_loads: expectations.max_doc_loads,
+    forbidden_commands: expectations.forbidden_commands, final_fragments: expectations.final_fragments,
+    min_questions: expectations.min_questions, tool_sequence: expectations.tool_sequence },
   rubric: expectations.rubric ?? [{ id: 'conversation-quality', criterion: 'Separately inspect question order, provenance, recommendations and honest readiness against saved source snapshots.' }] };
 const metadata = result.turns.find(turn => turn.role === 'assistant' && turn.metadata)?.metadata;
 if (!metadata?.isolation_confirmed) throw new Error('No verified model generation in this attempt');

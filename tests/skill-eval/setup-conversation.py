@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 import worker
-from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, validate_config_write
+from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, relative_argv, validate_config_write
 
 ROOT = worker.ROOT
 SYSTEM = '''Apply the supplied setup skill and its documentation to the user request.
@@ -135,7 +135,7 @@ def main():
                             canonical = json.dumps(['bakers', 'config', 'check', '--scope', scope, '--online'], separators=(',', ':'))
                             if canonical in fixture.get('commands', {}):
                                 key = canonical
-                        declared = declared_output(fixture.get('commands', {}), json.loads(key))
+                        declared = declared_output(fixture.get('commands', {}), relative_argv(environment, json.loads(key)))
                         if declared is not None:
                             event.update(output=declared, simulated=True)
                         elif argv[:2] == ['bakers', 'tools'] or argv == ['bakers', 'info']:

@@ -1,28 +1,14 @@
 # Get started
 
-bakers.build is a ticket-driven AI software factory. Coding agents work every ticket on your development machine or on remote workers, and a person decides at [every station](/get-started/first-ticket#how-it-works). Open source, self-hosted or hosted, both free.
+bakers.build is a ticket-driven AI software factory: coding agents work every ticket on your machine or remote workers, and a person decides at [every station](/get-started/first-ticket#how-it-works). Open source, hosted or [self-hosted](/self-hosting/), free.
 
-**You need:** a bakers.build account (hosted at [app.bakers.build](https://app.bakers.build/) or [self-hosted](/self-hosting/)), [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in, a Git checkout and a computer where you may install packages.
+## Quick start {#quick-start}
 
-<span id="before-you-start"></span>
+One skill run, without sandbox or `sudo`, ending in a running test ticket.
 
-## 1. Set up your computer (once) {#set-up-your-computer}
+**You need:** a [bakers.build account](https://app.bakers.build/), [Node.js ≥20.19](https://nodejs.org/en/download), Git, and [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in.
 
-Web-only ticket writers skip this.
-
-1. **Linux only, before you start the agent:** install the sandbox tools; the agent has no `sudo`. Other distributions: same packages.
-
-   ```sh
-   sudo apt install bubblewrap socat
-   ```
-
-2. **CLI** ([Node.js ≥20.19 with npm](https://nodejs.org/en/download)):
-
-   ```sh
-   npm install -g @bakers-build/bakers
-   ```
-
-3. **Skills**, one command at a time:
+1. <span id="install-the-skills"></span>**Install the skills** one command at a time, then `/reload-plugins` (Codex: new session):
 
    ::: code-group
 
@@ -48,9 +34,51 @@ Web-only ticket writers skip this.
 
    :::
 
-4. **Reload the plugins:** `/reload-plugins` in Claude Code; in Codex, start a new session.
+2. **Run** it (alias `bb-quick-start`):
 
-5. **Sign in.** Ask your agent:
+   ::: code-group
+
+   ```text [Claude Code]
+   /bakers:bb-get-started
+   ```
+
+   ```text [Codex]
+   Use bakers:bb-get-started to set up a quick start.
+   ```
+
+   :::
+
+It asks one question: your Git project's path (re-asked unless a Git repository) or the demo [northside-shop](https://github.com/bakers-build/northside-shop) (cloned to `~/projects/northside-shop`). It pushes the [setup files](/get-started/connect-a-project#what-setup-writes) to your default branch.
+
+::: warning
+Agents run unsandboxed, with all your rights. For confined agents, use the [Advanced setup](#advanced-setup).
+:::
+
+## Advanced setup {#advanced-setup}
+
+With a sandbox, where you may install packages.
+
+<span id="before-you-start"></span>
+
+### 1. Set up your computer (once) {#set-up-your-computer}
+
+Web-only ticket writers skip this.
+
+1. **Linux only, before you start the agent:** install the sandbox tools; the agent has no `sudo`. Other distributions: same packages.
+
+   ```sh
+   sudo apt install bubblewrap socat
+   ```
+
+2. **CLI** ([Node.js ≥20.19](https://nodejs.org/en/download)):
+
+   ```sh
+   npm install -g @bakers-build/bakers
+   ```
+
+3. **Skills:** [install and reload them](#install-the-skills).
+
+4. **Sign in.** Ask your agent:
 
    ::: code-group
 
@@ -66,15 +94,15 @@ Web-only ticket writers skip this.
 
 **Done when:** `bakers conductor check` prints `sandbox ok`. Remote or manual setup: [Choose where agents run](/provision/machine).
 
-## 2. Set up your project (once) {#set-up-your-project}
+### 2. Set up your project (once) {#set-up-your-project}
 
 Connect your repository with one skill call: [Prepare your project](/get-started/connect-a-project).
 
-## 3. Create a ticket {#create-a-ticket}
+### 3. Create a ticket {#create-a-ticket}
 
 Describe a small change with its expected result: [Create a ticket](/get-started/daily-work/create-a-ticket).
 
-## 4. Run a ticket {#run-a-ticket}
+### 4. Run a ticket {#run-a-ticket}
 
 Start your agents and read the first result: [Run the first ticket](/get-started/first-ticket).
 

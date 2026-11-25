@@ -1,0 +1,143 @@
+{
+  "id": "get-started-not-git",
+  "sources": [
+    ".claude/skills/bakers-build/skills/bb-get-started/SKILL.md",
+    ".claude/skills/bakers-build/skills/bb-workflow/references/tools.md",
+    ".claude/skills/bakers-build/skills/bb-workflow/references/people.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/WORKFLOW.template.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/project-setup.md",
+    "docs/get-started/index.md"
+  ],
+  "max_turns": 40,
+  "request": "/bakers:bb-get-started",
+  "answers": {
+    "project": "My project is at `plain` (relative to the environment root).",
+    "after_rejection": "If that path is rejected: stop the setup now, I will come back later."
+  },
+  "files": {
+    "machine/machine.config.js": "export default {\"schema_version\":1,\"machine_id\":\"11111111-1111-4111-8111-111111111111\",\"label\":\"quick-worker\"};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
+    "plain/notes.txt": "notes\n"
+  },
+  "commands": {
+    "[\"bakers\",\"--version\"]": {
+      "exit_code": 0,
+      "stdout": "0.14.0\n"
+    },
+    "[\"bakers\",\"auth\",\"status\"]": {
+      "exit_code": 0,
+      "stdout": "bakers (default): signed in as quick@example.test at https://setup.example.test — session valid (synthetic)\n"
+    },
+    "[\"hc\",\"--version\"]": {
+      "exit_code": 0,
+      "stdout": "hc 0.1.18\n"
+    },
+    "[\"bakers\",\"config\",\"check\",\"--scope\",\"project\",\"--online\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic: project configuration valid; signed in; workspace Quick Workspace reachable.\n"
+    },
+    "[\"bakers\",\"conductor\",\"start\"]": {
+      "exit_code": 0,
+      "stdout": "Conductor started in the background (synthetic; nothing was started).\n"
+    },
+    "[\"bakers\",\"conductor\",\"status\"]": {
+      "exit_code": 0,
+      "stdout": "Conductor cccccccc-cccc-4ccc-8ccc-000000000001 (quick-worker): online (synthetic)\n"
+    },
+    "[\"git\",\"-C\",\"plain\",\"rev-parse\",\"*\"]": {
+      "exit_code": 128,
+      "stderr": "fatal: not a git repository (or any of the parent directories): .git\n"
+    }
+  },
+  "server": {
+    "input": {
+      "workspace_uuid": "66666666-6666-4666-8666-666666666666"
+    },
+    "simulation": {
+      "workspaces": [
+        {
+          "uuid": "66666666-6666-4666-8666-666666666666",
+          "name": "Quick Workspace",
+          "slug": "quick"
+        }
+      ],
+      "teams": [
+        {
+          "uuid": "77777777-7777-4777-8777-000000000001",
+          "name": "Core"
+        }
+      ],
+      "groups": [],
+      "projects": [],
+      "user": {
+        "uuid": "88888888-8888-4888-8888-000000000001",
+        "name": "quick",
+        "position": "",
+        "background": "",
+        "machines": [
+          {
+            "name": "quick-worker",
+            "conductors": [
+              {
+                "uuid": "cccccccc-cccc-4ccc-8ccc-000000000001",
+                "label": "quick-worker",
+                "project": "66666666-6666-4666-8666-000000000001",
+                "status": "online"
+              }
+            ]
+          }
+        ]
+      },
+      "conductors": [
+        {
+          "uuid": "cccccccc-cccc-4ccc-8ccc-000000000001",
+          "label": "quick-worker",
+          "project": "66666666-6666-4666-8666-000000000001",
+          "status": "online"
+        }
+      ]
+    }
+  },
+  "observations": {
+    "tools": "Git, Node 24, npm, the bakers CLI 0.14.0, hc 0.1.18 and Claude Code are installed; Claude Code runs this skill.",
+    "skills": "The bakers skills are installed; the supplied sources are loaded.",
+    "authentication": "Use the supplied synthetic observations only; no real login.",
+    "api": "Call control-plane tools as `bakers tools <tool> --data '<json>'`; they answer from a synthetic server.",
+    "file_paths": "machine/ is BAKERS_HOME (~/.bakers); a path starting with ~ is a folder named ~ in the case directory. Git commands answer with case-relative paths.",
+    "repository": "plain/ is a folder without Git."
+  },
+  "expected_files": {},
+  "preserved_files": {
+    "machine/machine.config.js": "export default {\"schema_version\":1,\"machine_id\":\"11111111-1111-4111-8111-111111111111\",\"label\":\"quick-worker\"};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
+    "plain/notes.txt": "notes\n"
+  },
+  "no_writes": true,
+  "max_questions": 2,
+  "min_questions": 2,
+  "forbidden_commands": [
+    "sudo",
+    "bwrap",
+    "bubblewrap",
+    "socat",
+    "git init"
+  ],
+  "final_fragments": [
+    "✖",
+    "not run"
+  ],
+  "rubric": [
+    {
+      "id": "one-question",
+      "criterion": "The setup asks the person only the one question of step 3 (Git project path or demo), plus a repeat of it after a rejected path; every other value takes the skill's default."
+    },
+    {
+      "id": "overview",
+      "criterion": "The final report is one screen: one line per step with ✔ or ✖ and its result (sign-in, CLI, hc, machine permissions, server project, files, conductor, test ticket), then the three ways to go on."
+    },
+    {
+      "id": "not-git",
+      "criterion": "After `plain` fails the Git check, the same question is asked again with the reason; no repository is initialized; after the person stops, the overview marks the step ✖ and the later steps not run."
+    }
+  ]
+}
