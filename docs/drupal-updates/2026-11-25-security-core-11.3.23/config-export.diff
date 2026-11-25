@@ -1,0 +1,11 @@
+$ drush cex -y  (diff vs config/sync, discarded: not update-caused)
+ config/sync/island.profile.bb_shell.yml  | 2 --
+ config/sync/views.view.bb_terms.yml      | 2 +-
+ config/sync/views.view.conductors.yml    | 8 ++++----
+ config/sync/views.view.groups.yml        | 2 +-
+ config/sync/views.view.machines.yml      | 2 +-
+ config/sync/views.view.project_board.yml | 2 +-
+ config/sync/views.view.projects.yml      | 4 ++--
+ config/sync/views.view.runs.yml          | 2 +-
+ config/sync/views.view.tickets.yml       | 4 ++--
+ 9 files changed, 13 insertions(+), 15 deletions(-)

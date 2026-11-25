@@ -149,13 +149,17 @@ describe('the Conductors screen', () => {
   /**
    * BB-375 — conductors refresh through the shared ui-refresh / `R` path, not
    * a screen-private 5 s timer. Enter must not arm an interval of its own.
+   * Only the load's own timeout runs while the load is in flight, and it
+   * goes away when the load settles.
    */
-  it('does not arm a private refresh timer on enter or re-enter', () => {
+  it('does not arm a private refresh timer on enter or re-enter', async () => {
     vi.useFakeTimers();
     try {
       const screen = new ConductorsScreen();
       const context = harness();
       screen.enter(context);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(screen.busy).toBe(false);
       expect(vi.getTimerCount()).toBe(0);
       screen.enter(context);
       expect(vi.getTimerCount()).toBe(0);

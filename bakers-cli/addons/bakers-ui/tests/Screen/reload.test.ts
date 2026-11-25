@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { lineText } from '../../src/Component/section-list/index.js';
+import { createSessionStore } from '../../src/Data/session-store.js';
 import { ProjectsScreen } from '../../src/Entity/project/Screen/projects-screen.js';
 import { RunsScreen } from '../../src/Entity/run/Screen/runs.js';
 import type { TicketContentProps } from '../../src/Entity/ticket/Component/ticket-content/index.js';
@@ -125,6 +126,26 @@ describe('BB-285 — every data screen declares reload (AC-1)', () => {
     screen.enter(context);
     await vi.waitFor(() => expect(screen.busy).toBe(false));
     expect(gets(client, 'bb_ticket/bb_ticket/t1')).toBe(1);
+
+    screen.reload(context);
+    expect(screen.busy).toBe(true);
+    await vi.waitFor(() => expect(screen.busy).toBe(false));
+    expect(gets(client, 'bb_ticket/bb_ticket/t1')).toBe(2);
+  });
+
+  it('TicketDetailScreen.reload ends with the kernel session store', async () => {
+    const client = fakeClient();
+    const context = contextFor(
+      { client },
+      {
+        project: PROJECT,
+        params: { ticketId: 't1' },
+        store: createSessionStore(),
+      },
+    );
+    const screen = new TicketDetailScreen();
+    screen.enter(context);
+    await vi.waitFor(() => expect(screen.busy).toBe(false));
 
     screen.reload(context);
     expect(screen.busy).toBe(true);

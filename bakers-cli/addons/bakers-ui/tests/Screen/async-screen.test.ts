@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { messageTree } from '../../src/lib/vnode.js';
 import { AsyncScreen } from '../../src/Screen/async-screen.js';
 import type { ScreenContext } from '../../src/Screen/screen.js';
@@ -24,7 +24,31 @@ class Subject extends AsyncScreen<string> {
   mutate(value: string) {
     this.replaceReady(value);
   }
+  search(context: ScreenContext) {
+    return this.reloadInPlace(context);
+  }
 }
+
+/** A ready Subject whose later loads wait on the returned queue, oldest first. */
+const readyWithPendingLoads = async () => {
+  const pending: PromiseWithResolvers<string>[] = [];
+  let loads = 0;
+  const screen = new Subject(() => {
+    loads += 1;
+    if (loads === 1) return Promise.resolve('ready');
+    const next = Promise.withResolvers<string>();
+    pending.push(next);
+    return next.promise;
+  });
+  const context = {
+    sessionGeneration: 1,
+    requestDraw: vi.fn(),
+    isActive: () => true,
+  };
+  screen.enter(context);
+  await vi.waitFor(() => expect(screen.state).toBe('ready'));
+  return { screen, context, pending };
+};
 
 /**
  * The rows this screen is showing.
@@ -194,6 +218,99 @@ describe('AsyncScreen', () => {
 
     expect(shownRows(screen, context)).toEqual(['newer']);
     expect(requestDraw).not.toHaveBeenCalled();
+  });
+
+  it('a re-read overtaken by a local mutation still ends busy and keeps the newer value', async () => {
+    const { screen, context, pending } = await readyWithPendingLoads();
+
+    const reread = screen.retry(context);
+    screen.mutate('local');
+    pending[0].resolve('older');
+    await reread;
+
+    expect(screen.busy).toBe(false);
+    expect(shownRows(screen, context)).toEqual(['local']);
+  });
+
+  it('a re-read superseded by an in-place reload ends busy when that reload lands', async () => {
+    const { screen, context, pending } = await readyWithPendingLoads();
+
+    void screen.retry(context);
+    const search = screen.search(context);
+    pending[1].resolve('searched');
+    await search;
+
+    expect(screen.busy).toBe(false);
+    expect(shownRows(screen, context)).toEqual(['searched']);
+  });
+
+  describe('a load that never answers', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('ends a re-read after 60 s with a timeout toast and keeps the body', async () => {
+      const { screen, context, pending } = await readyWithPendingLoads();
+
+      void screen.retry(context);
+      await vi.advanceTimersByTimeAsync(59_999);
+      expect(screen.busy).toBe(true);
+      await vi.advanceTimersByTimeAsync(1);
+
+      expect(screen.busy).toBe(false);
+      expect(screen.present(context).toast).toBe('Timed out after 60 s.');
+      expect(shownRows(screen, context)).toEqual(['ready']);
+      expect(pending).toHaveLength(1);
+    });
+
+    it('ends a first load after 60 s in the error state', async () => {
+      const screen = new Subject(() => new Promise<string>(() => {}));
+      const context = {
+        sessionGeneration: 1,
+        requestDraw: vi.fn(),
+        isActive: () => true,
+      };
+
+      screen.enter(context);
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(screen.busy).toBe(false);
+      expect(screen.state).toBe('error');
+      expect(shownRows(screen, context)).toEqual([
+        'Timed out after 60 s.',
+        '',
+        'Press Enter to retry.',
+      ]);
+    });
+
+    it('ignores the late answer of a timed-out read and lets R retry', async () => {
+      const { screen, context, pending } = await readyWithPendingLoads();
+
+      void screen.retry(context);
+      await vi.advanceTimersByTimeAsync(60_000);
+      pending[0].resolve('late');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(shownRows(screen, context)).toEqual(['ready']);
+      expect(screen.present(context).toast).toBe('Timed out after 60 s.');
+
+      const again = screen.retry(context);
+      expect(screen.busy).toBe(true);
+      pending[1].resolve('fresh');
+      await again;
+      expect(screen.busy).toBe(false);
+      expect(shownRows(screen, context)).toEqual(['fresh']);
+    });
+  });
+
+  it('names what it loads in the footer status while a re-read runs', async () => {
+    const { screen, context, pending } = await readyWithPendingLoads();
+    expect(screen.present(context).status).toBeUndefined();
+
+    const reread = screen.retry(context);
+    expect(screen.present(context).status).toBe('loading');
+
+    pending[0].resolve('next');
+    await reread;
+    expect(screen.present(context).status).toBeUndefined();
   });
 
   it('rejects settlement after leaving the activation', async () => {

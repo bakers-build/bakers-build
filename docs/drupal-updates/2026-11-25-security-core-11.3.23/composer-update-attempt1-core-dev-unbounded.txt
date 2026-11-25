@@ -1,0 +1,152 @@
+$ composer update drupal/core drupal/core-recommended drupal/core-composer-scaffold drupal/core-dev drupal/core-project-message drupal/core-recipe-unpack --with-dependencies --with drupal/core:11.3.23 --no-interaction
+Gathering patches for root package.
+Removing package drupal/ui_patterns so that it can be re-installed and re-patched.
+  - Removing drupal/ui_patterns (2.0.23)
+Deleting /var/www/html/web/modules/contrib/ui_patterns - deleted
+Loading composer repositories with package information
+Dependency justinrainbow/json-schema is also a root requirement. Package has not been listed as an update argument, so keeping locked at old version. Use --with-all-dependencies (-W) to include root dependencies.
+Dependency phpstan/extension-installer is also a root requirement. Package has not been listed as an update argument, so keeping locked at old version. Use --with-all-dependencies (-W) to include root dependencies.
+Dependency phpstan/phpstan-deprecation-rules is also a root requirement. Package has not been listed as an update argument, so keeping locked at old version. Use --with-all-dependencies (-W) to include root dependencies.
+Updating dependencies
+Lock file operations: 0 installs, 36 updates, 0 removals
+  - Upgrading composer/composer (2.11.2 => 2.11.3)
+  - Upgrading composer/xdebug-handler (3.0.5 => 3.1.0)
+  - Upgrading drupal/core (11.3.22 => 11.3.23)
+  - Upgrading drupal/core-composer-scaffold (11.3.22 => 11.3.23)
+  - Upgrading drupal/core-dev (11.3.22 => 11.4.14)
+  - Upgrading drupal/core-project-message (11.3.22 => 11.4.14)
+  - Upgrading drupal/core-recipe-unpack (11.3.22 => 11.4.14)
+  - Upgrading drupal/core-recommended (11.3.22 => 11.3.23)
+  - Upgrading egulias/email-validator (4.0.4 => 4.0.5)
+  - Upgrading guzzlehttp/guzzle (7.16.3 => 7.17.0)
+  - Upgrading guzzlehttp/promises (2.6.0 => 2.6.2)
+  - Upgrading guzzlehttp/psr7 (2.13.4 => 2.13.6)
+  - Upgrading open-telemetry/api (1.11.0 => 1.12.0)
+  - Upgrading open-telemetry/exporter-otlp (1.5.0 => 1.6.0)
+  - Upgrading open-telemetry/sdk (1.16.1 => 1.17.0)
+  - Upgrading phpstan/phpdoc-parser (2.4.1 => 2.4.2)
+  - Upgrading phpstan/phpstan (2.3.6 => 2.3.7)
+  - Upgrading phpstan/phpstan-phpunit (2.1.2 => 2.1.3)
+  - Upgrading symfony/browser-kit (v7.4.23 => v7.4.24)
+  - Upgrading symfony/console (v7.4.23 => v7.4.24)
+  - Upgrading symfony/dependency-injection (v7.4.23 => v7.4.24)
+  - Upgrading symfony/filesystem (v7.4.23 => v7.4.24)
+  - Upgrading symfony/finder (v7.4.23 => v7.4.24)
+  - Upgrading symfony/http-foundation (v7.4.23 => v7.4.24)
+  - Upgrading symfony/http-kernel (v7.4.23 => v7.4.24)
+  - Upgrading symfony/lock (v7.4.23 => v7.4.24)
+  - Upgrading symfony/mailer (v7.4.22 => v7.4.24)
+  - Upgrading symfony/mime (v7.4.22 => v7.4.24)
+  - Upgrading symfony/process (v7.4.22 => v7.4.24)
+  - Upgrading symfony/psr-http-message-bridge (v7.4.21 => v7.4.24)
+  - Upgrading symfony/routing (v7.4.23 => v7.4.24)
+  - Upgrading symfony/serializer (v7.4.23 => v7.4.24)
+  - Upgrading symfony/string (v7.4.22 => v7.4.24)
+  - Upgrading symfony/validator (v7.4.23 => v7.4.24)
+  - Upgrading symfony/var-dumper (v7.4.22 => v7.4.24)
+  - Upgrading symfony/yaml (v7.4.23 => v7.4.24)
+Writing lock file
+Installing dependencies from lock file (including require-dev)
+Package operations: 1 install, 36 updates, 0 removals
+  - Downloading symfony/process (v7.4.24)
+  - Downloading symfony/string (v7.4.24)
+  - Downloading symfony/console (v7.4.24)
+  - Downloading symfony/finder (v7.4.24)
+  - Downloading symfony/filesystem (v7.4.24)
+  - Downloading guzzlehttp/psr7 (2.13.6)
+  - Downloading guzzlehttp/promises (2.6.2)
+  - Downloading guzzlehttp/guzzle (7.17.0)
+  - Downloading symfony/yaml (v7.4.24)
+  - Downloading symfony/validator (v7.4.24)
+  - Downloading symfony/serializer (v7.4.24)
+  - Downloading symfony/routing (v7.4.24)
+  - Downloading symfony/http-foundation (v7.4.24)
+  - Downloading symfony/psr-http-message-bridge (v7.4.24)
+  - Downloading symfony/mime (v7.4.24)
+  - Downloading egulias/email-validator (4.0.5)
+  - Downloading symfony/mailer (v7.4.24)
+  - Downloading symfony/var-dumper (v7.4.24)
+  - Downloading symfony/http-kernel (v7.4.24)
+  - Downloading symfony/dependency-injection (v7.4.24)
+  - Downloading drupal/core (11.3.23)
+  - Downloading symfony/lock (v7.4.24)
+  - Downloading symfony/browser-kit (v7.4.24)
+  - Downloading phpstan/phpstan (2.3.7)
+  - Downloading phpstan/phpstan-phpunit (2.1.3)
+  - Downloading phpstan/phpdoc-parser (2.4.2)
+  - Downloading open-telemetry/api (1.12.0)
+  - Downloading open-telemetry/sdk (1.17.0)
+  - Downloading open-telemetry/exporter-otlp (1.6.0)
+  - Downloading composer/xdebug-handler (3.1.0)
+  - Downloading composer/composer (2.11.3)
+  0/31 [>---------------------------]   0%
+ 10/31 [=========>------------------]  32%
+ 15/31 [=============>--------------]  48%
+ 18/31 [================>-----------]  58%
+ 19/31 [=================>----------]  61%
+ 24/31 [=====================>------]  77%
+ 27/31 [========================>---]  87%
+ 28/31 [=========================>--]  90%
+ 29/31 [==========================>-]  93%
+ 30/31 [===========================>]  96%
+ 31/31 [============================] 100%
+Gathering patches for root package.
+Gathering patches for dependencies. This might take a minute.
+  - Upgrading drupal/core-composer-scaffold (11.3.22 => 11.3.23): Extracting archive
+  - Upgrading drupal/core-project-message (11.3.22 => 11.4.14): Extracting archive
+  - Upgrading drupal/core-recipe-unpack (11.3.22 => 11.4.14): Extracting archive
+  - Upgrading symfony/process (v7.4.22 => v7.4.24): Extracting archive
+  - Upgrading symfony/string (v7.4.22 => v7.4.24): Extracting archive
+  - Upgrading symfony/console (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/finder (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/filesystem (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading guzzlehttp/psr7 (2.13.4 => 2.13.6): Extracting archive
+  - Upgrading guzzlehttp/promises (2.6.0 => 2.6.2): Extracting archive
+  - Upgrading guzzlehttp/guzzle (7.16.3 => 7.17.0): Extracting archive
+  - Upgrading symfony/yaml (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/validator (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/serializer (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/routing (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/http-foundation (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/psr-http-message-bridge (v7.4.21 => v7.4.24): Extracting archive
+  - Upgrading symfony/mime (v7.4.22 => v7.4.24): Extracting archive
+  - Upgrading egulias/email-validator (4.0.4 => 4.0.5): Extracting archive
+  - Upgrading symfony/mailer (v7.4.22 => v7.4.24): Extracting archive
+  - Upgrading symfony/var-dumper (v7.4.22 => v7.4.24): Extracting archive
+  - Upgrading symfony/http-kernel (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/dependency-injection (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading drupal/core (11.3.22 => 11.3.23): Extracting archive
+  - Upgrading symfony/lock (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/browser-kit (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading phpstan/phpstan (2.3.6 => 2.3.7): Extracting archive
+  - Upgrading phpstan/phpstan-phpunit (2.1.2 => 2.1.3): Extracting archive
+  - Upgrading phpstan/phpdoc-parser (2.4.1 => 2.4.2): Extracting archive
+  - Upgrading open-telemetry/api (1.11.0 => 1.12.0): Extracting archive
+  - Upgrading open-telemetry/sdk (1.16.1 => 1.17.0): Extracting archive
+  - Upgrading open-telemetry/exporter-otlp (1.5.0 => 1.6.0): Extracting archive
+  - Upgrading composer/xdebug-handler (3.0.5 => 3.1.0): Extracting archive
+  - Upgrading composer/composer (2.11.2 => 2.11.3): Extracting archive
+  - Upgrading drupal/core-dev (11.3.22 => 11.4.14)
+  - Upgrading drupal/core-recommended (11.3.22 => 11.3.23)
+  - Installing drupal/ui_patterns (2.0.23): Extracting archive
+  0/32 [>---------------------------]   0%
+ 10/32 [========>-------------------]  31%
+ 19/32 [================>-----------]  59%
+ 28/32 [========================>---]  87%
+ 30/32 [==========================>-]  93%
+ 31/32 [===========================>]  96%
+ 32/32 [============================] 100%
+  - Applying patches for drupal/ui_patterns
+
+Package doctrine/common is abandoned, you should avoid using it. No replacement was suggested.
+Generating autoload files
+110 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+phpstan/extension-installer: Extensions installed
+> composer/composer: installed
+> composer/pcre: installed
+> mglaman/phpstan-drupal: installed
+> phpstan/phpstan-deprecation-rules: installed
+> phpstan/phpstan-phpunit: installed
+No security vulnerability advisories found.
+exit=0
