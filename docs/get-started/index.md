@@ -46,15 +46,15 @@ bakers.build is a ticket-driven AI software factory: agents work each ticket, a 
 
    :::
 
-One question: your Git project's path (re-asked unless Git) or the [demo](https://github.com/bakers-build/northside-shop) in `~/projects/northside-shop`. It installs a missing CLI and [herdr-core](/addons/herdr-core), signs you in, sets `permissions.mode: 'system'`, reuses or creates the project in group **Quick start**, writes the [setup files](/get-started/connect-a-project#what-setup-writes) (pushed to your default branch if it lacks `WORKFLOW.md`; demo never), starts the conductor and a `human-review` ticket.
+One question: your Git project's path (re-asked unless Git) or the [demo](https://github.com/bakers-build/northside-shop) in `~/projects/northside-shop`. It installs a missing CLI and [herdr-core](/addons/herdr-core), signs you in, sets `permissions.mode: 'system'`, reuses your repository's project or creates one in group **Quick start**, writes the [setup files](/get-started/connect-a-project#what-setup-writes) (pushed to your default branch if it lacks `WORKFLOW.md`; demo never), starts the conductor and a `human-review` ticket.
 
 ::: warning
-Agents run unsandboxed with your rights. Sandboxed: [Advanced setup](#advanced-setup).
+Unsandboxed agents can change anything your user can. To confine them: [Advanced setup](#advanced-setup).
 :::
 
 ## Advanced setup {#advanced-setup}
 
-With a sandbox, where you may install packages.
+Sandboxed, where you may install packages.
 
 <span id="before-you-start"></span>
 
@@ -94,7 +94,7 @@ Web-only ticket writers skip this.
 
 ### 2. Set up your project (once) {#set-up-your-project}
 
-Connect your repository with one skill call: [Prepare your project](/get-started/connect-a-project).
+Connect your repository: [Prepare your project](/get-started/connect-a-project).
 
 ### 3. Create a ticket {#create-a-ticket}
 
@@ -102,7 +102,7 @@ Describe a small change with its expected result: [Create a ticket](/get-started
 
 ### 4. Run a ticket {#run-a-ticket}
 
-Start your agents and read the first result: [Run the first ticket](/get-started/first-ticket).
+Start agents and read the first result: [Run the first ticket](/get-started/first-ticket).
 
 <span id="after-your-first-ticket"></span>
 
