@@ -29,7 +29,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[Tool(
   id: 'bakers_user_read',
   label: new TranslatableMarkup('Read a user'),
-  description: new TranslatableMarkup('Reads you, or a user you can see by e-mail or username: profile, teams with role, machines and conductors with who may assign them.'),
+  description: new TranslatableMarkup('Reads you, or a user you can see by e-mail or username: profile, teams with role, machines and conductors with who may assign them. To find someone by name, use bakers_user_search first.'),
   operation: ToolOperation::Read,
   input_definitions: [
     'user' => new InputDefinition(
