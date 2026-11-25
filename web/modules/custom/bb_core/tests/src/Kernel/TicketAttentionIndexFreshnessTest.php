@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\search_api\Entity\Index;
 use Drupal\user\Entity\User;
@@ -107,10 +108,12 @@ final class TicketAttentionIndexFreshnessTest extends ClaimKernelTestBase {
    */
   public function testFreezeWithQuestionAndUnfreeze(): void {
     $ticket = $this->seedAssignedTicket('working');
+    $project = $ticket->get('project_id')->entity;
+    assert($project instanceof BbProjectInterface);
     $term = $this->container->get('entity_type.manager')->getStorage('bb_term')->create([
       'vid' => 'label',
       'name' => 'Question',
-      'workspace_id' => $ticket->get('project_id')->entity->getGroup()?->getWorkspace()?->id(),
+      'workspace_id' => $project->getGroup()?->getWorkspace()?->id(),
     ]);
     $term->save();
     $ticket->get('labels')->appendItem($term->id());
@@ -145,6 +148,35 @@ final class TicketAttentionIndexFreshnessTest extends ClaimKernelTestBase {
     $other->set('owner_user_id', $first)->save();
     $this->settle();
     self::assertTrue($this->indexed($ticket, 'conductor_owner_user_id', $first));
+  }
+
+  /**
+   * The deploy hook fills the attention field added to an indexed site.
+   */
+  public function testDeployHookIndexesAttentionWithoutCron(): void {
+    $ticket = $this->seedAssignedTicket('review');
+    $this->settle();
+    // The site before the field: every ticket indexed without it.
+    $index = Index::load('bb_tickets');
+    $field = $index->getField('attention');
+    self::assertNotNull($field);
+    $index->removeField('attention');
+    $index->save();
+    $index->indexItems();
+    // The config import adds it back; the stored items still lack it.
+    $index = Index::load('bb_tickets');
+    $index->addField($field);
+    $index->save();
+    self::assertFalse($this->indexed($ticket, 'attention', 'review'), 'Before the hook the index lacks the value.');
+
+    $this->container->get('module_handler')->loadInclude('bb_core', 'php', 'bb_core.deploy');
+    $sandbox = [];
+    $passes = 0;
+    do {
+      bb_core_deploy_index_ticket_attention($sandbox);
+    } while (($sandbox['#finished'] ?? 1) < 1 && ++$passes < 20);
+    self::assertEquals(1, $sandbox['#finished'] ?? 1);
+    self::assertTrue($this->indexed($ticket, 'attention', 'review'));
   }
 
   /**

@@ -70,7 +70,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_label_list` | `workspace`; optional `query` | A workspace's labels |
 | `bakers_ticket_read` | `ticket` (identifier or UUID); optional `newest` (default 2), `types` | A ticket with canonical absolute `url`, stored `origin`, `priority`, `reviewers` and `assignee` (see below), its `newest` comments per `types`, oldest first; `comment_facets`: per comment `type` and `author`, the `count` and `newest` time of all readable comments; and `deployments`: each ship ticket that carries it, with its `identifier` and `environments` |
 | `bakers_comment_read` | `ticket`; optional `ids`, `type`, `author` (lists), `newest` (per type when `type` is given) | A ticket's readable comments matching every given filter, oldest first; no filter returns all |
-| `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |
+| `bakers_ticket_search` | `query` or `branch_name`, or `filters` and/or `facets` (never both kinds); optional `project` | Up to 50 readable tickets, newest first, matching a text or a branch, or the [filters](#filters-and-facets); with filters or facets also `total` and per-facet counts |
 | `bakers_ticket_list` | `project` (UUID); `limit`, `offset` | Every ticket of the project you can read, closed ones included, oldest first. Each row has `id` (UUID), `identifier`, `title`, canonical absolute `url`, stored `origin`, `state`, `links` (`uri`, `title`), `labels` (names), `frozen`, `frozen_at` (ISO 8601 or `null`), `parent` (the parent's UUID, `null` when absent or unreadable) and `closed` |
 | `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee`, `reviewers` (user UUIDs), `blocked_by`, `priority` | Create a ticket; returns `title`, `url` and stored `origin` too. Ineligible people are skipped |
 | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `assignee`, `labels_add`, `labels_remove`, `frozen`, `priority`, `environments_add`, `referenced_tickets_add`, `reviewers_add`, `reviewers_remove`, `links_add`, `links_remove`, `blocked_by_add`, `blocked_by_remove` | Edit a ticket; omitted values are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; `assignee` takes a user UUID or `""`; `priority: 0` clears it; a [forbidden](/configuration/project/conductors#who-may-assign-this-conductor) `conductor` is refused; a closed ticket refuses every edit |
@@ -86,6 +86,44 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_inbox_read` | `message` (the UUID `bakers_inbox_send` returned) | The message's current `status` and `markdown`, without waiting |
 
 The list printed by `bakers tools` is what your identity may call on this server; it can hold tools this table does not show. Type, recipe and label names are reused, or created in the ticket's workspace.
+
+## Filters and facets
+
+`bakers_ticket_search` takes `filters` and `facets` instead of `query` and `branch_name`; giving both kinds is refused. Without `project` it covers every project you can read. Rows, `total` and every count include only tickets you can read.
+
+| Filter | Value | Matches |
+|---|---|---|
+| `conductor` | conductor UUIDs | tickets on any of them; an unknown or unreadable conductor is refused |
+| `conductor_owner` | `"me"` | tickets on conductors you own |
+| `state` | workflow state ids, e.g. `["plan", "review"]` | tickets in any of them |
+| `attention` | any of `review`, `plan_ready`, `question` | tickets that need a person for that reason |
+| `closed`, `frozen` | `true` or `false` | closed or open, frozen or not |
+
+Every given filter must hold. An empty list or an unknown value is refused, never answered unfiltered.
+
+A ticket's `attention` is one value, checked in this order: a closed ticket has none; `question` when it is frozen with the label Question (any letter case); `plan_ready` in state plan with a `plan` comment and no claimed or running run; `review` in state review; otherwise none.
+
+`facets` lists any of `conductor`, `project`, `state` and `attention`. The response then adds `total`, every matching ticket beyond the 50 rows, and `facets`: per name, buckets `{value, label, count}`, most tickets first, then by label. `value` is the UUID for `conductor` and `project` and the id for `state` and `attention`. A `conductor` bucket adds `owner` and `machine`, each `{uuid, name}` or `null`. A ticket without a conductor or an attention forms no bucket.
+
+"Needs me", the open tickets that need you on your conductors, per project and reason, across all projects in one call:
+
+```json
+{
+  "filters": {"attention": ["review", "plan_ready", "question"], "conductor_owner": "me", "closed": false},
+  "facets": ["project", "attention"]
+}
+```
+
+```json
+{
+  "tickets": [{"identifier": "SHOP-42", "title": "…", "state": "review", "type": "feature", "branch_name": "…", "base_branch": "main", "parent": null}],
+  "total": 3,
+  "facets": {
+    "project": [{"value": "<project uuid>", "label": "Shop", "count": 2}, {"value": "<project uuid>", "label": "Docs", "count": 1}],
+    "attention": [{"value": "review", "label": "Review", "count": 2}, {"value": "plan_ready", "label": "Plan ready", "count": 1}]
+  }
+}
+```
 
 ## Writing tickets and comments
 

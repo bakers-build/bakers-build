@@ -37,3 +37,32 @@ function bb_core_deploy_index_ticket_parents(array &$sandbox): string {
   $sandbox['#finished'] = $indexed === 0 || $remaining === 0 || $total === 0 ? 1 : 1 - $remaining / $total;
   return sprintf('Indexed %d tickets for the parent filter.', $sandbox['indexed']);
 }
+
+/**
+ * Indexes every ticket, so its attention is searchable without cron.
+ *
+ * A deploy hook rather than a post_update: the import that adds the
+ * `attention`, `frozen` and `conductor_owner_user_id` fields runs after `updb`.
+ *
+ * @param array<string, mixed> $sandbox
+ *   The batch state.
+ */
+function bb_core_deploy_index_ticket_attention(array &$sandbox): string {
+  $index = \Drupal::moduleHandler()->moduleExists('search_api') ? Index::load('bb_tickets') : NULL;
+  if ($index === NULL || !$index->status() || $index->getField('attention') === NULL) {
+    $sandbox['#finished'] = 1;
+    return 'No ticket index with an attention field; nothing to index.';
+  }
+  if (!isset($sandbox['indexed'])) {
+    $index->reindex();
+    $sandbox['indexed'] = 0;
+  }
+  $indexed = $index->indexItems(100);
+  $sandbox['indexed'] += $indexed;
+  $tracker = $index->getTrackerInstance();
+  $total = $tracker->getTotalItemsCount();
+  $remaining = $tracker->getRemainingItemsCount();
+  // A pass that indexes nothing ends the hook, so a failing item cannot loop.
+  $sandbox['#finished'] = $indexed === 0 || $remaining === 0 || $total === 0 ? 1 : 1 - $remaining / $total;
+  return sprintf('Indexed %d tickets for the attention filter.', $sandbox['indexed']);
+}

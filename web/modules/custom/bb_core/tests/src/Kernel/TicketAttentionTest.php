@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -174,7 +175,9 @@ final class TicketAttentionTest extends ClaimKernelTestBase {
    * Adds a label of the given name to the ticket.
    */
   private function label(BbTicketInterface $ticket, string $name): void {
-    $workspace = $ticket->get('project_id')->entity->getGroup()?->getWorkspace();
+    $project = $ticket->get('project_id')->entity;
+    assert($project instanceof BbProjectInterface);
+    $workspace = $project->getGroup()?->getWorkspace();
     $term = $this->container->get('entity_type.manager')->getStorage('bb_term')->create([
       'vid' => 'label',
       'name' => $name,
