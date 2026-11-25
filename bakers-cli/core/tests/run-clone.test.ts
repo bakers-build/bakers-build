@@ -22,6 +22,7 @@ import {
   runCloneGitDir,
   saveRunClone,
 } from '../src/core/run-clone.js';
+import { commitLargeTree } from './fixtures/large-tree.js';
 
 const roots: string[] = [];
 afterEach(() =>
@@ -424,4 +425,25 @@ it('registers a run clone whose host index is locked', () => {
   expect(git(parent, 'worktree', 'list', '--porcelain')).toContain(
     `worktree ${workspace}`,
   );
+});
+
+it('clones a branch whose tree listing exceeds 1 MiB', () => {
+  const { parent, create, run } = fixture();
+  const large = commitLargeTree(parent, [], 'ticket');
+  git(parent, 'update-ref', 'refs/heads/ticket', large);
+
+  expect(create().expected).toBe(large);
+  expect(run('rev-parse', 'HEAD')).toBe(large);
+});
+
+it('refuses a gitlink in a tree whose listing exceeds 1 MiB', () => {
+  const { parent, create } = fixture();
+  git(
+    parent,
+    'update-ref',
+    'refs/heads/ticket',
+    commitLargeTree(parent, [], 'ticket', true),
+  );
+
+  expect(() => create()).toThrow('run clone: submodules are not supported');
 });
