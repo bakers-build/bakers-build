@@ -470,12 +470,14 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->installCatalogTermDisplays();
     $this->container->get('router.builder')->rebuild();
     $lead = $this->createUser([], 'acme-lead');
+    self::assertNotFalse($lead);
     // Before the account is current: rank permissions are memoised per account.
     $this->addMembership($this->workspace, $lead, ['lead']);
     $this->setCurrentUser($lead);
 
     $titles = array_column($this->emitted(), 'title');
-    self::assertSame(['Insights', 'Catalog', 'Settings'], array_values(array_intersect($titles, ['Insights', 'Catalog', 'Settings'])));
+    $order = ['Insights', 'Catalog', 'Settings'];
+    self::assertSame($order, array_values(array_intersect($titles, $order)));
     $catalog = array_column($this->emitted(), NULL, 'title')['Catalog'];
     self::assertSame('/acme/catalog/types', $catalog['url']);
     self::assertSame('tag', $catalog['icon']);
@@ -484,6 +486,7 @@ final class BbMenuSourceTest extends KernelTestBase {
     self::assertTrue(array_column($this->emitted(), NULL, 'title')['Catalog']['in_active_trail']);
 
     $guest = $this->createUser([], 'acme-guest');
+    self::assertNotFalse($guest);
     $this->addMembership($this->workspace, $guest, ['guest']);
     $this->setCurrentUser($guest);
     self::assertContains('Catalog', array_column($this->emitted(), 'title'));

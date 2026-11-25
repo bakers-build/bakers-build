@@ -2,8 +2,8 @@
 Feature: Catalog manages the workspace's environments
   The Environments tab lists the environments of every project of the
   workspace, each with its project, and filters by project. A lead adds an
-  environment for a project of the workspace from the tab, edits it from its
-  page and deletes it there. A contributor reads the list and gets no action;
+  environment for a project of the workspace from the tab, and edits or
+  deletes it from its Edit tab. A contributor reads the list and gets no action;
   a guest has no tab. Other workspaces' accounts and outsiders are refused.
 
   Scenario: A lead adds, filters, edits and deletes environments
@@ -22,18 +22,18 @@ Feature: Catalog manages the workspace's environments
     And I visit "/bakers/catalog/environments"
     Then the environment "Catalog env renamed" is listed with the project "Template fixtures"
     When I open the environment "Catalog env renamed"
-    And I delete the environment on its page
+    And I delete the environment from its Edit tab
     Then the tab "Environments" is current
     And the environment "Catalog env renamed" is not listed
 
   Scenario: A contributor reads environments but cannot change them
-    Given a disposable "environment" exists in the Northside workspace
+    Given the project "API home" has the environment "Catalog env read only"
     And I am logged in as the account "north-contributor"
     When I visit "/bakers/catalog/environments"
-    Then the disposable entity is listed
+    Then the environment "Catalog env read only" is listed with the project "API home"
     And the page header does not offer the action "Add environment"
-    And the page where the disposable entity is managed answers 403
-    And the delete page of the disposable entity answers 403
+    And the edit page of the environment "Catalog env read only" answers 403
+    And the delete page of the environment "Catalog env read only" answers 403
     When I visit "/bakers/catalog/environments/add"
     Then the page is not found or forbidden
 

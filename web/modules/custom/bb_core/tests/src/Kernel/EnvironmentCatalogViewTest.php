@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\bb_core\Plugin\views\filter\BbWorkspaceProject;
 use Drupal\user\UserInterface;
 use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\Group;
@@ -58,12 +59,12 @@ final class EnvironmentCatalogViewTest extends KernelTestBase {
       'name' => 'another-a',
       'group_id' => $this->fixture('a', 'bb_group')->id(),
       'teams' => [$this->fixture('a', 'bb_team')->id()],
-      'owner_user_id' => $this->fixture('a', 'bb_project')->getOwnerId(),
+      'owner_user_id' => $this->worldOwner->id(),
     ]);
     $this->createEntity('bb_environment', [
       'name' => 'env-another-a',
       'project_id' => $this->secondProject->id(),
-      'owner_user_id' => $this->fixture('a', 'bb_project')->getOwnerId(),
+      'owner_user_id' => $this->worldOwner->id(),
     ]);
     $this->installConfig(['views']);
     $this->installShippedView('views.view.bb_environments');
@@ -104,10 +105,12 @@ final class EnvironmentCatalogViewTest extends KernelTestBase {
     $view->setDisplay('catalog');
     $view->setArguments(['space-a']);
     $view->initHandlers();
+    $filter = $view->filter['project'];
+    self::assertInstanceOf(BbWorkspaceProject::class, $filter);
 
     self::assertSame(
       [(int) $this->secondProject->id() => 'another-a', (int) $this->fixture('a', 'bb_project')->id() => 'project-a'],
-      $view->filter['project']->getValueOptions(),
+      $filter->getValueOptions(),
     );
   }
 

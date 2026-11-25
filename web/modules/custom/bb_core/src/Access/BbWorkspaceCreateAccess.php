@@ -13,8 +13,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 
 /**
- * Authorizes group, team, template and environment creation in the route's
- * workspace.
+ * Authorizes group, team, template and environment creation in a workspace.
  *
  * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
  */

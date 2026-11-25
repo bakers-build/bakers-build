@@ -43,10 +43,7 @@ final class BbWorkspaceProject extends InOperator {
   /**
    * {@inheritdoc}
    */
-  public function getValueOptions() {
-    if (isset($this->valueOptions)) {
-      return $this->valueOptions;
-    }
+  public function getValueOptions(): array {
     $this->valueOptions = [];
     $slug = $this->view->args[0] ?? NULL;
     $workspace = is_scalar($slug) && (string) $slug !== ''

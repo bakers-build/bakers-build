@@ -12,6 +12,7 @@ use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbEnvironmentInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidget;
+use Drupal\island\Form\WrappedDialogFormTrait;
 
 /**
  * Environment entity form with a meta header block.
@@ -23,6 +24,8 @@ use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidget;
  * route's workspace instead and refuses any other.
  */
 final class BbEnvironmentForm extends BbContentEntityFormBase {
+
+  use WrappedDialogFormTrait;
 
   /**
    * The add route on the Catalog Environments tab.
@@ -112,6 +115,15 @@ final class BbEnvironmentForm extends BbContentEntityFormBase {
     if ($this->getRouteMatch()->getParameter('bb_project') instanceof BbProjectInterface
       && isset($form['project_id'])) {
       $form['project_id']['#access'] = FALSE;
+    }
+    if (!$this->isDialogRequest()) {
+      // A boosted page submit is an htmx request, for which core drops the
+      // redirect: the save would land nowhere and show no message.
+      $form['#attributes']['data-hx-boost'] = 'false';
+      // Opened by a boosted link, core's action keeps `ajax_page_state`; a
+      // page re-rendered after an error would then arrive without assets.
+      $form['#action'] = HtmxTransport::currentUrl($this->getRequest())->toString();
+      $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
     }
     return $form;
   }

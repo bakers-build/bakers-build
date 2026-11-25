@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteObjectInterface;
@@ -85,14 +86,16 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
   /**
    * A project of the workspace is saved and the form returns to the tab.
    */
-  public function testAddSavesForAProjectOfTheWorkspace(): void {
+  public function testAddSavesForProjectOfTheWorkspace(): void {
     $project = (string) $this->fixture('a', 'bb_project')->id();
     $state = $this->submitAdd('staging', $project);
 
     self::assertSame([], array_map('strval', $state->getErrors()));
     $saved = $this->environments('staging');
     self::assertCount(1, $saved);
-    self::assertSame($project, (string) reset($saved)->get('project_id')->target_id);
+    $environment = reset($saved);
+    self::assertInstanceOf(ContentEntityInterface::class, $environment);
+    self::assertSame($project, (string) $environment->get('project_id')->target_id);
     // A programmed submission reports no redirect; read the one it set.
     $redirect = (new \ReflectionProperty(FormState::class, 'redirect'))->getValue($state);
     self::assertInstanceOf(Url::class, $redirect);
@@ -102,11 +105,27 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
   /**
    * A project of another workspace is refused; nothing is saved.
    */
-  public function testAddRejectsAProjectOfAnotherWorkspace(): void {
+  public function testAddRejectsProjectOfAnotherWorkspace(): void {
     $state = $this->submitAdd('foreign', (string) $this->fixture('b', 'bb_project')->id());
 
     self::assertNotSame([], $state->getErrors());
     self::assertSame([], $this->environments('foreign'));
+  }
+
+  /**
+   * The edit page saves by a native round trip, so its redirect is followed.
+   */
+  public function testEditPageIsNotBoosted(): void {
+    $request = Request::create('/edit', 'GET');
+    $request->setSession(new Session(new MockArraySessionStorage()));
+    $this->container->get('request_stack')->push($request);
+    $form_object = $this->container->get('entity_type.manager')->getFormObject('bb_environment', 'edit');
+    $form_object->setEntity($this->fixture('a', 'bb_environment'));
+
+    $form = $this->container->get('form_builder')->getForm($form_object);
+
+    self::assertSame('false', $form['#attributes']['data-hx-boost'] ?? NULL);
+    self::assertArrayHasKey('messages', $form, 'Errors and the saved message show on the page.');
   }
 
   /**

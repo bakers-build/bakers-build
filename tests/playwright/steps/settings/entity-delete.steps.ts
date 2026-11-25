@@ -33,7 +33,7 @@ function exists(reference: string): boolean {
   return lastLine(`print \\Drupal::entityTypeManager()->getStorage("${type}")->load("${id}") ? "yes" : "no";`) === 'yes';
 }
 
-After({ tags: '@feature:entity-delete or @feature:delete-dialog or @feature:workspace-delete or @feature:catalog-environments' }, async ({ page }) => {
+After({ tags: '@feature:entity-delete or @feature:delete-dialog or @feature:workspace-delete' }, async ({ page }) => {
   const record = disposables.get(page);
   disposables.delete(page);
   if (!record) return;
@@ -251,9 +251,4 @@ When('I confirm the deletion in the dialog', async ({ page }) => {
   // dialog to leave rather than for the address to change.
   await deleteDialog(page).getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page.locator('dialog[data-dialog]:has(form[id$="-delete-form"])')).toHaveCount(0);
-});
-
-Then('the disposable entity is listed', async ({ page }) => {
-  const { label } = subject(page);
-  await expect(page.locator('li[data-list-item]').filter({ has: page.getByText(label, { exact: true }) })).toHaveCount(1);
 });
