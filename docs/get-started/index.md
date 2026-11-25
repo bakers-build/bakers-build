@@ -67,7 +67,7 @@ The Advanced setup below adds a sandbox.
 
 Web-only ticket writers skip this.
 
-1. **Linux only:** Claude Code's sandbox isolates commands with bubblewrap and filters network access through socat ([sandbox prerequisites](/provision/security/execution#sandbox-prerequisites)). Install both before you start the agent; it has no `sudo`. macOS needs nothing:
+1. **Linux only:** Claude Code's sandbox isolates commands with bubblewrap and filters network access through socat ([sandbox prerequisites](/provision/security/execution#sandbox-prerequisites)). To use the sandbox, install both before you start the agent; it has no `sudo`. macOS needs nothing:
 
    ```sh
    sudo apt install bubblewrap socat
