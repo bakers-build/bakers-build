@@ -146,7 +146,11 @@ final class ProjectUpdateToolTest extends BakersToolTestBase {
    * A prefix another project's tickets carry is refused and named.
    */
   public function testReservedKeyRefused(): void {
-    $other = $this->entity('bb_project', ['name' => 'other', 'key' => 'OLD', 'group_id' => $this->project->get('group_id')->target_id]);
+    $other = $this->entity('bb_project', [
+      'name' => 'other',
+      'key' => 'OLD',
+      'group_id' => $this->project->get('group_id')->target_id,
+    ]);
     $this->ticket('OLD-1', ['project_id' => $other->id()]);
     $other->set('key', 'OTHER')->save();
     $this->actAsLead();

@@ -20,7 +20,7 @@ use Drupal\tool\TypedData\MapOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
 
 /**
- * Changes a project's repository settings or identifier prefix; group and teams stay.
+ * Changes a project's repository or identifier prefix; group and teams stay.
  */
 #[Tool(
   id: 'bakers_project_update',

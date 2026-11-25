@@ -9,6 +9,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\Query\QueryInterface;
 
@@ -88,7 +89,9 @@ final class TicketSearchResolver {
       ->execute();
     $identifiers = [];
     foreach ($storage->loadMultiple($ids) as $ticket) {
-      $identifiers[] = (string) $ticket->get('identifier')->value;
+      if ($ticket instanceof BbTicketInterface) {
+        $identifiers[] = $ticket->getIdentifier();
+      }
     }
     sort($identifiers);
     return new TicketSearchQuery(field: 'identifier', value: $identifiers);

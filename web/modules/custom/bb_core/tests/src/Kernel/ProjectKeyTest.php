@@ -36,7 +36,10 @@ final class ProjectKeyTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    foreach (['user', 'og_membership', 'bb_group', 'bb_project', 'bb_environment', 'bb_conductor', 'bb_ticket', 'bb_comment', 'bb_run', 'bb_term'] as $type) {
+    foreach ([
+      'user', 'og_membership', 'bb_group', 'bb_project', 'bb_environment',
+      'bb_conductor', 'bb_ticket', 'bb_comment', 'bb_run', 'bb_term',
+    ] as $type) {
       $this->installEntitySchema($type);
     }
   }
