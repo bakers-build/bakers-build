@@ -32,13 +32,14 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 [Isolation models](/agents/isolation): platform support.
 
-pi has no OS sandbox and no tool-permission gate: its tools run with the conductor user's own permissions. bakers.build therefore offers no `sandbox` or `yolo` for pi; both fail loading before pi starts.
+pi has no OS sandbox and no tool-permission gate: its tools run with the conductor user's own permissions. bakers.build therefore offers no `sandbox` and no [bypass mode](/provision/security/execution#modes) for pi; both fail loading before pi starts.
 
 | `permissions` | Launch flags |
 |---|---|
 | `system` (default) | none |
 | `custom` | `--no-extensions`, then `-e '<extension>'` for each entry of `config.extensions` |
-| `sandbox`, `yolo` | fails loading |
+| `sandbox` | fails loading |
+| other modes | fail loading; see [Agent permissions › Modes](/provision/security/execution#modes) |
 
 `custom` takes `config: { extensions: ['<path or builtin:name>', ...] }`, at least one entry and no other key. Only these extensions load, for example one that sandboxes pi's tools; whether they protect anything is up to the extension, not bakers.build.
 
