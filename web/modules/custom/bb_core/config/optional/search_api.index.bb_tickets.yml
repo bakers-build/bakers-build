@@ -18,6 +18,14 @@ field_settings:
     dependencies:
       module:
         - bb_core
+  attention:
+    label: Attention
+    datasource_id: 'entity:bb_ticket'
+    property_path: attention
+    type: string
+    dependencies:
+      module:
+        - bb_core
   changed:
     label: Changed
     datasource_id: 'entity:bb_ticket'
@@ -50,6 +58,14 @@ field_settings:
     dependencies:
       module:
         - bb_core
+  conductor_owner_user_id:
+    label: 'Conductor owner'
+    datasource_id: 'entity:bb_ticket'
+    property_path: 'conductor_id:entity:owner_user_id'
+    type: integer
+    dependencies:
+      module:
+        - bb_core
   created:
     label: Created
     datasource_id: 'entity:bb_ticket'
@@ -71,6 +87,14 @@ field_settings:
     datasource_id: 'entity:bb_ticket'
     property_path: health_moved
     type: date
+    dependencies:
+      module:
+        - bb_core
+  frozen:
+    label: Frozen
+    datasource_id: 'entity:bb_ticket'
+    property_path: frozen
+    type: boolean
     dependencies:
       module:
         - bb_core

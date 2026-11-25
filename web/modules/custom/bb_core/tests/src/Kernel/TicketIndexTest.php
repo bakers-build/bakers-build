@@ -39,6 +39,7 @@ final class TicketIndexTest extends KernelTestBase {
     'assignee_user_id', 'conductor_id', 'project_id', 'group_id',
     'labels', 'changed', 'project_team_ids',
     'closed', 'closed_date', 'ticket_id', 'priority_rank',
+    'attention', 'frozen', 'conductor_owner_user_id',
   ];
 
   /**
