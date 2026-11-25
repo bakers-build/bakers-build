@@ -77,6 +77,26 @@ trait ProjectsViewTestTrait {
   }
 
   /**
+   * Installs a shipped Search API index from its recipe copy.
+   *
+   * A view of an index renders Search API rows, which need the index to exist
+   * when the view is saved.
+   *
+   * @param string $name
+   *   The config object name, e.g. `search_api.index.bb_runs`.
+   */
+  protected function installShippedIndex(string $name): void {
+    $path = dirname(__DIR__, 7) . '/recipes/bakers/config/' . $name . '.yml';
+    self::assertFileExists($path, "$name is not shipped in recipes/bakers/config.");
+    $data = Yaml::parseFile($path);
+    self::assertIsArray($data, "$name did not parse as a YAML mapping.");
+    $storage = $this->container->get('entity_type.manager')->getStorage('search_api_index');
+    if ($storage->load($data['id']) === NULL) {
+      $storage->create($data)->save();
+    }
+  }
+
+  /**
    * Creates a row view mode and its Display Builder display from config/sync.
    */
   protected function installRowViewMode(string $entity_type_id, string $mode): void {

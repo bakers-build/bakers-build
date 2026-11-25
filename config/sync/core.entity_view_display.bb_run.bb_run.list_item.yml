@@ -1,0 +1,243 @@
+uuid: 23b5f820-0a3f-4d57-bf00-dd5c83019d7f
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_run.list_item
+  module:
+    - bb_core
+    - display_builder
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      - source_id: component
+        source:
+          component:
+            component_id: bb_theme:list_item
+            variant_id: null
+            props: {  }
+            slots:
+              headline:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: identifier
+                          primary:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_reference
+                                source:
+                                  derivable_context: entity_reference:bb_run:bb_run:ticket_id:bb_ticket:bb_ticket
+                                  entity_reference:bb_run:bb_run:ticket_id:bb_ticket:bb_ticket:
+                                    value:
+                                      sources:
+                                        - source_id: entity_field
+                                          source:
+                                            derivable_context: field:bb_ticket:bb_ticket:identifier
+                                            field:bb_ticket:bb_ticket:identifier:
+                                              value:
+                                                sources:
+                                                  - source_id: field_formatter:bb_ticket:bb_ticket:identifier
+                                                    source:
+                                                      type: bb_ticket_identifier_cell
+                                                      settings: {  }
+                                                      third_party_settings: {  }
+                    node_id: list_item_identifier
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: state
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_run:bb_run:state
+                                  field:bb_run:bb_run:state:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_run:bb_run:state
+                                          source:
+                                            type: bb_ticket_state_cell
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_state
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: state_at_start
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: From
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_run:bb_run:state_at_start
+                                  field:bb_run:bb_run:state_at_start:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_run:bb_run:state_at_start
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: false
+                                            third_party_settings: {  }
+                    node_id: list_item_state_at_start
+              meta:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: conductor_id
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_run:bb_run:conductor_id
+                                  field:bb_run:bb_run:conductor_id:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_run:bb_run:conductor_id
+                                          source:
+                                            type: bb_ticket_conductor_cell
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_conductor_id
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: agent
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_run:bb_run:agent
+                                  field:bb_run:bb_run:agent:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_run:bb_run:agent
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: false
+                                            third_party_settings: {  }
+                    node_id: list_item_agent
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: started_at
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Started
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_run:bb_run:started_at
+                                  field:bb_run:bb_run:started_at:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_run:bb_run:started_at
+                                          source:
+                                            type: bb_time
+                                            settings:
+                                              date_only: false
+                                            third_party_settings: {  }
+                    node_id: list_item_started_at
+              right:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: duration_s
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Took
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_run:bb_run:duration_s
+                                  field:bb_run:bb_run:duration_s:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_run:bb_run:duration_s
+                                          source:
+                                            type: bb_integer_unit
+                                            settings:
+                                              unit: s
+                                            third_party_settings: {  }
+                    node_id: list_item_duration_s
+        node_id: bb_run_list_item
+id: bb_run.bb_run.list_item
+targetEntityType: bb_run
+bundle: bb_run
+mode: list_item
+content: {  }
+hidden:
+  search_api_excerpt: true

@@ -30,6 +30,7 @@ use PHPUnit\Framework\Attributes\Group;
 final class RunListCanvasTest extends KernelTestBase {
 
   use UserCreationTrait;
+  use ProjectsViewTestTrait;
 
   /**
    * {@inheritdoc}
@@ -42,8 +43,8 @@ final class RunListCanvasTest extends KernelTestBase {
     'og', 'state_machine', 'views', 'search_api', 'search_api_db',
     'better_exposed_filters', 'facets', 'facets_exposed_filters',
     'island', 'views_filters_summary',
-    'ui_patterns', 'ui_patterns_views', 'display_builder',
-    'display_builder_views', 'bb_core',
+    'ui_patterns', 'ui_patterns_views', 'ui_patterns_field', 'display_builder',
+    'display_builder_views', 'display_builder_entity_view', 'bb_core',
   ];
 
   /**
@@ -340,39 +341,6 @@ final class RunListCanvasTest extends KernelTestBase {
       ->save();
   }
 
-  /**
-   * Installs the bb_runs Search API index from its recipe copy.
-   *
-   * @param string $name
-   *   The config object name, e.g. `search_api.index.bb_runs`.
-   */
-  private function installShippedIndex(string $name): void {
-    $path = dirname(__DIR__, 7) . '/recipes/bakers/config/' . $name . '.yml';
-    self::assertFileExists($path, "$name is not shipped in recipes/bakers/config.");
-    $data = Yaml::parseFile($path);
-    self::assertIsArray($data, "$name did not parse as a YAML mapping.");
-    $storage = $this->container->get('entity_type.manager')->getStorage('search_api_index');
-    if ($storage->load($data['id']) === NULL) {
-      $storage->create($data)->save();
-    }
-  }
-
-  /**
-   * Installs the `runs` view from its recipe copy.
-   *
-   * @param string $name
-   *   The config object name, e.g. `views.view.runs`.
-   */
-  private function installShippedView(string $name): void {
-    $path = dirname(__DIR__, 7) . '/recipes/bakers/config/' . $name . '.yml';
-    self::assertFileExists($path, "$name is not shipped in recipes/bakers/config.");
-    $data = Yaml::parseFile($path);
-    self::assertIsArray($data, "$name did not parse as a YAML mapping.");
-    $storage = $this->container->get('entity_type.manager')->getStorage('view');
-    if ($storage->load($data['id']) === NULL) {
-      $storage->create($data)->save();
-    }
-  }
 
   /**
    * Renders the `project_runs` display for a given project.
