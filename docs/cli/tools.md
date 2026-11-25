@@ -20,7 +20,7 @@ bakers tools [<global options>] [<wire name>] [--schema] [--data <json|@file>] [
 | `bakers tools <wire name> --data '<json>'` | Call it with inline JSON arguments |
 | `bakers tools <wire name> --param key=value` | Set one argument; repeatable, and wins over the same key in `--data` |
 
-Prefer `--data @file`, written by an editor or a JSON encoder, for anything but a one-word value, so Markdown bodies survive byte for byte without shell quoting.
+Prefer `--data @file` for anything beyond a one-word value, so Markdown bodies survive without shell quoting.
 
 ## Global options
 
@@ -35,7 +35,7 @@ Global options follow the subcommand: `bakers tools --connection staging`. The c
 
 ## Results and exit codes
 
-The tool's structured result is printed to stdout as JSON. Errors go to stderr as structured JSON.
+Results print to stdout as JSON, errors to stderr as structured JSON.
 
 | Exit | Meaning | Next |
 |---|---|---|
@@ -47,7 +47,7 @@ The tool's structured result is printed to stdout as JSON. Errors go to stderr a
 | `5` | HTTP or protocol error (`E_HTTP`); `details.status` `0` means the response was lost | See the rule below |
 | `6` | Plugin error | Check the connection's `plugins` |
 
-**An uncertain write is not a failure.** A write that timed out or ended with exit `5` may have been applied on the server. The CLI sends each call once; never resend it. Read the ticket back (`bakers_ticket_read`) or search for the object first, and act only on what the read shows. Likewise, a failed read or search proves no absence.
+**An uncertain write is not a failure.** A write that timed out or ended with exit `5` may have been applied. The CLI sends each call once; never resend it. Read the ticket back (`bakers_ticket_read`) or search for the object first, and act only on what the read shows. Likewise, a failed read or search proves no absence.
 
 ## Tools
 
@@ -56,10 +56,12 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | Tool | Arguments | What it does |
 |---|---|---|
 | `bakers_user_read` | optional `user` (e-mail or username) | You or a teammate: profile, team roles, machines and conductors with `conductor_id` and `assignment` |
+| `bakers_user_search` | `query` | Users whose full name or username contains `query`, any case |
 | `bakers_workspace_list` | `limit`, `offset` | The workspaces you can reach |
 | `bakers_group_list` | `workspace`; optional `group` | A workspace's groups, or one group's subgroups |
 | `bakers_group_create` | `workspace`, `name`; optional `description` | Create a group |
 | `bakers_team_list` | `workspace` | A workspace's teams |
+| `bakers_team_members` | `team` | A team's members and roles |
 | `bakers_project_list` | optional `workspace`, `group`, `query` | Projects you can reach, with `key` and `uuid` |
 | `bakers_project_read` | `project` (prefix or UUID) | One project: group, teams, repository, coder configuration, environments |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
