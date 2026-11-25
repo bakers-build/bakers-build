@@ -14,10 +14,10 @@ namespace Drupal\bb_core\Entity;
 interface BbProjectInterface extends BbContentEntityInterface {
 
   /**
-   * Returns the short project key used to build ticket identifiers.
+   * Returns the identifier prefix used to build new ticket identifiers.
    *
    * @return string
-   *   The uppercase project key, e.g. "bakers.build".
+   *   The uppercase identifier prefix, e.g. "BB".
    */
   public function getKey(): string;
 

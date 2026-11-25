@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Changes a project's repository settings under `edit bb_project`.
+ * Changes a project's repository or identifier prefix under `edit bb_project`.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -114,11 +114,89 @@ final class ProjectUpdateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A lead changes the prefix; old tickets keep theirs, new ones use it.
+   */
+  public function testChangesKey(): void {
+    $old = $this->ticket('TOOLPROJEC-1');
+    $this->actAsLead();
+    $out = $this->outputs($this->runTool('bakers_project_update', ['project' => 'TOOLPROJEC', 'key' => 'NEW']));
+    self::assertSame('NEW', $out['key']);
+    self::assertSame('NEW', $this->outputs($this->runTool('bakers_project_read', ['project' => 'NEW']))['key']);
+    self::assertSame('TOOLPROJEC-1', $this->reload($old)->getIdentifier());
+    self::assertSame('NEW-2', $this->ticket('ignored')->getIdentifier());
+    $read = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => 'TOOLPROJEC-1']));
+    self::assertSame($old->uuid(), $read['id']);
+  }
+
+  /**
+   * An invalid prefix is refused with the rule; nothing is uppercased.
+   */
+  public function testInvalidKeyRefused(): void {
+    $this->actAsLead();
+    foreach (['new', 'N'] as $key) {
+      $this->assertFailure(
+        $this->runTool('bakers_project_update', ['project' => 'TOOLPROJEC', 'key' => $key]),
+        'The identifier prefix must be 2–10 uppercase letters or digits, starting with a letter (e.g. BB).',
+      );
+    }
+    $this->assertKey('TOOLPROJEC');
+  }
+
+  /**
+   * A prefix another project's tickets carry is refused and named.
+   */
+  public function testReservedKeyRefused(): void {
+    $other = $this->entity('bb_project', [
+      'name' => 'other',
+      'key' => 'OLD',
+      'group_id' => $this->project->get('group_id')->target_id,
+    ]);
+    $this->ticket('OLD-1', ['project_id' => $other->id()]);
+    $other->set('key', 'OTHER')->save();
+    $this->actAsLead();
+    $this->assertFailure(
+      $this->runTool('bakers_project_update', ['project' => 'TOOLPROJEC', 'key' => 'OLD']),
+      "The identifier prefix OLD is reserved: another project’s tickets use it.",
+    );
+    $this->assertKey('TOOLPROJEC');
+  }
+
+  /**
+   * A member without edit right and a foreign lead cannot change the prefix.
+   */
+  public function testGuestAndOtherWorkspaceCannotChangeKey(): void {
+    $this->assertFailure($this->runTool('bakers_project_update', ['project' => 'TOOLPROJEC', 'key' => 'NEW']), 'You may not edit project TOOLPROJEC');
+    $lead = $this->account('foreign-lead', ['skill_user']);
+    $foreign = $this->entity('bb_workspace', ['name' => 'foreign', 'slug' => 'foreign', 'owner_user_id' => $lead->id()]);
+    $this->addMembership($foreign, $lead, ['lead']);
+    $this->container->get('current_user')->setAccount($lead);
+    $this->assertFailure($this->runTool('bakers_project_update', ['project' => 'TOOLPROJEC', 'key' => 'NEW']), 'does not exist or is not readable');
+    $this->assertKey('TOOLPROJEC');
+  }
+
+  /**
+   * A call naming neither key nor repository is refused.
+   */
+  public function testRequiresKeyOrRepository(): void {
+    $this->actAsLead();
+    $this->assertFailure($this->runTool('bakers_project_update', ['project' => 'TOOLPROJEC']), 'Give key or repository.');
+  }
+
+  /**
    * The inputs are an explicit allowlist.
    */
   public function testInputAllowlist(): void {
     $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_project_update');
-    self::assertSame(['project', 'repository'], array_keys($definition->getInputDefinitions()));
+    self::assertSame(['project', 'repository', 'key'], array_keys($definition->getInputDefinitions()));
+  }
+
+  /**
+   * The stored project's identifier prefix.
+   */
+  private function assertKey(string $key): void {
+    $stored = $this->container->get('entity_type.manager')->getStorage('bb_project')->loadUnchanged($this->project->id());
+    self::assertInstanceOf(ContentEntityInterface::class, $stored);
+    self::assertSame($key, $stored->get('key')->value);
   }
 
   /**

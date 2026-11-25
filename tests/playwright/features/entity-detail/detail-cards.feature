@@ -44,7 +44,7 @@ Feature: Entity detail pages show read-only cards; Settings edit
     Given I edit a disposable detail world
     When I open the project detail page
     Then the "Properties" card offers no Save and no inputs
-    And the "Properties" card shows "Key" as "D"
+    And the "Properties" card shows "Identifier prefix" as "D"
     And the "About" card offers no Save and no inputs
     And the "About" card says "Seeded project text"
     When I post the "properties" card of the world project directly
@@ -67,12 +67,12 @@ Feature: Entity detail pages show read-only cards; Settings edit
 
     # A card without editable fields has no POST address at all.
     Examples:
-      | fixture              | card          | operation     | row          | value                    | status |
-      | group.edit           | Properties    | properties    | Workspace    | Northside Bakery         | 404    |
-      | group.edit           | Identity      | identity      | Description  | —                        | 404    |
-      | project.edit         | Properties    | properties    | Key          | EDP1                     | 404    |
-      | team.home            | Identity      | identity      | Workspace    | Northside Bakery         | 404    |
-      | conductor.properties | Identity      | identity      | Conductor ID | bdd-properties-conductor | 404    |
+      | fixture              | card          | operation     | row               | value                    | status |
+      | group.edit           | Properties    | properties    | Workspace         | Northside Bakery         | 404    |
+      | group.edit           | Identity      | identity      | Description       | —                        | 404    |
+      | project.edit         | Properties    | properties    | Identifier prefix | EDP1                     | 404    |
+      | team.home            | Identity      | identity      | Workspace         | Northside Bakery         | 404    |
+      | conductor.properties | Identity      | identity      | Conductor ID      | bdd-properties-conductor | 404    |
 
   Scenario Outline: A reader of another workspace gets no detail page of <fixture>
     Given I am logged in as the account "south-contributor"

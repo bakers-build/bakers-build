@@ -9,6 +9,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\Query\QueryInterface;
 
@@ -66,29 +67,30 @@ final class TicketSearchResolver {
   }
 
   /**
-   * Resolves a typed decimal number to identifier `KEY-n`.
+   * Resolves a typed decimal number to the identifiers of tickets numbered n.
    *
-   * With a project in context that is an exact match. Without one, it is
-   * every readable project's `KEY-n`. No readable project (or a project
-   * without a key) is an honest empty result, not free text over the title.
+   * By the stored number, not `<current key>-n`, so a ticket keeps being
+   * found after its project changed the identifier prefix. Scoped to the
+   * project in context, otherwise to every readable project. No match is an
+   * honest empty result, not free text over the title.
    */
   private function resolveBareNumber(string $number, ?BbProjectInterface $project): TicketSearchQuery {
-    if ($project !== NULL) {
-      $key = $project->getKey();
-      return new TicketSearchQuery(
-        field: 'identifier',
-        value: $key === '' ? [] : $key . '-' . $number,
-      );
+    $project_ids = $project !== NULL
+      ? [$project->id()]
+      : array_map(static fn ($candidate) => $candidate->id(), array_values($this->readableProjects()));
+    if ($project_ids === []) {
+      return new TicketSearchQuery(field: 'identifier', value: []);
     }
-
+    $storage = $this->entityTypeManager->getStorage('bb_ticket');
+    $ids = $storage->getQuery()
+      ->accessCheck(TRUE)
+      ->condition('number', (int) $number)
+      ->condition('project_id', $project_ids, 'IN')
+      ->execute();
     $identifiers = [];
-    foreach ($this->readableProjects() as $candidate) {
-      if (!$candidate instanceof BbProjectInterface) {
-        continue;
-      }
-      $key = $candidate->getKey();
-      if ($key !== '') {
-        $identifiers[] = $key . '-' . $number;
+    foreach ($storage->loadMultiple($ids) as $ticket) {
+      if ($ticket instanceof BbTicketInterface) {
+        $identifiers[] = $ticket->getIdentifier();
       }
     }
     sort($identifiers);

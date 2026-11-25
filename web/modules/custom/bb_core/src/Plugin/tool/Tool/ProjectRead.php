@@ -23,14 +23,14 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_project_read',
   label: new TranslatableMarkup('Read a project'),
-  description: new TranslatableMarkup('Returns one readable project by key or UUID: name, description, group, teams, repository, coder config and its viewable environments (name, branch, base URL); bakers_ticket_update environments_add takes such a name. Environment variables are never returned.'),
+  description: new TranslatableMarkup('Returns one readable project by identifier prefix or UUID: name, description, group, teams, repository, coder config and its viewable environments (name, branch, base URL); bakers_ticket_update environments_add takes such a name. Environment variables are never returned.'),
   operation: ToolOperation::Read,
   permission: 'view bb_project',
   input_definitions: [
     'project' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('Project key (e.g. BAKERS) or UUID.'),
+      description: new TranslatableMarkup('Project identifier prefix (e.g. BAKERS) or UUID.'),
       constraints: ['NotBlank' => []],
     ),
   ],
@@ -42,7 +42,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
     'key' => new OutputDefinition(
       data_type: 'string',
-      label: new TranslatableMarkup('Key'),
+      label: new TranslatableMarkup('Identifier prefix'),
       description: new TranslatableMarkup('The ticket identifier prefix, e.g. BAKERS.'),
     ),
     'name' => new OutputDefinition(
