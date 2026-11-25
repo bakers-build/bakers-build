@@ -14,7 +14,7 @@ Every given filter must hold. An empty list or an unknown value is refused, neve
 
 A ticket's `attention` is one value, checked in this order: a closed ticket has none; `question` when it is frozen with the label Question (any letter case); `plan_ready` in state plan with a `plan` comment and no claimed or running run; `review` in state review; otherwise none.
 
-`facets` lists any of `conductor`, `project`, `state` and `attention`. The response then adds `total`, every matching ticket beyond the 50 rows, and `facets`: per name, buckets `{value, label, count}`, most tickets first, then by label. `value` is the UUID for `conductor` and `project` and the id for `state` and `attention`. A `conductor` bucket adds `owner` and `machine`, each `{uuid, name}` or `null`. A ticket without a conductor or an attention forms no bucket.
+With `filters` or `facets` the response adds `total`, the count of all matching tickets, not capped at the 50 rows. `facets` lists any of `conductor`, `project`, `state` and `attention`, and the response adds `facets`: per name, buckets `{value, label, count}`, most tickets first, then by label. `value` is the UUID for `conductor` and `project` and the id for `state` and `attention`. A `conductor` bucket adds `owner` and `machine`, each `{uuid, name}` or `null`. A ticket without a conductor or an attention forms no bucket.
 
 "Needs me", the open tickets that need you on your conductors, per project and reason, across all projects in one call:
 
