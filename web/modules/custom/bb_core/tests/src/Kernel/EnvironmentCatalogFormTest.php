@@ -106,9 +106,12 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
    * A project of another workspace is refused; nothing is saved.
    */
   public function testAddRejectsProjectOfAnotherWorkspace(): void {
+    // A lead of both workspaces may read and create there: only the form's
+    // own workspace check refuses B's project on A's Catalog.
+    $this->addMembership($this->fixture('b', 'bb_workspace'), $this->lead, ['lead']);
     $state = $this->submitAdd('foreign', (string) $this->fixture('b', 'bb_project')->id());
 
-    self::assertNotSame([], $state->getErrors());
+    self::assertSame(['project_id' => 'Pick a project of this workspace.'], array_map('strval', $state->getErrors()));
     self::assertSame([], $this->environments('foreign'));
   }
 
