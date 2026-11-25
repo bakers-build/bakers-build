@@ -23,7 +23,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_team_list',
   label: new TranslatableMarkup('List teams'),
-  description: new TranslatableMarkup('Lists the teams of a workspace by name. bakers_team_members lists one team\'s members.'),
+  description: new TranslatableMarkup("Lists the teams of a workspace by name. bakers_team_members lists one team's members."),
   operation: ToolOperation::Read,
   permission: 'view bb_team',
   input_definitions: [

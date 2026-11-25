@@ -61,10 +61,11 @@ final class TeamMembersToolTest extends BakersToolTestBase {
    * A team larger than one page is complete across pages.
    */
   public function testPagesAcrossMembers(): void {
-    $first = $this->outputs($this->runTool('bakers_team_members', ['team' => $this->alpha->uuid(), 'limit' => 2]));
+    $team = $this->alpha->uuid();
+    $first = $this->outputs($this->runTool('bakers_team_members', ['team' => $team, 'limit' => 2]));
     self::assertSame(['actor', 'bea'], array_column($first['members'], 'name'));
     self::assertSame(2, $first['next_offset']);
-    $second = $this->outputs($this->runTool('bakers_team_members', ['team' => $this->alpha->uuid(), 'limit' => 2, 'offset' => 2]));
+    $second = $this->outputs($this->runTool('bakers_team_members', ['team' => $team, 'limit' => 2, 'offset' => 2]));
     self::assertSame(['cem'], array_column($second['members'], 'name'));
     self::assertNull($second['next_offset']);
   }

@@ -139,7 +139,7 @@ final class UserSearchToolTest extends BakersToolTestBase {
   }
 
   /**
-   * "Christian Fremd" in a foreign workspace only, now the current user.
+   * A stranger "Christian Fremd" in a foreign workspace, now the current user.
    */
   private function stranger(): UserInterface {
     [, $stranger] = $this->foreignWorkspace();
