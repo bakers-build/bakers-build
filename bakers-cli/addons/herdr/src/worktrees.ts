@@ -202,8 +202,8 @@ export interface HerdrTeardownDeps {
  * aborts (returns `unverified`) so the reaper retries later, rather than
  * deleting the focused path out from under the user.
  */
-async function ensureFocusSafeToRemove(
-  deps: HerdrTeardownDeps,
+export async function ensureFocusSafeToRemove(
+  deps: Pick<HerdrTeardownDeps, 'root' | 'execHerdr'>,
   workspaceId: string,
 ): Promise<boolean> {
   const workspaces = parseWorkspaceList(
