@@ -5,7 +5,7 @@ description: Use for a quick start — set up bakers.build on this computer in o
 
 # Quick start
 
-One run, one question; every other choice takes the default below. Speak the system
+One run, one question; everything else takes the default below. Speak the system
 language (`LC_ALL`, `LC_MESSAGES`, `LANG`; unset, `C`, `POSIX`: English); commands, paths, keys and
 URLs stay verbatim. Never run `sudo`, `bubblewrap` or `socat`: a step needing them stops.
 
@@ -14,7 +14,7 @@ URLs stay verbatim. Never run `sudo`, `bubblewrap` or `socat`: a step needing th
 2. **Sign-in.** `bakers auth status`. Signed out: `bakers init --yes`, then `bakers auth login` in the
    background; show its URL and code at once, wait up to 10 minutes, else
    stop. **Done when** `bakers auth status` shows a session.
-3. **The question.** Ask: the path of an existing Git project, or the demo. A path that fails
+3. **The question.** Ask: an existing Git project's path, or the demo. A path that fails
    `git -C <path> rev-parse --show-toplevel`: ask again with the reason; never `git init`. Demo:
    clone `https://github.com/bakers-build/northside-shop` to `~/projects/northside-shop`, reusing
    its clone there; anything else there stops. **Done when** `<project>` is a Git top level.
@@ -40,14 +40,15 @@ URLs stay verbatim. Never run `sudo`, `bubblewrap` or `socat`: a step needing th
 9. **Test ticket.** `bakers_ticket_create`, workflow `bb_work`: demo "Show opening hours on the
    contact page" (done when it lists every weekday's hours); own project the
    [example](../bb-init-project/references/project-setup.md#start-the-session). Then
-   `bakers_ticket_update` `labels_add: [human-review]`; after it, set the conductor of step 8
-   ([people](../bb-workflow/references/people.md)). **Done when** `bakers_run_list` lists a run
-   within 2 minutes, or that wait ended.
-10. **Overview**, one screen: `✔`/`✖` `<step> — <result>` for sign-in, CLI, `hc`, machine
-    (`permissions.mode`), server project (workspace / group / name, new or reused), files (written,
-    kept, pushed), conductor, test ticket URL. A stop: `✖` with the remedy, later steps
-    `not run`. Then go on: follow the test ticket; create your own with `bakers:bb-create-ticket`;
-    confine agents: `https://bakers.build/get-started/#advanced-setup`. Demo: its run stops before
-    delivery; push it to your own repository.
+   `bakers_ticket_update` `labels_add: [human-review]`; then set the step-8 conductor
+   ([people](../bb-workflow/references/people.md)). **Done when** `bakers_run_list` lists a run,
+   or after 2 minutes.
+10. **Overview**, at most 15 lines: one line per step, only `✔` or `✖`,
+    `<step> — <result>`, for sign-in, CLI, `hc`, machine (`permissions.mode`), server project
+    (workspace / group / name, new or reused), files (written, kept, pushed), conductor, test
+    ticket URL; a caveat stays in its line. A stop: `✖` with the remedy, later steps `not run`.
+    Then exactly three ways on: follow the test ticket (demo: push it to your own repository to
+    deliver); create your own with `bakers:bb-create-ticket`; confine agents:
+    `https://bakers.build/get-started/#advanced-setup`.
 
-A rerun fills only what is missing, keeps a set `permissions.mode` and creates a new test ticket.
+A rerun fills only what is missing and creates a new test ticket.
