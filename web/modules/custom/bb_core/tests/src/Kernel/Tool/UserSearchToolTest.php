@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel\Tool;
 
-use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\field\Entity\FieldConfig;
-use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -20,6 +17,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 final class UserSearchToolTest extends BakersToolTestBase {
 
   use ForeignWorkspaceTrait;
+  use FullNameFieldTrait;
 
   /**
    * {@inheritdoc}
@@ -27,14 +25,7 @@ final class UserSearchToolTest extends BakersToolTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('bb_profile');
-    $this->container->get('config.typed')->clearCachedDefinitions();
-    $storage = new FileStorage(dirname($this->root) . '/config/sync');
-    $field_storage = $storage->read('field.storage.user.field_full_name');
-    $field = $storage->read('field.field.user.user.field_full_name');
-    self::assertIsArray($field_storage);
-    self::assertIsArray($field);
-    FieldStorageConfig::create($field_storage)->save();
-    FieldConfig::create($field)->save();
+    $this->installFullNameField();
 
     $team = $this->project->get('teams')->entity;
     assert($team instanceof ContentEntityInterface);
