@@ -1,10 +1,8 @@
 # Get started
 
-bakers.build is a ticket-driven AI software factory: coding agents work every ticket on your machine or remote workers, and a person decides at [every station](/get-started/first-ticket#how-it-works). Open source, hosted or [self-hosted](/self-hosting/), free.
+bakers.build is a ticket-driven AI software factory: agents work each ticket, a person decides at [every station](/get-started/first-ticket#how-it-works). Open source, hosted or [self-hosted](/self-hosting/), free.
 
 ## Quick start {#quick-start}
-
-One skill run, without sandbox or `sudo`, ending in a running test ticket.
 
 **You need:** a [bakers.build account](https://app.bakers.build/), [Node.js ≥20.19](https://nodejs.org/en/download), Git, and [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in.
 
@@ -48,16 +46,10 @@ One skill run, without sandbox or `sudo`, ending in a running test ticket.
 
    :::
 
-It asks one question: your Git project's path (re-asked unless a Git repository) or the demo [northside-shop](https://github.com/bakers-build/northside-shop) (cloned to `~/projects/northside-shop`). Then it:
-
-- installs a missing CLI and [herdr-core](/addons/herdr-core) (`hc`) and signs you in with a code in the browser,
-- lets agents run unsandboxed: `permissions.mode: 'system'` in `~/.bakers/machine.config.js`, only if unset,
-- creates or reuses the server project, named after your folder, in the group **Quick start**,
-- writes the [setup files](/get-started/connect-a-project#what-setup-writes); for your own project without `WORKFLOW.md` on its default branch, it commits and pushes them there,
-- starts the conductor and creates a test ticket labelled `human-review`.
+One question: your Git project's path (re-asked unless Git) or the [demo](https://github.com/bakers-build/northside-shop), cloned to `~/projects/northside-shop`. It installs a missing CLI and [herdr-core](/addons/herdr-core), signs you in, sets `permissions.mode: 'system'`, creates the project in group **Quick start**, writes the [setup files](/get-started/connect-a-project#what-setup-writes) (pushed to your default branch if it lacks `WORKFLOW.md`; demo never), starts the conductor and a `human-review` test ticket.
 
 ::: warning
-Agents run unsandboxed, with all your rights. For confined agents, use the [Advanced setup](#advanced-setup).
+Agents run unsandboxed with your rights. Sandboxed: [Advanced setup](#advanced-setup).
 :::
 
 ## Advanced setup {#advanced-setup}
