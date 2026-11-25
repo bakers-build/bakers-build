@@ -48,18 +48,16 @@ bakers.build is a ticket-driven AI software factory: agents work each ticket, a 
 
    :::
 
-One question: your Git project's path (asked again if not Git) or the [demo](https://github.com/bakers-build/northside-shop), cloned to `~/projects/northside-shop`. Then it:
+It asks for the path of an existing Git project (again if the path is no Git repository), or clones our [demo project](https://github.com/bakers-build/northside-shop) to `~/projects/northside-shop`. Then it:
 
 - installs the `bakers` CLI and [herdr-core](/addons/herdr-core) if missing,
 - signs you in,
-- sets `permissions.mode: 'system'`,
-- reuses your project, else creates one in group **Quick start**,
-- writes the [setup files](/get-started/connect-a-project#what-setup-writes), pushed to your default branch if it lacks `WORKFLOW.md` (demo: never),
-- starts the conductor and a test ticket.
+- sets the [permission mode](/provision/security/execution#modes) `system`: agents run unsandboxed and can change anything your user can,
+- connects a bakers.build project: the one linked to your repository, else a new one in group **Quick start**,
+- writes the [setup files](/get-started/connect-a-project#what-setup-writes); for your own project it commits and pushes them to your default branch once,
+- starts the conductor and creates a test ticket.
 
-::: warning
-Unsandboxed agents can change anything your user can. To confine them, see [Advanced setup](#advanced-setup) below.
-:::
+The Advanced setup below adds a sandbox.
 
 ## Advanced setup {#advanced-setup}
 
@@ -67,9 +65,9 @@ Unsandboxed agents can change anything your user can. To confine them, see [Adva
 
 ### 1. Set up your computer (once) {#set-up-your-computer}
 
-Web-only users skip this.
+Web-only ticket writers skip this.
 
-1. **Linux only** (the agent has no `sudo`):
+1. **Linux only:** Claude Code's sandbox isolates commands with bubblewrap and filters network access through socat ([sandbox prerequisites](/provision/security/execution#sandbox-prerequisites)). Install both before you start the agent; it has no `sudo`. macOS needs nothing:
 
    ```sh
    sudo apt install bubblewrap socat
@@ -97,21 +95,21 @@ Web-only users skip this.
 
    :::
 
-   `bb-init` signs you in, adds your agent and turns on the [sandbox](/agents/security): runs work isolated in bubblewrap or Docker.
+   `bb-init` signs you in, adds your agent and turns on the [sandbox](/agents/security): the agent's commands run in its OS sandbox and reach only what its rules allow.
 
-**Done when:** `bakers conductor check` prints `sandbox ok`. Other setups: [Choose where agents run](/provision/machine).
+**Done when:** `bakers conductor check` prints `sandbox ok`. Remote or manual setup: [Choose where agents run](/provision/machine).
 
 ### 2. Set up your project (once) {#set-up-your-project}
 
-Connect your repository: [Prepare your project](/get-started/connect-a-project).
+Connect your repository with one skill call: [Prepare your project](/get-started/connect-a-project).
 
 ### 3. Create a ticket {#create-a-ticket}
 
-Describe a small change: [Create a ticket](/get-started/daily-work/create-a-ticket).
+Describe a small change with its expected result: [Create a ticket](/get-started/daily-work/create-a-ticket).
 
 ### 4. Run a ticket {#run-a-ticket}
 
-Start agents, read the first result: [Run the first ticket](/get-started/first-ticket).
+Start your agents and read the first result: [Run the first ticket](/get-started/first-ticket).
 
 <span id="after-your-first-ticket"></span>
 
