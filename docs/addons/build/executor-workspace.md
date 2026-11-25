@@ -7,7 +7,7 @@ A conductor runs each ticket in its own Git worktree, and each run's agent in a 
 | Slot | Job | Interface |
 |---|---|---|
 | Workspace | Create or reuse the ticket's worktree; remove it when the ticket is done | `BbWorkspace`: `ensure`, `remove` |
-| Executor | Start the agent's terminal in that worktree, stop it, clean it up; optionally show a fresh worktree in the tool | `BbExecutor`: `capabilities`, `startRun`, `stopRun`, `cleanupRun`, optional `openWorkspace` |
+| Executor | Start the agent's terminal in that worktree, stop it, clean it up; optionally show a fresh worktree in the tool | `BbExecutor`: `capabilities`, `startRun`, `stopRun`, `cleanupRun`, optional `openWorkspace`, `closeWorkspace` and `sweepWorkspaces` |
 | Conductor | Call both, and run every lifecycle hook (`after_create`, `before_run`, `after_run`, `after_done`) itself | — |
 
 The two never call each other. The conductor hands the worktree path and the branch from the workspace to the executor, so any executor runs on any workspace's worktree. One conductor has exactly one executor and one workspace.
@@ -25,7 +25,7 @@ A dispatch:
 
 The run ends when the server marks it done or cancelled. The conductor then calls `stopRun`, stores the transcript, runs `after_run`, and calls `cleanupRun`. For an executor that is not `persistent`, it skips `stopRun` and that `cleanupRun`.
 
-When the ticket is done, the reaper runs `after_done`, then `workspace.remove(branch, worktreePath)`.
+When the ticket is done, the reaper runs `after_done`, then `workspace.remove(branch, worktreePath)`. After a `removed` or `already_absent` teardown it calls `executor.closeWorkspace(branch, worktreePath)` for a `persistent` executor. Once per conductor process it also calls `executor.sweepWorkspaces()`.
 
 ## Write an executor
 
@@ -40,6 +40,8 @@ The rules each method must keep:
 - **`cleanupRun(branch, runId)`** removes **only** that run's terminal. Another run of the same ticket may still be open. It is also called before every `startRun`, so a missing terminal is a quiet no-op. Log failures; never throw.
 - **`stopRun(branch)`** signals the agent to stop, before the transcript is read. It must not delete the transcript. Most executors leave it empty and let `cleanupRun` end the terminal.
 - **`openWorkspace(path, ctx)`** is optional. Add it when your tool has a window or layout to show for a new worktree. The worktree may come from any workspace, so find it by `path`, not by your own records. Log failures; never throw.
+- **`closeWorkspace(branch, worktreePath?)`** is optional. Add it when your tool keeps a window or workspace per branch that the workspace addon does not remove. Close only what holds nothing but your own terminals; report anything else in the log and return `true`. Return `false` when closing is not safe yet, for example a focused window with nowhere to move focus: the ticket stays on the reap list and the next reap retries. A throw is logged and does not hold up the cleanup.
+- **`sweepWorkspaces()`** is optional. It closes windows left over by earlier versions, whose tickets are already cleaned up. The conductor runs it on the first reap of each process and again while it returns `false`. [herdr](/addons/herdr) closes a workspace whose checkout under `.bakers-worktrees/` is gone and that holds only the open-layout tab.
 - An executor never creates, changes or removes a worktree, and runs no hooks.
 
 Label each terminal with the branch and run id when you start it, so `cleanupRun` can find it again without any state of its own; the conductor may have restarted in between. [herdr-core](/addons/herdr-core) does this with `hc` labels.

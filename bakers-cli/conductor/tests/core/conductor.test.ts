@@ -291,6 +291,28 @@ class RecordingExecutor implements BbExecutor {
     }
   }
 
+  /** closeWorkspace's result; an Error is thrown instead. */
+  closeWorkspaceResult: boolean | Error = true;
+  readonly closeWorkspaceArgs: Array<{
+    branch: string;
+    worktreePath?: string;
+  }> = [];
+  async closeWorkspace(branch: string, worktreePath?: string) {
+    this.closeWorkspaceArgs.push({ branch, worktreePath });
+    if (this.closeWorkspaceResult instanceof Error)
+      throw this.closeWorkspaceResult;
+    return this.closeWorkspaceResult;
+  }
+
+  /** sweepWorkspaces's result; an Error is thrown instead. */
+  sweepResult: boolean | Error = true;
+  sweepCalls = 0;
+  async sweepWorkspaces() {
+    this.sweepCalls++;
+    if (this.sweepResult instanceof Error) throw this.sweepResult;
+    return this.sweepResult;
+  }
+
   async removeWorktree(
     branch: string,
     worktreePath?: string,
@@ -2647,6 +2669,132 @@ describe('Conductor', () => {
     expect(removeIdx).toBeGreaterThanOrEqual(0);
     expect(executor.removed).toEqual(['bakers/bb-1']);
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
+  });
+
+  // --- closing the executor's branch workspace at reap --------------------
+
+  it.each([
+    'removed',
+    'already_absent',
+  ] as const)('after a %s teardown a persistent executor closes the branch workspace, then the ticket is cleaned', async (outcome) => {
+    const remote = new FakeBbRemote(doneTicketSeed());
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    executor.removeWorktreeOutcome = outcome;
+    const conductor = await cleanupConductor(remote, executor);
+
+    await conductor.tick();
+
+    expect(executor.closeWorkspaceArgs).toEqual([
+      { branch: 'bakers/bb-1', worktreePath: PRESENT_WORKTREE },
+    ]);
+    expect(remote.calls.markCleanedUp).toEqual(['t-1']);
+  });
+
+  it('an unverified teardown or a non-persistent executor closes no workspace', async () => {
+    const remote = new FakeBbRemote(doneTicketSeed());
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    executor.removeWorktreePresent = false;
+    await (await cleanupConductor(remote, executor)).tick();
+    expect(executor.closeWorkspaceArgs).toEqual([]);
+
+    const remote2 = new FakeBbRemote(doneTicketSeed());
+    const plain = new RecordingExecutor();
+    await (await cleanupConductor(remote2, plain)).tick();
+    expect(plain.closeWorkspaceArgs).toEqual([]);
+    expect(plain.sweepCalls).toBe(0);
+    expect(remote2.calls.markCleanedUp).toEqual(['t-1']);
+  });
+
+  it('a workspace close that is not safe yet (false) keeps the ticket on the work list', async () => {
+    const remote = new FakeBbRemote(doneTicketSeed());
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    executor.closeWorkspaceResult = false;
+    const { log, calls } = spyLogger();
+    const conductor = await cleanupConductor(
+      remote,
+      executor,
+      new FakeWorkspace(),
+      log,
+    );
+
+    await conductor.tick();
+
+    expect(remote.calls.markCleanedUp).toEqual([]);
+    expect(
+      (await remote.fetchUncleanedTickets(conductor.id)).map(
+        (t) => t.ticketUuid,
+      ),
+    ).toEqual(['t-1']);
+    expect(calls.some((c) => c.level === 'warn')).toBe(true);
+  });
+
+  it('a waiting workspace close writes no run note on its retries', async () => {
+    const remote = new FakeBbRemote(doneTicketSeed(ABSENT_WORKTREE));
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    executor.removeWorktreeOutcome = 'already_absent';
+    executor.closeWorkspaceResult = false;
+    const conductor = await cleanupConductor(remote, executor);
+
+    await conductor.tick();
+    await conductor.tick();
+    executor.closeWorkspaceResult = true;
+    await conductor.tick();
+
+    expect(executor.closeWorkspaceArgs).toHaveLength(3);
+    expect(
+      remote.calls.appendRunNote.filter((c) =>
+        c.note.includes('already absent'),
+      ),
+    ).toHaveLength(1);
+    expect(remote.calls.markCleanedUp).toEqual(['t-1']);
+  });
+
+  it('a throwing workspace close is logged and the ticket is still cleaned', async () => {
+    const remote = new FakeBbRemote(doneTicketSeed());
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    executor.closeWorkspaceResult = new Error('herdr gone');
+    const { log, calls } = spyLogger();
+    const conductor = await cleanupConductor(
+      remote,
+      executor,
+      new FakeWorkspace(),
+      log,
+    );
+
+    await conductor.tick();
+
+    expect(
+      calls.find(
+        (c) =>
+          c.level === 'warn' &&
+          String((c.obj as { err?: unknown }).err).includes('herdr gone'),
+      ),
+    ).toBeDefined();
+    expect(remote.calls.markCleanedUp).toEqual(['t-1']);
+  });
+
+  it('the leftover sweep runs once per process, and again while it reports false', async () => {
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    const conductor = await cleanupConductor(new FakeBbRemote({}), executor);
+    await conductor.tick();
+    await conductor.tick();
+    expect(executor.sweepCalls).toBe(1);
+
+    const retrying = new RecordingExecutor();
+    retrying.persistent = true;
+    retrying.sweepResult = false;
+    const second = await cleanupConductor(new FakeBbRemote({}), retrying);
+    await second.tick();
+    retrying.sweepResult = true;
+    await second.tick();
+    await second.tick();
+    expect(retrying.sweepCalls).toBe(2);
   });
 
   it('tick skips after_done when the ticket has no worktree, but still tears down + marks cleaned_up', async () => {
