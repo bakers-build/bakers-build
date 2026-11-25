@@ -48,6 +48,7 @@ Each fact has one canonical home. Repeat only essential safety instructions at t
 | Page | Prose word limit |
 |---|---|
 | Manual and area indexes | 250 |
+| Get started index (Quick start and Advanced setup) | 350 |
 | Setup, daily-work and main addon pages | 400 |
 | Provision (including Security), Agents, Skills & Workflows, Configuration and Self-hosting detail pages; addon build/subordinate references | 1,500 |
 

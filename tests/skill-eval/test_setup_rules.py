@@ -153,8 +153,10 @@ class SetupRulesTest(unittest.TestCase):
         self.assertIn('#check-the-repository-first', project_skill)
 
     def test_setup_cases_stay_few(self):
-        cases = [path for path in TAKE_ALL.parent.glob('*.json') if path.name != 'defaults.json']
+        quick = list(TAKE_ALL.parent.glob('get-started-*.json'))
+        cases = [path for path in TAKE_ALL.parent.glob('*.json') if path.name != 'defaults.json' and path not in quick]
         self.assertLessEqual(len(cases), 10)
+        self.assertLessEqual(len(quick), 3)
 
 
 if __name__ == '__main__':

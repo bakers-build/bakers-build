@@ -21,7 +21,7 @@ def parse_action(text):
             raise ValueError('Invalid action transport') from error
     else:
         action = json.loads(text)
-    fields = {'question': {'text'}, 'final': {'text'}, 'command': {'argv'},
+    fields = {'question': {'text'}, 'message': {'text'}, 'final': {'text'}, 'command': {'argv'},
               'read': {'path'}, 'write': {'path', 'content'}}
     if not isinstance(action, dict) or action.get('type') not in fields or set(action) != fields[action['type']] | {'type'}:
         raise ValueError('Expected one supported action')
@@ -32,16 +32,36 @@ def parse_action(text):
 
 
 def declared_output(commands, argv):
-    """A fixture's synthetic output for argv: exact, or by prefix for forge CLIs, whose read flags vary."""
+    """A fixture's synthetic output for argv: exact; by prefix for forge CLIs, whose read flags vary,
+    and for a declaration ending in `*`."""
     exact = json.dumps(argv, separators=(',', ':'))
     if exact in commands:
         return commands[exact]
+    for key, output in commands.items():
+        declared = json.loads(key)
+        if declared[-1:] == ['*'] and len(argv) >= len(declared) and argv[:len(declared) - 1] == declared[:-1]:
+            return output
     if argv[:1] in (['gh'], ['glab']):
         for key, output in commands.items():
             declared = json.loads(key)
             if declared[:1] == argv[:1] and argv[:len(declared)] == declared:
                 return output
     return None
+
+
+def take_output(output, calls, argv):
+    """A declared list answers successive calls of one argv in order; its last output repeats."""
+    if not isinstance(output, list):
+        return output
+    key = json.dumps(argv)
+    calls[key] = calls.get(key, 0) + 1
+    return output[min(calls[key], len(output)) - 1]
+
+
+def relative_argv(root, argv):
+    """Absolute paths inside the case read as case-relative, so declared evidence matches either spelling."""
+    root = str(root)
+    return ['.' if value == root else value[len(root) + 1:] if value.startswith(root + '/') else value for value in argv]
 
 
 def safe_path(root, value):
@@ -83,7 +103,7 @@ def config_args(root, argv):
     values = {}
     online = False
     dry_run = False
-    flags = {'--scope', '--label', '--project', '--workspace', '--base-url', '--client-id',
+    flags = {'--scope', '--label', '--project', '--workspace', '--base-url', '--client-id', '--executor',
              '--workspace-id', '--path', '--machine-path', '--config', '--connection',
              '--after-create', '--after-done', '--format', '--project-connection'}
     index = 3
