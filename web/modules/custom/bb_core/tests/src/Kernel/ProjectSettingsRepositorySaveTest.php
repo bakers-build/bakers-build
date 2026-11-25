@@ -218,6 +218,19 @@ final class ProjectSettingsRepositorySaveTest extends KernelTestBase {
   }
 
   /**
+   * Settings shows the identifier prefix and saves a new one.
+   */
+  public function testSettingsFormChangesIdentifierPrefix(): void {
+    $project = $this->createProject(['name' => 'p']);
+    $form = $this->buildSettingsForm($project);
+    self::assertSame('Identifier prefix', (string) $form['key']['widget'][0]['value']['#title']);
+    self::assertSame('PSAVE', $form['key']['widget'][0]['value']['#default_value']);
+
+    $this->submitSettingsForm($project, ['key' => [['value' => 'PNEW']]]);
+    self::assertSame('PNEW', $this->reload($project)->get('key')->value);
+  }
+
+  /**
    * The env_vars field round-trips: set, reload, clear, reload.
    */
   public function testEnvVarsRoundTripAndClear(): void {

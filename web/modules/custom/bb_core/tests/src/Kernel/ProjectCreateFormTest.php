@@ -124,13 +124,13 @@ final class ProjectCreateFormTest extends KernelTestBase {
     uasort($components, static fn (array $a, array $b): int => $a['weight'] <=> $b['weight']);
 
     self::assertSame(
-      ['group_id', 'teams', 'name', 'description', 'image', 'repository', 'owner_user_id', 'env_vars'],
+      ['group_id', 'teams', 'name', 'key', 'description', 'image', 'repository', 'owner_user_id', 'env_vars'],
       array_keys($components),
     );
 
     $hidden = $display->get('hidden');
     self::assertIsArray($hidden);
-    foreach (['key', 'next_number', 'environments'] as $absent) {
+    foreach (['next_number', 'environments'] as $absent) {
       self::assertArrayHasKey(
         $absent,
         $hidden,
@@ -161,6 +161,7 @@ final class ProjectCreateFormTest extends KernelTestBase {
       'group_id' => PickerWidgetInterface::REGION_LEAD,
       'teams' => PickerWidgetInterface::REGION_PILLS,
       'name' => PickerWidgetInterface::REGION_LINES,
+      'key' => PickerWidgetInterface::REGION_LINES,
       'description' => PickerWidgetInterface::REGION_LINES,
       'image' => PickerWidgetInterface::REGION_LINES,
       'repository' => PickerWidgetInterface::REGION_LINES,
@@ -171,6 +172,16 @@ final class ProjectCreateFormTest extends KernelTestBase {
     self::assertFalse($form['env_vars']['#access']);
     self::assertFalse($form['repository']['widget'][0]['branch_convention']['#access']);
     self::assertTrue($form['repository']['widget'][0]['default_branch']['#access'] ?? TRUE);
+  }
+
+  /**
+   * The create dialog derives the identifier prefix and never shows it.
+   *
+   * Settings carries the prefix on the shared display; only this surface
+   * hides it.
+   */
+  public function testCreateDialogHidesIdentifierPrefix(): void {
+    self::assertFalse($this->buildCreateForm()['key']['#access']);
   }
 
   /**

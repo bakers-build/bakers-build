@@ -71,6 +71,8 @@ final class BbProjectCreateForm extends BbCreateDialogFormBase {
    */
   public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
+    // Derived from the name on create (copyFormValuesToEntity()).
+    $form['key']['#access'] = FALSE;
     $form['env_vars']['#access'] = FALSE;
     $form['repository']['widget'][0]['branch_convention']['#access'] = FALSE;
     return $form;
