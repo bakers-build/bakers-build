@@ -1,0 +1,91 @@
+uuid: 299597d6-8256-4652-b613-ec7b069c0842
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_ticket.list_item_compact
+  module:
+    - bb_core
+    - display_builder
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.label
+      - bb_core.bb_vocabulary.recipe
+      - bb_core.bb_vocabulary.type
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      - source_id: component
+        source:
+          component:
+            component_id: bb_theme:list_item
+            variant_id: null
+            props: {  }
+            slots:
+              headline:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: identifier
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:identifier
+                                  field:bb_ticket:bb_ticket:identifier:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:identifier
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: true
+                                            third_party_settings: {  }
+                    node_id: list_item_compact_identifier
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: title
+                          primary:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:title
+                                  field:bb_ticket:bb_ticket:title:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:title
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: true
+                                            third_party_settings: {  }
+                    node_id: list_item_compact_title
+        node_id: bb_ticket_list_item_compact
+id: bb_ticket.bb_ticket.list_item_compact
+targetEntityType: bb_ticket
+bundle: bb_ticket
+mode: list_item_compact
+content: {  }
+hidden:
+  search_api_excerpt: true

@@ -1,0 +1,11 @@
+uuid: dee3d13d-e03f-490b-9dc5-53c8a57bdfe4
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_conductor.list_item_user
+label: List item with project
+description: One row of a listing.
+targetEntityType: bb_conductor
+cache: true
