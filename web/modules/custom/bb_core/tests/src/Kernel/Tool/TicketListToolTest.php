@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel\Tool;
 
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\bb_core\Entity\BbTicketInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -44,7 +46,8 @@ final class TicketListToolTest extends BakersToolTestBase {
     self::assertSame(
       [
         'id', 'identifier', 'title', 'url', 'origin', 'state', 'links',
-        'labels', 'frozen', 'frozen_at', 'parent', 'closed',
+        'labels', 'frozen', 'frozen_at', 'parent', 'closed', 'ticket_type',
+        'changed', 'active_run',
       ],
       array_keys($rows[0]),
     );
@@ -147,6 +150,81 @@ final class TicketListToolTest extends BakersToolTestBase {
     $out = $this->outputs($this->runTool('bakers_ticket_list', ['project' => $this->project->uuid()]));
     self::assertSame(['Child'], array_column($out['tickets'], 'title'));
     self::assertNull($out['tickets'][0]['parent']);
+  }
+
+  /**
+   * A list client filters open tickets, sorts by change and sees active runs.
+   */
+  public function testOpenTicketsNewestChangeFirstWithTheirActiveRun(): void {
+    user_role_grant_permissions('skill_user', ['view bb_run']);
+    $bug = $this->term('type', 'bug');
+    $older = $this->ticket('OLD-1', ['ticket_type' => $bug->id()]);
+    $newer = $this->ticket('NEW-1');
+    $closed = $this->ticket('DONE-1');
+    $closed->markClosed(1767225600)->save();
+    $this->seedRun($older, 'done');
+    $running = $this->seedRun($older, 'running');
+    $this->seedRun($newer, 'failed');
+    $claimed = $this->seedRun($newer, 'claimed');
+    // After the runs: a run write touches its ticket.
+    $this->changedAt($older, 1767225600);
+    $this->changedAt($newer, 1767312000);
+
+    $rows = $this->outputs($this->runTool('bakers_ticket_list', [
+      'project' => $this->project->uuid(),
+      'closed' => FALSE,
+      'sort' => '-changed',
+    ]))['tickets'];
+
+    self::assertSame([$newer->uuid(), $older->uuid()], array_column($rows, 'id'));
+    self::assertSame([NULL, 'bug'], array_column($rows, 'ticket_type'));
+    self::assertSame(1767312000, (new \DateTimeImmutable($rows[0]['changed']))->getTimestamp());
+    self::assertSame(['id' => $claimed->uuid(), 'state' => 'claimed'], $rows[0]['active_run'], 'A claimed run is active, a failed one not.');
+    self::assertSame(['id' => $running->uuid(), 'state' => 'running'], $rows[1]['active_run']);
+
+    $closedOnly = $this->outputs($this->runTool('bakers_ticket_list', [
+      'project' => $this->project->uuid(),
+      'closed' => TRUE,
+    ]));
+    self::assertSame([$closed->uuid()], array_column($closedOnly['tickets'], 'id'));
+    self::assertNull($closedOnly['tickets'][0]['active_run']);
+    // Without the new inputs, every ticket in id order, as before.
+    $all = $this->outputs($this->runTool('bakers_ticket_list', ['project' => $this->project->uuid()]));
+    self::assertSame([$older->uuid(), $newer->uuid(), $closed->uuid()], array_column($all['tickets'], 'id'));
+
+    $this->assertFailure(
+      $this->runTool('bakers_ticket_list', ['project' => $this->project->uuid(), 'sort' => 'title']),
+      'sort must be id or -changed.',
+    );
+  }
+
+  /**
+   * Stores a ticket's last change time.
+   */
+  private function changedAt(BbTicketInterface $ticket, int $time): void {
+    $this->container->get('database')->update('bb_ticket')
+      ->fields(['changed' => $time])->condition('id', $ticket->id())->execute();
+    $this->container->get('entity_type.manager')->getStorage('bb_ticket')->resetCache();
+  }
+
+  /**
+   * Creates a run of the ticket in the given state on a new conductor.
+   */
+  private function seedRun(BbTicketInterface $ticket, string $state): ContentEntityInterface {
+    $name = 'node-' . $this->randomMachineName();
+    $conductor = $this->entity('bb_conductor', [
+      'conductor_id' => $name,
+      'label' => $name,
+      'owner_user_id' => $this->actor->id(),
+      'project_id' => $this->project->id(),
+    ]);
+    return $this->entity('bb_run', [
+      'ticket_id' => $ticket->id(),
+      'conductor_id' => $conductor->id(),
+      'owner_user_id' => $this->actor->id(),
+      'state' => $state,
+      'claim_expires_at' => 4102444800,
+    ]);
   }
 
 }
