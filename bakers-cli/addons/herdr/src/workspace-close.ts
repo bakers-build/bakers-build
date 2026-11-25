@@ -56,6 +56,8 @@ async function foreignContent(
   const tabs = parseTabList(
     await deps.execHerdr(['tab', 'list', '--workspace', workspaceId]),
   );
+  // A workspace always has a tab: none read means herdr's output changed.
+  if (tabs.length === 0) return 'tab list unreadable';
   let panes: unknown;
   try {
     const parsed = parseJson(
@@ -132,7 +134,13 @@ export async function closeBranchWorkspace(
           w.checkoutPath !== null &&
           normPath(w.checkoutPath) === normPath(worktreePath),
       )) ||
-    workspaces.find((w) => w.label === branch);
+    // `workspace list` spans the host: a label match counts only when its
+    // checkout is gone, so another clone's live workspace is never taken.
+    workspaces.find(
+      (w) =>
+        w.label === branch &&
+        (w.checkoutPath === null || !existsSync(w.checkoutPath)),
+    );
   return ws ? closeIfBakersOnly(deps, ws) : true;
 }
 
@@ -160,7 +168,15 @@ export async function sweepLeftoverWorkspaces(
       await deps.execHerdr(['tab', 'list', '--workspace', ws.workspaceId]),
     );
     if (tabs.length !== 1) continue;
-    if (!(await closeIfBakersOnly(deps, ws))) done = false;
+    try {
+      if (!(await closeIfBakersOnly(deps, ws))) done = false;
+    } catch (err) {
+      // e.g. the ticket's own reap closed it first; the others still count.
+      deps.logger.warn(
+        { workspace: ws.workspaceId, err: String(err) },
+        'herdr leftover workspace close failed',
+      );
+    }
   }
   return done;
 }

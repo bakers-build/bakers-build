@@ -2731,6 +2731,28 @@ describe('Conductor', () => {
     expect(calls.some((c) => c.level === 'warn')).toBe(true);
   });
 
+  it('a waiting workspace close writes no run note on its retries', async () => {
+    const remote = new FakeBbRemote(doneTicketSeed(ABSENT_WORKTREE));
+    const executor = new RecordingExecutor();
+    executor.persistent = true;
+    executor.removeWorktreeOutcome = 'already_absent';
+    executor.closeWorkspaceResult = false;
+    const conductor = await cleanupConductor(remote, executor);
+
+    await conductor.tick();
+    await conductor.tick();
+    executor.closeWorkspaceResult = true;
+    await conductor.tick();
+
+    expect(executor.closeWorkspaceArgs).toHaveLength(3);
+    expect(
+      remote.calls.appendRunNote.filter((c) =>
+        c.note.includes('already absent'),
+      ),
+    ).toHaveLength(1);
+    expect(remote.calls.markCleanedUp).toEqual(['t-1']);
+  });
+
   it('a throwing workspace close is logged and the ticket is still cleaned', async () => {
     const remote = new FakeBbRemote(doneTicketSeed());
     const executor = new RecordingExecutor();

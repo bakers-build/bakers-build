@@ -42,7 +42,12 @@ interface FakeWorkspace {
 /** A herdr holding workspaces with tabs and panes; records every call. */
 function fakeHerdr(
   workspaces: FakeWorkspace[],
-  opts: { paneList?: string; focusSticks?: boolean } = {},
+  opts: {
+    paneList?: string;
+    tabList?: string;
+    focusSticks?: boolean;
+    failClose?: string;
+  } = {},
 ) {
   const calls: string[][] = [];
   const byId = (id: string) => workspaces.find((w) => w.id === id);
@@ -71,12 +76,14 @@ function fakeHerdr(
       return '{}';
     }
     if (noun === 'workspace' && verb === 'close') {
+      if (id === opts.failClose) throw new Error(`workspace ${id} not found`);
       workspaces.splice(
         workspaces.indexOf(byId(id as string) as FakeWorkspace),
         1,
       );
       return '{}';
     }
+    if (noun === 'tab' && verb === 'list' && opts.tabList) return opts.tabList;
     if (noun === 'tab' && verb === 'list')
       return JSON.stringify({
         result: {
@@ -353,4 +360,43 @@ it('the sweep asks for a retry when a focused leftover cannot lose focus', async
 
   expect(await executor.sweepWorkspaces()).toBe(false);
   expect(closes(herdr.calls)).toEqual([]);
+});
+
+it('does not take a workspace of another checkout that still exists by its label', async () => {
+  const path = await reapedWorktree();
+  const other = join(base, 'other-clone');
+  mkdirSync(other);
+  const herdr = fakeHerdr([ticketWorkspace(other)]);
+  const executor = new HerdrExecutor({ root }, herdr.exec);
+
+  expect(await executor.closeWorkspace(BRANCH, path)).toBe(true);
+  expect(closes(herdr.calls)).toEqual([]);
+});
+
+it('keeps a workspace whose tab list it cannot read and reports it', async () => {
+  const path = await reapedWorktree();
+  const herdr = fakeHerdr([ticketWorkspace(path)], {
+    tabList: '{"result":{}}',
+  });
+  const { log, warnings } = spyLogger();
+  const executor = new HerdrExecutor({ root }, herdr.exec, log);
+
+  expect(await executor.closeWorkspace(BRANCH, path)).toBe(true);
+  expect(closes(herdr.calls)).toEqual([]);
+  expect(warnings[0]?.obj).toMatchObject({ workspace: 'w79' });
+});
+
+it('the sweep goes on past a leftover whose close fails', async () => {
+  const dir = join(root, '.bakers-worktrees');
+  const leftover = (id: string): FakeWorkspace => ({
+    id,
+    label: id,
+    path: join(dir, id),
+    tabs: [{ label: 'ui', panes: [null] }],
+  });
+  const herdr = fakeHerdr([leftover('a'), leftover('b')], { failClose: 'a' });
+  const executor = new HerdrExecutor({ root }, herdr.exec);
+
+  expect(await executor.sweepWorkspaces()).toBe(true);
+  expect(closes(herdr.calls)).toEqual(['a', 'b']);
 });

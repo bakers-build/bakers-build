@@ -1538,6 +1538,32 @@ export class Conductor {
           return; // leave cleaned_up=0 → the next reconciliation retries.
         }
       }
+      // The worktree is gone; close the branch workspace the executor opened
+      // for it, which another workspace addon's teardown leaves behind.
+      if (
+        outcome !== 'unverified' &&
+        this.executor.closeWorkspace &&
+        this.executor.capabilities().persistent
+      ) {
+        try {
+          const closed = await this.executor.closeWorkspace(
+            t.branchName,
+            t.worktreePath || undefined,
+          );
+          if (!closed) {
+            this.logger.warn(
+              { ticket: t.ticketUuid, branch: t.branchName },
+              'branch workspace not safe to close — retrying next reap',
+            );
+            return; // leave cleaned_up=0 → the next reconciliation retries.
+          }
+        } catch (err) {
+          this.logger.warn(
+            { ticket: t.ticketUuid, branch: t.branchName, err: String(err) },
+            'branch workspace close failed',
+          );
+        }
+      }
       if (outcome === 'already_absent') {
         // BB-293: the worktree was gone before we got here. That is a
         // FINISHED teardown, so it is recorded rather than swallowed and
@@ -1569,32 +1595,6 @@ export class Conductor {
               'run note write failed',
             );
           }
-        }
-      }
-      // The worktree is gone; close the branch workspace the executor opened
-      // for it, which another workspace addon's teardown leaves behind.
-      if (
-        outcome !== 'unverified' &&
-        this.executor.closeWorkspace &&
-        this.executor.capabilities().persistent
-      ) {
-        try {
-          const closed = await this.executor.closeWorkspace(
-            t.branchName,
-            t.worktreePath || undefined,
-          );
-          if (!closed) {
-            this.logger.warn(
-              { ticket: t.ticketUuid, branch: t.branchName },
-              'branch workspace not safe to close — retrying next reap',
-            );
-            return; // leave cleaned_up=0 → the next reconciliation retries.
-          }
-        } catch (err) {
-          this.logger.warn(
-            { ticket: t.ticketUuid, branch: t.branchName, err: String(err) },
-            'branch workspace close failed',
-          );
         }
       }
       // Teardown verified locally or the worktree was already absent: flag it
