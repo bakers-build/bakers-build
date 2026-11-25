@@ -23,6 +23,8 @@ export const SITE_TOOLS: readonly string[] = [
   'bakers_label_list',
   'bakers_project_read',
   'bakers_user_read',
+  'bakers_user_search',
+  'bakers_team_members',
   'bakers_conductor_list',
 ];
 

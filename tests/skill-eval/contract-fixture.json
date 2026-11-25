@@ -1193,7 +1193,7 @@
     {
       "name": "tool_api__bakers_team_list",
       "title": "List teams",
-      "description": "Lists the teams of a workspace by name.",
+      "description": "Lists the teams of a workspace by name. bakers_team_members lists one team's members.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -1261,6 +1261,117 @@
               "title": "Team"
             },
             "title": "Teams"
+          },
+          "next_offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The offset of the next page, or null on the last page.",
+            "title": "Next offset"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_team_members",
+      "title": "List team members",
+      "description": "Lists the members of a team you can see with their team roles, by username. Use it to pick an assignee or reviewer from a team.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "team": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Team UUID, from bakers_team_list or bakers_user_read.",
+            "title": "Team"
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows per page, 1-100; default 50.",
+            "title": "Limit"
+          },
+          "offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows to skip; default 0.",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "team"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "members": {
+            "type": "array",
+            "description": "The active members, by username.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The user UUID.",
+                  "title": "UUID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "The username, as bakers_user_read takes it.",
+                  "title": "Name"
+                },
+                "full_name": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The full name, or null without one.",
+                  "title": "Full name"
+                },
+                "roles": {
+                  "type": "array",
+                  "description": "The team roles, sorted: member, lead, owner, reporter.",
+                  "items": {
+                    "type": "string",
+                    "description": "One team role.",
+                    "title": "Role"
+                  },
+                  "title": "Roles"
+                }
+              },
+              "required": [
+                "uuid",
+                "name",
+                "full_name",
+                "roles"
+              ],
+              "description": "One member.",
+              "title": "Member"
+            },
+            "title": "Members"
           },
           "next_offset": {
             "oneOf": [
@@ -2578,11 +2689,24 @@
     },
     {
       "name": "tool_api__bakers_user_read",
-      "title": "Read your user",
-      "description": "Reads your own user: name, position and background, which describe you.",
+      "title": "Read a user",
+      "description": "Reads you, or a user you can see by e-mail or username: profile, teams with role, machines and conductors with who may assign them. To find someone by name, use bakers_user_search first.",
       "inputSchema": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "user": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "E-mail address (any case) or username; default you.",
+            "title": "User"
+          }
+        },
         "additionalProperties": false
       },
       "outputSchema": {
@@ -2590,23 +2714,403 @@
         "properties": {
           "uuid": {
             "type": "string",
-            "description": "Your user UUID.",
+            "description": "The user UUID.",
             "title": "UUID"
           },
           "name": {
             "type": "string",
-            "description": "Your display name.",
+            "description": "The display name.",
             "title": "Name"
           },
-          "position": {
-            "type": "string",
-            "description": "Your position, or an empty string.",
-            "title": "Position"
+          "mail": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The e-mail address, null without mail view access.",
+            "title": "Mail"
           },
-          "background": {
+          "profiles": {
+            "type": "array",
+            "description": "The user's profile per workspace you can read it in; use the one of the ticket's workspace.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "workspace": {
+                  "type": "string",
+                  "description": "The workspace UUID.",
+                  "title": "Workspace"
+                },
+                "position": {
+                  "type": "string",
+                  "description": "The position, or an empty string.",
+                  "title": "Position"
+                },
+                "background": {
+                  "type": "string",
+                  "description": "What bakers.build should know about the background, or an empty string.",
+                  "title": "Background"
+                }
+              },
+              "required": [
+                "workspace",
+                "position",
+                "background"
+              ],
+              "description": "One workspace profile.",
+              "title": "Profile"
+            },
+            "title": "Profiles"
+          },
+          "teams": {
+            "type": "array",
+            "description": "The teams of the user you can read.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The team UUID.",
+                  "title": "UUID"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "The team name.",
+                  "title": "Label"
+                },
+                "workspace": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The workspace UUID.",
+                  "title": "Workspace"
+                },
+                "role": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The user's rank in that workspace: lead (Admin), contributor or guest; null without one.",
+                  "title": "Role"
+                }
+              },
+              "required": [
+                "uuid",
+                "label",
+                "workspace",
+                "role"
+              ],
+              "description": "One team.",
+              "title": "Team"
+            },
+            "title": "Teams"
+          },
+          "machines": {
+            "type": "array",
+            "description": "Your own machines; for another user, those carrying a conductor you can view.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The machine UUID.",
+                  "title": "UUID"
+                },
+                "machine_id": {
+                  "type": "string",
+                  "description": "The machine_id (host key).",
+                  "title": "Machine ID"
+                },
+                "name": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The machine name.",
+                  "title": "Name"
+                },
+                "max_parallel": {
+                  "type": "integer",
+                  "description": "Runs the machine takes at once.",
+                  "title": "Max parallel"
+                },
+                "current_load": {
+                  "type": "integer",
+                  "description": "Runs the machine holds now.",
+                  "title": "Current load"
+                },
+                "assignment": {
+                  "type": "string",
+                  "description": "allow or forbid: whether others may assign its conductors, unless a conductor overrides it.",
+                  "title": "Assignment"
+                },
+                "conductors": {
+                  "type": "array",
+                  "description": "The user's conductors on this machine you can view.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "uuid": {
+                        "type": "string",
+                        "description": "The conductor UUID, as bakers_ticket_update takes it.",
+                        "title": "UUID"
+                      },
+                      "conductor_id": {
+                        "type": "string",
+                        "description": "The process registration key.",
+                        "title": "Conductor ID"
+                      },
+                      "label": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "The conductor label.",
+                        "title": "Label"
+                      },
+                      "project": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "The project UUID.",
+                        "title": "Project"
+                      },
+                      "status": {
+                        "type": "string",
+                        "description": "online or offline.",
+                        "title": "Status"
+                      },
+                      "assignment_setting": {
+                        "type": "string",
+                        "description": "The conductor's own setting: machine, allow or forbid.",
+                        "title": "Assignment setting"
+                      },
+                      "assignment": {
+                        "type": "string",
+                        "description": "allow or forbid in force: whether others may assign this conductor; the owner always may.",
+                        "title": "Assignment"
+                      }
+                    },
+                    "required": [
+                      "uuid",
+                      "conductor_id",
+                      "label",
+                      "project",
+                      "status",
+                      "assignment_setting",
+                      "assignment"
+                    ],
+                    "description": "One conductor.",
+                    "title": "Conductor"
+                  },
+                  "title": "Conductors"
+                }
+              },
+              "required": [
+                "uuid",
+                "machine_id",
+                "name",
+                "max_parallel",
+                "current_load",
+                "assignment",
+                "conductors"
+              ],
+              "description": "One machine with the user’s conductors on it.",
+              "title": "Machine"
+            },
+            "title": "Machines"
+          }
+        }
+      }
+    },
+    {
+      "name": "tool_api__bakers_user_search",
+      "title": "Search users",
+      "description": "Finds users you can see by part of their full name or username, any case; several matches return all, none an empty list. Use it to get a person's uuid before assigning, mentioning or adding reviewers.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
             "type": "string",
-            "description": "What bakers.build should know about your background, or an empty string.",
-            "title": "Background"
+            "minLength": 1,
+            "description": "Part of the full name or username, e.g. a first name, a last name or \"first last\".",
+            "title": "Query"
+          },
+          "limit": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows per page, 1-100; default 50.",
+            "title": "Limit"
+          },
+          "offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rows to skip; default 0.",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "query"
+        ]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "description": "The matching users, by username.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "description": "The user UUID.",
+                  "title": "UUID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "The username, as bakers_user_read takes it.",
+                  "title": "Name"
+                },
+                "full_name": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The full name, or null without one.",
+                  "title": "Full name"
+                },
+                "mail": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The e-mail address, null without mail view access.",
+                  "title": "Mail"
+                },
+                "teams": {
+                  "type": "array",
+                  "description": "The teams of the user you can read, as bakers_user_read returns them.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "uuid": {
+                        "type": "string",
+                        "description": "The team UUID.",
+                        "title": "UUID"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "The team name.",
+                        "title": "Label"
+                      },
+                      "workspace": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "The workspace UUID.",
+                        "title": "Workspace"
+                      },
+                      "role": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "The user's rank in that workspace: lead (Admin), contributor or guest; null without one.",
+                        "title": "Role"
+                      }
+                    },
+                    "required": [
+                      "uuid",
+                      "label",
+                      "workspace",
+                      "role"
+                    ],
+                    "description": "One team.",
+                    "title": "Team"
+                  },
+                  "title": "Teams"
+                }
+              },
+              "required": [
+                "uuid",
+                "name",
+                "full_name",
+                "mail",
+                "teams"
+              ],
+              "description": "One user.",
+              "title": "User"
+            },
+            "title": "Users"
+          },
+          "next_offset": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The offset of the next page, or null on the last page.",
+            "title": "Next offset"
           }
         }
       }
