@@ -115,6 +115,39 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A given priority is stored; without one the ticket has none.
+   */
+  public function testCreatesWithPriority(): void {
+    $values = ['title' => 'Urgent', 'workflow' => 'bb_work', 'project' => $this->project->uuid()];
+    $repository = $this->container->get('entity.repository');
+    $high = $repository->loadEntityByUuid('bb_ticket', $this->outputs($this->runTool('bakers_ticket_create', $values + ['priority' => 1]))['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $high);
+    self::assertSame('1', (string) $high->get('priority')->value);
+    $none = $repository->loadEntityByUuid('bb_ticket', $this->outputs($this->runTool('bakers_ticket_create', $values))['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $none);
+    self::assertTrue($none->get('priority')->isEmpty());
+  }
+
+  /**
+   * Any priority but 1, 2 or 3 is refused with the values; nothing is saved.
+   */
+  public function testInvalidPriorityIsRefused(): void {
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
+    $before = $storage->getQuery()->accessCheck(FALSE)->count()->execute();
+    foreach ([4, 0] as $priority) {
+      $this->assertFailure($this->runTool('bakers_ticket_create', [
+        'title' => 'Never',
+        'workflow' => 'bb_work',
+        'project' => $this->project->uuid(),
+        'recipe' => 'priority-refused',
+        'priority' => $priority,
+      ]), 'Priority must be 1 (High), 2 (Medium) or 3 (Low).');
+    }
+    self::assertSame($before, $storage->getQuery()->accessCheck(FALSE)->count()->execute());
+    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'priority-refused']));
+  }
+
+  /**
    * A description at the limit is stored; an oversized create saves nothing.
    */
   public function testDescriptionByteBudget(): void {

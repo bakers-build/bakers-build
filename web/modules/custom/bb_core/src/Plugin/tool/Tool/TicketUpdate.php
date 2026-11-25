@@ -30,7 +30,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[Tool(
   id: 'bakers_ticket_update',
   label: new TranslatableMarkup('Update a ticket'),
-  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, assignee (a user UUID, empty to clear), labels (added or removed by name, every other one kept), frozen flag, reviewers (added or removed by user UUID), links (upserted by exact URI or removed), environments and referenced tickets (both add-only, existing ones kept), blockers (added or removed by ticket identifier or UUID; an added blocker must be a readable, open ticket of the same project that creates no cycle, else nothing is saved); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner, also after the assignee is cleared; changing the assignee keeps the conductor. Returns the saved values.'),
+  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, assignee (a user UUID, empty to clear), labels (added or removed by name, every other one kept), frozen flag, priority (1 High, 2 Medium, 3 Low, 0 to clear; any other value saves nothing), reviewers (added or removed by user UUID), links (upserted by exact URI or removed), environments and referenced tickets (both add-only, existing ones kept), blockers (added or removed by ticket identifier or UUID; an added blocker must be a readable, open ticket of the same project that creates no cycle, else nothing is saved); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner, also after the assignee is cleared; changing the assignee keeps the conductor. Returns the saved values.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -91,6 +91,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
       data_type: 'boolean',
       label: new TranslatableMarkup('Frozen'),
       description: new TranslatableMarkup('TRUE freezes the ticket for a release batch, FALSE unfreezes it.'),
+      required: FALSE,
+    ),
+    'priority' => new InputDefinition(
+      data_type: 'integer',
+      label: new TranslatableMarkup('Priority'),
+      description: new TranslatableMarkup('1 High, 2 Medium or 3 Low; 0 clears it. Any other value saves nothing.'),
       required: FALSE,
     ),
     'environments_add' => new ListInputDefinition(
@@ -290,6 +296,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
       label: new TranslatableMarkup('Frozen'),
       description: new TranslatableMarkup('Whether the ticket is frozen.'),
     ),
+    'priority' => new OutputDefinition(
+      data_type: 'integer',
+      label: new TranslatableMarkup('Priority'),
+      description: new TranslatableMarkup('1 High, 2 Medium, 3 Low; null for none.'),
+      nullable: TRUE,
+    ),
     'environments' => new ListOutputDefinition(
       label: new TranslatableMarkup('Environments'),
       description: new TranslatableMarkup('The saved environment names.'),
@@ -384,6 +396,7 @@ final class TicketUpdate extends ToolBase {
     'labels_add' => 'labels',
     'labels_remove' => 'labels',
     'frozen' => 'frozen',
+    'priority' => 'priority',
     'environments_add' => 'environments',
     'referenced_tickets_add' => 'referenced_tickets',
     'reviewers_add' => 'reviewers',
@@ -404,7 +417,7 @@ final class TicketUpdate extends ToolBase {
       static fn ($value) => $value !== NULL,
     );
     if (!$given) {
-      throw new \InvalidArgumentException('Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, environments to add, referenced tickets to add or blockers to add or remove.');
+      throw new \InvalidArgumentException('Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, a priority, environments to add, referenced tickets to add or blockers to add or remove.');
     }
     $this->assertDisjointLists($given);
     // Closed tickets deny every field edit; say why before the access check.
@@ -441,6 +454,7 @@ final class TicketUpdate extends ToolBase {
           'description' => ['value' => $value, 'format' => 'bb_rich'],
           'conductor' => $this->conductorId($value),
           'frozen' => (bool) $value,
+          'priority' => $this->priority((int) $value, TRUE),
           default => $value,
         });
       }
@@ -470,6 +484,7 @@ final class TicketUpdate extends ToolBase {
       'conductor' => $saved->get('conductor_id')->entity?->uuid(),
       'labels' => array_map(static fn ($term) => $term->label(), $saved->get('labels')->referencedEntities()),
       'frozen' => $saved->isFrozen(),
+      'priority' => $this->priorityOf($saved),
       'environments' => array_map(static fn ($env) => (string) $env->label(), $saved->get('environments')->referencedEntities()),
       'referenced_tickets' => array_map(static fn (BbTicketInterface $ref) => $ref->getIdentifier(), $saved->getReferencedTickets()),
       'blocked_by' => $this->blockers($saved),
