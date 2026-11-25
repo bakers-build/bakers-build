@@ -12,7 +12,8 @@ the rest. The host may add a conversation link, a conductor and the wish to spec
 
 1. **Create** after the [prior-art search](../bb-workflow/references/prior-art-search.md); a hit
    stops for a decision. Use the verbatim title, the Markdown description and the intake's recipe,
-   type and parent; read it back; add the conversation link. An existing ticket is read, never
+   type and parent; a requested priority goes in the `priority` field (1 High, 2 Medium, 3 Low);
+   read it back; add the conversation link. An existing ticket is read, never
    replaced.
 2. **Specify** it based on your user, when the profile or the request says so, as
    [specify](../bb-workflow/references/specify.md) does.
