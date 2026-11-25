@@ -23,6 +23,8 @@ const NO_PROSE = new Set(['landing.md', 'de/index.md'])
 const NO_SIDEBAR = new Set(['index.md', 'landing.md', 'de/index.md'])
 
 function limitFor(rel) {
+  // Get started holds the Quick start and the Advanced setup on one page.
+  if (rel === 'get-started/index.md') return 350
   if (AREA_INDEX.has(rel)) return 250
   // Detailed addon references keep the configuration tier after relocation.
   if (/^addons\/[^/]+\//.test(rel)) return 1500

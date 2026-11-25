@@ -294,7 +294,9 @@ class Simulation:
         return found
 
     def project(self, reference):
-        if reference not in (CONTRACT['project'], CONTRACT['project_key']):
+        # The contract project, or one the fixture seeds or the run creates.
+        known = {value for p in self.config.get('projects', []) for value in (p['uuid'], p.get('key'))}
+        if reference not in (CONTRACT['project'], CONTRACT['project_key']) and reference not in known:
             raise refused(f'Project {reference} does not exist or is not readable.')
 
     def parent_identifier(self, t):
@@ -382,7 +384,9 @@ class Simulation:
         project = {'uuid': f'66666666-6666-4666-8666-{len(self.config.setdefault("projects", [])) + 1:012d}',
                    'key': ''.join(ch for ch in args['name'].upper() if ch.isalnum())[:10], 'name': args['name'],
                    'description': args.get('description'), 'group': args['group'], 'teams': list(args['teams']),
-                   'repository': args.get('repository'), 'coder_config': args.get('coder_config')}
+                   # Like the server, a stored repository always carries its branch convention, null when unset.
+                   'repository': {'branch_convention': None, **args['repository']} if args.get('repository') else None,
+                   'coder_config': args.get('coder_config')}
         self.config['projects'].append(project)
         return copy.deepcopy(project)
 

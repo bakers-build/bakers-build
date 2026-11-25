@@ -7,8 +7,8 @@ import tempfile
 
 repo = Path(__file__).resolve().parents[2]
 root = repo / '.claude/skills/bakers-build'
-SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-label-auto',
-          'bb-label-human-accept', 'bb-label-human-review', 'bb-label-ticket-question', 'bb-prepare-time', 'bb-recipe-matt', 'bb-recipe-ship', 'bb-recipe-superpowers',
+SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-get-started', 'bb-init', 'bb-init-project', 'bb-label-auto',
+          'bb-label-human-accept', 'bb-label-human-review', 'bb-label-ticket-question', 'bb-prepare-time', 'bb-quick-start', 'bb-recipe-matt', 'bb-recipe-ship', 'bb-recipe-superpowers',
           'bb-recipe-verify', 'bb-scope-change', 'bb-verdict',
           'bb-workflow')
 STATES = ('qualification', 'plan', 'working', 'review')
@@ -24,7 +24,8 @@ RETIRED = ('bb-acceptance', 'bb-ensure-qualification', 'bb-merge-mr', 'bb-post-d
 # mean a skill. Retired helpers' bare names are reference file names now.
 UNPREFIXED = ('method-context', 'essential-skills', 'diagnose-ticket', 'workflow-step', 'ddev-drupal-feature',
               'ddev-drupal-bug', 'docs-authoring', 'create-spec', 'provision-ddev',
-              *(n[3:] for n in SKILLS if '-' in n[3:]))
+              # `get-started` is also the manual's path (bakers.build/get-started/), so only its prefixed name counts.
+              *(n[3:] for n in SKILLS if '-' in n[3:] and n != 'bb-get-started'))
 STATE_HEADING = re.compile(r'## (?:([a-z]+):)?bb-state-([a-z_]+)')
 PHASE_HEADING = re.compile(r'#{2,3} bb-phase-([a-z_]+)')
 
