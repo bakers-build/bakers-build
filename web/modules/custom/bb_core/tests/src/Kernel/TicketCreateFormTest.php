@@ -79,7 +79,7 @@ final class TicketCreateFormTest extends KernelTestBase {
     }
     // `bb_core`'s own config, for the one file this suite cannot do
     // without: `core.entity_form_display.bb_ticket.bb_ticket.create`,
-    // which IS the dialog now — the nine fields, their widgets, their
+    // which IS the dialog now — the ten fields, their widgets, their
     // regions and the 37 names it hides.
     $this->installConfig(['system', 'user', 'filter', 'bb_core']);
     // Uid 1 bypasses every access check, so it must not be an actor.
@@ -118,12 +118,12 @@ final class TicketCreateFormTest extends KernelTestBase {
   /**
    * AC2, structural — and it moved, because the thing it pins moved.
    */
-  public function testTheDisplayHoldsExactlyTheNineFieldsInGrammarOrder(): void {
+  public function testTheDisplayHoldsExactlyTheTenFieldsInGrammarOrder(): void {
     $components = $this->createDisplay()->getComponents();
     uasort($components, static fn (array $a, array $b): int => $a['weight'] <=> $b['weight']);
 
     self::assertSame(
-      ['workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe', 'ticket_type'],
+      ['project_id', 'workflow','title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe', 'ticket_type'],
       array_keys($components),
     );
   }
@@ -136,7 +136,7 @@ final class TicketCreateFormTest extends KernelTestBase {
     $fields = $this->container->get('entity_field.manager')
       ->getFieldDefinitions('bb_ticket', 'bb_ticket');
 
-    foreach (['identifier', 'number', 'state', 'branch_name', 'base_branch', 'owner_user_id', 'project_id'] as $owned) {
+    foreach (['identifier', 'number', 'state', 'branch_name', 'base_branch', 'owner_user_id'] as $owned) {
       self::assertArrayHasKey(
         $owned,
         $fields,
@@ -152,47 +152,32 @@ final class TicketCreateFormTest extends KernelTestBase {
   /**
    * AC2, on the request side: no server-owned name reaches the built form.
    *
-   * Asserted by EQUALITY against the nine field names, not only by
+   * Asserted by EQUALITY against the ten field names, not only by
    * `assertNotContains()` over the known-bad names: a substring-style check
-   * cannot catch a surprise tenth field (an `assignee` pill, a `state`
+   * cannot catch a surprise eleventh field (an `assignee` pill, a `state`
    * pill under another name), and it would pass vacuously if
    * `submittedNamesOfBuiltForm()` ever collected nothing at all.
    * `assertEqualsCanonicalizing()` rather than `assertSame()` because the
    * SET of names, not the walk order they happen to be found in, is the
-   * contract. `project_id` is resolved server-side (BB-664) and carries
-   * no widget ON A PROJECT-BOUND REQUEST, so it joins the server-owned
-   * names below rather than the expected set; the unbound case (the field
-   * IS shown, review F1/AC-8) is
-   * {@see testUnboundRequestShowsTheProjectPicker()}.
+   * contract. Every dialog, opened on a project or not, shows the Project
+   * picker.
    */
   public function testNoServerOwnedFieldReachesTheForm(): void {
-    $names = $this->submittedNamesOfBuiltForm(fn (): array => $this->buildFormOpenedOnProject((string) $this->project->id()));
+    foreach ([fn (): array => $this->buildFormOpenedOnProject((string) $this->project->id()), $this->buildForm(...)] as $build) {
+      $names = $this->submittedNamesOfBuiltForm($build);
 
-    self::assertEqualsCanonicalizing(
-      ['workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe', 'ticket_type'],
-      $names,
-      'A project-bound request emits exactly these nine names and no others.',
-    );
-    // Documentation only from here — the equality assertion above already
-    // rules every one of these out; named individually so a reader sees
-    // which server-owned fields this guards against.
-    foreach (['identifier', 'number', 'state', 'branch_name', 'base_branch', 'owner_user_id', 'project_id'] as $owned) {
-      self::assertNotContains($owned, $names);
+      self::assertEqualsCanonicalizing(
+        ['project_id', 'workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe', 'ticket_type'],
+        $names,
+        'Every dialog emits exactly these ten names and no others.',
+      );
+      // Documentation only from here — the equality assertion above already
+      // rules every one of these out; named individually so a reader sees
+      // which server-owned fields this guards against.
+      foreach (['identifier', 'number', 'state', 'branch_name', 'base_branch', 'owner_user_id'] as $owned) {
+        self::assertNotContains($owned, $names);
+      }
     }
-  }
-
-  /**
-   * AC-8: a request that binds no project gets the picker, not a silent gap.
-   *
-   * BB-664 review F1: the field used to stay hidden unconditionally, so
-   * neither the reader nor `ContentEntityForm::validateForm()`'s own
-   * component-filtered violations ever saw it. `alterFormDisplay()` now adds
-   * it back for exactly this request shape.
-   */
-  public function testUnboundRequestShowsTheProjectPicker(): void {
-    $names = $this->submittedNamesOfBuiltForm($this->buildForm(...));
-
-    self::assertContains('project_id', $names, 'An unbound request must offer a way to choose the project.');
   }
 
   /**
@@ -468,6 +453,8 @@ final class TicketCreateFormTest extends KernelTestBase {
    * set or a tampered request would.
    */
   public function testSubmissionWithNoResolvableProjectIsRefused(): void {
+    // A second project, so the dialog has no only-project default.
+    $this->project->createDuplicate()->save();
     $before = $this->ticketCount();
 
     $form_state = new FormState();
@@ -489,24 +476,14 @@ final class TicketCreateFormTest extends KernelTestBase {
     $gone->save();
     $gone_id = (string) $gone->id();
     $gone->delete();
+    // A second project, so the dialog has no only-project default.
+    $this->project->createDuplicate()->save();
     $before = $this->ticketCount();
 
     $state = $this->submitForm(['title' => $this->line('Stale project')], $gone_id);
 
-    self::assertArrayHasKey('project_id', $state->getErrors(), 'The unbound picker reports the missing project.');
+    self::assertArrayHasKey('project_id', $state->getErrors(), 'The empty picker reports the missing project.');
     self::assertSame($before, $this->ticketCount(), 'Nothing was written.');
-  }
-
-  /**
-   * A bound dialog ignores a posted project.
-   */
-  public function testBoundDialogIgnoresThePostedProject(): void {
-    $other_project = $this->project->createDuplicate();
-    $other_project->save();
-
-    $ticket = $this->submit(['title' => $this->line('Forged project'), 'project_id' => $other_project->id()]);
-
-    self::assertSame($this->project->id(), $ticket->get('project_id')->target_id);
   }
 
   /**
@@ -544,20 +521,6 @@ final class TicketCreateFormTest extends KernelTestBase {
     self::assertNotNull($ticket->id(), 'The unassigned ticket was saved.');
     self::assertSame($empty_id, (string) $ticket->get('project_id')->target_id);
     self::assertTrue($ticket->get('conductor_id')->isEmpty());
-  }
-
-  /**
-   * A dialog without project context offers no conductor.
-   *
-   * Conductor candidates depend on the project, so the project-less dialog
-   * creates the ticket unassigned.
-   */
-  public function testUnboundDialogOffersNoConductor(): void {
-    $unbound = $this->submittedNamesOfBuiltForm($this->buildForm(...));
-    $bound = $this->submittedNamesOfBuiltForm(fn (): array => $this->buildFormOpenedOnProject((string) $this->project->id()));
-
-    self::assertNotContains('conductor_id', $unbound);
-    self::assertContains('conductor_id', $bound);
   }
 
   /**
