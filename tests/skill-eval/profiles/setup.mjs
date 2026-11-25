@@ -63,6 +63,12 @@ export function checkOutput(fixture, output) {
   for (const fragment of fixture.input.final_fragments ?? []) {
     checks.push({ id: `final-${fragment}`, met: final.includes(fragment), reason: `The final report must contain \`${fragment}\`` });
   }
+  for (const words of fixture.input.required_commands ?? []) {
+    checks.push({ id: `required-${words}`, met: commands.some(argv => argv.join(' ') === words), reason: `The command \`${words}\` must run as given` });
+  }
+  for (const fragment of fixture.input.first_question_fragments ?? []) {
+    checks.push({ id: `first-question-${fragment}`, met: (questions[0] ?? '').includes(fragment), reason: `The first question must show \`${fragment}\`` });
+  }
   if (fixture.input.min_questions !== undefined) checks.push({ id: 'min-questions', met: questions.length >= fixture.input.min_questions,
     reason: `At least ${fixture.input.min_questions} questions; asked ${questions.length}` });
   if (fixture.input.tool_sequence) {

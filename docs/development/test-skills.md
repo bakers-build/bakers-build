@@ -135,17 +135,20 @@ a final report, not that setup succeeded. Read the final report and file asserti
 
 Evidence commands answer only from a fixture's `commands`: exactly, by argv prefix for `gh` and
 `glab`, since their read flags vary, or by the prefix before a final `*` element of a declaration.
-An absolute path inside the case matches its case-relative spelling. Any other command is blocked,
-which the setup must treat as missing evidence.
+An absolute path inside the case matches its case-relative spelling. A declared list answers
+successive calls in order and repeats its last output. Any other command is blocked, which the
+setup must treat as missing evidence.
 
 Replay uses independently maintained expectations from `fixtures/setup/`, actual file snapshots
 and the existing provenance checks. Besides file expectations, a fixture may set `max_questions`
 (questions asked), `derived_sources` (each named in some question's preview) and `asked_values`
 (each shown open as `<key>: ?`), `min_questions`, `forbidden_commands` (words no command may run),
-`final_fragments` (each in the final report) and `tool_sequence` (`bakers tools` calls in order, each
-naming its fragments). The `get-started-*` cases cover the quick start. Repeat replay to another unused output and compare named
-checks. Inspect recommendations, authorization, delegation and readiness claims separately;
-file checks cannot prove them. Preserve failed attempts and state the reason before any rerun.
+`final_fragments` (each in the final report), `first_question_fragments` (each in the first
+question), `required_commands` (each run exactly) and `tool_sequence` (`bakers tools` calls in
+order, each naming its fragments). The `get-started-*` cases cover the quick start. Repeat replay
+to another unused output and compare named checks. Inspect recommendations, authorization,
+delegation and readiness claims separately; file checks cannot prove them. Preserve failed
+attempts and state the reason before any rerun.
 
 Add coverage for another skill or explore a maintained example.
 

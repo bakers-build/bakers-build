@@ -24,10 +24,16 @@
       "exit_code": 0,
       "stdout": "0.14.0\n"
     },
-    "[\"bakers\",\"auth\",\"status\"]": {
-      "exit_code": 0,
-      "stdout": "bakers (default): signed in as quick@example.test at https://setup.example.test — session valid (synthetic)\n"
-    },
+    "[\"bakers\",\"auth\",\"status\"]": [
+      {
+        "exit_code": 1,
+        "stderr": "bakers (default): not signed in at https://setup.example.test (synthetic)\n"
+      },
+      {
+        "exit_code": 0,
+        "stdout": "bakers (default): signed in as quick@example.test at https://setup.example.test — session valid (synthetic)\n"
+      }
+    ],
     "[\"hc\",\"--version\"]": {
       "exit_code": 0,
       "stdout": "hc 0.1.18\n"
@@ -99,6 +105,14 @@
     "[\"git\",\"-C\",\"project\",\"push\",\"*\"]": {
       "exit_code": 0,
       "stdout": "To https://git.example.test/acme/project.git\n   0000000..1a2b3c4  main -> main\n"
+    },
+    "[\"bakers\",\"init\",\"--yes\",\"--base-url\",\"https://app.bakers.build\",\"--client-id\",\"bakers-cli\"]": {
+      "exit_code": 0,
+      "stdout": "Machine and connection kept (synthetic). Next: bakers auth login\n"
+    },
+    "[\"bakers\",\"auth\",\"login\"]": {
+      "exit_code": 0,
+      "stdout": "Open https://setup.example.test/device and enter the code WXYZ-1234\nWaiting for confirmation… (synthetic)\nSigned in as quick@example.test\n"
     }
   },
   "server": {
@@ -153,7 +167,7 @@
   "observations": {
     "tools": "Git, Node 24, npm, the bakers CLI 0.14.0, hc 0.1.18 and Claude Code are installed; Claude Code runs this skill.",
     "skills": "The bakers skills are installed; the supplied sources are loaded.",
-    "authentication": "Use the supplied synthetic observations only; no real login.",
+    "authentication": "The person is signed out; the supplied synthetic observations answer sign-in, and the person confirms the code. No real login.",
     "api": "Call control-plane tools as `bakers tools <tool> --data '<json>'`; they answer from a synthetic server.",
     "file_paths": "machine/ is BAKERS_HOME (~/.bakers); a path starting with ~ is a folder named ~ in the case directory. Git commands answer with case-relative paths.",
     "repository": "project/ is the person's existing checkout: origin https://git.example.test/acme/project.git, default branch main, no WORKFLOW.md on origin/main; the person may push to main."
@@ -230,5 +244,13 @@
       "id": "defaults",
       "criterion": "The server project is created in a group named Quick start, named after the repository folder (project), with the origin URL and default branch main; the setup commit is pushed to main."
     }
+  ],
+  "required_commands": [
+    "bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli",
+    "bakers auth login"
+  ],
+  "first_question_fragments": [
+    "https://setup.example.test/device",
+    "WXYZ-1234"
   ]
 }

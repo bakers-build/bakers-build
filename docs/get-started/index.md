@@ -48,7 +48,13 @@ One skill run, without sandbox or `sudo`, ending in a running test ticket.
 
    :::
 
-It asks one question: your Git project's path (re-asked unless a Git repository) or the demo [northside-shop](https://github.com/bakers-build/northside-shop) (cloned to `~/projects/northside-shop`). It pushes the [setup files](/get-started/connect-a-project#what-setup-writes) to your default branch.
+It asks one question: your Git project's path (re-asked unless a Git repository) or the demo [northside-shop](https://github.com/bakers-build/northside-shop) (cloned to `~/projects/northside-shop`). Then it:
+
+- installs a missing CLI and [herdr-core](/addons/herdr-core) (`hc`) and signs you in with a code in the browser,
+- lets agents run unsandboxed: `permissions.mode: 'system'` in `~/.bakers/machine.config.js`, only if unset,
+- creates or reuses the server project, named after your folder, in the group **Quick start**,
+- writes the [setup files](/get-started/connect-a-project#what-setup-writes); for your own project without `WORKFLOW.md` on its default branch, it commits and pushes them there,
+- starts the conductor and creates a test ticket labelled `human-review`.
 
 ::: warning
 Agents run unsandboxed, with all your rights. For confined agents, use the [Advanced setup](#advanced-setup).

@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 import worker
-from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, relative_argv, validate_config_write
+from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, relative_argv, take_output, validate_config_write
 
 ROOT = worker.ROOT
 SYSTEM = '''Apply the supplied setup skill and its documentation to the user request.
@@ -73,6 +73,7 @@ def main():
     history = [{'role': 'user', 'content': fixture['request']}]
     tools = []
     config_written = set()
+    calls = {}
     result = {'status': 'incomplete', 'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
               'dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip()),
               'source_hashes': {path: hashlib.sha256(content.encode()).hexdigest() for path, content in sources.items()},
@@ -135,7 +136,7 @@ def main():
                             canonical = json.dumps(['bakers', 'config', 'check', '--scope', scope, '--online'], separators=(',', ':'))
                             if canonical in fixture.get('commands', {}):
                                 key = canonical
-                        declared = declared_output(fixture.get('commands', {}), relative_argv(environment, json.loads(key)))
+                        declared = take_output(declared_output(fixture.get('commands', {}), relative_argv(environment, json.loads(key))), calls, argv)
                         if declared is not None:
                             event.update(output=declared, simulated=True)
                         elif argv[:2] == ['bakers', 'tools'] or argv == ['bakers', 'info']:

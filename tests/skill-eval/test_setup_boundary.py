@@ -5,7 +5,7 @@ import unittest
 import json
 import subprocess
 
-from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, relative_argv, validate_config_write
+from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, relative_argv, take_output, validate_config_write
 
 
 class SetupBoundaryTest(unittest.TestCase):
@@ -76,6 +76,14 @@ class SetupBoundaryTest(unittest.TestCase):
         for argv in [['git', '-C', 'project'], ['git', '-C', 'plain', 'rev-parse', '--show-toplevel']]:
             with self.subTest(argv=argv):
                 self.assertIsNone(declared_output(commands, argv))
+
+    def test_a_declared_list_answers_successive_calls_and_repeats_its_last(self):
+        calls = {}
+        argv = ['bakers', 'auth', 'status']
+        outputs = [take_output(['out', 'in'], calls, argv) for _ in range(3)]
+        self.assertEqual(outputs, ['out', 'in', 'in'])
+        self.assertEqual(take_output(['out', 'in'], calls, ['bakers', 'auth', 'login']), 'out')
+        self.assertEqual(take_output({'stdout': 'one'}, calls, argv), {'stdout': 'one'})
 
     def test_absolute_case_paths_read_as_relative_for_declared_evidence(self):
         root = Path('/tmp/case/environment')

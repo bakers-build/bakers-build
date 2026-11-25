@@ -49,6 +49,15 @@ def declared_output(commands, argv):
     return None
 
 
+def take_output(output, calls, argv):
+    """A declared list answers successive calls of one argv in order; its last output repeats."""
+    if not isinstance(output, list):
+        return output
+    key = json.dumps(argv)
+    calls[key] = calls.get(key, 0) + 1
+    return output[min(calls[key], len(output)) - 1]
+
+
 def relative_argv(root, argv):
     """Absolute paths inside the case read as case-relative, so declared evidence matches either spelling."""
     root = str(root)

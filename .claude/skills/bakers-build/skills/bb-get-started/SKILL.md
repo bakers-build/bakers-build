@@ -5,22 +5,22 @@ description: Use for a quick start — set up bakers.build on this computer in o
 
 # Quick start
 
-One run, one question; everything else takes the default below. Speak the system
+One question; all else takes the defaults below. Speak the system
 language (`LC_ALL`, `LC_MESSAGES`, `LANG`; unset, `C`, `POSIX`: English); commands, paths, keys and
 URLs stay verbatim. Never run `sudo`, `bubblewrap` or `socat`: a step needing them stops.
 
 1. **CLI.** `bakers --version`; missing: `npm install -g @bakers-build/bakers`; `EACCES` stops,
    naming `npm config set prefix ~/.local`. **Done when** it prints a version.
-2. **Sign-in.** `bakers auth status`. Signed out: `bakers init --yes`, then `bakers auth login` in the
-   background; show its URL and code at once, wait up to 10 minutes, else
-   stop. **Done when** `bakers auth status` shows a session.
+2. **Sign-in.** `bakers auth status`. Signed out: `bakers init --yes --base-url https://app.bakers.build
+   --client-id bakers-cli`, then `bakers auth login` in the background; show its URL and code at once,
+   wait up to 10 minutes, else stop. **Done when** `bakers auth status` shows a session.
 3. **The question.** Ask: an existing Git project's path, or the demo. A path that fails
    `git -C <path> rev-parse --show-toplevel`: ask again with the reason; never `git init`. Demo:
    clone `https://github.com/bakers-build/northside-shop` to `~/projects/northside-shop`, reusing
    its clone there; anything else there stops. **Done when** `<project>` is a Git top level.
 4. **Machine.** In `~/.bakers/machine.config.js`, keeping every key: add this skill's harness
    (`@bakers-build/addon-claude` or `-codex`) to `addons`; unset `permissions.mode` becomes
-   `system`, no `runtime`. **Done when** it reads back so.
+   `system`, no `runtime`. **Done when** read back.
 5. **herdr-core.** `hc --version`; missing: install per `https://herdr.dev/core/` into
    `~/.local/bin`. **Done when** it prints 0.1.18 or later.
 6. **Server project** through [tools](../bb-workflow/references/tools.md). Workspace and team: the
