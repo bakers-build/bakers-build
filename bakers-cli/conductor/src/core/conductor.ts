@@ -305,6 +305,9 @@ export class Conductor {
   /** The per-item work each tick enqueues. */
   private readonly queue: ActionQueue;
 
+  /** Whether the executor's leftover-workspace sweep has finished this process. */
+  private workspaceSweepDone = false;
+
   /** The local MCP server for addon tools; only the serve process runs one. */
   private toolServer: ToolServer | undefined;
 
@@ -1348,6 +1351,26 @@ export class Conductor {
         run: () => this.reapOne(t),
       });
     }
+    const sweep = this.executor.sweepWorkspaces?.bind(this.executor);
+    if (
+      sweep &&
+      !this.workspaceSweepDone &&
+      this.executor.capabilities().persistent
+    ) {
+      this.queue.enqueue({
+        key: 'reap:workspace-sweep',
+        lane: 'reap:workspace-sweep',
+        run: async () => {
+          try {
+            this.workspaceSweepDone = await sweep();
+          } catch (err) {
+            // A sweep that throws would throw again: give up for this process.
+            this.workspaceSweepDone = true;
+            this.logger.warn({ err: String(err) }, 'workspace sweep failed');
+          }
+        },
+      });
+    }
   }
 
   /**
@@ -1513,6 +1536,32 @@ export class Conductor {
             'worktree teardown unverified — retrying next reap',
           );
           return; // leave cleaned_up=0 → the next reconciliation retries.
+        }
+      }
+      // The worktree is gone; close the branch workspace the executor opened
+      // for it, which another workspace addon's teardown leaves behind.
+      if (
+        outcome !== 'unverified' &&
+        this.executor.closeWorkspace &&
+        this.executor.capabilities().persistent
+      ) {
+        try {
+          const closed = await this.executor.closeWorkspace(
+            t.branchName,
+            t.worktreePath || undefined,
+          );
+          if (!closed) {
+            this.logger.warn(
+              { ticket: t.ticketUuid, branch: t.branchName },
+              'branch workspace not safe to close — retrying next reap',
+            );
+            return; // leave cleaned_up=0 → the next reconciliation retries.
+          }
+        } catch (err) {
+          this.logger.warn(
+            { ticket: t.ticketUuid, branch: t.branchName, err: String(err) },
+            'branch workspace close failed',
+          );
         }
       }
       if (outcome === 'already_absent') {
