@@ -7,10 +7,16 @@
 
 declare(strict_types=1);
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTermInterface;
+use Drupal\bb_core\ProtectedLabelPermissions;
 use Drupal\bb_core\Ticket\BranchName;
+use Drupal\field\Entity\FieldStorageConfig;
+use Drupal\og\OgRoleInterface;
+use Drupal\user\UserInterface;
 
 /**
  * Removes the environments past deploys stamped onto the tickets they carried.
@@ -158,4 +164,148 @@ function bb_core_post_update_conductor_assignment(): void {
   }
   \Drupal::entityTypeManager()->getStorage('bb_machine')->resetCache();
   \Drupal::entityTypeManager()->getStorage('bb_conductor')->resetCache();
+}
+
+/**
+ * Grants the protected label permissions on the existing workspace ranks.
+ *
+ * Lead gets `any`, contributor `own`, for every protected namespace. The
+ * namespace setting is written first when the site does not carry it yet.
+ */
+function bb_core_post_update_protected_label_permissions(): void {
+  $settings = \Drupal::configFactory()->getEditable('bb_core.settings');
+  if ($settings->get('protected_label_namespaces') === NULL) {
+    $settings->set('protected_label_namespaces', ['runtime'])->save();
+  }
+  $storage = \Drupal::entityTypeManager()->getStorage('og_role');
+  foreach (['lead' => 'any', 'contributor' => 'own'] as $rank => $scope) {
+    $role = $storage->load("bb_workspace-bb_workspace-$rank");
+    if (!$role instanceof OgRoleInterface) {
+      continue;
+    }
+    foreach ($settings->get('protected_label_namespaces') as $namespace) {
+      $role->grantPermission(ProtectedLabelPermissions::$scope($namespace));
+    }
+    $role->save();
+  }
+}
+
+/**
+ * Moves position and background from the account into per-workspace profiles.
+ *
+ * Every workspace the account belongs to, or a service account is bound to,
+ * gets a profile with both values; accounts without either value get none.
+ * Values of accounts in no workspace are logged, then both fields are deleted.
+ * bb_core_update_11003() installed the profile entity.
+ */
+function bb_core_post_update_user_profiles(array &$sandbox): string {
+  $fields = ['position' => 'field_developer_title', 'background' => 'field_bb_background'];
+  $definitions = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('user');
+  $fields = array_filter($fields, static fn (string $field): bool => isset($definitions[$field]));
+  if ($fields === []) {
+    $sandbox['#finished'] = 1;
+    return 'No position or background on accounts; nothing to move.';
+  }
+  $users = \Drupal::entityTypeManager()->getStorage('user');
+  $ids = $users->getQuery()->accessCheck(FALSE)->condition('uid', $sandbox['last'] ?? 0, '>')->sort('uid')->range(0, 100)->execute();
+  $messages = array_filter(array_map(
+    static fn ($user): ?string => _bb_core_move_user_profile($user, $fields),
+    $users->loadMultiple($ids),
+  ));
+  $sandbox['last'] = $ids === [] ? ($sandbox['last'] ?? 0) : max($ids);
+  if ($ids !== []) {
+    $sandbox['#finished'] = 0.5;
+    return implode(' ', $messages);
+  }
+  foreach ($fields as $field) {
+    FieldStorageConfig::loadByName('user', $field)?->delete();
+  }
+  $sandbox['#finished'] = 1;
+  return trim(implode(' ', $messages) . ' Position and background moved into profiles; the account fields are deleted.');
+}
+
+/**
+ * Copies one account's values into its workspace profiles.
+ *
+ * @param \Drupal\user\UserInterface $user
+ *   The account.
+ * @param array<string, string> $fields
+ *   Profile key => account field, of the fields that exist.
+ *
+ * @return string|null
+ *   A message when the values could not be kept, else NULL.
+ */
+function _bb_core_move_user_profile(UserInterface $user, array $fields): ?string {
+  $values = array_map(static fn (string $field): string => trim((string) $user->get($field)->value), $fields);
+  $values += ['position' => '', 'background' => ''];
+  if (implode('', $values) === '') {
+    return NULL;
+  }
+  // Every membership state: a blocked member's profile is kept too.
+  $workspaces = \Drupal::database()->select('og_membership', 'm')->fields('m', ['entity_id'])
+    ->condition('m.uid', $user->id())->condition('m.entity_type', 'bb_workspace')
+    ->execute()->fetchCol();
+  if ($user->hasField('bb_service_workspace') && !$user->get('bb_service_workspace')->isEmpty()) {
+    $workspaces[] = $user->get('bb_service_workspace')->target_id;
+  }
+  $workspaces = array_unique(array_map('intval', $workspaces));
+  foreach ($workspaces as $workspace_id) {
+    \Drupal::service(Profiles::class)->forAccount((int) $user->id(), $workspace_id)
+      ->setPosition($values['position'])->setBackground($values['background'])->save();
+  }
+  if ($workspaces !== []) {
+    return NULL;
+  }
+  $line = sprintf('uid %d: position "%s", background "%s"', $user->id(), $values['position'], $values['background']);
+  \Drupal::logger('bb_core')->notice('Profile not moved, the account is in no workspace: @line', ['@line' => $line]);
+  return 'Not moved, in no workspace: ' . $line . '.';
+}
+
+/**
+ * Renames the ticket type deployment and the recipe deploy-and-release to ship.
+ *
+ * Per workspace vocabulary: the old term is renamed, or, when that vocabulary
+ * already holds ship, its tickets and ticket templates move to ship and the
+ * old term is deleted.
+ */
+function bb_core_post_update_rename_deployment_to_ship(): string {
+  $etm = \Drupal::entityTypeManager();
+  $terms = $etm->getStorage('bb_term');
+  $tickets = $etm->getStorage('bb_ticket');
+  $templates = $etm->getStorage('bb_ticket_template');
+  $renames = [
+    'type' => ['deployment', 'ticket_type'],
+    'recipe' => ['deploy-and-release', 'recipe'],
+  ];
+  $count = 0;
+  foreach ($renames as $vid => [$old, $field]) {
+    foreach ($terms->loadByProperties(['vid' => $vid, 'name' => $old]) as $term) {
+      assert($term instanceof BbTermInterface);
+      $count++;
+      $query = $terms->getQuery()->accessCheck(FALSE)
+        ->condition('vid', $vid)
+        ->condition('workspace_id', $term->get('workspace_id')->target_id)
+        ->condition('id', $term->id(), '<>');
+      $query->condition($query->orConditionGroup()->condition('name', 'ship')->condition('key', 'ship'));
+      $ship = $terms->loadMultiple($query->execute());
+      if (!$ship) {
+        $term->set('name', 'ship');
+        if (!$term->get('key')->isEmpty()) {
+          $term->set('key', 'ship');
+        }
+        $term->save();
+        continue;
+      }
+      // Tickets and ticket templates reference these terms; both move first.
+      foreach ([$tickets, $templates] as $storage) {
+        $ids = $storage->getQuery()->accessCheck(FALSE)->condition($field, $term->id())->execute();
+        foreach ($storage->loadMultiple($ids) as $entity) {
+          assert($entity instanceof ContentEntityInterface);
+          $entity->set($field, reset($ship)->id())->save();
+        }
+      }
+      $term->delete();
+    }
+  }
+  return (string) t('Renamed @count terms to ship.', ['@count' => $count]);
 }

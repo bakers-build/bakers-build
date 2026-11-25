@@ -26,7 +26,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_read',
   label: new TranslatableMarkup('Read a ticket'),
-  description: new TranslatableMarkup('Returns a ticket’s fields, labels, links, its newest readable comments in chronological order, per type when types is given, and facets over all its readable comments.'),
+  description: new TranslatableMarkup('Returns a ticket’s fields, labels, links, readable blockers (identifier, title, state), its newest readable comments in chronological order, per type when types is given, and facets over all its readable comments.'),
   operation: ToolOperation::Read,
   permission: 'view bb_ticket',
   input_definitions: [
@@ -262,17 +262,42 @@ use Drupal\tool\TypedData\OutputDefinition;
         ],
       ),
     ),
-    'deployments' => new ListOutputDefinition(
-      label: new TranslatableMarkup('Deployments'),
-      description: new TranslatableMarkup('The viewable deployment tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
+    'blocked_by' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Blocked by'),
+      description: new TranslatableMarkup('The readable tickets this one waits for; unreadable blockers are omitted.'),
       item_definition: new MapOutputDefinition(
-        label: new TranslatableMarkup('Deployment'),
-        description: new TranslatableMarkup('One deployment ticket.'),
+        label: new TranslatableMarkup('Blocker'),
+        description: new TranslatableMarkup('One blocking ticket.'),
         property_definitions: [
           'identifier' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('Identifier'),
-            description: new TranslatableMarkup('The deployment ticket identifier.'),
+            description: new TranslatableMarkup('The ticket identifier, e.g. BAKERS-15.'),
+          ),
+          'title' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Title'),
+            description: new TranslatableMarkup('The ticket title.'),
+          ),
+          'state' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('State'),
+            description: new TranslatableMarkup('The ticket’s workflow state id.'),
+          ),
+        ],
+      ),
+    ),
+    'deployments' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Deployments'),
+      description: new TranslatableMarkup('The viewable ship tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Deployment'),
+        description: new TranslatableMarkup('One ship ticket.'),
+        property_definitions: [
+          'identifier' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Identifier'),
+            description: new TranslatableMarkup('The ship ticket identifier.'),
           ),
           'environments' => new ListOutputDefinition(
             label: new TranslatableMarkup('Environments'),
@@ -426,6 +451,7 @@ final class TicketRead extends ToolBase {
         'value' => (float) $row['value'],
         'unit' => $row['unit'] ?? NULL,
       ], $ticket->get('metrics')->getValue()) : NULL,
+      'blocked_by' => $this->blockers($ticket),
       'deployments' => array_map(static fn (BbTicketInterface $deployment): array => [
         'identifier' => $deployment->getIdentifier(),
         'environments' => array_map(static fn ($env): string => (string) $env->label(), $deployment->get('environments')->referencedEntities()),

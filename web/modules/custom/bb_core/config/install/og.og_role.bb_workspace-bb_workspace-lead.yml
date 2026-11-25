@@ -6,8 +6,9 @@
 # holds this rank too: `group_manager_full_access` is off, so ownership alone
 # grants nothing. `delete own bb_workspace` lets the owner, and no other lead,
 # delete the workspace; `create`/`delete any bb_workspace` stay off every rank,
-# an instance act (`administer bakers`). Projects and groups are deleted by
-# their creator (`delete own`) or by the workspace owner (BbRankEntityFence).
+# an instance act (`administer bakers`). Any lead deletes any project of the
+# workspace; groups are deleted by their creator (`delete own`) or by the
+# workspace owner (BbRankEntityFence).
 #
 # `register bakers conductor` is needed because every conductor re-registers
 # (an upsert), and the update path is fenced by rank. Per-user (`by_user`)
@@ -44,6 +45,7 @@ permissions:
   - 'delete any bb_comment'
   - 'delete any bb_environment'
   - 'delete any bb_invite'
+  - 'delete any bb_project'
   - 'delete any bb_team'
   - 'delete any bb_term'
   - 'delete any bb_ticket'
@@ -56,6 +58,7 @@ permissions:
   - 'manage members'
   - 'record own worklog'
   - 'register bakers conductor'
+  - 'set any runtime label on bb_ticket'
   - 'update any bb_comment'
   - 'update any bb_environment'
   - 'update any bb_group'

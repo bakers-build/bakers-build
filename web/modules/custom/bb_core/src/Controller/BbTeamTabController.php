@@ -7,7 +7,10 @@ namespace Drupal\bb_core\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Render\EntityFormSurface;
+use Drupal\bb_core\Members\MembershipWriter;
 use Drupal\island\IslandPlacement;
+use Drupal\user\UserInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -22,6 +25,7 @@ final class BbTeamTabController extends ControllerBase {
 
   public function __construct(
     private readonly IslandPlacement $placement,
+    private readonly MembershipWriter $membershipWriter,
   ) {}
 
   /**
@@ -30,6 +34,7 @@ final class BbTeamTabController extends ControllerBase {
   public static function create(ContainerInterface $container): static {
     return new static(
       $container->get('island.placement'),
+      $container->get('bb_core.membership_writer'),
     );
   }
 
@@ -53,6 +58,16 @@ final class BbTeamTabController extends ControllerBase {
    */
   public function members(BbTeamInterface $bb_team): array {
     return EntityFormSurface::wrap($this->body('members', $this->placement->place('team', 'members')));
+  }
+
+  /**
+   * Renders one team member's page, the Members island showing them alone.
+   */
+  public function member(BbTeamInterface $bb_team, UserInterface $user): array {
+    if ($this->membershipWriter->membershipOf($bb_team, (int) $user->id()) === NULL) {
+      throw new NotFoundHttpException();
+    }
+    return EntityFormSurface::wrap($this->body('member', $this->placement->place('team', 'members')));
   }
 
   /**

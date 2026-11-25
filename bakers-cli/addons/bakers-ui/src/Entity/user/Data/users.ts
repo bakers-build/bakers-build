@@ -180,22 +180,31 @@ export interface UserProfile {
   aboutMe: string;
 }
 
-/** Read one user's username, position (`field_developer_title`) and About me
- *  (`field_bb_background`). A refusal propagates to the screen's error. */
+/** Read one user's username, and position and About me from their profile in
+ *  the workspace (`bb_profile`). A refusal propagates to the screen's error. */
 export async function loadUserProfile(
   client: DropshClient,
   userId: string,
+  workspaceId: string,
 ): Promise<UserProfile> {
-  const doc = (await client.get(`user/user/${userId}`)) as {
+  const user = (await client.get(`user/user/${userId}`)) as {
     data?: JsonApiResource;
   };
-  const text = (key: string): string => {
-    const value = doc?.data?.attributes?.[key];
+  const params = new DrupalJsonApiParams()
+    .addFilter('uid.id', userId)
+    .addFilter('workspace_id.id', workspaceId)
+    .addPageLimit(1);
+  const profiles = (await client.get('bb_profile/bb_profile', params)) as {
+    data?: JsonApiResource[];
+  };
+  const text = (resource: JsonApiResource | undefined, key: string): string => {
+    const value = resource?.attributes?.[key];
     return typeof value === 'string' ? value.trim() : '';
   };
+  const profile = profiles?.data?.[0];
   return {
-    username: text('name'),
-    position: text('field_developer_title'),
-    aboutMe: text('field_bb_background'),
+    username: text(user?.data, 'name'),
+    position: text(profile, 'position'),
+    aboutMe: text(profile, 'background'),
   };
 }

@@ -31,7 +31,7 @@ final class DeploymentLookupTest extends BakersToolTestBase {
     $production->save();
     $foreign = $this->project->createDuplicate();
     $foreign->save();
-    $type = $this->term('type', 'deployment')->id();
+    $type = $this->term('type', 'ship')->id();
     $first = $this->ticket('LOOK-1');
     $second = $this->ticket('LOOK-2');
     $other = $this->ticket('OTHER-1', ['project_id' => $foreign->id()]);
@@ -65,7 +65,7 @@ final class DeploymentLookupTest extends BakersToolTestBase {
     $ticket = $this->ticket('LOOK-1');
     $this->ticket('OTHER-D1', [
       'project_id' => $foreign->id(),
-      'ticket_type' => $this->term('type', 'deployment')->id(),
+      'ticket_type' => $this->term('type', 'ship')->id(),
       'referenced_tickets' => [$ticket->id()],
     ]);
     self::assertSame([], $this->container->get('bb_core.deployment_lookup')->projectDeployments($project));
@@ -79,7 +79,7 @@ final class DeploymentLookupTest extends BakersToolTestBase {
     self::assertInstanceOf(BbProjectInterface::class, $project);
     $ticket = $this->ticket('LOOK-1');
     $this->ticket('LOOK-D1', [
-      'ticket_type' => $this->term('type', 'deployment')->id(),
+      'ticket_type' => $this->term('type', 'ship')->id(),
       'referenced_tickets' => [$ticket->id()],
       'closed' => TRUE,
     ]);
@@ -101,7 +101,7 @@ final class DeploymentLookupTest extends BakersToolTestBase {
     $production->save();
     $ticket = $this->ticket('LOOK-1');
     $values = [
-      'ticket_type' => $this->term('type', 'deployment')->id(),
+      'ticket_type' => $this->term('type', 'ship')->id(),
       'referenced_tickets' => [$ticket->id()],
       'environments' => [$develop->id()],
     ];
@@ -132,7 +132,7 @@ final class DeploymentLookupTest extends BakersToolTestBase {
     $this->installEntitySchema('bb_environment');
     $ticket = $this->ticket('LOOK-1');
     $this->ticket('LOOK-D1', [
-      'ticket_type' => $this->term('type', 'deployment')->id(),
+      'ticket_type' => $this->term('type', 'ship')->id(),
       'referenced_tickets' => [$ticket->id()],
       'closed' => TRUE,
     ]);

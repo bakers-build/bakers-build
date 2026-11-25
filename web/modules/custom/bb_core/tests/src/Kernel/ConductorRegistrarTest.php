@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
-use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Lock\DatabaseLockBackend;
 use Drupal\Core\Lock\LockBackendAbstract;
 use Drupal\bb_core\Conductor\ConductorRegistrar;
@@ -280,18 +280,17 @@ final class ConductorRegistrarTest extends KernelTestBase {
   public function testAdoptIsRefusedWhenTheConductorChangedMeanwhile(): void {
     $owner = $this->createUser('owner-adopt-changed');
     $old = $this->legacyConductor($owner);
-    $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
     // Another request moves the conductor to variant `shop` just before the
     // old id's lock is granted.
-    $lock = new class($storage, (int) $old->id()) extends LockBackendAbstract {
+    $lock = new class($this->container->get('entity_type.manager'), (int) $old->id()) extends LockBackendAbstract {
 
-      public function __construct(private readonly EntityStorageInterface $storage, private readonly int $id) {}
+      public function __construct(private readonly EntityTypeManagerInterface $entityTypeManager, private readonly int $id) {}
 
       /**
        * {@inheritdoc}
        */
       public function acquire($name, $timeout = 30.0) {
-        $conductor = $this->storage->loadUnchanged($this->id);
+        $conductor = $this->entityTypeManager->getStorage('bb_conductor')->loadUnchanged($this->id);
         if (str_ends_with($name, ':cw-framework') && $conductor instanceof BbConductorInterface) {
           $conductor->set('conductor_name', 'shop')->save();
         }
@@ -330,7 +329,7 @@ final class ConductorRegistrarTest extends KernelTestBase {
     }
     catch (ConflictHttpException) {
     }
-    $reloaded = $storage->loadUnchanged($old->id());
+    $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->loadUnchanged($old->id());
     $this->assertInstanceOf(BbConductorInterface::class, $reloaded);
     $this->assertSame('cw-framework', $reloaded->getConductorId());
   }

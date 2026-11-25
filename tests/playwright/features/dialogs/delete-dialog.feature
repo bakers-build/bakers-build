@@ -37,7 +37,7 @@ Feature: Delete opens its confirmation as a dialog over the page
     Then the page confirms the disposable entity was deleted
     And the disposable entity no longer exists
 
-  Scenario Outline: A workspace lead deletes a <kind> from its list in the dialog
+  Scenario Outline: A workspace lead deletes a <kind> from its page in the dialog
     Given a disposable "<kind>" exists in the Northside workspace
     And I am logged in as the account "north-lead"
     When I open the page where the disposable entity is managed

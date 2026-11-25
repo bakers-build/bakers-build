@@ -22,9 +22,9 @@ export default {
 };
 ```
 
-herdr's preset fills the executor and the worktree. The file names no server: the conductor takes it from the connection. The generator also writes a `hooks` block when you answered its questions. `--server`, `--executor` and `--worktree` write an explicit choice instead of the defaults ([Conductor slots](/addons/slots)).
+herdr's preset fills the executor and the worktree. The generator also writes a `hooks` block when you answered its questions. `--server`, `--executor` and `--worktree` write an explicit choice instead of the defaults ([Conductor slots](/addons/slots)).
 
-The file carries no identity and is identical for everyone. A conductor is identified by machine + project + variant: the machine's `machine_id` from the [machine file](/configuration/machine), `project.name`, and the variant (`conductor` for `project.config.js`, `review` for `project.review.config.js`). bakers derives the conductor id `<machine_id>-<project>-<variant>` from them at runtime; it is never written to a config, and `bakers conductor ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its Identity card. When this machine, project and variant already have a conductor under an older id, the first `bakers conductor start` offers to take it over ([bakers conductor](/cli/conductor)).
+The file carries no identity and is identical for everyone. bakers derives the conductor id `<machine_id>-<project>-<variant>` at runtime from the [machine file](/configuration/machine)'s `machine_id`, `project.name` and the variant (`conductor` for `project.config.js`, `review` for `project.review.config.js`); it is never written to a config, and `bakers conductor ls` prints it as the last column. A new conductor is named `<machine label> · <project>`, plus `/<variant>` for a variant other than `conductor`; rename it on its **Settings** tab. When this machine, project and variant already have a conductor under an older id, the first `bakers conductor start` offers to take it over ([bakers conductor](/cli/conductor)).
 
 ## Fields
 
@@ -40,21 +40,22 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `server.use`, `server.export`, `server.with`, `executor.use`, `executor.export`, `executor.with`, `worktree.use`, `worktree.export`, `worktree.with` | A slot's package, its named factory and the factory's options; see [Slot descriptors](#slot-descriptors). |
 | `addons` | Packages that contribute slots and tools: a name, or `{ use, alias?, with? }`. A direct slot beats an addon; otherwise the last contributor wins with a warning. `with` is checked against the addon's options schema. Agent harnesses belong in the machine file. |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
-| `states` | Optional array of non-empty state strings; omitted or empty seeds all claimable states on first registration. Later edits belong on the conductor Identity card or API; changing this file does not update an existing registration. |
+| `states` | Optional array of non-empty state strings; omitted or empty seeds all claimable states on first registration. Later edits belong on the conductor **Settings** tab or API; changing this file does not update an existing registration. |
 | `prompt` | Agent prompt template with `{identifier}`, `{state}`, `{run_uuid}` and `{ticket_uuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
 | `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |
 | `restart_on_change` | Boolean, default `true`: a running conductor restarts itself when a config file, the [secrets file](/configuration/machine#secrets-file) or the installed CLI version changes. Needs Node.js 22.15 or later. |
 | `capture_logs` | Boolean, default `true`. Transcripts upload only where the server's [run-log storage policy](/self-hosting/server#run-log-storage) allows it; `false` keeps this conductor's transcripts local even then. Metrics are unaffected. |
 | `hooks` | Optional command object. [Lifecycle hooks](/configuration/project/hooks) owns its keys, timing, environment, failure behavior and on-demand `provision_up` profiles. |
-| `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume`, `hooks.provision_up`, `hooks.provision_exec` | The lifecycle hooks and the on-demand `provision_up` and `provision_exec` commands; see [Lifecycle hooks](/configuration/project/hooks). |
+| `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume`, `hooks.provision_up`, `hooks.provision_exec` | The lifecycle hooks and on-demand commands. |
 | `marketplaces` | Optional array of agent plugin marketplaces every run of this project installs: `{ url, ref, plugins }`. See [Agent plugins](#agent-plugins). |
 | `marketplaces[].url`, `marketplaces[].ref`, `marketplaces[].plugins` | The marketplace's Git URL, the ref to check out and the plugins to install from it. |
+| `runtime.enabled`, `runtime.default` | Restrict only: allowed machine runtime aliases, and the default. A project `select` is refused. See [Slot catalogs](/configuration/slot-catalogs). |
 | `runtime`, `runtime.read_only` | Worktree-relative paths an isolated run sees read-only and cannot change in a commit, for example `['.ddev', '.github']`. `.bakers` is always protected. A listed path must exist, or dispatch fails. Project config only. See [Protected paths](/provision/security/shared-settings#host-executed-paths). |
-| `permissions` | Run permissions for every agent of every machine that runs this project: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
+| `permissions` | Run permissions for every agent of every machine that runs this project. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
 | `permissions.mode` | `sandbox`, `system` or `yolo`. |
-| `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
-| `select_agent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/agents/guide). |
+| `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists. |
+| `select_agent` | Deprecated, warns at load. Function `(candidates, ticket) => candidate` replacing the agent choice; use the machine's `agents.select`. |
 
 Unknown keys fail.
 
@@ -104,7 +105,7 @@ states: ['working', 'review'],
 poll_interval_ms: 10000,
 ```
 
-Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). For an existing conductor, change its served states on the Identity card as well. Add `qualification` when it should qualify hand-written tickets.
+Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). Add `qualification` when it should qualify hand-written tickets.
 
 ## Named variants
 

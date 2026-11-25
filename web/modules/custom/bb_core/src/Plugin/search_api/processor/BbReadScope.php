@@ -33,12 +33,12 @@ final class BbReadScope extends ProcessorPluginBase implements ContainerFactoryP
   /**
    * The account the query is run as.
    */
-  private AccountProxyInterface $currentUser;
+  protected AccountProxyInterface $currentUser;
 
   /**
    * The one service that answers what the account may read.
    */
-  private BbWorkspaceReadScopeInterface $readScope;
+  protected BbWorkspaceReadScopeInterface $readScope;
 
   /**
    * {@inheritdoc}

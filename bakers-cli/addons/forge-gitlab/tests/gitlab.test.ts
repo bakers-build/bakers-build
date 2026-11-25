@@ -314,6 +314,84 @@ describe('forge-gitlab', () => {
     expect(f.calls.slice(before).some((c) => c.method === 'PUT')).toBe(false);
   });
 
+  describe('addReviewers', () => {
+    const users = (url: URL) =>
+      ({
+        'ada@example.com': [
+          { id: 3, public_email: 'other@example.com' },
+          { id: 7, public_email: 'Ada@Example.com' },
+        ],
+        'hidden@example.com': [{ id: 8, public_email: '' }],
+        // A non-admin token gets basic fields only, no e-mail.
+        'bea@example.com': [{ id: 4, username: 'bea' }],
+        'two@example.com': [
+          { id: 1, username: 'a' },
+          { id: 2, username: 'b' },
+        ],
+      })[url.searchParams.get('search') ?? ''] ?? [];
+
+    it('takes the single hit when the list shows no e-mail, as for a non-admin token', async () => {
+      const f = fakeFetch({
+        'GET /api/v4/users': users,
+        'GET /merge_requests/9': () => ({ ...MR, reviewers: [] }),
+        'PUT /merge_requests/9': () => MR,
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(
+        await b.addReviewers(PR, ['bea@example.com', 'two@example.com']),
+      ).toMatchObject({
+        requested: ['bea@example.com'],
+        skipped: [{ mail: 'two@example.com' }],
+      });
+      expect(f.calls.find((c) => c.method === 'PUT')?.body).toEqual({
+        reviewer_ids: [4],
+      });
+    });
+
+    it('resolves mails to users by exact e-mail and PUTs the union with the reviewers already on the MR', async () => {
+      const f = fakeFetch({
+        'GET /api/v4/users': users,
+        'GET /merge_requests/9': () => ({ ...MR, reviewers: [{ id: 5 }] }),
+        'PUT /merge_requests/9': () => MR,
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(
+        await b.addReviewers(PR, ['ada@example.com', 'hidden@example.com']),
+      ).toEqual({
+        requested: ['ada@example.com'],
+        skipped: [
+          {
+            mail: 'hidden@example.com',
+            reason: 'no GitLab user with this public e-mail',
+          },
+        ],
+      });
+      expect(f.calls.filter((c) => c.method === 'PUT')).toEqual([
+        {
+          method: 'PUT',
+          path: `${P}/merge_requests/9`,
+          body: { reviewer_ids: [5, 7] },
+          token: 'glpat-SECRET',
+        },
+      ]);
+    });
+
+    it('sends no PUT when every found user already reviews the MR', async () => {
+      const f = fakeFetch({
+        'GET /api/v4/users': users,
+        'GET /merge_requests/9': () => ({ ...MR, reviewers: [{ id: 7 }] }),
+      });
+      const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+      expect(
+        await b.addReviewers(PR, ['ada@example.com', 'nobody@example.com']),
+      ).toMatchObject({
+        requested: ['ada@example.com'],
+        skipped: [{ mail: 'nobody@example.com' }],
+      });
+      expect(f.calls.some((c) => c.method !== 'GET')).toBe(false);
+    });
+  });
+
   describe('origin issue', () => {
     const ISSUE = 'https://gitlab.com/acme/board/-/issues/4';
     const B = '/api/v4/projects/acme%2Fboard';

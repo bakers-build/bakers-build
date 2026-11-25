@@ -33,8 +33,12 @@ bb_core.rail.projects:
     icon: project
     # A project's Overview and Board are pages of Projects too.
     active_routes: [entity.bb_project.canonical, view.project_board.project_board]
+    # `BbMenuSource` appends the account's favorite projects of the ambient
+    # workspace, each with its own Tickets.
+    bb_children: favorites
 
-# Shown only on a route that carries a project.
+# Shown only on a route that carries a project that is not a favorite: a
+# favorite's own Tickets replaces it.
 bb_core.rail.project_tickets:
   title: 'Tickets'
   route_name: view.tickets.project_tickets
@@ -76,7 +80,7 @@ bb_core.rail.teams_heading:
   route_name: '<nolink>'
   menu_name: bakers-rail
   class: '\Drupal\bb_core\Plugin\Menu\WorkspaceMenuLink'
-  weight: 5
+  weight: 6
   options:
     icon: team
     heading: true

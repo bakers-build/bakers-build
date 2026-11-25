@@ -71,7 +71,8 @@ describe('cancel run through the confirmation dialog', () => {
   it.each([
     'claimed',
     'running',
-  ])('x on a %s run opens the dialog directly', async (state) => {
+    'failed',
+  ])('x on a %s newest run opens the dialog directly', async (state) => {
     const { screen, context } = await detailFor(state);
     const action = screen.actionForInput?.('x', context);
     expect(action).toMatchObject({
@@ -85,7 +86,6 @@ describe('cancel run through the confirmation dialog', () => {
 
   it.each([
     'done',
-    'failed',
     'expired',
     'cancelled',
   ])('offers no cancel on a %s run', async (state) => {
@@ -117,17 +117,22 @@ describe('cancel run through the confirmation dialog', () => {
     );
   });
 
-  it('confirming writes the cancellation and returns run-cancelled', async () => {
-    const write = { update: vi.fn().mockResolvedValue({}) };
+  it('confirming cancels through bakers_run_cancel and returns run-cancelled', async () => {
+    const write = {
+      update: vi.fn(),
+      callTool: vi.fn().mockResolvedValue({ runs: ['run-1'] }),
+    };
     const { screen, context } = await dialogFor(
       cancelRunRequest(document('running'), 'run-1'),
       { client: write, writeClient: write } as never,
     );
     expect(screen.handleInput('enter', context)).toBe(true);
     await settle();
-    expect(write.update).toHaveBeenCalledTimes(1);
-    expect(write.update).toHaveBeenCalledWith('bb_run--bb_run', 'run-1', {
-      attributes: { state: 'cancelled' },
+    expect(write.update).not.toHaveBeenCalled();
+    expect(write.callTool).toHaveBeenCalledTimes(1);
+    expect(write.callTool).toHaveBeenCalledWith('bakers_run_cancel', {
+      runs: ['run-1'],
+      reason: 'Cancel run',
     });
     expect(context.back).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -144,15 +149,33 @@ describe('cancel run through the confirmation dialog', () => {
     );
   });
 
+  it("shows the site's refusal and stays open", async () => {
+    const write = {
+      callTool: vi
+        .fn()
+        .mockRejectedValue(new Error('You may not cancel run run-1.')),
+    };
+    const { screen, context } = await dialogFor(
+      cancelRunRequest(document('failed'), 'run-1'),
+      { client: write, writeClient: write } as never,
+    );
+    screen.handleInput('enter', context);
+    await settle();
+    expect(renderTree(screen.present(context).body)).toContain(
+      'You may not cancel run run-1.',
+    );
+    expect(context.back).not.toHaveBeenCalled();
+  });
+
   it('Esc writes nothing', async () => {
-    const write = { update: vi.fn() };
+    const write = { update: vi.fn(), callTool: vi.fn() };
     const { screen, context } = await dialogFor(
       cancelRunRequest(document('running'), 'run-1'),
       { client: write, writeClient: write } as never,
     );
     expect(screen.handleInput('escape', context)).toBe(true);
     expect(screen.takeAction()).toEqual({ type: 'back' });
-    expect(write.update).not.toHaveBeenCalled();
+    expect(write.callTool).not.toHaveBeenCalled();
   });
 
   it('repaints the detail after cancellation', async () => {

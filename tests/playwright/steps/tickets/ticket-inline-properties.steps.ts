@@ -433,6 +433,10 @@ Then('the inline {string} selection includes {string}', async ({ page }, label: 
     if (label === 'Labels') expect((await values(page)).labels).toEqual(expect.arrayContaining(snapshots.get(page)!.values.labels));
 });
 
+Then('the inline {string} selection does not include {string}', async ({ page }, label: string, value: string) => {
+    await expect(picker(page, label).locator('[data-option-picker-trigger]')).not.toHaveAccessibleName(new RegExp(value));
+});
+
 Then('dismissing the current priority sends no save and leaves it unchanged', async ({ page }) => {
     const before = await values(page);
     const writes: string[] = [];

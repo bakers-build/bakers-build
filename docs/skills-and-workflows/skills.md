@@ -6,12 +6,19 @@ Skills give your AI the setup wizard and ticket methods. Install them into each 
 
 ## Claude Code
 
-Run in Claude Code:
+Run these two commands in Claude Code, one at a time:
 
-```text
-/plugin marketplace add https://bakers.build/marketplace.json
-/plugin install bakers@bakers
-```
+1. Add the marketplace:
+
+   ```text
+   /plugin marketplace add https://bakers.build/marketplace.json
+   ```
+
+2. Install the plugin:
+
+   ```text
+   /plugin install bakers@bakers
+   ```
 
 The marketplace points to a versioned ZIP on bakers.build with a SHA-256 checksum. Claude downloads the plugin and makes its skills available. Start a new session before invoking `bakers:bb-init`.
 

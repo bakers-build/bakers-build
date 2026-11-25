@@ -94,10 +94,11 @@ final class ServiceAccountOAuthTest extends KernelTestBase {
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group',
       'bb_project', 'bb_ticket', 'bb_run', 'bb_environment',
-      'bb_conductor', 'consumer', 'oauth2_token',
+      'bb_conductor', 'bb_profile', 'consumer', 'oauth2_token',
     ] as $type) {
       $this->installEntitySchema($type);
     }
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['system', 'user', 'og', 'bb_core', 'bb_api_key', 'simple_oauth']);
     Og::addGroup('bb_workspace', 'bb_workspace');
     Og::addGroup('bb_team', 'bb_team');

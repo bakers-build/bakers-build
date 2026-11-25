@@ -206,6 +206,15 @@ final class BbClosedRows extends FilterPluginBase {
         'contexts' => ['url.query_args', 'url.path'],
       ],
     ];
+    // The control is links, so a submit of the other filters carries its
+    // position here; the default stays absent for a clean address.
+    if ($active !== 'open') {
+      $form[$identifier . '_position'] = [
+        '#type' => 'hidden',
+        '#name' => self::PARAMETER,
+        '#value' => $active,
+      ];
+    }
   }
 
   /**

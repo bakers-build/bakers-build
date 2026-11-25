@@ -24,7 +24,7 @@ Tools run with your rights, outside the sandbox. Configure only commands you tru
 ## How to enable
 
 - Enable the addons you need in their [configuration scope](/addons/configure).
-- `provision_up` and `provision_exec` appear once you configure their [hooks](/configuration/project/hooks#provision-on-an-agent-s-request).
+- `provision_up` and `provision_exec` appear once you configure their [hooks](/configuration/project/hooks#provision-on-an-agent-s-request). Give each profile and key a one-line `description`: the agent reads it before its first call.
 - Claude and Codex get the tools through MCP; other harnesses call [`bakers tools`](/cli/tools) from their shell.
 - More: [call tools from outside an agent](/addons/build/tools#call-tools-from-outside-an-agent) and [how long `provision_up` may take](/configuration/project/hooks#provision-on-an-agent-s-request).
 

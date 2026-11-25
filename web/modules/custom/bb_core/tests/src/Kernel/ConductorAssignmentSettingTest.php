@@ -10,6 +10,8 @@ use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachine;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Form\BbEntityDetailCardForm;
+use Drupal\Component\Serialization\Yaml;
+use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -132,7 +134,9 @@ final class ConductorAssignmentSettingTest extends KernelTestBase {
   }
 
   /**
-   * Only the owner may edit either setting; the cards offer both.
+   * Only the owner may edit either setting; the Settings forms offer both.
+   *
+   * The cards show them.
    */
   public function testOnlyTheOwnerMayEdit(): void {
     $owner = $this->createUser('owner');
@@ -147,8 +151,12 @@ final class ConductorAssignmentSettingTest extends KernelTestBase {
     }
     $this->assertFalse($conductor->get('assignment_effective')->access('edit', $owner));
 
-    $this->assertContains('assignment', BbEntityDetailCardForm::fields('bb_machine', 'identity')['edit'] ?? []);
-    $this->assertContains('assignment', BbEntityDetailCardForm::fields('bb_conductor', 'identity')['edit'] ?? []);
+    $this->assertContains('assignment', BbEntityDetailCardForm::fields('bb_machine', 'identity')['show'] ?? []);
+    $this->assertContains('assignment', BbEntityDetailCardForm::fields('bb_conductor', 'identity')['show'] ?? []);
+    foreach ([$conductor, $machine] as $entity) {
+      $this->installSettingsFormDisplay($entity->getEntityTypeId());
+      $this->assertNotNull(EntityFormDisplay::collectRenderDisplay($entity, 'settings')->getComponent('assignment'), $entity->getEntityTypeId());
+    }
     $this->assertContains('assignment_effective', BbEntityDetailCardForm::fields('bb_conductor', 'identity')['show'] ?? []);
   }
 
@@ -176,6 +184,18 @@ final class ConductorAssignmentSettingTest extends KernelTestBase {
     $manager->getStorage('bb_conductor')->resetCache();
     $this->assertSame('allow', BbMachine::load($machine_id)?->getAssignment());
     $this->assertSame('machine', BbConductor::load($conductor->id())?->getAssignment());
+  }
+
+  /**
+   * Writes the shipped `settings` form display of an entity type.
+   */
+  private function installSettingsFormDisplay(string $entity_type_id): void {
+    $name = sprintf('core.entity_form_display.%1$s.%1$s.settings', $entity_type_id);
+    $file = dirname(DRUPAL_ROOT) . '/recipes/bakers/config/' . $name . '.yml';
+    $this->assertFileExists($file);
+    $data = Yaml::decode((string) file_get_contents($file));
+    $data['uuid'] = $this->container->get('uuid')->generate();
+    $this->container->get('config.storage')->write($name, $data);
   }
 
   /**

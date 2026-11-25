@@ -58,7 +58,6 @@ export const SIDEBAR = {
     ]),
     group("Machine setup", [
       ["Set up a worker server", "/provision/worker-server"],
-      ["Install Node.js", "/provision/node"],
     ]),
     group("Project environment", [
       ["Prepare a worktree environment", "/provision/guide"],
@@ -89,16 +88,17 @@ export const SIDEBAR = {
     ]),
   ],
   "/skills-and-workflows/": [
-    group("Skills & Workflows", [
+    group("Adapt your workflow", [
       ["Overview", "/skills-and-workflows/"],
-      ["Accept results", "/skills-and-workflows/accept-results"],
+      ["Set project rules", "/skills-and-workflows/workflow-file"],
+      ["Choose a method", "/skills-and-workflows/recipes"],
+      ["Decide when people approve", "/skills-and-workflows/collaboration"],
+    ]),
+    group("Reference and setup", [
+      ["Workflow reference", "/skills-and-workflows/states"],
       ["Install the bakers skills", "/skills-and-workflows/skills"],
-      ["Workflows", "/skills-and-workflows/guide"],
+      ["Accept results", "/skills-and-workflows/accept-results"],
       ["Ticket metrics", "/skills-and-workflows/metrics"],
-      ["Write a recipe", "/skills-and-workflows/recipes"],
-      ["Workflows and states", "/skills-and-workflows/states"],
-      ["Ticket type, recipe and labels", "/skills-and-workflows/types-recipes-labels"],
-      ["Configure your workflow", "/skills-and-workflows/workflow-file"],
     ]),
   ],
   "/addons/": [
@@ -130,6 +130,7 @@ export const SIDEBAR = {
       ["herdr", "/addons/herdr"],
       ["herdr-core", "/addons/herdr-core"],
       ["Orca", "/addons/orca"],
+      ["Rex", "/addons/rex"],
       ["Git workspace", "/addons/workspace-git"],
       ["Conductor slots", "/addons/slots"],
       ["Tailscale", "/addons/tailscale"],
@@ -173,6 +174,7 @@ export const SIDEBAR = {
       ["Connection", "/configuration/connection"],
       ["Machine", "/configuration/machine"],
       ["Project", "/configuration/project"],
+      ["Slot catalogs", "/configuration/slot-catalogs"],
       ["Lifecycle hooks", "/configuration/project/hooks"],
       ["Conductors and variants", "/configuration/project/conductors"],
     ]),

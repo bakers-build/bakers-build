@@ -767,3 +767,10 @@ describe('GrokAgent.getRunLog', () => {
     expect(JSON.parse(log).signals.assistantMessageCount).toBe(2);
   });
 });
+
+describe('herdr agent name', () => {
+  it('declares grok so herdr identifies an isolated run', async () => {
+    const agent = new GrokAgent({});
+    expect(agent.herdrAgent).toBe('grok');
+  });
+});

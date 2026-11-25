@@ -28,7 +28,7 @@ them; one script writes `auto`.
 | Frame | `.claude/skills/bakers-build/skills/bb-workflow/SKILL.md` (*Routing* 1) | loads the installed `bb-label-<label>` skill for each ticket label and follows it in every state |
 | `auto` | `.claude/skills/bakers-build/skills/bb-label-auto/SKILL.md` | authorizes every transition, origin status and the merge; the run decides technical questions and records them under `Decisions`; one user question per run; an unplanned risky change is a technical problem that ends the run |
 | `ticket-question` | `.claude/skills/bakers-build/skills/bb-label-ticket-question/SKILL.md` | the run reaches a human only through the ticket: a `# Question` comment with label `Question`, or `# Error`/`# Architecture` with label `technical problem`, then `frozen: true`; authorizes only these writes |
-| Host hand-over | the host's conversation, documented in `docs/skills-and-workflows/types-recipes-labels.md` (*Labels*) | the host adds `auto` (and `ticket-question`) when it hands a specified ticket over; `bb-create-ticket` never adds it (checked by `tests/skill-eval/profiles/create-ticket-handover.mjs`) |
+| Host hand-over | the host's conversation, documented in `docs/skills-and-workflows/collaboration.md` (*Choose your level of involvement*) | the host adds `auto` (and `ticket-question`) when it hands a specified ticket over; `bb-create-ticket` never adds it (checked by `tests/skill-eval/profiles/create-ticket-handover.mjs`) |
 | CI failure | `scripts/ci/github-failure-ticket.sh` | creates a `bug` with recipe `superpowers`, assigns the `cw-framework` conductor and adds `auto` |
 | Docs | `types-recipes-labels.md`, `workflow-file.md`, `docs/development/skill-contract.md`, `docs/bakers/github-migration.md`, `docs/bakers/development-skills.md`, `.claude/skills/bakers-build/README.md` | describe the labels |
 | Tests | `tests/skill-eval/fixtures/auto-*.json`, `label-route-probe.json`, `tests/skill-eval/profiles/bb-label-auto.mjs`, `bakers-cli/core/tests/workflow/skill-state-evals.test.ts`, `skill-tool-calls.test.ts`, `bakers-cli/core/tests/packaging/github-failure-ticket.test.ts`, `tests/contract/skill-references.py` | assert today's behavior |
@@ -202,7 +202,7 @@ migration. The implementation changed:
 - **Recipes**: `## bb-gates` in `bb-recipe-matt`, `bb-recipe-superpowers`,
   `bb-recipe-deploy-and-release` (its repeated tool-discovery phrase stated once, to stay within
   500 words), `bb-recipe-verify` and the test recipes.
-- **Docs**: `docs/skills-and-workflows/types-recipes-labels.md`, `recipes.md`, `workflow-file.md`,
+- **Docs**: `docs/skills-and-workflows/collaboration.md`, `recipes.md`, `workflow-file.md`,
   `docs/development/skill-contract.md`, `docs/bakers/development-skills.md` (skill count, bundle
   0.72.0), `.claude/skills/bakers-build/README.md`. `docs/bakers/github-migration.md` and
   `docs/development/test-skill-tools.md` describe `auto` only and stay as they are.

@@ -318,7 +318,7 @@ final class TicketReadToolTest extends BakersToolTestBase {
     $this->installEntitySchema('bb_environment');
     user_role_grant_permissions('skill_user', ['view bb_environment']);
     $production = $this->entity('bb_environment', ['name' => 'production', 'project_id' => $this->project->id()]);
-    $type = $this->term('type', 'deployment')->id();
+    $type = $this->term('type', 'ship')->id();
     $ticket = $this->ticket('TR-T');
     $unreferenced = $this->ticket('TR-U');
     $first = $this->ticket('TR-D1', [
@@ -346,6 +346,28 @@ final class TicketReadToolTest extends BakersToolTestBase {
       ['identifier' => $second->getIdentifier(), 'environments' => []],
     ], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]))['deployments']);
     self::assertSame([], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $unreferenced->getIdentifier()]))['deployments']);
+  }
+
+  /**
+   * Lists the readable blockers with identifier, title and state.
+   */
+  public function testReturnsReadableBlockers(): void {
+    $open = $this->ticket('TR-B1', ['title' => 'Open blocker']);
+    $done = $this->ticket('TR-B2', ['title' => 'Done blocker', 'state' => 'done']);
+    $foreign = $this->entity('bb_workspace', [
+      'name' => 'foreign',
+      'slug' => 'foreign',
+      'owner_user_id' => $this->account('stranger')->id(),
+    ]);
+    $group = $this->entity('bb_group', ['name' => 'foreign-group', 'workspace_id' => $foreign->id()]);
+    $project = $this->entity('bb_project', ['name' => 'foreign-project', 'group_id' => $group->id()]);
+    $hidden = $this->ticket('TR-B3', ['project_id' => $project->id()]);
+    $ticket = $this->ticket('TR-B', ['blocked_by' => [$open->id(), $hidden->id(), $done->id()]]);
+    self::assertSame([
+      ['identifier' => $open->getIdentifier(), 'title' => 'Open blocker', 'state' => 'qualification'],
+      ['identifier' => $done->getIdentifier(), 'title' => 'Done blocker', 'state' => 'done'],
+    ], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]))['blocked_by']);
+    self::assertSame([], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $open->getIdentifier()]))['blocked_by']);
   }
 
   /**

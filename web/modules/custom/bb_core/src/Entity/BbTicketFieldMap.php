@@ -83,10 +83,10 @@ final class BbTicketFieldMap {
       ->setComputed(TRUE)
       ->setClass(SubTicketsItemList::class)
       ->setDisplayConfigurable('view', TRUE);
-    // Where the ticket is deployed: the deployment tickets carrying it.
+    // Where the ticket is deployed: the ship tickets carrying it.
     $fields['deployments'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Deployed to'))
-      ->setDescription(new TranslatableMarkup('Deployment tickets whose referenced tickets contain this ticket (computed; never writable).'))
+      ->setDescription(new TranslatableMarkup('Ship tickets whose referenced tickets contain this ticket (computed; never writable).'))
       ->setSetting('target_type', 'bb_ticket')
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->setComputed(TRUE)
@@ -113,7 +113,7 @@ final class BbTicketFieldMap {
       ->setDisplayConfigurable('view', TRUE);
     $fields['target_branch'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Target branch'))
-      ->setDescription(new TranslatableMarkup("Branch the ticket's work merges into (computed; never writable): a deployment ticket with exactly one environment merges into that environment's branch, every other ticket into base_branch. Consumed by the forge tools (PR/MR target)."))
+      ->setDescription(new TranslatableMarkup("Branch the ticket's work merges into (computed; never writable): a ship ticket with exactly one environment merges into that environment's branch, every other ticket into base_branch. Consumed by the forge tools (PR/MR target)."))
       ->setComputed(TRUE)
       ->setClass(TargetBranchItemList::class)
       ->setDisplayConfigurable('view', TRUE);

@@ -32,15 +32,28 @@ trait GroupMemberFormTrait {
    *   The group, or NULL off a group route.
    */
   private function group(FormStateInterface $form_state): ?ContentEntityInterface {
+    $group = $this->hostData($form_state)['group'] ?? NULL;
+
+    return $group instanceof ContentEntityInterface ? $group : NULL;
+  }
+
+  /**
+   * The island host's data: the group, its routes and the member, if any.
+   *
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state carrying the island build-info args.
+   *
+   * @return array<string, mixed>
+   *   The host's data for this island.
+   */
+  private function hostData(FormStateInterface $form_state): array {
     [$island, $host] = $this->resolveIsland($form_state);
     // The placement id (`members`), not the generic `configured_form` plugin
     // id, as `IslandResponder` resolves it for a rebuild.
     $island_id = method_exists($island, 'getRuntimeIslandId')
       ? $island->getRuntimeIslandId()
       : $island->getPluginId();
-    $group = $host->getIslandData($island_id)['group'] ?? NULL;
-
-    return $group instanceof ContentEntityInterface ? $group : NULL;
+    return $host->getIslandData($island_id);
   }
 
   /**

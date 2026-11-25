@@ -11,6 +11,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbMenuSource;
+use Drupal\bb_core\Profile\Profiles;
 use Drupal\user\UserInterface;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\views\Entity\View;
@@ -74,6 +75,8 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->installEntitySchema('bb_team');
     $this->installEntitySchema('bb_group');
     $this->installEntitySchema('bb_project');
+    $this->installEntitySchema('bb_profile');
+    $this->installSchema('user', ['users_data']);
     $this->installConfig(['system', 'user']);
     $this->setUpCurrentUser(['uid' => 1]);
 
@@ -265,17 +268,16 @@ final class BbMenuSourceTest extends KernelTestBase {
   }
 
   /**
-   * Every team row links to the team and to its Tickets task.
+   * Every team row links to the team and has no children.
    */
-  public function testEveryTeamLinksToItsTicketsTask(): void {
+  public function testTeamRowsLinkToTheTeamWithoutChildren(): void {
     $team = $this->createTeam('Platform Crew');
 
     $teams = $this->teamsGroup()['below'];
 
     self::assertCount(1, $teams);
     self::assertSame('/acme/team/' . $team->id(), $teams[0]['url']);
-    self::assertSame(['Tickets'], array_column($teams[0]['below'], 'title'));
-    self::assertSame('/acme/team/' . $team->id() . '/tickets', $teams[0]['below'][0]['url']);
+    self::assertSame([], $teams[0]['below']);
   }
 
   /**
@@ -484,6 +486,169 @@ final class BbMenuSourceTest extends KernelTestBase {
         self::assertContains($context, $cache->getCacheContexts(), "$menu: $context");
       }
     }
+  }
+
+  /**
+   * Favorites sit under Projects: viewable ones of this workspace, by label.
+   *
+   * Another workspace's, a deleted and an unreachable project drop out, and
+   * a colleague without favorites keeps the rail as it was.
+   */
+  public function testFavoritesListViewableProjectsOfTheWorkspaceInLabelOrder(): void {
+    $this->installOgScopeFixture();
+    $contributor = $this->createUser([], 'acme-contributor');
+    self::assertInstanceOf(UserInterface::class, $contributor);
+    $this->addMembership($this->workspace, $contributor, ['contributor']);
+    $this->addMembership($this->rival, $contributor, ['lead']);
+    $zeta = $this->favoriteProject('Zeta', 'ZETA');
+    $alpha = $this->favoriteProject('Alpha', 'ALPHA');
+    $hidden = $this->favoriteProject('Hidden', 'HID');
+    $gone = $this->favoriteProject('Gone', 'GONE');
+    $foreign = $this->favoriteProject('Foreign', 'FOR', $this->rival);
+    foreach ([$zeta, $alpha, $gone] as $project) {
+      $this->seatOnProjectTeam($project, $contributor);
+    }
+    $this->setCurrentUser($contributor);
+    $profiles = $this->container->get(Profiles::class);
+    $profile = $profiles->forAccount((int) $contributor->id(), (int) $this->workspace->id());
+    foreach ([$zeta, $alpha, $hidden, $gone, $foreign] as $project) {
+      $profile->toggleFavorite((int) $project->id());
+    }
+    $profile->save();
+    $gone->delete();
+
+    $favorites = $this->projectsRow()['below'];
+    self::assertSame(['Alpha', 'Zeta'], array_column($favorites, 'title'));
+    self::assertSame($alpha->toUrl()->toString(), $favorites[0]['url']);
+    self::assertSame('A', $favorites[0]['mark']['initials']);
+    self::assertSame(['Tickets'], array_column($favorites[0]['below'], 'title'));
+    self::assertSame('/acme/project/' . $alpha->id() . '/tickets', $favorites[0]['below'][0]['url']);
+    self::assertSame('/acme/project/' . $zeta->id() . '/tickets', $favorites[1]['below'][0]['url']);
+    self::assertFalse($this->projectsRow()['in_active_trail']);
+    self::assertNotContains('Favorites', array_column($this->emitted(), 'title'));
+
+    $this->visit('entity.bb_project.canonical', ['bb_workspace' => 'acme', 'bb_project' => $alpha->id()]);
+    $projects = $this->projectsRow();
+    self::assertSame(['Alpha', 'Zeta'], array_column($projects['below'], 'title'), 'the favorite Tickets replaces the contextual one');
+    self::assertSame([TRUE, FALSE], array_column($projects['below'], 'in_active_trail'));
+    self::assertTrue($projects['in_active_trail']);
+
+    $this->visit('view.groups.workspace_list', ['bb_workspace' => 'rival']);
+    self::assertSame([], $this->projectsRow()['below'], 'the other workspace has its own favorites');
+
+    $colleague = $this->createUser([], 'acme-colleague');
+    self::assertInstanceOf(UserInterface::class, $colleague);
+    $this->addMembership($this->workspace, $colleague, ['lead']);
+    $this->setCurrentUser($colleague);
+    $this->visit('view.groups.workspace_list', ['bb_workspace' => 'acme']);
+    self::assertSame([], $this->projectsRow()['below'], 'no favorites, no rows');
+    self::assertNotContains('Favorites', array_column($this->emitted(), 'title'));
+  }
+
+  /**
+   * On a project's ticket list exactly one Tickets entry is current.
+   *
+   * A favorite's own Tickets on its list, `Projects` › `Tickets` on any
+   * other project's; the overview offers no second link to the same list.
+   */
+  public function testOnlyOneTicketsEntryIsCurrentOnProjectTicketLists(): void {
+    $this->installOgScopeFixture();
+    $lead = $this->createUser([], 'acme-lead');
+    self::assertInstanceOf(UserInterface::class, $lead);
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+    $favorite = $this->favoriteProject('Alpha', 'ALPHA');
+    $other = $this->favoriteProject('Beta', 'BETA');
+    $this->container->get(Profiles::class)->forAccount((int) $lead->id(), (int) $this->workspace->id())
+      ->toggleFavorite((int) $favorite->id())->save();
+    $tickets_of = static fn (BbProjectInterface $project): string => '/acme/project/' . $project->id() . '/tickets';
+
+    $this->visit('view.tickets.project_tickets', ['bb_workspace' => 'acme', 'bb_project' => $favorite->id()]);
+    $below = $this->projectsRow()['below'];
+    self::assertSame(['Alpha'], array_column($below, 'title'), 'no contextual Tickets beside the favorite');
+    self::assertSame([$tickets_of($favorite)], $this->currentTickets($this->emitted()));
+    self::assertTrue($below[0]['below'][0]['in_active_trail']);
+
+    $this->visit('view.tickets.project_tickets', ['bb_workspace' => 'acme', 'bb_project' => $other->id()]);
+    $below = $this->projectsRow()['below'];
+    self::assertSame(['Tickets', 'Alpha'], array_column($below, 'title'));
+    self::assertSame([$tickets_of($other)], $this->currentTickets($this->emitted()));
+    self::assertTrue($below[0]['in_active_trail']);
+
+    $this->visit('entity.bb_project.canonical', ['bb_workspace' => 'acme', 'bb_project' => $favorite->id()]);
+    self::assertSame([], $this->currentTickets($this->emitted()));
+    self::assertSame(['Alpha'], array_column($this->projectsRow()['below'], 'title'), 'one link per ticket list');
+
+    // The rail links a project by its key, e.g. `/acme/project/alpha`.
+    foreach (['ALPHA', 'alpha'] as $key) {
+      $this->visit('entity.bb_project.canonical', ['bb_workspace' => 'acme', 'bb_project' => $key]);
+      self::assertSame(['Alpha'], array_column($this->projectsRow()['below'], 'title'), "one link per ticket list by key $key");
+
+      $this->visit('view.tickets.project_tickets', ['bb_workspace' => 'acme', 'bb_project' => $key]);
+      $below = $this->projectsRow()['below'];
+      self::assertSame(['Alpha'], array_column($below, 'title'), "no contextual Tickets beside the favorite by key $key");
+      self::assertCount(1, $this->currentTickets($this->emitted()));
+      self::assertTrue($below[0]['below'][0]['in_active_trail']);
+    }
+  }
+
+  /**
+   * The URLs of every current `Tickets` entry in a nav tree.
+   *
+   * @param array<int, array<string, mixed>> $items
+   *   Link items.
+   *
+   * @return array<int, string>
+   *   The URLs, in tree order.
+   */
+  private function currentTickets(array $items): array {
+    $urls = [];
+    foreach ($items as $item) {
+      if ($item['title'] === 'Tickets' && $item['in_active_trail']) {
+        $urls[] = $item['url'];
+      }
+      $urls = array_merge($urls, $this->currentTickets($item['below'] ?? []));
+    }
+    return $urls;
+  }
+
+  /**
+   * Unmarking takes the project off the rail; the rail varies by account.
+   */
+  public function testUnmarkedProjectLeavesTheRail(): void {
+    $this->installOgScopeFixture();
+    $lead = $this->createUser([], 'acme-lead');
+    self::assertInstanceOf(UserInterface::class, $lead);
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+    $project = $this->favoriteProject('Alpha', 'ALPHA');
+    $profile = $this->container->get(Profiles::class)->forAccount((int) $lead->id(), (int) $this->workspace->id());
+    $profile->toggleFavorite((int) $project->id())->save();
+    self::assertSame(['Alpha'], array_column($this->projectsRow()['below'], 'title'));
+
+    $profile->toggleFavorite((int) $project->id())->save();
+    self::assertSame([], $this->projectsRow()['below']);
+
+    $cache = CacheableMetadata::createFromRenderArray($this->source()->alterComponent([]));
+    self::assertContains('bb_profile_list', $cache->getCacheTags());
+    self::assertContains('bb_project_list', $cache->getCacheTags());
+    self::assertContains('user', $cache->getCacheContexts());
+  }
+
+  /**
+   * Creates a project in a workspace, by default the ambient one.
+   */
+  private function favoriteProject(string $name, string $key, ?BbWorkspaceInterface $workspace = NULL): BbProjectInterface {
+    $etm = $this->container->get('entity_type.manager');
+    $group = $etm->getStorage('bb_group')->create([
+      'name' => $name . ' Group',
+      'workspace_id' => ($workspace ?? $this->workspace)->id(),
+    ]);
+    $group->save();
+    $project = $etm->getStorage('bb_project')->create(['name' => $name, 'key' => $key, 'group_id' => $group->id()]);
+    self::assertInstanceOf(BbProjectInterface::class, $project);
+    $project->save();
+    return $project;
   }
 
   /**

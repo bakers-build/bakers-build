@@ -44,13 +44,18 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   },
   forge_pr_upsert: {
     description:
-      "Create the PR/MR of an owned branch into its base (target_branch, which is base_branch unless a deployment names its environment branch; the ticket branch for a variant), or update the open one's title and body. The title must be a Conventional Commits subject.",
+      "Create the PR/MR of an owned branch into its base (target_branch, which is base_branch unless a ship names its environment branch; the ticket branch for a variant, base_branch for a ship's variant), or update the open one's title and body. The title must be a Conventional Commits subject.",
     input: {
       type: 'object',
       properties: {
         branch,
         title: { type: 'string' },
         body: { type: 'string' },
+        request_reviewers: {
+          type: 'boolean',
+          description:
+            "set when the ticket asks for its reviewers on the PR/MR: adds the ticket's reviewers, found by their public forge e-mail, and removes none; the result lists requested and skipped reviewers with the reason",
+        },
       },
       required: ['title'],
     },

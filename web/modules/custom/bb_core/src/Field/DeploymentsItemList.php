@@ -9,9 +9,9 @@ use Drupal\Core\TypedData\ComputedItemListTrait;
 use Drupal\bb_core\Entity\BbTicketInterface;
 
 /**
- * Computes the deployment tickets that carry a ticket.
+ * Computes the ship tickets that carry a ticket.
  *
- * Reflects every bb_ticket of type `deployment` whose referenced_tickets
+ * Reflects every bb_ticket of type `ship` whose referenced_tickets
  * contain this ticket, ordered by created ASC, then id ASC. Read-only: the
  * deployment's referenced_tickets is the single record of where a ticket is
  * deployed. The query is access-checked, the read boundary the ticket tools
@@ -32,7 +32,7 @@ final class DeploymentsItemList extends EntityReferenceFieldItemList {
     $ids = \Drupal::entityTypeManager()->getStorage('bb_ticket')->getQuery()
       ->accessCheck(TRUE)
       ->condition('referenced_tickets', $ticket->id())
-      ->condition('ticket_type.entity.name', 'deployment')
+      ->condition('ticket_type.entity.name', 'ship')
       ->sort('created', 'ASC')
       ->sort('id', 'ASC')
       ->execute();

@@ -129,13 +129,13 @@ export function siteToolProxy(
       const refs: Array<['ticket' | 'project', string, unknown]> = [
         ['ticket', 'ticket', scoped.ticket],
         ['ticket', 'parent', scoped.parent],
-        ...[scoped.referenced_tickets_add ?? []]
-          .flat()
-          .map((r): ['ticket', string, unknown] => [
-            'ticket',
-            'referenced_tickets_add',
-            r,
-          ]),
+        // blocked_by_remove only drops links on this run's own ticket.
+        ...['referenced_tickets_add', 'blocked_by_add', 'blocked_by'].flatMap(
+          (arg) =>
+            [scoped[arg] ?? []]
+              .flat()
+              .map((r): ['ticket', string, unknown] => ['ticket', arg, r]),
+        ),
         ['project', 'project', scoped.project],
       ];
       for (const [kind, arg, value] of refs) {

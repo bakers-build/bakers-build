@@ -26,13 +26,14 @@ use Drupal\bb_core\Field\NodeStatesLabelItemList;
 use Drupal\bb_core\Field\NodeStatusItemList;
 use Drupal\bb_core\Field\OwnerInitialsItemList;
 use Drupal\bb_core\Field\OwnerNameItemList;
+use Drupal\bb_core\Field\PersonMarkItemList;
 use Drupal\bb_core\Field\RecipientProfileItemList;
 use Drupal\bb_core\Field\RunDurationItemList;
 use Drupal\bb_core\Field\SinceLabelItemList;
 use Drupal\bb_core\Field\StallReasonItemList;
 use Drupal\bb_core\Field\StateFlowItemList;
+use Drupal\bb_core\Field\TicketUrlItemList;
 use Drupal\bb_core\Field\WorkStateItemList;
-use Drupal\bb_core\Form\UserProfileForm;
 use Drupal\bb_core\Plugin\Validation\Constraint\BbGroupScopeConstraint;
 use Drupal\bb_core\Plugin\views\field\BbEntityOperations;
 use Drupal\bb_core\Storage\DisplayBuilderInstanceStorage;
@@ -84,7 +85,6 @@ final class EntitySchemaHooks {
    */
   #[Hook('entity_type_alter')]
   public function entityTypeAlter(array &$entity_types): void {
-    ($entity_types['user'] ?? NULL)?->setFormClass('profile', UserProfileForm::class);
     if (isset($entity_types['display_builder_instance'])) {
       $entity_types['display_builder_instance']->setHandlerClass('storage', DisplayBuilderInstanceStorage::class);
     }
@@ -559,6 +559,12 @@ final class EntitySchemaHooks {
         ->setComputed(TRUE)
         ->setClass(EditUrlItemList::class)
         ->setDisplayConfigurable('view', TRUE);
+      // Absolute canonical URL served to API clients (bakers ui); readable by
+      // anyone who may read the ticket, unlike the action link above.
+      $fields['url'] = BaseFieldDefinition::create('string')
+        ->setLabel(new TranslatableMarkup('URL'))
+        ->setComputed(TRUE)
+        ->setClass(TicketUrlItemList::class);
     }
 
     if ($entity_type->id() === 'bb_comment') {
@@ -577,6 +583,21 @@ final class EntitySchemaHooks {
         ->setComputed(TRUE)
         ->setClass(CommentAuthorColorItemList::class)
         ->setDisplayConfigurable('view', TRUE);
+    }
+
+    if ($entity_type->id() === 'user') {
+      // The person mark, derived in one place for the view mode and every cell.
+      foreach ([
+        'person_initials' => new TranslatableMarkup('Person initials'),
+        'person_color' => new TranslatableMarkup('Person colour'),
+        'person_picture' => new TranslatableMarkup('Person picture'),
+      ] as $name => $label) {
+        $fields[$name] = BaseFieldDefinition::create('string')
+          ->setLabel($label)
+          ->setComputed(TRUE)
+          ->setReadOnly(TRUE)
+          ->setClass(PersonMarkItemList::class);
+      }
     }
 
     if ($entity_type->id() === 'bb_run') {

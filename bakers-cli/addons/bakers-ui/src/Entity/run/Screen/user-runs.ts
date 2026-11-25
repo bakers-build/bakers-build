@@ -14,7 +14,6 @@ import {
   RUN_TABLE,
   type RunPage,
   type RunRow,
-  selectedRunTicketId,
 } from '../Data/runs.js';
 
 /** Shared member run list behavior; subclasses own scope and loading. */
@@ -73,18 +72,17 @@ export abstract class MemberRunsScreen extends ListScreen<RunRow, number> {
 
   protected actions() {
     return [
-      actionItem('user-runs-enter', 'Enter', 'ticket'),
+      actionItem('user-runs-enter', 'Enter', 'run'),
       actionItem('user-runs-tab', 'Tab', 'tabs'),
       ...this.pagingActionItems(),
     ];
   }
 
+  /** A run row opens the run's own detail (BAKERS-338). */
   activate(index: number, context: ScreenContext): boolean {
-    const id = this.readyValue
-      ? selectedRunTicketId(this.readyValue.rows, index)
-      : null;
-    if (!id || !context.navigate) return false;
-    context.navigate('ticket.runs', { ticketId: id });
+    const row = this.rows[index];
+    if (!row?.ticketId || !context.navigate) return false;
+    context.navigate('run.detail', { ticketId: row.ticketId, runId: row.id });
     return true;
   }
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\designbook_config_schema\Commands;
 
+use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\config_inspector\ConfigInspectorManager;
 use Drush\Commands\DrushCommands;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * Drush commands for designbook sync: schema emission + YAML validation.
@@ -330,7 +330,7 @@ class ConfigSchemaCommands extends DrushCommands {
       throw new \RuntimeException("File not found or unreadable: $yaml_path");
     }
 
-    $data = Yaml::parse($contents);
+    $data = Yaml::decode($contents);
 
     $definition     = $this->typedConfig->getDefinition($config_name);
     $dataDefinition = $this->typedConfig->buildDataDefinition($definition, $data);

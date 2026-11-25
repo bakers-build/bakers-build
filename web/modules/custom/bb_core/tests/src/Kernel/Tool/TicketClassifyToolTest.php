@@ -45,4 +45,25 @@ final class TicketClassifyToolTest extends BakersToolTestBase {
     ]), 'recipe or a type');
   }
 
+  /**
+   * The retired names are refused, naming ship; ship and ship are saved.
+   */
+  public function testRetiredDeploymentNamesPointToShip(): void {
+    $ticket = $this->ticket('TK-3');
+    $this->assertFailure($this->runTool('bakers_ticket_classify', [
+      'ticket' => $ticket->getIdentifier(),
+      'type' => 'deployment',
+    ]), 'The type deployment is now ship.');
+    $this->assertFailure($this->runTool('bakers_ticket_classify', [
+      'ticket' => $ticket->getIdentifier(),
+      'recipe' => 'deploy-and-release',
+    ]), 'The recipe deploy-and-release is now ship.');
+    $out = $this->outputs($this->runTool('bakers_ticket_classify', [
+      'ticket' => $ticket->getIdentifier(),
+      'recipe' => 'ship',
+      'type' => 'ship',
+    ]));
+    self::assertSame(['type' => 'ship', 'recipe' => 'ship'], $out);
+  }
+
 }

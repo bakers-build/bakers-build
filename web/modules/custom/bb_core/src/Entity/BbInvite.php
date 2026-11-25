@@ -10,9 +10,9 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Form\BbContentEntityDeleteForm;
+use Drupal\bb_core\Routing\BbInviteRouteProvider;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
@@ -42,11 +42,12 @@ use Drupal\user\EntityOwnerTrait;
     'query_access' => BbInviteQueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
     'form' => ['delete' => BbContentEntityDeleteForm::class],
-    'route_provider' => ['html' => AdminHtmlRouteProvider::class],
+    'route_provider' => ['html' => BbInviteRouteProvider::class],
   ],
-  // Only the revoke confirm form: an invitation has no canonical page;
-  // member screens list it and `bb_core.workspace_join` addresses it by id.
+  // The detail, opened from its Members row, and the revoke confirm form;
+  // `bb_core.workspace_join` addresses an invitation by id.
   links: [
+    'canonical' => '/_workspace/{bb_workspace}/invite/{bb_invite}',
     'delete-form' => '/_workspace/{bb_workspace}/invite/{bb_invite}/delete',
   ],
   base_table: 'bb_invite',

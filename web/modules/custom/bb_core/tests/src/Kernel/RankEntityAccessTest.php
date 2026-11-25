@@ -427,9 +427,9 @@ final class RankEntityAccessTest extends KernelTestBase {
       $project->access('update', $workspace_lead),
       'the workspace admin edits a project of its own workspace',
     );
-    self::assertFalse(
+    self::assertTrue(
       $project->access('delete', $workspace_lead),
-      'but deletes it only as its creator or the workspace owner',
+      'and deletes it, whoever created it',
     );
   }
 

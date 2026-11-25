@@ -1,7 +1,8 @@
 # Self-service pipeline API keys. The owner creates a key through
 # the real form, the secret is shown once, the minted token carries exactly
-# the owner's permissions, and revocation removes access immediately. Access
-# control (owner/other/anonymous) is covered for the list and create routes.
+# the owner's permissions, and revocation, on the key's own page reached from
+# its list row, removes access immediately. Access control (owner/other/
+# anonymous) is covered for the list, the key's page and the create routes.
 
 Feature: Self-service API keys in the user area
 
@@ -65,3 +66,8 @@ Feature: Self-service API keys in the user area
     And I press the copy button "Copy the client ID"
     Then the copy status of "Copy the client ID" is "Copy failed. Select the command and copy it yourself."
     And the created API key's client ID and secret are shown
+
+  Scenario: Another authenticated user is denied my key's page
+    Given I have created my own API key named "Private" through the user area
+    When another authenticated user visits my key's page
+    Then they receive a 403

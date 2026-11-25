@@ -16,24 +16,37 @@ export interface LaunchScript {
   commandPath: string;
   startedPath: string;
   exitPath: string;
+  /** How to start the wrapper: `[wrapPath]` when named after an agent, else `['sh', wrapPath]`. */
+  argv: string[];
   typedCommand: string;
 }
 
 /**
- * Write a run-scoped launch script so a fresh pane is typed only `sh '<file>'`.
+ * Write a run-scoped launch script so a fresh pane is typed only its path (`sh '<file>'` without an agent).
  *
  * The assembled command (env prefixes + agent argv) lives in a `0600` file
  * inside a fresh `0700` directory under the OS temp dir. The typed line stays
  * well under the tty canonical cap (macOS 1024, Linux 4096). The wrapper
  * deletes the command file as its first step so secrets never linger in the
  * pane's shell history or on disk after launch.
+ *
+ * With `agent` (the harness's herdr name) the wrapper is an executable named
+ * after it and started directly, so herdr and hc identify the pane's agent by
+ * its foreground process name while the agent itself runs in a sandbox.
  */
-export function writeLaunchScript(command: string): LaunchScript {
+export function writeLaunchScript(
+  command: string,
+  agent?: string,
+): LaunchScript {
+  // The name becomes a file name in the launch directory.
+  if (agent !== undefined && !/^[a-z0-9-]+$/.test(agent)) {
+    throw new Error(`Invalid herdr agent name: ${JSON.stringify(agent)}`);
+  }
   const dir = mkdtempSync(join(tmpdir(), 'bakers-run-'));
   chmodSync(dir, 0o700);
   try {
     const commandPath = join(dir, 'command');
-    const wrapPath = join(dir, 'run.sh');
+    const wrapPath = join(dir, agent ?? 'run.sh');
     const startedPath = join(dir, 'started');
     const exitPath = join(dir, 'exit');
     writeFileSync(commandPath, command, { encoding: 'utf8', mode: 0o600 });
@@ -49,15 +62,19 @@ code=$?
 printf 'exit %s\\n' "$code" > "$dir/exit"
 exit "$code"
 `;
-    writeFileSync(wrapPath, wrap, { encoding: 'utf8', mode: 0o600 });
-    chmodSync(wrapPath, 0o600);
+    // shortcut: a noexec tmpdir refuses the direct exec, move the launch dir if a host mounts /tmp noexec
+    const mode = agent ? 0o700 : 0o600;
+    writeFileSync(wrapPath, wrap, { encoding: 'utf8', mode });
+    chmodSync(wrapPath, mode);
+    const argv = agent ? [wrapPath] : ['sh', wrapPath];
     return {
       dir,
       wrapPath,
       commandPath,
       startedPath,
       exitPath,
-      typedCommand: `sh ${shellQuote(wrapPath)}`,
+      argv,
+      typedCommand: agent ? shellQuote(wrapPath) : `sh ${shellQuote(wrapPath)}`,
     };
   } catch (err) {
     rmSync(dir, { recursive: true, force: true });

@@ -51,6 +51,7 @@ import type {
 import { type ConductorLogger, shellQuote } from '@bakers-build/core';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { HttpError } from 'dropsh/plugin';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { attemptFamily, attemptSessionId } from '../../src/core/attempt.js';
@@ -5688,5 +5689,158 @@ describe('Conductor — bakers ui refresh signal', () => {
         encoding: 'utf8',
       }),
     ).not.toContain('ui-refresh');
+  });
+});
+
+describe('Conductor — a start alone changes no run', () => {
+  it('leaves seeded running runs running and counted across start and ticks', async () => {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
+        't-2': { identifier: 'BB-2', title: 'Two', state: 'plan' },
+      },
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'working',
+          state: 'running',
+          worktreePath: PRESENT_WORKTREE,
+        },
+        {
+          runUuid: 'r-2',
+          ticketUuid: 't-2',
+          stateAtStart: 'plan',
+          state: 'running',
+          worktreePath: PRESENT_WORKTREE,
+        },
+      ],
+    });
+    remote.queue.length = 0;
+    const conductor = await startedConductor(
+      makeConfig(),
+      remote,
+      new RecordingExecutor(),
+    );
+    await conductor.tick();
+    await conductor.tick();
+
+    expect(remote.calls.markFailed).toEqual([]);
+    expect(remote.calls.finalizeRun).toEqual([]);
+    expect(await remote.activeRunCount('x')).toBe(2);
+  });
+});
+
+describe('tick error log', () => {
+  it("logs the server's title and detail of a failed list query", async () => {
+    const remote = new FakeBbRemote();
+    remote.fetchFinalizableRuns = async () => {
+      throw new HttpError(500, 'HTTP 500', {
+        errors: [{ title: 'Boom', detail: 'why' }],
+      });
+    };
+    const { log, calls } = spyLogger();
+    const conductor = new TestConductor(
+      makeConfig(),
+      remote,
+      new RecordingExecutor(),
+      new FakeWorkspace(),
+      resolved(fakeAgent),
+      log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    await conductor.tick();
+    const warn = calls.find((c) => c.msg === 'finalize query failed');
+    expect(warn?.obj).toMatchObject({ err: 'HTTP 500 Boom: why' });
+  });
+});
+
+describe('claim refusal', () => {
+  const POLL = 5000;
+  const DETAIL =
+    'bakers 0.0.1 is too old for this server (requires >= 0.11.0). Update: npm install -g @bakers-build/bakers@latest';
+  const refuse = async (): Promise<never> => {
+    throw new HttpError(426, 'HTTP 426', {
+      errors: [{ title: 'Upgrade Required', detail: DETAIL }],
+    });
+  };
+
+  async function refusedConductor() {
+    const remote = new FakeBbRemote();
+    const claimAt: number[] = [];
+    remote.claimNext = async () => {
+      claimAt.push(Date.now());
+      return refuse();
+    };
+    const heartbeat = vi.spyOn(remote, 'heartbeat');
+    const { log, calls } = spyLogger();
+    const conductor = new TestConductor(
+      makeConfig({ poll_interval_ms: POLL }),
+      remote,
+      new RecordingExecutor(),
+      new FakeWorkspace(),
+      resolved(fakeAgent),
+      log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    return { conductor, remote, claimAt, heartbeat, calls };
+  }
+
+  /** Ticks `n` times, `step` ms apart, on the fake clock. */
+  async function ticks(conductor: Conductor, n: number, step = POLL) {
+    for (let i = 0; i < n; i++) {
+      await conductor.tick();
+      vi.setSystemTime(Date.now() + step);
+    }
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-19T12:00:00Z'));
+    return () => vi.useRealTimers();
+  });
+
+  it('logs a persistent 426 once with the remedy and claims less often while heartbeats continue', async () => {
+    const { conductor, claimAt, heartbeat, calls } = await refusedConductor();
+    await ticks(conductor, 10);
+    const refusals = calls.filter((c) => c.msg?.includes(DETAIL));
+    expect(refusals).toHaveLength(1);
+    expect(refusals[0]).toMatchObject({
+      level: 'error',
+      msg: `claims refused by the server: ${DETAIL}`,
+    });
+    expect(calls.some((c) => c.msg === 'tick failed')).toBe(false);
+    expect(calls.some((c) => c.msg === 'idle, nothing to claim')).toBe(false);
+    expect(claimAt.length).toBeLessThan(10);
+    expect(heartbeat).toHaveBeenCalledTimes(10);
+  });
+
+  it('doubles the wait between refused claims up to five minutes', async () => {
+    const { conductor, claimAt } = await refusedConductor();
+    await ticks(conductor, 190);
+    const gaps = claimAt.slice(1).map((t, i) => t - claimAt[i]);
+    expect(gaps.slice(0, 7)).toEqual([
+      10_000, 20_000, 40_000, 80_000, 160_000, 300_000, 300_000,
+    ]);
+    expect(Math.max(...gaps)).toBe(300_000);
+  });
+
+  it('logs once that claims are accepted again and claims every tick after', async () => {
+    const { conductor, remote, claimAt, calls } = await refusedConductor();
+    await ticks(conductor, 3);
+    remote.claimNext = async () => {
+      claimAt.push(Date.now());
+      return null;
+    };
+    vi.setSystemTime(Date.now() + 300_000);
+    const before = claimAt.length;
+    await ticks(conductor, 5);
+    expect(
+      calls.filter((c) => c.msg === 'claims accepted again'),
+    ).toMatchObject([{ level: 'info' }]);
+    expect(claimAt.length - before).toBe(5);
+    expect(calls.at(-1)?.msg).toBe('idle, nothing to claim');
   });
 });

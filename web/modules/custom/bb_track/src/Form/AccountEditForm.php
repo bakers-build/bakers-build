@@ -24,7 +24,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  *
  * Opened over the project's billing face, as a dialog with JavaScript and
  * as a plain page without. No ticket field (tickets link on the ticket) and
- * no default switch (Make default is a row action). Only the terms of the
+ * no default switch (Make default is on the account's detail). Only the
+ * terms of the
  * chosen type and budget render; htmx re-renders them when either changes.
  * Without JavaScript the stored type's fields show, and a save of another
  * type is validated against that type's rules.
@@ -59,6 +60,9 @@ final class AccountEditForm extends WrappedDialogFormBase {
   /**
    * The trigger opening this dialog for a new or an existing account.
    *
+   * An existing account's dialog returns to its detail, a new one's to the
+   * project's billing list.
+   *
    * @return array<string, mixed>
    *   A button component.
    */
@@ -69,7 +73,7 @@ final class AccountEditForm extends WrappedDialogFormBase {
       $route = 'bb_track.account_edit';
       $parameters['bb_track_account'] = $billing_account->id();
     }
-    $destination = Url::fromRoute('bb_track.account', ['bb_project' => $project->uuid()])->toString();
+    $destination = ($billing_account instanceof Account ? $billing_account->toUrl() : Url::fromRoute('bb_track.account', ['bb_project' => $project->uuid()]))->toString();
     $url = static fn (array $query): Url => Url::fromRoute($route, $parameters, ['query' => $query]);
     $build = [
       '#type' => 'component',

@@ -12,7 +12,7 @@ use Drupal\bb_core\Entity\BbTicketInterface;
 /**
  * Computes the branch a ticket's work merges into.
  *
- * A deployment ticket with exactly one environment merges into that
+ * A ship ticket with exactly one environment merges into that
  * environment's branch; every other ticket into its base_branch. Read-only:
  * ticket_type, environments and base_branch remain the source of truth.
  */
@@ -36,7 +36,7 @@ final class TargetBranchItemList extends FieldItemList {
    */
   private function resolve(BbTicketInterface $ticket): string {
     $base = (string) $ticket->get('base_branch')->value;
-    if (mb_strtolower((string) $ticket->get('ticket_type')->entity?->label()) !== 'deployment') {
+    if (mb_strtolower((string) $ticket->get('ticket_type')->entity?->label()) !== 'ship') {
       return $base;
     }
     $environments = $ticket->get('environments')->referencedEntities();

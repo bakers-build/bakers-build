@@ -29,9 +29,10 @@ final class BbProjectAccessControlHandler extends EntityAccessControlHandler {
       return $parent;
     }
     if ($operation === 'delete') {
-      // The generated `delete own` grant; the workspace owner's delete is
-      // added by BbRankEntityFence.
-      return $this->ownerResult($entity, 'delete own bb_project', $account);
+      // A workspace lead deletes any project, others their own; the
+      // workspace owner's delete is added by BbRankEntityFence.
+      return AccessResult::allowedIfHasPermission($account, 'delete any bb_project')
+        ->orIf($this->ownerResult($entity, 'delete own bb_project', $account));
     }
     if ($operation === 'update') {
       return AccessResult::allowedIfHasPermission($account, 'edit bb_project')

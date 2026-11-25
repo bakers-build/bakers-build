@@ -82,6 +82,7 @@ const cases: [addon: string, good: Record<string, unknown>][] = [
   ],
   ['herdr-core', { command: 'claude', launch_watch: { timeout_ms: 4000 } }],
   ['kimi', { model: 'k2', args: ['-y'] }],
+  ['rex', { command: 'claude', launch_watch: { timeout_ms: 4000 } }],
   [
     'orca',
     {

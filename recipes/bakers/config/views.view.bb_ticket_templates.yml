@@ -8,7 +8,7 @@ dependencies:
 id: bb_ticket_templates
 label: 'Ticket templates'
 module: views
-description: "Ticket templates: a project's Templates tab and the workspace Templates page. Rows link to the template and carry Create-ticket/Settings/Delete operations; the Add template action opens the project- or workspace-scoped add form."
+description: "Ticket templates: a project's Templates tab and the workspace Templates page. Each row links to the template, whose page carries Create ticket, Settings and Delete; the Add template action opens the project- or workspace-scoped add form."
 tag: ''
 base_table: bb_ticket_template
 base_field: id
@@ -346,17 +346,6 @@ display:
           multi_type: separator
           separator: ', '
           field_api_classes: false
-        operations:
-          id: operations
-          table: bb_ticket_template
-          field: operations
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_ticket_template
-          plugin_id: entity_operations
-          label: ''
-          destination: true
       pager:
         type: full
         options:
@@ -440,8 +429,7 @@ display:
               - owner
               - enabled
             description: {  }
-            right:
-              - operations
+            right: {  }
             right_meta: {  }
       row:
         type: fields

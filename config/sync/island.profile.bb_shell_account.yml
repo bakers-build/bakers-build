@@ -23,15 +23,6 @@ app: bakers
 layout: 'bb_theme:shell'
 layout_settings: {  }
 placements:
-  # The account-area twin of `bb_shell`, matched by the
-  # `bb_user_area_route` condition and weighted ahead of `bb_shell`, whose
-  # `/user/*` path also covers these routes. `nav`'s items come from the same
-  # `bb_menu` source over the `bakers-account` menu. The page header also
-  # carries the API key create action, which renders only on the API key
-  # list. `shell_messages` shows status messages on the machine and conductor
-  # lists, which render none themselves; account forms render their own.
-  # Everything else matches `bb_shell`; no `bakers.team.created` refresh
-  # event, since teams are not created from an account-area page.
   shell_rail:
     plugin_id: ui_patterns_component
     slot: sidebar
@@ -49,7 +40,8 @@ placements:
         slots:
           workspace:
             sources:
-              - source_id: component
+              -
+                source_id: component
                 source:
                   component:
                     component_id: 'bb_theme:account_switcher'
@@ -73,11 +65,13 @@ placements:
                     slots:
                       workspace_panel:
                         sources:
-                          - source_id: bb_workspace_switcher_panel
+                          -
+                            source_id: bb_workspace_switcher_panel
                             source: {  }
           navigation:
             sources:
-              - source_id: component
+              -
+                source_id: component
                 source:
                   component:
                     component_id: 'bb_theme:nav'
@@ -98,7 +92,8 @@ placements:
                     slots: {  }
           actions:
             sources:
-              - source_id: component
+              -
+                source_id: component
                 source:
                   component:
                     component_id: 'bb_theme:person'
@@ -129,7 +124,8 @@ placements:
                           value: md
                     slots: {  }
                 _weight: '0'
-              - source_id: component
+              -
+                source_id: component
                 source:
                   component:
                     component_id: 'bb_theme:mode_toggle'
@@ -167,36 +163,48 @@ placements:
         slots:
           leading:
             sources:
-              - source_id: bb_entity_page_header_mark
+              -
+                source_id: bb_entity_page_header_mark
                 source: {  }
           breadcrumb:
             sources:
-              - source_id: bb_run_breadcrumb
+              -
+                source_id: bb_run_breadcrumb
                 source: {  }
-              - source_id: bb_comment_breadcrumb
+              -
+                source_id: bb_comment_breadcrumb
                 source: {  }
           tabs:
             sources:
-              - source_id: block
+              -
+                source_id: block
                 source:
                   plugin_id: local_tasks_block
           actions:
             sources:
-              - source_id: bb_ticket_create_action
+              -
+                source_id: bb_ticket_create_action
                 source: {  }
-              - source_id: bb_project_create_action
+              -
+                source_id: bb_project_create_action
                 source: {  }
-              - source_id: bb_ticket_template_create_action
+              -
+                source_id: bb_ticket_template_create_action
                 source: {  }
-              - source_id: bb_ticket_trigger_create_action
+              -
+                source_id: bb_ticket_trigger_create_action
                 source: {  }
-              - source_id: bb_group_create_action
+              -
+                source_id: bb_group_create_action
                 source: {  }
-              - source_id: bb_worklog_create_action
+              -
+                source_id: bb_worklog_create_action
                 source: {  }
-              - source_id: bb_api_key_create_action
+              -
+                source_id: bb_api_key_create_action
                 source: {  }
-              - source_id: bb_service_account_create_action
+              -
+                source_id: bb_service_account_create_action
                 source: {  }
       boost: true
       target_placement: shell_content_island

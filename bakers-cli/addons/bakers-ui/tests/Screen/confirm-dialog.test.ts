@@ -216,4 +216,50 @@ describe('confirmation dialog', () => {
     await settle();
     expect(renderTree(screen.present(second).body)).toContain('Second?');
   });
+
+  it('a checklist starts checked; arrows move, space toggles, Enter is OK with the checked ids', async () => {
+    const confirm = vi.fn(
+      (_context: ScreenContext, _checked?: readonly string[]) =>
+        Promise.resolve('done'),
+    );
+    const { screen, context } = await opened(
+      requestOf({
+        message: 'Restart?',
+        checklist: [
+          { id: 'a', label: 'BB-1' },
+          { id: 'b', label: 'BB-2' },
+        ],
+        labels: { confirm: 'OK', close: 'Cancel' },
+        confirm,
+      }),
+    );
+    const shown = () => renderTree(screen.present(context).body).join('\n');
+    expect(shown()).toContain('▸[x] BB-1');
+    expect(shown()).toContain(' [x] BB-2');
+    expect(shown()).toContain('[ OK ]');
+    expect(shown()).toContain('[ Cancel ]');
+
+    screen.handleInput('down', context);
+    screen.handleInput(' ', context);
+    expect(shown()).toContain('▸[ ] BB-2');
+    expect(confirm).not.toHaveBeenCalled();
+
+    screen.handleInput('enter', context);
+    await settle();
+    expect(confirm.mock.calls[0]?.[1]).toEqual(['a']);
+  });
+
+  it('Esc on a checklist closes and confirms nothing', async () => {
+    const confirm = vi.fn(() => Promise.resolve('done'));
+    const { screen, context } = await opened(
+      requestOf({
+        message: 'Restart?',
+        checklist: [{ id: 'a', label: 'BB-1' }],
+        confirm,
+      }),
+    );
+    screen.handleInput('escape', context);
+    expect(screen.takeAction()).toEqual({ type: 'back' });
+    expect(confirm).not.toHaveBeenCalled();
+  });
 });

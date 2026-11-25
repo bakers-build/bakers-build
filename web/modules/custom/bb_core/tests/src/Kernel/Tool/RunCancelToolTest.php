@@ -162,17 +162,20 @@ final class RunCancelToolTest extends BakersToolTestBase {
   }
 
   /**
-   * Both or neither of ticket and machine_id are refused; no run changes.
+   * Two or none of ticket, machine_id and runs are refused; no run changes.
    */
-  public function testTicketOrMachineExactlyOne(): void {
+  public function testTicketOrMachineOrRunsExactlyOne(): void {
     $ticket = $this->ticket('RUN-5');
     $run = $this->seedRun($ticket, 'running', $this->actor);
 
     foreach ([
       ['ticket' => $ticket->getIdentifier(), 'machine_id' => 'box-1', 'reason' => 'stop'],
+      ['ticket' => $ticket->getIdentifier(), 'runs' => [$run->uuid()], 'reason' => 'stop'],
+      ['machine_id' => 'box-1', 'runs' => [$run->uuid()], 'reason' => 'stop'],
+      ['runs' => [], 'reason' => 'stop'],
       ['reason' => 'stop'],
     ] as $values) {
-      $this->assertFailure($this->runTool('bakers_run_cancel', $values), 'Give exactly one of ticket or machine_id.');
+      $this->assertFailure($this->runTool('bakers_run_cancel', $values), 'Give exactly one of ticket, machine_id or runs.');
     }
     self::assertSame('running', $this->reloadRun($run)->getRunState());
   }
@@ -305,6 +308,91 @@ final class RunCancelToolTest extends BakersToolTestBase {
     self::assertSame((string) $unknown->getMessage(), (string) $foreign->getMessage());
     self::assertSame([], $this->outputs($foreign)['runs']);
     self::assertSame('running', $this->reloadRun($run)->getRunState());
+  }
+
+  /**
+   * With runs, exactly those runs end: active, frozen or a newest failed one.
+   */
+  public function testRunsCancelsExactlyThoseRuns(): void {
+    $owner = $this->account('run-owner');
+    $first = $this->seedRun($this->ticket('SEL-1'), 'running', $owner);
+    $kept = $this->seedRun($this->ticket('SEL-2'), 'claimed', $owner);
+    $frozen = $this->ticket('SEL-3');
+    $frozen->setFrozen(TRUE);
+    $frozen->save();
+    $frozen_run = $this->seedRun($frozen, 'running', $owner);
+    $failed = $this->seedFailedRuns($this->ticket('SEL-4'), 1)[0];
+
+    $outputs = $this->outputs($this->runTool('bakers_run_cancel', [
+      'runs' => [$first->uuid(), $frozen_run->uuid(), $failed->uuid()],
+      'reason' => 'Restart runs (ticket SEL-1)',
+    ]));
+
+    self::assertEqualsCanonicalizing([$first->uuid(), $frozen_run->uuid(), $failed->uuid()], $outputs['runs']);
+    foreach ([$first, $frozen_run, $failed] as $run) {
+      $stored = $this->reloadRun($run);
+      self::assertSame('cancelled', $stored->getRunState());
+      self::assertStringContainsString('cancelled by actor: Restart runs (ticket SEL-1)', (string) $stored->getErrorLog());
+    }
+    self::assertSame('claimed', $this->reloadRun($kept)->getRunState());
+    self::assertSame([], $this->comments($frozen), 'A cancel by runs posts no comment.');
+  }
+
+  /**
+   * One run that may not end refuses the whole call; no run changes.
+   */
+  public function testRunsAreAllOrNothing(): void {
+    $owner = $this->account('run-owner');
+    $active = $this->seedRun($this->ticket('SEL-5'), 'running', $owner);
+    $done = $this->seedRun($this->ticket('SEL-6'), 'done', $owner);
+    $older_failed = $this->seedFailedRuns($this->ticket('SEL-7'), 2)[0];
+
+    foreach ([$done->uuid(), $older_failed->uuid(), 'no-such-run'] as $bad) {
+      $this->assertFailure($this->runTool('bakers_run_cancel', ['runs' => [$active->uuid(), $bad], 'reason' => 'stop']), $bad);
+    }
+    self::assertSame('running', $this->reloadRun($active)->getRunState());
+  }
+
+  /**
+   * A reader may not cancel by runs either.
+   */
+  public function testReaderIsRefusedByRuns(): void {
+    $run = $this->seedRun($this->ticket('SEL-8'), 'running', $this->account('machine-owner'));
+    $etm = $this->container->get('entity_type.manager');
+    $etm->getStorage('user_role')->create(['id' => 'viewer', 'label' => 'Viewer'])->save();
+    user_role_grant_permissions('viewer', ['view bb_ticket', 'view bb_project']);
+    $reader = $this->account('reader', ['viewer']);
+    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
+      $this->addMembership($team, $reader);
+    }
+    $this->container->get('current_user')->setAccount($reader);
+
+    $this->assertFailure($this->runTool('bakers_run_cancel', ['runs' => [$run->uuid()], 'reason' => 'stop']), 'may not cancel run ' . $run->uuid());
+    self::assertSame('running', $this->reloadRun($run)->getRunState());
+  }
+
+  /**
+   * The machine's owner restarts a run on it whose ticket they may not edit.
+   */
+  public function testMachineOwnerCancelsRunOfTicketTheyMayNotEdit(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $etm->getStorage('user_role')->create(['id' => 'own_editor', 'label' => 'Own editor'])->save();
+    user_role_grant_permissions('own_editor', ['view bb_ticket', 'update own bb_ticket', 'view bb_project']);
+    $owner = $this->account('box-owner', ['own_editor']);
+    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
+      $this->addMembership($team, $owner);
+    }
+    $here = $this->conductor('box-1-here', $owner, $this->machine($owner, 'box-1'));
+    $theirs = $this->runOn($this->ticket('SEL-9', ['owner_user_id' => $this->actor->id()]), $here, 'running');
+    $elsewhere = $this->seedRun($this->ticket('SEL-10', ['owner_user_id' => $this->actor->id()]), 'running', $this->actor);
+    $this->container->get('current_user')->setAccount($owner);
+
+    $this->assertFailure($this->runTool('bakers_run_cancel', ['runs' => [$elsewhere->uuid()], 'reason' => 'stop']), 'may not cancel run');
+    $outputs = $this->outputs($this->runTool('bakers_run_cancel', ['runs' => [$theirs->uuid()], 'reason' => 'stop']));
+
+    self::assertSame([$theirs->uuid()], $outputs['runs']);
+    self::assertSame('cancelled', $this->reloadRun($theirs)->getRunState());
+    self::assertSame('running', $this->reloadRun($elsewhere)->getRunState());
   }
 
   /**

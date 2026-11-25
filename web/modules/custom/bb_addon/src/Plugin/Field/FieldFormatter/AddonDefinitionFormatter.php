@@ -33,7 +33,7 @@ final class AddonDefinitionFormatter extends FormatterBase {
   /**
    * Reads the sibling versions of the addon's name.
    */
-  private AddonRepository $repository;
+  protected AddonRepository $repository;
 
   /**
    * {@inheritdoc}

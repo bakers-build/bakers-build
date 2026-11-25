@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_api_key\Kernel;
 
 use Drupal\Component\Serialization\Yaml;
-use Drupal\Component\Utility\Html;
-use Drupal\Core\Url;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_api_key\ServiceAccountManager;
@@ -126,10 +124,6 @@ final class ServiceAccountListingTest extends KernelTestBase {
     $data = Yaml::decode((string) file_get_contents(DRUPAL_ROOT . '/../config/sync/views.view.bb_service_accounts.yml'));
     unset($data['display']['settings']['display_options']['display_extenders']);
     $this->container->get('entity_type.manager')->getStorage('view')->create($data)->save();
-    // Its row menu links to the shipped API keys page.
-    $keys = Yaml::decode((string) file_get_contents(DRUPAL_ROOT . '/../config/sync/views.view.bb_api_keys.yml'));
-    unset($keys['display']['page']['display_options']['display_extenders']);
-    $this->container->get('entity_type.manager')->getStorage('view')->create($keys)->save();
     $this->container->get('router.builder')->rebuild();
   }
 
@@ -199,15 +193,13 @@ final class ServiceAccountListingTest extends KernelTestBase {
     self::assertStringNotContainsString($disabled['secret'], $rendered);
     self::assertStringContainsString('Guest', $rendered, 'the workspace role must be listed');
     self::assertStringContainsString('1 key · until ', $rendered, 'each account must summarize its keys');
-    self::assertStringContainsString('Manage API keys', $rendered, 'an active account must link to its API keys page');
-    self::assertStringContainsString('Disable', $rendered, 'an active account must offer Disable');
-    $profile = Url::fromRoute('bb_core.user.profile', ['user' => $own['user']->id()], [
-      'query' => ['destination' => Url::fromRoute('view.bb_service_accounts.settings', ['bb_workspace' => $this->workspace->getSlug()])->toString()],
-    ])->toString();
-    $profileAt = strpos($rendered, Html::escape($profile));
-    self::assertIsInt($profileAt, 'an active account must link to its Profile, returning to this list');
-    self::assertLessThan(strpos($rendered, 'Manage API keys'), $profileAt, 'Profile comes first');
-    self::assertStringNotContainsString('/user/' . $disabled['user']->id() . '/profile', $rendered, 'a disabled account offers no Profile');
+    // A row is one link, the account name to its Profile; no row control.
+    preg_match_all('/<a\s[^>]*href="([^"]*)"/', $rendered, $links);
+    self::assertSame(['/user/' . $own['user']->id() . '/profile'], array_map('html_entity_decode', $links[1]), 'Only the active account links, to its Profile.');
+    self::assertStringNotContainsString('Manage API keys', $rendered);
+    self::assertStringNotContainsString('/disable', $rendered);
+    self::assertStringNotContainsString('data-action-menu', $rendered);
+    self::assertStringContainsString('>Disabled<', $rendered, 'the status badge stays');
   }
 
   /**

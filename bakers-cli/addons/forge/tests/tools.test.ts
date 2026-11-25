@@ -34,6 +34,8 @@ function fakeBackend(options: {
   log?: string;
   labels?: IssueLabel[];
   issueFail?: string;
+  reviewersFail?: string;
+  refused?: string[];
 }) {
   const calls: string[] = [];
   const prs = [...(options.prs ?? [])];
@@ -92,6 +94,17 @@ function fakeBackend(options: {
     updateIssueLabels: async (issueUrl, { add, remove }) => {
       calls.push(`relabel:${issueUrl}:+${add ?? ''}:-${remove.join(',')}`);
       return [add ?? ''];
+    },
+    addReviewers: async (pr, mails) => {
+      calls.push(`reviewers:${pr.number}:${mails.join(',')}`);
+      if (options.reviewersFail) throw new Error(options.reviewersFail);
+      const refused = options.refused ?? [];
+      return {
+        requested: mails.filter((m) => !refused.includes(m)),
+        skipped: mails
+          .filter((m) => refused.includes(m))
+          .map((mail) => ({ mail, reason: 'refused' })),
+      };
     },
     commentIssue: async (issueUrl, body) => {
       calls.push(`comment:${issueUrl}:${body}`);
@@ -276,6 +289,102 @@ describe('forge tools', () => {
     expect(calls).toContain('update:1->feat/bb-7-work:feat(cli)!: y');
   });
 
+  describe('forge_pr_upsert request_reviewers', () => {
+    const reviewed = {
+      ...RUN,
+      reviewers: [
+        { name: 'Ada', mail: 'ada@example.com' },
+        { name: 'Bob' },
+        { name: 'Cy', mail: 'cy@example.com' },
+      ],
+    };
+    const upsert = async (
+      backend: ForgeBackend,
+      args: Record<string, unknown>,
+    ) =>
+      JSON.parse(
+        (
+          await forgeTools({ backend: async () => backend, settings: {} })
+            .forge_pr_upsert!(request(args, '/nonexistent', reviewed))
+        ).text,
+      );
+
+    it("requests the ticket's reviewers by mail and names every skip with its reason", async () => {
+      const { backend, calls } = fakeBackend({ refused: ['cy@example.com'] });
+      const result = await upsert(backend, {
+        title: 'feat: x',
+        request_reviewers: true,
+      });
+      expect(calls).toContain('reviewers:1:ada@example.com,cy@example.com');
+      expect(result).toMatchObject({ created: true, number: 1 });
+      expect(result.reviewers).toEqual({
+        requested: ['Ada'],
+        skipped: [
+          { reviewer: 'Bob', reason: 'e-mail not readable' },
+          { reviewer: 'Cy', reason: 'refused' },
+        ],
+      });
+    });
+
+    it('adds reviewers on the update of an open PR the same way', async () => {
+      const { backend, calls } = fakeBackend({ prs: [pr()] });
+      const result = await upsert(backend, {
+        title: 'feat: x',
+        request_reviewers: true,
+      });
+      expect(result.created).toBe(false);
+      expect(calls).toContain('reviewers:1:ada@example.com,cy@example.com');
+    });
+
+    it('leaves reviewers untouched and the result unchanged without the flag', async () => {
+      for (const flag of [undefined, false]) {
+        const { backend, calls } = fakeBackend({});
+        const result = await upsert(backend, {
+          title: 'feat: x',
+          ...(flag === undefined ? {} : { request_reviewers: flag }),
+        });
+        expect(calls.some((c) => c.startsWith('reviewers'))).toBe(false);
+        expect(result).not.toHaveProperty('reviewers');
+      }
+    });
+
+    it('reads the ticket once on a suffixed branch, for its base only', async () => {
+      const { backend } = fakeBackend({});
+      let reads = 0;
+      await forgeTools({ backend: async () => backend, settings: {} })
+        .forge_pr_upsert!(
+        request(
+          { title: 'feat: x', branch: 'feat/bb-7-work-alt' },
+          '/nonexistent',
+          reviewed,
+          async () => {
+            reads++;
+            return reviewed;
+          },
+        ),
+      );
+      expect(reads).toBe(1);
+    });
+
+    it('still returns the PR when the forge fails, skipping every reviewer with the reason', async () => {
+      const { backend } = fakeBackend({ reviewersFail: 'HTTP 502' });
+      const result = await upsert(backend, {
+        title: 'feat: x',
+        request_reviewers: true,
+      });
+      expect(result).toMatchObject({
+        created: true,
+        url: 'https://forge/pr/1',
+      });
+      expect(result.reviewers.requested).toEqual([]);
+      expect(result.reviewers.skipped).toEqual([
+        { reviewer: 'Bob', reason: 'e-mail not readable' },
+        { reviewer: 'Ada', reason: 'HTTP 502' },
+        { reviewer: 'Cy', reason: 'HTTP 502' },
+      ]);
+    });
+  });
+
   it("a deployment run opens and merges its branch into target_branch by that target's rule", async () => {
     const deploy = {
       identifier: 'BB-9',
@@ -343,6 +452,32 @@ describe('forge tools', () => {
         .text,
     );
     expect(merged.into).toBe('main');
+  });
+
+  it("opens a ship's variant into base_branch by the server's target, so a source fix lands before the freeze", async () => {
+    const atStart = {
+      identifier: 'BB-9',
+      branchName: 'release/bb-9',
+      baseBranch: 'next',
+      targetBranch: 'next',
+    };
+    const server = async () => ({ ...atStart, targetBranch: 'main' });
+    const { backend, calls } = fakeBackend({});
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const opened = JSON.parse(
+      (
+        await tools.forge_pr_upsert!(
+          request(
+            { title: 'fix(server): x', branch: 'release/bb-9-fix' },
+            '/nonexistent',
+            atStart,
+            server,
+          ),
+        )
+      ).text,
+    );
+    expect(opened).toMatchObject({ target: 'next', created: true });
+    expect(calls).toContain('create:release/bb-9-fix->next:fix(server): x');
   });
 
   it("forge_merge refuses a PR into the run copy's target once the server target moved", async () => {

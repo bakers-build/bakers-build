@@ -59,6 +59,30 @@ final class ActivityMailLanguageTest extends ActivityMailKernelTestBase {
   }
 
   /**
+   * A German assignee reads who assigned and who created in German.
+   */
+  public function testGermanAssignmentMailNamesInGerman(): void {
+    $this->translate('@assigner assigned you to this ticket, created by @creator', '@assigner hat dir dieses Ticket zugewiesen, erstellt von @creator');
+
+    $assigner = $this->recipient('a', 'assigner-a');
+    $creator = $this->recipient('a', 'creator-a');
+    $assignee = $this->recipient('a', 'assignee-de');
+    $assignee->set('preferred_langcode', 'de')->save();
+    $this->tick($assignee, ['assigned']);
+    $this->ticket('a')->set('owner_user_id', $creator->id())->save();
+
+    $this->container->get('account_switcher')->switchTo($assigner);
+    try {
+      $this->ticket('a')->set('assignee_user_id', $assignee->id())->save();
+    }
+    finally {
+      $this->container->get('account_switcher')->switchBack();
+    }
+
+    self::assertStringEndsWith('] assigner-a hat dir dieses Ticket zugewiesen, erstellt von creator-a', (string) $this->mailsTo($assignee)[0]->getSubject());
+  }
+
+  /**
    * Stores one German translation.
    */
   private function translate(string $source, string $translation): void {

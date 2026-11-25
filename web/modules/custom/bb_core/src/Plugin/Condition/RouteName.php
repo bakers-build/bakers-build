@@ -25,7 +25,7 @@ final class RouteName extends ConditionPluginBase implements ContainerFactoryPlu
     array $configuration,
     $plugin_id,
     $plugin_definition,
-    private readonly RouteMatchInterface $routeMatch,
+    protected readonly RouteMatchInterface $routeMatch,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }

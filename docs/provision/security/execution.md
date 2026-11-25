@@ -30,7 +30,7 @@ Bypass flags: Claude `--dangerously-skip-permissions`; Codex `--sandbox danger-f
 bakers conductor check
 ```
 
-It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix>`, and exits 1 when one agent cannot start its sandbox. `system`, `yolo` and `custom` agents are not checked.
+It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix>`, and exits 1 when one agent cannot start its sandbox. Other modes are not checked.
 
 | Platform | Claude | Codex | Grok |
 |---|---|---|---|
@@ -47,7 +47,7 @@ While an enabled agent cannot start its sandbox, the conductor claims nothing an
 
 ## Claude in `sandbox` mode
 
-The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)` and `AskUserQuestion`. They run without a prompt. Anything else asks you in the run's terminal, because Claude starts in `default` permission mode: `dontAsk` would deny it outright, and no allow rule can permit a write to a protected path such as `.claude/` or `.git`. A run nobody watches therefore waits at such a prompt.
+The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)`, `AskUserQuestion` and, with plugins on, `Read` of the agent home's `plugins/`. They run without a prompt. Anything else asks in the run's terminal, because Claude starts in `default` permission mode: `dontAsk` would deny it outright, and no allow rule can permit a write to a protected path such as `.claude/` or `.git`. An unwatched run waits there.
 
 What the default blocks:
 

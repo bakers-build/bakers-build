@@ -2,10 +2,6 @@
 
 Run agents, but securely. Choose where they run, connect a project and give each ticket an independent environment with the tools and access it needs.
 
-::: tip Your team already runs tickets?
-You can [create a ticket](/get-started/daily-work/create-a-ticket) using that setup. Follow this guide when you want to run agents yourself.
-:::
-
 ## Set up execution
 
 Start at the first step you have not completed. Keep working tools and project settings.

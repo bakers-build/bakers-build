@@ -55,7 +55,7 @@ Without Forge, shell-based delivery needs an explicitly supported permission pat
 
 ## Verify
 
-From a connected project checkout, run `bakers agents` and inspect each alias's effective mode, sources and `not_applied` entries. Run `bakers conductor check` for sandbox prerequisites on the host. With a runtime configured, check and startup warn that its environment is not checked. A successful host check does not establish that the sandbox can start inside a container. These checks do not prove that an addon tool or application container has the same limits as the agent.
+From a connected project checkout, run `bakers agents` and inspect each alias's effective mode, sources and `not_applied` entries. Run `bakers conductor check` for sandbox prerequisites on the host. With a runtime other than Docker configured, check and startup warn that its environment is not checked. A successful host check does not establish that the sandbox can start inside a container. These checks do not prove that an addon tool or application container has the same limits as the agent.
 
 Runtime selection preserves these settings. Rules apply inside the runtime filesystem: `~` names
 the private run home, and `allow_write` does not mount an otherwise hidden host path. Native sandbox

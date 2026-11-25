@@ -19,7 +19,7 @@ loads every installed `bb-recipe-*` skill completely and picks the method that f
 | `@bakers-build/bb-workflow` | The frame of every state run: seven phases — `read, provision, work, validate, deliver, outtake, transition` — the state files, routing, binding, replacement and stop rules. |
 | `@bakers-build/bb-recipe-matt` | The Matt method for feature, bug and chore tickets. |
 | `@bakers-build/bb-recipe-superpowers` | The superpowers method for the same ticket types. |
-| `@bakers-build/bb-recipe-deploy-and-release`, `@bakers-build/bb-recipe-verify` | The recipes of `deployment` and `verification` tickets. |
+| `@bakers-build/bb-recipe-ship`, `@bakers-build/bb-recipe-verify` | The recipes of `ship` and `verification` tickets. |
 | `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
 | `@bakers-build/bb-label-auto` | Loaded by the `bb-workflow` frame for a ticket labelled `auto`, in any state, as every `bb-label-<label>` skill is: it carries the ticket to `done` on its own, asks the user only what is theirs to decide and for one acceptance only when they had something to decide, and refers technical problems to the developers. |
 | `@bakers-build/bb-label-human-review` | Loaded by the frame for a ticket labelled `human-review`, in any state: it passes every gate up to a published review verdict on its own; the assignee or a reviewer (not a service account) confirms the verdict and authorizes the merge. |

@@ -547,6 +547,24 @@ final class FigureRendererTest extends KernelTestBase {
   }
 
   /**
+   * Hourly sections of a day are captioned per hour, in UTC.
+   */
+  public function testDayFlowChartCaptionsPerHour(): void {
+    $figure = $this->flowFigure(
+      [
+        ['key' => '2026-09-20T00', 'label' => '00:00'],
+        ['key' => '2026-09-20T01', 'label' => '01:00', 'partial' => TRUE],
+      ],
+      [1, 0],
+      [0, 1],
+      [3, 2],
+      NULL,
+    );
+
+    self::assertSame('Per hour, UTC · 01:00 is still running', $this->renderWidgets($figure)['chart']['#props']['chart']['caption']);
+  }
+
+  /**
    * An empty flow figure keeps the flow chart in its empty state.
    */
   public function testEmptyFlowFigureUsesEmptyState(): void {

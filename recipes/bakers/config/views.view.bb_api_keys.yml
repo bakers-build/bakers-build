@@ -9,7 +9,7 @@ dependencies:
 id: bb_api_keys
 label: 'My API keys'
 module: views
-description: "Self-service pipeline API keys: list and revoke the current user's own keys."
+description: "Self-service pipeline API keys: the path user's own keys, each row linking to the key's page, which carries Revoke."
 tag: ''
 base_table: consumer_field_data
 base_field: id
@@ -22,6 +22,22 @@ display:
     display_options:
       title: 'API keys'
       fields:
+        id:
+          id: id
+          table: consumer_field_data
+          field: id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: consumer
+          entity_field: id
+          plugin_id: field
+          label: ''
+          exclude: true
+          type: number_integer
+          settings:
+            thousand_separator: ''
+            prefix_suffix: false
         label:
           id: label
           table: consumer_field_data
@@ -36,7 +52,8 @@ display:
           exclude: false
           alter:
             alter_text: false
-            make_link: false
+            make_link: true
+            path: 'user/{{ raw_arguments.owner_id }}/api-keys/{{ id }}'
             absolute: false
             word_boundary: false
             ellipsis: false
@@ -168,37 +185,6 @@ display:
           group_type: group
           admin_label: ''
           plugin_id: bb_api_key_status
-          label: ''
-          exclude: false
-          alter:
-            alter_text: false
-            make_link: false
-            absolute: false
-            word_boundary: false
-            ellipsis: false
-            strip_tags: false
-            trim: false
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: true
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-        bb_api_key_revoke_link:
-          id: bb_api_key_revoke_link
-          table: consumer_field_data
-          field: bb_api_key_revoke_link
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: bb_api_key_revoke_link
           label: ''
           exclude: false
           alter:
@@ -390,7 +376,6 @@ display:
             description: {  }
             right:
               - bb_api_key_status
-              - bb_api_key_revoke_link
             right_meta:
               - bb_key_created
               - bb_expires

@@ -34,6 +34,7 @@ permissions:
   - 'delete own bb_project'
   - 'record own worklog'
   - 'register bakers conductor'
+  - 'set runtime label on bb_ticket with own conductor'
   - 'update any bb_term'
   - 'update any bb_ticket'
   - 'update own bb_machine'

@@ -200,11 +200,14 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
       parent::submitForm($form, $form_state);
       return;
     }
-    // The Members screen shows its own result line instead of status toasts.
+    // Revoked from the invitation's page: the Members screen shows the result.
     $this->getEntity()->delete();
-    $this->messenger()->addMessage($this->getDeletionMessage(), WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
-    $form_state->setRedirectUrl($this->getRedirectUrl());
+    // Plain text: the result is announced as well as shown.
+    $this->messenger()->addMessage($this->t('Revoked the invitation for @email.', [
+      '@email' => $this->getEntity()->label(),
+    ]), WorkspaceInviteForm::RESULT_MESSAGE_TYPE);
     $this->logDeletionMessage();
+    $form_state->setRedirectUrl($this->getRedirectUrl());
   }
 
   /**
@@ -212,7 +215,7 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
    */
   public function getCancelUrl(): Url {
     $entity = $this->getEntity();
-    // An invitation has no page of its own to return to.
+    // An entity without a page of its own returns to its list.
     return $entity->hasLinkTemplate('canonical') || $entity->hasLinkTemplate('edit-form')
       ? parent::getCancelUrl()
       : $this->getRedirectUrl();

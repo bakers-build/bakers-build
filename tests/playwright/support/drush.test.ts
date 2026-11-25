@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { Drush, phpUnderLock, phpWithRetry } from './drush';
+import { DEADLOCK, Drush, phpUnderLock, phpWithRetry } from './drush';
 
 vi.mock('node:child_process', () => ({ execSync: vi.fn() }));
 const exec = vi.mocked(execSync);
@@ -24,6 +24,18 @@ it.each(['1412 Table definition has changed', 'Time data is being changed'])('re
         : phpUnderLock('print "ready";');
     await vi.runAllTimersAsync();
     await expect(result).resolves.toBe('ready');
+    expect(exec).toHaveBeenCalledTimes(2);
+});
+
+it('retries a MariaDB deadlock named by DEADLOCK', async () => {
+    vi.stubEnv('DDEV_DOCROOT', '/var/www/html/web');
+    vi.useFakeTimers();
+    exec.mockImplementationOnce(() => {
+        throw new Error('SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction');
+    }).mockReturnValue('2\n');
+    const result = phpWithRetry('print 2;', [DEADLOCK]);
+    await vi.runAllTimersAsync();
+    await expect(result).resolves.toBe('2');
     expect(exec).toHaveBeenCalledTimes(2);
 });
 

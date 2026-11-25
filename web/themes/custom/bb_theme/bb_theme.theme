@@ -39,6 +39,9 @@ function bb_theme_theme(): array {
     // the chrome from. Core's own `form.html.twig` stays the wrapper.
     'bb_onboarding_wizard_form' => ['render element' => 'form'],
     'user_logout_confirm' => ['render element' => 'form'],
+    // The device sign-in presenter: centres the decision, start-aligns the
+    // consent details below it.
+    'bb_oauth_device_verify' => ['render element' => 'form'],
   ];
 }
 

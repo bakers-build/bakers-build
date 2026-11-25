@@ -3,8 +3,8 @@ prev:
   text: Provision
   link: /provision/
 next:
-  text: Prepare your project
-  link: /get-started/connect-a-project
+  text: Choose an example
+  link: /provision/examples
 ---
 
 <span id="prepare-your-project"></span>
@@ -15,11 +15,7 @@ next:
 
 Use your project's existing development tools to give each ticket a working application environment. Any environment can fit, provided it supports independent Git worktrees and repeatable setup.
 
-**You need:** a ready [execution environment](/provision/machine) and the repository. Use this guide during [project setup](/get-started/connect-a-project) when its environment still needs worktree support. It helps you choose and check commands before applying them.
-
-::: tip The project already supports ticket worktrees?
-Keep its existing scripts and configuration. Continue with [connecting this checkout](/get-started/connect-a-project).
-:::
+**You need:** a ready [execution environment](/provision/machine) and the repository. Use this guide when the project's environment still needs worktree support. It helps you choose and check commands before applying them.
 
 ## Make the project worktree-compatible
 
@@ -59,5 +55,3 @@ Test the setup with two disposable worktrees before using it for parallel ticket
 Lifecycle hook failures are logged and work continues; put mandatory checks in `WORKFLOW.md`. A failed `provision_up` call returns an error to the agent. Configuration validation follows when you connect the project.
 
 **Done when:** you know the preparation, readiness and cleanup commands, and have checked that they keep worktrees independent.
-
-**Next:** [Connect your project](/get-started/connect-a-project) to apply these choices and run the configuration checks.

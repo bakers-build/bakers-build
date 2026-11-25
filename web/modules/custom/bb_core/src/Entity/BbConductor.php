@@ -15,7 +15,9 @@ use Drupal\bb_core\Access\BbConductorAccessControlHandler;
 use Drupal\bb_core\Access\BbOwnerGrantQueryAccessHandler;
 use Drupal\bb_core\Field\ConductorAssignmentEffectiveItemList;
 use Drupal\bb_core\Form\BbConductorActionForm;
+use Drupal\bb_core\Form\BbConductorForm;
 use Drupal\bb_core\Form\BbEntityDetailCardForm;
+use Drupal\bb_core\Form\BbRestartRunsForm;
 use Drupal\bb_core\ListBuilder\BbConductorListBuilder;
 use Drupal\bb_core\Routing\BbConductorRouteProvider;
 use Drupal\bb_core\ViewsData\BbConductorViewsData;
@@ -48,9 +50,12 @@ use Drupal\user\EntityOwnerTrait;
     'list_builder' => BbConductorListBuilder::class,
     'form' => [
       'delete' => BbContentEntityDeleteForm::class,
-      // The Overview's card and its Disable/Enable confirmation.
+      // The Overview's read-only card and its Disable/Enable confirmation;
+      // Settings edits the conductor.
       'identity' => BbEntityDetailCardForm::class,
+      'settings' => BbConductorForm::class,
       'action' => BbConductorActionForm::class,
+      'restart' => BbRestartRunsForm::class,
     ],
     // Views integration is declared HERE rather than attached by a hook. It
     // came from bb_dashboard's hook_entity_type_alter(), which was a detour:

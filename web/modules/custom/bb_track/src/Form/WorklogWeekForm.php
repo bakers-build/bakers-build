@@ -486,6 +486,7 @@ final class WorklogWeekForm extends FormBase {
       'name' => 'cells[' . $key . '][duration]',
       'value' => is_string($typed) ? $typed : ($entry ? WorklogFormLayout::formatDuration($sum) : ''),
       'label' => $label,
+      'time' => 'duration',
     ];
     if ($entry instanceof Worklog) {
       $cell += $this->entryCellDetails($selection, $key, $entry);

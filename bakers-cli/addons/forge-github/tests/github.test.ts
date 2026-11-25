@@ -46,6 +46,7 @@ function fakeFetch(routes: Record<string, Route>, expiresInMs = 3_600_000) {
     const route = routes[`${method} ${url.pathname}`];
     if (!route) return new Response('not found', { status: 404 });
     const out = route(url, init);
+    if (out instanceof Response) return out;
     if (out === undefined) return new Response(null, { status: 204 });
     return typeof out === 'string' ? new Response(out) : Response.json(out);
   }) as typeof fetch;
@@ -482,6 +483,62 @@ describe('forge-github', () => {
       body: 'ref:BB-7',
     });
     expect(f.calls.some((c) => c.method === 'DELETE')).toBe(true);
+  });
+
+  it('requests reviewers found by public e-mail one by one, skips unknown and refused ones and deletes none', async () => {
+    const f = fakeFetch({
+      'GET /search/users': (url) =>
+        ({
+          'ada@example.com in:email': {
+            total_count: 1,
+            items: [{ login: 'ada' }],
+          },
+          'me@example.com in:email': {
+            total_count: 1,
+            items: [{ login: 'me' }],
+          },
+        })[url.searchParams.get('q') ?? ''] ?? { total_count: 0, items: [] },
+      'POST /repos/acme/shop/pulls/5/requested_reviewers': (_url, init) =>
+        String(init.body).includes('"me"')
+          ? new Response(
+              JSON.stringify({
+                message: 'Review cannot be requested from pull request author.',
+              }),
+              { status: 422 },
+            )
+          : PULL,
+    });
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    const result = await b.addReviewers(
+      {
+        number: 5,
+        url: PULL.html_url,
+        head: 'feat/bb-7-work',
+        base: 'next',
+        title: 'feat: x',
+        headSha: 'abc',
+      },
+      ['ada@example.com', 'nobody@example.com', 'me@example.com'],
+    );
+    expect(result.requested).toEqual(['ada@example.com']);
+    expect(result.skipped).toEqual([
+      {
+        mail: 'nobody@example.com',
+        reason: 'no GitHub user with this public e-mail',
+      },
+      {
+        mail: 'me@example.com',
+        reason: expect.stringContaining(
+          'Review cannot be requested from pull request author.',
+        ),
+      },
+    ]);
+    expect(
+      f.calls
+        .filter((c) => c.method === 'POST' && c.path.includes('requested'))
+        .map((c) => c.body),
+    ).toEqual([{ reviewers: ['ada'] }, { reviewers: ['me'] }]);
+    expect(f.calls.some((c) => c.method === 'DELETE')).toBe(false);
   });
 
   it('refuses every origin issue operation as unsupported, without a request', async () => {

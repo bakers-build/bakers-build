@@ -87,6 +87,8 @@ export const WORKSPACE_READ_SCOPE_PATHS: Readonly<
   ],
   bb_run: 'ticket_id.project_id.group_id.workspace_id.id',
   bb_comment: 'ticket_id.project_id.group_id.workspace_id.id',
+  // One profile per account and workspace.
+  bb_profile: 'workspace_id.id',
 };
 
 /**

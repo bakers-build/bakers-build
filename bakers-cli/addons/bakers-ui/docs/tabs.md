@@ -74,8 +74,8 @@ Expose that preset and UI module as `./preset` and `./ui` package exports.
 
 ## Scope and placement
 
-The existing scopes are `root`, `project`, `ticket`, `workspace-member` and
-`conductor`. Tab navigation preserves route parameters in entity scopes; root
+The existing scopes are `root`, `project`, `ticket`, `workspace-member`,
+`machine` and `conductor`. Tab navigation preserves route parameters in entity scopes; root
 navigation clears them. The member scope retains both the selected user and
 their workspace. Tab changes do not add
 browser-style back-history entries.

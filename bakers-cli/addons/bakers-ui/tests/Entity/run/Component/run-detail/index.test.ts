@@ -69,8 +69,17 @@ const BOLD = createTextAttributes({ bold: true });
 const attributesOf = (node: VNode | undefined): number | undefined =>
   (node?.props as { attributes?: number } | undefined)?.attributes;
 
-const contentOf = (node: VNode | undefined): string | undefined =>
-  (node?.props as { content?: string } | undefined)?.content;
+const contentOf = (node: VNode | undefined): string | undefined => {
+  const content = (
+    node?.props as
+      | { content?: string | { chunks: readonly { text: string }[] } }
+      | undefined
+  )?.content;
+  // A wrapping paragraph carries styled chunks rather than a plain string.
+  return typeof content === 'object'
+    ? content.chunks.map((chunk) => chunk.text).join('')
+    : content;
+};
 
 /** The text of every row whose id matches, in tree order. */
 const rowsMatching = (tree: VNode, pattern: RegExp): string[] =>
@@ -90,6 +99,7 @@ it('D6: runResource selects the sideloaded run by id, and only a run', () => {
 it('D6: every section is rendered, each with the run’s own fields', () => {
   const tree = runDetailTree(doc, RUN_ID);
   expect(rowsMatching(tree, /^run-detail-section-/)).toEqual([
+    'Links',
     'Run',
     'State',
     'Timing',
@@ -209,7 +219,8 @@ it('D6: the title carries the run id, the ticket identifier and the state', () =
 
 it('D6: runDetailTree carries the rows in the order the screen draws them', () => {
   const rows = renderTree(runDetailTree(doc, RUN_ID));
-  expect(rows[0]).toBe('Run');
+  expect(rows[0]).toBe('Links');
+  expect(rows[3]).toBe('Run');
   expect(rows.join('\n')).toContain('#4599');
   expect(rows.join('\n')).toContain('cw-framework');
   expect(rows.join('\n')).toContain('Captured (42 bytes)');
@@ -240,4 +251,71 @@ it('R4: every id names what the row IS, and no id is used twice', () => {
   );
   const ids = idsOf(tree);
   expect(new Set(ids).size, ids.join(' ')).toBe(ids.length);
+});
+
+// AC-4/AC-2: the owning ticket's URL and its PR sit first, as short labels; a
+// press hands the FULL URL to the screen.
+const withPr: TicketDetailDocument = {
+  ...doc,
+  data: {
+    ...doc.data,
+    attributes: {
+      ...doc.data?.attributes,
+      url: 'https://b.test/bakers/ticket/bb-255',
+      links: [
+        { title: 'Result', uri: 'https://example.test/result' },
+        { title: 'PR', uri: 'https://github.com/o/r/pull/229' },
+      ],
+    },
+  },
+};
+
+it('AC-4/AC-7: the first section is Links, one `* <url>` row for the ticket and the PR', () => {
+  const tree = runDetailTree(withPr, RUN_ID, 'https://b.test');
+  expect(rowsMatching(tree, /^run-detail-section-/)[0]).toBe('Links');
+  expect(idsOf(tree).filter((id) => /^run-detail-link-/.test(id))).toEqual([
+    'run-detail-link-ticket',
+    'run-detail-link-pr-0',
+  ]);
+  expect(rowsMatching(tree, /^run-detail-link-/)).toEqual([
+    '* https://b.test/bakers/ticket/bb-255',
+    '* https://github.com/o/r/pull/229',
+  ]);
+});
+
+it('AC-4: without a PR only the ticket row; without a served URL either, No links.', () => {
+  const served: TicketDetailDocument = {
+    ...doc,
+    data: {
+      ...doc.data,
+      attributes: {
+        ...doc.data?.attributes,
+        url: 'https://b.test/bakers/ticket/bb-255',
+      },
+    },
+  };
+  expect(
+    rowsMatching(runDetailTree(served, RUN_ID), /^run-detail-link-/),
+  ).toEqual(['* https://b.test/bakers/ticket/bb-255']);
+  const unserved = runDetailTree(doc, RUN_ID, 'https://b.test');
+  expect(rowsMatching(unserved, /^run-detail-link/)).toEqual(['No links.']);
+});
+
+it('AC-2: a link row is an OSC 8 hyperlink with no press handler of its own', () => {
+  const tree = runDetailTree(withPr, RUN_ID, 'https://b.test');
+  for (const [id, url] of [
+    ['run-detail-link-ticket', 'https://b.test/bakers/ticket/bb-255'],
+    ['run-detail-link-pr-0', 'https://github.com/o/r/pull/229'],
+  ] as const) {
+    const props = nodeById(tree, id)?.props as {
+      content?: { chunks: readonly { text: string; link?: { url: string } }[] };
+      onMouse?: unknown;
+      onMouseDown?: unknown;
+      wrapMode?: string;
+    };
+    const links = (props.content?.chunks ?? []).filter((c) => c.link);
+    expect(links.map((c) => [c.text, c.link?.url])).toEqual([[url, url]]);
+    expect(props.onMouse ?? props.onMouseDown).toBeUndefined();
+    expect(props.wrapMode).toBe('char');
+  }
 });

@@ -39,7 +39,7 @@ final class DeploymentFilterTest extends BakersToolTestBase {
   }
 
   /**
-   * A release batch matches its project's work, excluding deployment tickets.
+   * A release batch matches its project's work, excluding ship tickets.
    */
   public function testListsCarriedProjectTickets(): void {
     $first = $this->ticket('FILTER-1');
@@ -48,7 +48,7 @@ final class DeploymentFilterTest extends BakersToolTestBase {
     $foreign = $this->project->createDuplicate();
     $foreign->save();
     $other = $this->ticket('OTHER-1', ['project_id' => $foreign->id()]);
-    $type = $this->term('type', 'deployment')->id();
+    $type = $this->term('type', 'ship')->id();
     $nested = $this->ticket('FILTER-NESTED', ['ticket_type' => $type]);
     $deployment = $this->ticket('FILTER-D1', [
       'ticket_type' => $type,
@@ -66,7 +66,7 @@ final class DeploymentFilterTest extends BakersToolTestBase {
     $first = $this->ticket('FILTER-1');
     $second = $this->ticket('FILTER-2');
     $deployment = $this->ticket('FILTER-D1', [
-      'ticket_type' => $this->term('type', 'deployment')->id(),
+      'ticket_type' => $this->term('type', 'ship')->id(),
       'referenced_tickets' => [$first->id(), $second->id()],
     ]);
     $index = Index::load('bb_tickets');
@@ -95,7 +95,7 @@ final class DeploymentFilterTest extends BakersToolTestBase {
     $hidden->set('group_id', $group->id())->set('teams', [])->save();
     $deployment = $this->ticket('HIDDEN-D1', [
       'project_id' => $hidden->id(),
-      'ticket_type' => $this->term('type', 'deployment')->id(),
+      'ticket_type' => $this->term('type', 'ship')->id(),
       'referenced_tickets' => [$ticket->id()],
     ]);
     self::assertSame([], $etm->getStorage('bb_ticket')->getQuery()->accessCheck(TRUE)->condition('id', $deployment->id())->execute());

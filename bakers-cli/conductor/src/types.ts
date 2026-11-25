@@ -20,6 +20,7 @@ import type {
 } from './plugins/plugins.js';
 import type { Ticket } from './plugins/remote.js';
 import type { RuntimePlugin } from './plugins/runtime.js';
+import type { SlotCatalog } from './plugins/slot-catalog.js';
 import type {
   ProvisionHook,
   ProvisionRuns,
@@ -132,10 +133,21 @@ export interface ConductorFileConfig extends ConductorSettings {
   disabled_agents: string[];
   default_agent: string;
   routes: AgentRoutes;
+  catalogs: {
+    agent: SlotCatalog<AgentCandidate>;
+    /** Absent: `runtime` alone, beside the built-in `system`. */
+    runtime?: SlotCatalog<RuntimePlugin>;
+    executor?: SlotCatalog<ExecutorPlugin>;
+    workspace?: SlotCatalog<WorkspacePlugin>;
+  };
+  /** Machine `runtime.allow_unsandboxed`: a label may choose a runtime that does not isolate. */
+  allow_unsandboxed?: boolean;
+  /** Whether the run in a worktree isolates, by worktree path; provision tools read it. */
+  runtime_isolation?: Map<string, boolean>;
   /** Replaces the shipped label/default resolution for this project. */
   selectAgent?: (candidates: ResolvedAgent[], ticket: Ticket) => ResolvedAgent;
   workspace: WorkspacePlugin;
-  /** Where agent processes run (the `runtime` slot); absent means on the host. */
+  /** The default runtime entry; the workspace reads it. Absent means on the host. */
   runtime?: RuntimePlugin;
   /** The project's `runtime.read_only`: paths an isolated run sees read-only. */
   readOnly?: string[];
@@ -177,4 +189,6 @@ export type ConductorEngineConfig = Omit<
 };
 
 /** A fixed command, or one that also receives the run's arguments as argv. */
-export type ProvisionExecCommand = string | { command: string; args?: boolean };
+export type ProvisionExecCommand =
+  | string
+  | { command: string; args?: boolean; description?: string };

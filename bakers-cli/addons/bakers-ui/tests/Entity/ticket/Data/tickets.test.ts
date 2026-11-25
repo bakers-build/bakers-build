@@ -335,6 +335,7 @@ it('a resource carrying exactly the fieldset maps to a row with no fallback valu
     workflow: 'bb_work',
     closed: false,
     frozen: false,
+    url: 'https://b.test/bakers/ticket/bb-1',
   };
   // Every requested attribute is consumed by the mapper, and nothing else is.
   expect(Object.keys(attributes).sort()).toEqual(
@@ -377,6 +378,7 @@ it('a resource carrying exactly the fieldset maps to a row with no fallback valu
     projectId: 'uuid-project',
     closed: false,
     frozen: false,
+    url: 'https://b.test/bakers/ticket/bb-1',
   });
 });
 
