@@ -1398,6 +1398,56 @@ describe('Conductor', () => {
     expect(command).not.toContain('bakers run release');
   });
 
+  // JSON:API can return the pre-transition state, so the run's own state wins.
+  it.each([
+    {
+      name: 'a stale ticket state',
+      ticket: 'working',
+      run: 'review',
+      expected: 'review',
+    },
+    {
+      name: 'an empty stateAtStart',
+      ticket: 'plan',
+      run: '',
+      expected: 'plan',
+    },
+  ])('dispatch: $name → prompt and tab name $expected (stateAtStart first)', async ({
+    ticket,
+    run,
+    expected,
+  }) => {
+    const remote = new FakeBbRemote({
+      tickets: { 't-1': { identifier: 'BB-1', title: 'One', state: ticket } },
+    });
+    remote.queue.push({
+      runUuid: 'r-1',
+      runId: 1,
+      ticketUuid: 't-1',
+      stateAtStart: run,
+      handler: 'code',
+    });
+    const executor = new RecordingExecutor();
+    const workspace = new FakeWorkspace();
+    workspace.ensure = async (identifier: string) => ({
+      path: `/fake/${identifier}`,
+      instructions: 'WORKFLOW content',
+    });
+    const conductor = await startedConductor(
+      makeConfig(),
+      remote,
+      executor,
+      workspace,
+    );
+
+    await conductor.tick();
+
+    expect(executor.started[0]?.command).toContain(
+      `current state: ${expected}`,
+    );
+    expect(executor.started[0]?.ticket.state).toBe(expected);
+  });
+
   it('dispatch renders the configured prompt template with ticket, state, and run values', async () => {
     const remote = new FakeBbRemote({
       tickets: {
