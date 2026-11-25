@@ -64,9 +64,10 @@ class BbTicketCreateForm extends BbCreateDialogFormBase {
   /**
    * Preselects the project before Drupal builds dependent widgets.
    *
-   * The dialog's own `?project=` wins when the reader may create there; else
-   * the only creatable project; else the creatable project of the reader's
-   * newest own ticket; else none, and the required picker asks.
+   * The dialog's own `?project=` is preselected when the reader may create
+   * there, else nothing. Without one: the only creatable project; else the
+   * creatable project of the reader's newest own ticket; else none, and the
+   * required picker asks.
    */
   protected function init(FormStateInterface $form_state): void {
     parent::init($form_state);
@@ -75,8 +76,10 @@ class BbTicketCreateForm extends BbCreateDialogFormBase {
     }
     $candidates = array_map('strval', array_keys($this->projectCandidates()));
     $project = $this->getRequest()->query->get('project');
-    $project = is_scalar($project) && in_array((string) $project, $candidates, TRUE)
-      ? (string) $project
+    // A named project the reader may not create in preselects nothing rather
+    // than silently another project.
+    $project = is_scalar($project)
+      ? (in_array((string) $project, $candidates, TRUE) ? (string) $project : NULL)
       : $this->defaultProject($candidates);
     if ($project !== NULL) {
       $this->entity->set('project_id', $project);

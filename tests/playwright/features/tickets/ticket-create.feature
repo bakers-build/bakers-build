@@ -401,10 +401,10 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     When I visit the ticket list of project "bakers.build Platform"
     And I click the "New ticket" action
     Then the "Project" pill reads "bakers.build Platform"
-    And the "Conductor" picker lists only "platform-node"
+    And the "Conductor" picker lists "platform-node" but not "e2e-node"
     When I type "Filed in another project" into the title line
     And I choose the dialog project "bakers-e2e-project"
-    Then the "Conductor" picker lists only "e2e-node"
+    Then the "Conductor" picker lists "e2e-node" but not "platform-node"
     When I submit the dialog
     Then the dialog closed
     And the stored ticket belongs to project "bakers-e2e-project"

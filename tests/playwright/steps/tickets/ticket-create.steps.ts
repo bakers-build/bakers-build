@@ -346,12 +346,14 @@ Then('the dialog offers an editable project picker', async ({ page }) => {
 });
 
 /**
- * Exactly the named candidate, by label, besides the clear row — read off the
- * collapsed panel, which `option_picker.twig` renders `hidden`, not absent.
+ * One candidate is offered and another is not, by label — other seeded
+ * candidates may sit beside them. Read off the collapsed panel, which
+ * `option_picker.twig` renders `hidden`, not absent.
  */
-Then('the {string} picker lists only {string}', async ({ page }, field: string, label: string) => {
-  const rows = pickerPanel(pickerTrigger(page, field)).locator('[role="option"]:not([data-value=""]) .option-list__label');
-  await expect(rows, `"${field}" does not list exactly "${label}"`).toHaveText([label]);
+Then('the {string} picker lists {string} but not {string}', async ({ page }, field: string, listed: string, absent: string) => {
+  const labels = pickerPanel(pickerTrigger(page, field)).locator('[role="option"] .option-list__label');
+  await expect(labels.filter({ hasText: listed }), `"${field}" does not list "${listed}"`).toHaveCount(1);
+  await expect(labels.filter({ hasText: absent }), `"${field}" lists "${absent}"`).toHaveCount(0);
 });
 
 When('I open the {string} picker', async ({ page }, field: string) => {

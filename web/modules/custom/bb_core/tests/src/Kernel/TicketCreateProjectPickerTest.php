@@ -182,6 +182,17 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
   }
 
   /**
+   * Opened on a project one may not create in, nothing is preselected.
+   *
+   * Another project would file the ticket where the reader did not ask.
+   */
+  public function testNonCreatableOpeningProjectPreselectsNothing(): void {
+    $this->reader('read-only-s', ['member'], ['reporter']);
+
+    self::assertSame([], $this->pickerProps($this->buildForm('S'), 'project_id')['values']);
+  }
+
+  /**
    * AC2: else the project of the reader's newest own ticket is preselected.
    */
   public function testNewestOwnTicketProjectIsPreselected(): void {
