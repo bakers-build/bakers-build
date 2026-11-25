@@ -258,6 +258,20 @@ final class ProjectCreateFormTest extends KernelTestBase {
   }
 
   /**
+   * A taken derived prefix is the name's error: the dialog hides the prefix.
+   */
+  public function testTakenDerivedPrefixIsRefusedAgainstTheName(): void {
+    $this->submit(['name' => $this->line('Designbook')]);
+    $state = $this->submitExpectingRefusal(['name' => $this->line('Designbook')]);
+
+    self::assertSame(['name][0][value'], array_keys($state->getErrors()));
+    self::assertSame(
+      'The identifier prefix DESIGNBOOK is already used by another project. Choose a different name.',
+      strip_tags((string) $state->getErrors()['name][0][value']),
+    );
+  }
+
+  /**
    * AC2, spec D5: a teamless submit is refused, and the message names Teams.
    *
    * THE REFUSAL IS THE ENTITY'S AND THE WORDING IS THIS PRODUCT'S.

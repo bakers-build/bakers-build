@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityConstraintViolationListInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -76,6 +77,31 @@ final class BbProjectCreateForm extends BbCreateDialogFormBase {
     $form['env_vars']['#access'] = FALSE;
     $form['repository']['widget'][0]['branch_convention']['#access'] = FALSE;
     return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * The derived identifier prefix is validated too, though no widget shows it.
+   */
+  protected function getEditedFieldNames(FormStateInterface $form_state): array {
+    return [...parent::getEditedFieldNames($form_state), 'key'];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * A prefix violation is the name's: the prefix derives from it and the
+   * dialog hides it, so the name is what the person can change.
+   */
+  protected function flagViolations(EntityConstraintViolationListInterface $violations, array $form, FormStateInterface $form_state): void {
+    foreach ($violations->getByField('key') as $violation) {
+      $form_state->setError($form['name']['widget'][0]['value'], $this->t('@message Choose a different name.', [
+        '@message' => strip_tags((string) $violation->getMessage()),
+      ]));
+    }
+    $violations->filterByFields(['key']);
+    parent::flagViolations($violations, $form, $form_state);
   }
 
   /**

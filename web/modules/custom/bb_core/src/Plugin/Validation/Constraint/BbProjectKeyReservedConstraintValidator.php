@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Plugin\Validation\Constraint;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -43,6 +44,12 @@ final class BbProjectKeyReservedConstraintValidator extends ConstraintValidator 
       return;
     }
     $entity = $items->getEntity();
+    // Only a change is checked: a moved ticket must not lock its old project
+    // out of every later save.
+    $stored = $entity->isNew() ? NULL : $this->entityTypeManager->getStorage('bb_project')->loadUnchanged($entity->id());
+    if ($stored instanceof BbProjectInterface && $stored->getKey() === $key) {
+      return;
+    }
     // Reservation is global, so it must see tickets the editor cannot read;
     // the message names no project.
     $query = $this->entityTypeManager->getStorage('bb_ticket')->getQuery()
