@@ -55,7 +55,7 @@ The `bb_api_key` submodule adds a further tab, **Service accounts**
 (`view.bb_service_accounts.settings`, `/{ws}/settings/service-accounts`), when
 it is enabled; see service accounts.
 
-## Catalog — three tabs, Types default
+## Catalog — four tabs, Types default
 
 The categories tickets pick from. Each tab needs its kind's view right in the
 route's workspace, set on the Views route by `BbWorkspaceRouteSubscriber`.
@@ -65,6 +65,7 @@ route's workspace, set on the Views route by `BbWorkspaceRouteSubscriber`.
 | Types (default) | `view.bb_terms.types` | `/{ws}/catalog/types` | View (page display) | `view bb_term` in this workspace | `_bb_workspace_permission`. Lists the `type` terms of this workspace. |
 | Recipes | `view.bb_terms.recipes` | `/{ws}/catalog/recipes` | View (page display) | `view bb_term` in this workspace | As Types, for the `recipe` terms. |
 | Labels | `view.bb_terms.labels` | `/{ws}/catalog/labels` | View (page display) | `view bb_term` in this workspace | As Types, for the `label` terms. |
+| Environments | `view.bb_environments.catalog` | `/{ws}/catalog/environments` | View (page display) | `view bb_environment` in this workspace | `_bb_workspace_permission`, so a guest has no such tab. Lists the environments of every project of this workspace, filtered by an exposed **Project** select offering only this workspace's projects. Its *Add environment* header action opens `entity.bb_environment.add_for_workspace`, gated by `_bb_workspace_create`. |
 
 ## Workspace invitation — a dialog, not a tab
 

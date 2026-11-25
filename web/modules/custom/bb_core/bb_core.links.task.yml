@@ -240,6 +240,12 @@ bb_core.catalog.labels:
   base_route: view.bb_terms.types
   weight: 2
 
+bb_core.catalog.environments:
+  title: Environments
+  route_name: view.bb_environments.catalog
+  base_route: view.bb_terms.types
+  weight: 3
+
 # --- User: Profile after core's View and Edit ---
 # Position and background only; the tab shows where `edit profile` allows.
 

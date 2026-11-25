@@ -281,6 +281,29 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
       'display' => $term_displays,
     ])->save();
 
+    // The Catalog Environments tab, with the shipped display access.
+    View::create([
+      'id' => 'bb_environments',
+      'label' => 'bb_environments',
+      'base_table' => 'users_field_data',
+      'display' => [
+        'default' => [
+          'id' => 'default',
+          'display_title' => 'Default',
+          'display_plugin' => 'default',
+          'position' => 0,
+          'display_options' => ['access' => ['type' => 'perm', 'options' => ['perm' => 'view bb_environment']]],
+        ],
+        'catalog' => [
+          'id' => 'catalog',
+          'display_title' => 'Environments',
+          'display_plugin' => 'page',
+          'position' => 1,
+          'display_options' => ['path' => '_workspace/%bb_workspace/catalog/environments'],
+        ],
+      ],
+    ])->save();
+
     View::create([
       'id' => 'project_board',
       'label' => 'project_board',
@@ -716,14 +739,14 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   }
 
   /**
-   * Catalog tabs: Types, Recipes, Labels, the same row on every tab.
+   * Catalog tabs: Types, Recipes, Labels, Environments, on every tab.
    */
   public function testCatalogTabRowMatchesTheAgreedOrder(): void {
     foreach ($this->tabOrder['Catalog'] as $route_name) {
       self::assertSame(
         $this->tabOrder['Catalog'],
         $this->tabRoutesOn($route_name, $this->accounts['lead']),
-        sprintf('The Catalog tab row on %s is Types, Recipes, Labels.', $route_name),
+        sprintf('The Catalog tab row on %s is Types, Recipes, Labels, Environments.', $route_name),
       );
     }
   }
@@ -900,7 +923,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
         'Project detail — eight tabs, Overview default' => 'Project detail',
         'Team detail — five tabs, Overview default' => 'Team detail',
         'Workspace settings — four tabs, Settings default' => 'Workspace settings',
-        'Catalog — three tabs, Types default' => 'Catalog',
+        'Catalog — four tabs, Types default' => 'Catalog',
         'Group detail — two tabs, Overview default' => 'Group detail',
         'Conductor detail — two tabs, Overview default' => 'Conductor detail',
         'Machine detail — two tabs, View default' => 'Machine detail',
@@ -919,7 +942,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     self::assertCount(8, $order['Project detail'] ?? [], 'The sitemap file must declare exactly eight Project detail tabs.');
     self::assertCount(6, $order['Team detail'] ?? [], 'The sitemap file must declare exactly six Team detail tabs.');
     self::assertCount(4, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly four Workspace settings tabs.');
-    self::assertCount(3, $order['Catalog'] ?? [], 'The sitemap file must declare exactly three Catalog tabs.');
+    self::assertCount(4, $order['Catalog'] ?? [], 'The sitemap file must declare exactly four Catalog tabs.');
     self::assertCount(2, $order['Group detail'] ?? [], 'The sitemap file must declare exactly two Group detail tabs.');
     self::assertCount(2, $order['Conductor detail'] ?? [], 'The sitemap file must declare exactly two Conductor detail tabs.');
     self::assertCount(2, $order['Machine detail'] ?? [], 'The sitemap file must declare exactly two Machine detail tabs.');
@@ -983,6 +1006,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'view.bb_terms.types' => 404,
     'view.bb_terms.recipes' => 404,
     'view.bb_terms.labels' => 404,
+    'view.bb_environments.catalog' => 404,
     // Gated on `_entity_access` — 403, and each one admits the entity exists.
     'bb_core.bb_workspace.settings' => 403,
     'bb_core.bb_workspace.members' => 403,
@@ -1054,6 +1078,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'view.bb_terms.types' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.bb_terms.recipes' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.bb_terms.labels' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
+    // Guests see no environments; contributors read them.
+    'view.bb_environments.catalog' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
     'bb_core.workspace_invite' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     // Overview is a VIEW surface as of finding 3 (`bb_project.view`), so
     // every ranked account here — lead, contributor and guest all carry

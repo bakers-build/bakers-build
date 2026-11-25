@@ -72,7 +72,7 @@ bb_core.rail.catalog:
   weight: 4
   options:
     icon: tag
-    active_routes: [view.bb_terms.recipes, view.bb_terms.labels, entity.bb_term.canonical]
+    active_routes: [view.bb_terms.recipes, view.bb_terms.labels, view.bb_environments.catalog, entity.bb_term.canonical, entity.bb_environment.canonical]
 
 bb_core.rail.settings:
   title: 'Settings'
