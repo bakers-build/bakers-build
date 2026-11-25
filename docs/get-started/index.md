@@ -6,7 +6,7 @@ bakers.build is a ticket-driven AI software factory: agents work each ticket, a 
 
 **You need:** a [bakers.build account](https://app.bakers.build/), [Node.js ≥20.19](https://nodejs.org/en/download), Git, and [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in.
 
-1. <span id="install-the-skills"></span>**Install the skills** one command at a time, then `/reload-plugins` (Codex: new session):
+1. <span id="install-the-skills"></span>**Add the marketplace:**
 
    ::: code-group
 
@@ -20,6 +20,8 @@ bakers.build is a ticket-driven AI software factory: agents work each ticket, a 
 
    :::
 
+2. **Install the skills,** then `/reload-plugins` (Codex: new session):
+
    ::: code-group
 
    ```text [Claude Code]
@@ -32,7 +34,7 @@ bakers.build is a ticket-driven AI software factory: agents work each ticket, a 
 
    :::
 
-2. **Run** it (alias `bb-quick-start`):
+3. **Run** it (alias `bb-quick-start`):
 
    ::: code-group
 
