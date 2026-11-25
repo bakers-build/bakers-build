@@ -82,15 +82,6 @@ final class BbProjectCreateForm extends BbCreateDialogFormBase {
   /**
    * {@inheritdoc}
    *
-   * The derived identifier prefix is validated too, though no widget shows it.
-   */
-  protected function getEditedFieldNames(FormStateInterface $form_state): array {
-    return [...parent::getEditedFieldNames($form_state), 'key'];
-  }
-
-  /**
-   * {@inheritdoc}
-   *
    * A prefix violation is the name's: the prefix derives from it and the
    * dialog hides it, so the name is what the person can change.
    */
