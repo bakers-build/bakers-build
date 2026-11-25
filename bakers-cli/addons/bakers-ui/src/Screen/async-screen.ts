@@ -18,6 +18,10 @@ export type { ListFilterBadge };
 
 export type AsyncScreenState = 'idle' | 'loading' | 'ready' | 'error';
 
+/** Above one healthy multi-page load, below dropsh's ≈122 s retry ceiling per request. */
+export const RELOAD_TIMEOUT_MS = 60_000;
+const RELOAD_TIMEOUT_MESSAGE = `Timed out after ${RELOAD_TIMEOUT_MS / 1000} s.`;
+
 /**
  * Header fields — not the footer.
  * Footer chips go through {@link AsyncScreen.actions}; notices through
@@ -131,7 +135,11 @@ export abstract class AsyncScreen<T> extends BaseScreen {
     context: ScreenContext,
     supersedeRequests = false,
   ): LifecycleGuard {
-    if (supersedeRequests) this.generation++;
+    if (supersedeRequests) {
+      this.generation++;
+      // The superseded read can no longer end the refresh it started.
+      this.refreshing = false;
+    }
     return {
       generation: this.generation,
       activation: this.activation,
@@ -246,42 +254,58 @@ export abstract class AsyncScreen<T> extends BaseScreen {
     } catch (caught) {
       operation = Promise.reject(caught);
     }
-    return operation.then(
+    let settled = false;
+    /** The current read always ends the refresh, even when its answer is dropped. */
+    const current = (): boolean => {
+      if (settled || generation !== this.generation) return false;
+      settled = true;
+      const ended = this.refreshing;
+      this.refreshing = false;
+      if (
+        activation === this.activation &&
+        revision === this.revision &&
+        session === this.sessionGeneration &&
+        scope === this.contextKey
+      )
+        return true;
+      if (ended) this.requestActiveDraw(context);
+      return false;
+    };
+    const fail = (caught: unknown): void => {
+      if (!current()) return;
+      if (keepSurface) {
+        this.toast = serverMessage(caught);
+        this.requestActiveDraw(context);
+        return;
+      }
+      this.failure = new Error(serverMessage(caught));
+      this.state = 'error';
+      this.requestActiveDraw(context);
+    };
+    // shortcut: the abandoned request keeps running until dropsh's own timeout, because DropshClient takes no abort signal; abort it once it does.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timedOut = new Promise<void>((resolve) => {
+      timer = setTimeout(() => {
+        fail(new Error(RELOAD_TIMEOUT_MESSAGE));
+        resolve();
+      }, RELOAD_TIMEOUT_MS);
+    });
+    // Handlers sit directly on the load, so the bound adds no microtask ticks before they run.
+    const handled = operation.then(
       (data) => {
-        if (
-          generation !== this.generation ||
-          activation !== this.activation ||
-          revision !== this.revision ||
-          session !== this.sessionGeneration ||
-          scope !== this.contextKey
-        )
-          return;
-        this.refreshing = false;
+        clearTimeout(timer);
+        if (!current()) return;
         this.data = data;
         this.state = 'ready';
         this.didLoad(data, context);
         this.requestActiveDraw(context);
       },
       (caught) => {
-        if (
-          generation !== this.generation ||
-          activation !== this.activation ||
-          revision !== this.revision ||
-          session !== this.sessionGeneration ||
-          scope !== this.contextKey
-        )
-          return;
-        this.refreshing = false;
-        if (keepSurface) {
-          this.toast = serverMessage(caught);
-          this.requestActiveDraw(context);
-          return;
-        }
-        this.failure = new Error(serverMessage(caught));
-        this.state = 'error';
-        this.requestActiveDraw(context);
+        clearTimeout(timer);
+        fail(caught);
       },
     );
+    return Promise.race([handled, timedOut]);
   }
 
   override leave(): void {
@@ -313,7 +337,9 @@ export abstract class AsyncScreen<T> extends BaseScreen {
     const id = this.frameId ?? this.id;
     const badges = this.badges(context);
     const actions = this.actions(context);
-    const notice = this.notice(context);
+    const notice =
+      this.notice(context) ||
+      (this.refreshing ? this.renderLoading(context)[0] : undefined);
     // Frame lives on region-body ScrollBox (BB-375) — no nested framedPanel.
     const children: VNode[] = [];
     if (badges.length > 0) {
