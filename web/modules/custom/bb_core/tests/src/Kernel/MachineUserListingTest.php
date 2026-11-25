@@ -243,7 +243,7 @@ final class MachineUserListingTest extends KernelTestBase {
     $view->setArguments([(string) $this->accounts['lead']->id()]);
     $view->preExecute();
     $view->execute();
-    // Entity rows are built in the style's pre-render, as View::render() does.
+    // Entity rows are built in pre-render, as View::render() does.
     $view->style_plugin->preRender($view->result);
     $build = $view->style_plugin->render();
     $html = (string) $this->container->get('renderer')->renderInIsolation($build);

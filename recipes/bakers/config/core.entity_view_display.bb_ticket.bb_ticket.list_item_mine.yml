@@ -1,0 +1,287 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_ticket.list_item_mine
+  module:
+    - bb_core
+    - display_builder
+  enforced:
+    config:
+      - bb_core.bb_vocabulary.label
+      - bb_core.bb_vocabulary.recipe
+      - bb_core.bb_vocabulary.type
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      - source_id: component
+        source:
+          component:
+            component_id: bb_theme:list_item
+            variant_id: null
+            props: {  }
+            slots:
+              avatar:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: state
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:state
+                                  field:bb_ticket:bb_ticket:state:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:state
+                                          source:
+                                            type: bb_ticket_state_icon_cell
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_state
+              headline:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: title
+                          primary:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:title
+                                  field:bb_ticket:bb_ticket:title:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:title
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: true
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_title
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: priority
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:priority
+                                  field:bb_ticket:bb_ticket:priority:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:priority
+                                          source:
+                                            type: bb_ticket_priority_cell
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_priority
+              meta:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: identifier
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:identifier
+                                  field:bb_ticket:bb_ticket:identifier:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:identifier
+                                          source:
+                                            type: bb_ticket_identifier_cell
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_identifier
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: created
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Created
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:created
+                                  field:bb_ticket:bb_ticket:created:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:created
+                                          source:
+                                            type: bb_time
+                                            settings:
+                                              date_only: false
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_created
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: owner
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: by
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:owner_user_id
+                                  field:bb_ticket:bb_ticket:owner_user_id:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:owner_user_id
+                                          source:
+                                            type: bb_ticket_owner_cell
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_owner
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: stall_reason
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:stall_reason
+                                  field:bb_ticket:bb_ticket:stall_reason:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:stall_reason
+                                          source:
+                                            type: bb_stall_reason
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_stall_reason
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: run_summary
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:run_summary
+                                  field:bb_ticket:bb_ticket:run_summary:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:run_summary
+                                          source:
+                                            type: bb_run_summary
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_run_summary
+              right:
+                sources:
+                  - source_id: component
+                    source:
+                      component:
+                        component_id: bb_theme:list_cell
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: conductor
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              - source_id: entity_field
+                                source:
+                                  derivable_context: field:bb_ticket:bb_ticket:conductor_id
+                                  field:bb_ticket:bb_ticket:conductor_id:
+                                    value:
+                                      sources:
+                                        - source_id: field_formatter:bb_ticket:bb_ticket:conductor_id
+                                          source:
+                                            type: bb_ticket_conductor_cell
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_mine_conductor
+        node_id: bb_ticket_list_item_mine
+id: bb_ticket.bb_ticket.list_item_mine
+targetEntityType: bb_ticket
+bundle: bb_ticket
+mode: list_item_mine
+content: {  }
+hidden:
+  search_api_excerpt: true

@@ -6,7 +6,6 @@ namespace Drupal\bb_core\Plugin\views\style;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Core\TypedData\ComplexDataInterface;
 use Drupal\views\Attribute\ViewsStyle;
 use Drupal\views\Plugin\views\style\StylePluginBase;
 
@@ -136,9 +135,9 @@ final class BbList extends StylePluginBase {
   /**
    * {@inheritdoc}
    *
-   * Each row carries the rendered output of the pattern's fields and the
-   * entity behind it. A field Views removed for access, or one the display
-   * excludes, contributes nothing, so its value is absent rather than raw.
+   * Each row carries the rendered output of the pattern's fields. A field
+   * Views removed for access, or one the display excludes, contributes
+   * nothing, so its value is absent rather than raw.
    */
   public function render(): array {
     $this->renderFields($this->view->result);
@@ -160,20 +159,12 @@ final class BbList extends StylePluginBase {
     }
 
     $rows = [];
-    foreach ($this->view->result as $index => $row) {
+    foreach (array_keys($this->view->result) as $index) {
       $fields = [];
       foreach (array_merge(...array_values($pattern)) as $key) {
         $fields[$key] = $this->getField($index, $key) ?? '';
       }
-      // `_entity` is what SQL and Search API rows carry; `_object` is the
-      // Search API fallback when the original entity could not be loaded.
-      $values = get_object_vars($row);
-      $entity = $values['_entity'] ?? NULL;
-      $object = $values['_object'] ?? NULL;
-      if ($entity === NULL && $object instanceof ComplexDataInterface) {
-        $entity = $object->getValue();
-      }
-      $rows[] = ['fields' => $fields, 'entity' => $entity];
+      $rows[] = ['fields' => $fields];
     }
 
     return [

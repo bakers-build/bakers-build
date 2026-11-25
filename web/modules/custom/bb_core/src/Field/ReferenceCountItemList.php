@@ -25,7 +25,11 @@ final class ReferenceCountItemList extends FieldItemList implements CacheableDep
   public const array COUNTS = [
     'bb_group.projects' => ['bb_project', 'group_id', []],
     'bb_project.open_tickets' => ['bb_ticket', 'project_id', ['closed' => 0]],
-    'bb_project.conductor_tickets' => ['bb_ticket', 'project_id', ['closed' => 0, 'conductor_id' => ['operator' => 'IS NOT NULL']]],
+    'bb_project.conductor_tickets' => [
+      'bb_ticket',
+      'project_id',
+      ['closed' => 0, 'conductor_id' => ['operator' => 'IS NOT NULL']],
+    ],
     'bb_project.closed_tickets' => ['bb_ticket', 'project_id', ['closed' => 1]],
   ];
 
@@ -57,7 +61,7 @@ final class ReferenceCountItemList extends FieldItemList implements CacheableDep
    */
   public function getCacheTags(): array {
     // Any counted entity saved anywhere must recount.
-    return \Drupal::entityTypeManager()->getDefinition($this->countDefinition()[0])->getListCacheTags();
+    return array_values(\Drupal::entityTypeManager()->getDefinition($this->countDefinition()[0])->getListCacheTags());
   }
 
   /**

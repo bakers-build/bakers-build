@@ -85,7 +85,8 @@ final class TicketsViewTableTest extends KernelTestBase {
     // `views.view.tickets` will not INSTALL at all: `ConfigSchemaChecker`
     // rejects `display_extenders.display_builder` as "missing schema", and
     // strict config schema is on by default in every Kernel test.
-    'display_builder', 'ui_patterns_views', 'display_builder_views',
+    'display_builder', 'ui_patterns_views', 'ui_patterns_field', 'display_builder_views',
+    'display_builder_entity_view',
     'bb_core',
   ];
 
@@ -558,6 +559,10 @@ final class TicketsViewTableTest extends KernelTestBase {
       foreach ($view->field as $field) {
         $field->preRender($view->result);
       }
+      // Entity rows are built in pre-render, as View::render() does; a
+      // refused query never initialised the style.
+      $view->initStyle();
+      $view->style_plugin->preRender($view->result);
       $build = $view->style_plugin->render();
       return (string) $this->container->get('renderer')->renderInIsolation($build);
     }

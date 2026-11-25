@@ -552,7 +552,7 @@ final class ListingPatternTest extends KernelTestBase {
     $switcher = $this->container->get('account_switcher');
     $switcher->switchTo($account ?? $this->reader);
     try {
-      // Entity rows are built in the style's pre-render, as View::render() does.
+      // Entity rows are built in pre-render, as View::render() does.
       $view->style_plugin->preRender($view->result);
       $build = $view->style_plugin->render();
       return (string) $this->container->get('renderer')->renderInIsolation($build);

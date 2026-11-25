@@ -341,7 +341,6 @@ final class RunListCanvasTest extends KernelTestBase {
       ->save();
   }
 
-
   /**
    * Renders the `project_runs` display for a given project.
    *

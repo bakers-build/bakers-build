@@ -141,7 +141,8 @@ final class TicketListCanvasTest extends KernelTestBase {
     // view without it — the symptom is "The tickets view is not installed".
     'views_filters_summary',
     'ui_patterns', 'ui_patterns_views', 'display_builder',
-    'display_builder_views', 'bb_core',
+    'ui_patterns_field', 'display_builder_views',
+    'display_builder_entity_view', 'bb_core',
   ];
 
   /**

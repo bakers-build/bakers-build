@@ -93,10 +93,6 @@ views.area.bb_empty:
   type: views.area.text_custom
   label: 'Empty state with configured text'
 
-views.field.bb_related_max_timestamp:
-  type: views_field
-  label: 'Related max timestamp'
-
 # The `bb_list` Views style: ordered field IDs per row region.
 views.style.bb_list:
   type: views_style

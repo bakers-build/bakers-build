@@ -30,6 +30,8 @@ use Drupal\bb_core\Field\PersonMarkItemList;
 use Drupal\bb_core\Field\RecipientProfileItemList;
 use Drupal\bb_core\Field\RunDurationItemList;
 use Drupal\bb_core\Field\SinceLabelItemList;
+use Drupal\bb_core\Field\RowAccentItemList;
+use Drupal\bb_core\Field\RunSummaryItemList;
 use Drupal\bb_core\Field\StallReasonItemList;
 use Drupal\bb_core\Field\StateFlowItemList;
 use Drupal\bb_core\Field\TicketUrlItemList;
@@ -196,41 +198,6 @@ final class EntitySchemaHooks {
           ],
         ];
       }
-    }
-
-    // Ticket-list runs summary: occupancy is the conductor rail; this is how
-    // often the ticket has already run and how its newest run ended. A ticket
-    // without runs stays quiet. The field lives on the Search API table the
-    // tickets view uses.
-    if (isset($data['search_api_index_bb_tickets'])) {
-      $data['search_api_index_bb_tickets']['run_summary'] = [
-        'title' => 'Runs',
-        'help' => new TranslatableMarkup('How many runs the ticket has, and the state and time of the newest.'),
-        'field' => [
-          'id' => 'bb_run_summary',
-        ],
-      ];
-      $data['search_api_index_bb_tickets']['stall_reason'] = [
-        'title' => 'Stall reason',
-        'help' => new TranslatableMarkup('Why this ticket is standing still: frozen, blocked, no conductor, conductor no access, or failing.'),
-        'field' => [
-          'id' => 'bb_stall_reason',
-        ],
-      ];
-    }
-
-    // Latest conductor heartbeat on a machine, for the listing caption.
-    if (isset($data['bb_machine'])) {
-      $data['bb_machine']['last_run'] = [
-        'title' => new TranslatableMarkup('Last run'),
-        'help' => new TranslatableMarkup('The latest last_seen of conductors on this machine.'),
-        'field' => [
-          'id' => 'bb_related_max_timestamp',
-          'related_entity_type' => 'bb_conductor',
-          'related_field' => 'machine',
-          'timestamp_field' => 'last_seen',
-        ],
-      ];
     }
 
     // Core's combined-fields filter, with the LIKE escape clause it drops.
@@ -504,6 +471,18 @@ final class EntitySchemaHooks {
         ->setComputed(TRUE)
         ->setClass(StallReasonItemList::class)
         ->setDisplayConfigurable('view', TRUE);
+      // The listing row's status rail and run summary; per reader, so not in
+      // JSON:API.
+      $fields['row_accent'] = BaseFieldDefinition::create('string')
+        ->setLabel(new TranslatableMarkup('Row accent'))
+        ->setComputed(TRUE)
+        ->setClass(RowAccentItemList::class)
+        ->setInternal(TRUE);
+      $fields['run_summary'] = BaseFieldDefinition::create('integer')
+        ->setLabel(new TranslatableMarkup('Runs'))
+        ->setComputed(TRUE)
+        ->setClass(RunSummaryItemList::class)
+        ->setInternal(TRUE);
       $fields['claim_machine'] = BaseFieldDefinition::create('string')
         ->setLabel(new TranslatableMarkup('Claim machine'))
         ->setComputed(TRUE)

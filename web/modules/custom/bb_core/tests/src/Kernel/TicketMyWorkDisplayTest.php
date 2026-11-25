@@ -81,7 +81,8 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
     'better_exposed_filters', 'facets', 'facets_exposed_filters',
     'views_filters_summary',
     'ui_patterns', 'ui_patterns_views', 'display_builder',
-    'display_builder_views', 'bb_core',
+    'ui_patterns_field', 'display_builder_views',
+    'display_builder_entity_view', 'bb_core',
   ];
 
   /**
@@ -367,10 +368,9 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
    * other ticket lists still show whose a ticket is.
    */
   public function testMyWorkShowsConductorInsteadOfAssignee(): void {
+    // My work renders its own row: the conductor where the assignee was.
     $my_work = $this->options('my_work');
-    self::assertArrayNotHasKey('assignee', $my_work['fields'], 'My work renders no assignee field.');
-    self::assertSame(['conductor'], $my_work['style']['options']['pattern']['right']);
-    self::assertNotContains('conductor', $my_work['style']['options']['pattern']['meta']);
+    self::assertSame('list_item_mine', $my_work['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket']);
 
     $html = $this->screen('my_work');
     $row = (new Crawler($html))->filter('li[data-list-item]');
@@ -386,9 +386,9 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
     self::assertCount(0, $row->filter('[data-list-region="meta"] [data-cell="conductor"]'));
 
     foreach (['page_1', 'project_tickets', 'team_tickets'] as $display_id) {
+      // The list item's row keeps the assignee column.
       $options = $this->options($display_id);
-      self::assertArrayHasKey('assignee', $options['fields'], $display_id . ' keeps the assignee field.');
-      self::assertSame(['assignee'], $options['style']['options']['pattern']['right'], $display_id . ' keeps the assignee column.');
+      self::assertSame('list_item', $options['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket'], $display_id . ' keeps the assignee row.');
     }
     self::assertCount(
       4,

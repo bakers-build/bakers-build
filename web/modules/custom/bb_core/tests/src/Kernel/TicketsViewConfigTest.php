@@ -8,6 +8,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\views\Entity\View;
 use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * The tickets view is core's table over ten fields, and exposes ten facets.
@@ -197,28 +198,30 @@ final class TicketsViewConfigTest extends KernelTestBase {
   }
 
   /**
-   * The style is the shared `bb_list`, with the approved ticket pattern.
+   * A row is the ticket in its list-item mode, with the approved pattern.
    */
-  public function testTheStyleIsTheSharedListWithTheTicketPattern(): void {
-    $style = $this->display()['style'];
-    self::assertSame('bb_list', $style['type']);
+  public function testTheRowIsTheTicketWithTheTicketPattern(): void {
+    $display = $this->display();
+    self::assertSame('bb_rows', $display['style']['type']);
+    self::assertSame('search_api', $display['row']['type']);
+    self::assertSame('list_item', $display['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket']);
     self::assertSame([
       'avatar' => ['state'],
       'headline' => ['title', 'priority'],
       'meta' => ['identifier', 'created', 'owner', 'conductor', 'stall_reason', 'run_summary'],
       'right' => ['assignee'],
-    ], $style['options']['pattern']);
+    ], array_map('array_keys', $this->rowCells('list_item')));
   }
 
   /**
-   * The ten fields are real Views FIELDS, in row order.
+   * The ten cells are entity fields, in row order.
    *
-   * The field ids ARE the cell keys the pattern and the Designbook entity
-   * mapping address. Project and team left the row: both repeat context the
-   * listing already has, and both stay available as filters.
+   * The cell keys are what the Designbook entity mapping addresses. Project
+   * and team left the row: both repeat context the listing already has, and
+   * both stay available as filters.
    */
-  public function testTheTenFieldsAreThePatternsOwn(): void {
-    $fields = $this->display()['fields'];
+  public function testTheTenCellsAreThePatternsOwn(): void {
+    $fields = array_merge(...array_values($this->rowCells('list_item')));
     self::assertSame(
       [
         'state',
@@ -234,15 +237,15 @@ final class TicketsViewConfigTest extends KernelTestBase {
       ],
       array_keys($fields),
     );
-    self::assertSame(['created', 'Created'], [$fields['created']['field'], $fields['created']['label']]);
-    self::assertSame(['owner_user_id', 'by'], [$fields['owner']['field'], $fields['owner']['label']]);
+    self::assertSame(['created', 'Created'], [$fields['created']['field'], $fields['created']['caption']]);
+    self::assertSame(['owner_user_id', 'by'], [$fields['owner']['field'], $fields['owner']['caption']]);
   }
 
   /**
    * Each field renders itself, through a formatter of its own.
    */
   public function testEveryFieldCarriesTheFormatterItsFaceNeeds(): void {
-    $fields = $this->display()['fields'];
+    $fields = array_merge(...array_values($this->rowCells('list_item')));
 
     foreach ([
       'identifier' => 'bb_ticket_identifier_cell',
@@ -254,10 +257,10 @@ final class TicketsViewConfigTest extends KernelTestBase {
       'assignee' => 'bb_ticket_assignee_avatar_cell',
       'conductor' => 'bb_ticket_conductor_cell',
     ] as $key => $formatter) {
-      self::assertSame($formatter, $fields[$key]['type'] ?? NULL, sprintf('Field %s.', $key));
+      self::assertSame($formatter, $fields[$key]['formatter'] ?? NULL, sprintf('Field %s.', $key));
     }
-    self::assertSame('bb_run_summary', $fields['run_summary']['plugin_id'] ?? NULL);
-    self::assertSame('bb_stall_reason', $fields['stall_reason']['plugin_id'] ?? NULL);
+    self::assertSame('bb_run_summary', $fields['run_summary']['formatter'] ?? NULL);
+    self::assertSame('bb_stall_reason', $fields['stall_reason']['formatter'] ?? NULL);
   }
 
   /**
@@ -279,13 +282,6 @@ final class TicketsViewConfigTest extends KernelTestBase {
     $sort_widget = $this->display()['exposed_form']['options']['bef']['sort'];
     self::assertTrue($sort_widget['advanced']['combine']);
     self::assertStringContainsString('Updated Desc|Updated, newest first', $sort_widget['advanced']['combine_rewrite']);
-  }
-
-  /**
-   * There is no row plugin: the style renders the whole result set.
-   */
-  public function testThereIsNoRowPlugin(): void {
-    self::assertArrayNotHasKey('row', $this->display());
   }
 
   /**
@@ -522,27 +518,52 @@ final class TicketsViewConfigTest extends KernelTestBase {
   }
 
   /**
-   * My work's own fields and style are the default's, minus the assignee.
+   * My work's row is the default row, minus the assignee.
    *
-   * The override copies the default display's fields, so a field changed on
-   * `default` and not here would drift silently. Only two differences are
+   * Its own view mode copies the list item's cells, so a cell changed on one
+   * and not the other would drift silently. Only two differences are
    * allowed: no assignee, and the conductor in the right-hand column.
    */
   public function testMyWorkCopiesTheDefaultRowWithoutTheAssignee(): void {
-    $view = View::load('tickets');
-    $default = $view->getDisplay('default')['display_options'];
-    $my_work = $view->getDisplay('my_work')['display_options'];
+    $my_work = View::load('tickets')->getDisplay('my_work')['display_options'];
+    self::assertFalse($my_work['defaults']['row'] ?? NULL, 'My work overrides the row.');
+    self::assertSame('list_item_mine', $my_work['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket']);
 
-    self::assertFalse($my_work['defaults']['fields'] ?? NULL, 'My work overrides the fields.');
-    self::assertFalse($my_work['defaults']['style'] ?? NULL, 'My work overrides the style.');
-    $expected_fields = $default['fields'];
-    unset($expected_fields['assignee']);
-    self::assertSame($expected_fields, $my_work['fields']);
+    $expected = $this->rowCells('list_item');
+    unset($expected['right']['assignee']);
+    $expected['right']['conductor'] = $expected['meta']['conductor'];
+    unset($expected['meta']['conductor']);
+    $actual = $this->rowCells('list_item_mine');
+    // The right-hand column reads a dash when the value is empty.
+    unset($actual['right']['conductor']['fallback'], $expected['right']['conductor']['fallback']);
+    self::assertSame($expected, $actual);
+  }
 
-    $expected_style = $default['style'];
-    $expected_style['options']['pattern']['meta'] = array_values(array_diff($expected_style['options']['pattern']['meta'], ['conductor']));
-    $expected_style['options']['pattern']['right'] = ['conductor'];
-    self::assertSame($expected_style, $my_work['style']);
+  /**
+   * The cells of a shipped ticket row display, by region.
+   *
+   * @return array<string, array<string, array<string, mixed>>>
+   *   Per region, per cell key: the field, its formatter, its caption and
+   *   its fallback.
+   */
+  private function rowCells(string $mode): array {
+    $file = dirname(__DIR__, 7) . "/config/sync/core.entity_view_display.bb_ticket.bb_ticket.$mode.yml";
+    $sources = Yaml::parseFile($file)['third_party_settings']['display_builder']['sources'];
+    $regions = [];
+    foreach ($sources[0]['source']['component']['slots'] as $region => $slot) {
+      foreach ($slot['sources'] as $cell) {
+        $props = $cell['source']['component']['props'];
+        $field = $cell['source']['component']['slots']['value']['sources'][0]['source'];
+        $formatter = $field[$field['derivable_context']]['value']['sources'][0]['source'];
+        $regions[$region][$props['key']['source']['value']] = [
+          'field' => substr($field['derivable_context'], strrpos($field['derivable_context'], ':') + 1),
+          'formatter' => $formatter['type'],
+          'caption' => $props['caption']['source']['value'] ?? NULL,
+          'fallback' => $props['fallback']['source']['value'] ?? NULL,
+        ];
+      }
+    }
+    return $regions;
   }
 
   /**
