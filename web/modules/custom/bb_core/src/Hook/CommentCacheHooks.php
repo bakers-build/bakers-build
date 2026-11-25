@@ -8,16 +8,16 @@ use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\bb_core\Entity\BbCommentInterface;
+use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
- * Invalidates the parent ticket's cache tag on bb_comment write operations.
+ * Invalidates the parent ticket's cache tag on bb_comment and bb_run writes.
  *
- * JSON:API caches the ticket resource keyed by `bb_ticket:{id}`. When a
- * comment is created or deleted the set of comments visible via
- * `?include=comments` changes, so the parent ticket's cache entry must be
- * invalidated immediately.
+ * JSON:API caches the ticket resource keyed by `bb_ticket:{id}`. Its computed
+ * `comments` and `runs` relationships change with every comment or run write,
+ * so the parent ticket's cache entry must be invalidated immediately.
  */
 final class CommentCacheHooks {
 
@@ -64,13 +64,14 @@ final class CommentCacheHooks {
   /**
    * Invalidates `bb_ticket:{id}` for the comment's parent ticket.
    *
-   * Silently returns if the entity is not a bb_comment or has no ticket_id.
+   * Silently returns if the entity is not a bb_comment or bb_run, or has no
+   * ticket_id.
    *
    * @param \Drupal\Core\Entity\EntityInterface $entity
    *   The entity being written or deleted.
    */
   private function invalidateTicketTag(EntityInterface $entity): void {
-    if (!$entity instanceof BbCommentInterface) {
+    if (!$entity instanceof BbCommentInterface && !$entity instanceof BbRunInterface) {
       return;
     }
     $ticketId = $entity->getTicketId();
