@@ -66,8 +66,12 @@ export function checkOutput(fixture, output) {
   for (const words of fixture.input.required_commands ?? []) {
     checks.push({ id: `required-${words}`, met: commands.some(argv => argv.join(' ') === words), reason: `The command \`${words}\` must run as given` });
   }
-  for (const fragment of fixture.input.first_question_fragments ?? []) {
-    checks.push({ id: `first-question-${fragment}`, met: (questions[0] ?? '').includes(fragment), reason: `The first question must show \`${fragment}\`` });
+  // Text the person sees before answering: messages and questions up to the first reply after the request.
+  const firstReply = saved.turns.findIndex((turn, index) => index > 0 && turn.role === 'user');
+  const shown = saved.turns.slice(0, firstReply < 0 ? undefined : firstReply)
+    .filter(turn => turn.role === 'assistant' && ['message', 'question'].includes(turn.content?.type)).map(turn => turn.content.text).join('\n');
+  for (const fragment of fixture.input.shown_before_answer ?? []) {
+    checks.push({ id: `shown-${fragment}`, met: shown.includes(fragment), reason: `\`${fragment}\` must be shown before the person answers` });
   }
   if (fixture.input.min_questions !== undefined) checks.push({ id: 'min-questions', met: questions.length >= fixture.input.min_questions,
     reason: `At least ${fixture.input.min_questions} questions; asked ${questions.length}` });

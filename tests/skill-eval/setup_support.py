@@ -21,7 +21,7 @@ def parse_action(text):
             raise ValueError('Invalid action transport') from error
     else:
         action = json.loads(text)
-    fields = {'question': {'text'}, 'final': {'text'}, 'command': {'argv'},
+    fields = {'question': {'text'}, 'message': {'text'}, 'final': {'text'}, 'command': {'argv'},
               'read': {'path'}, 'write': {'path', 'content'}}
     if not isinstance(action, dict) or action.get('type') not in fields or set(action) != fields[action['type']] | {'type'}:
         raise ValueError('Expected one supported action')

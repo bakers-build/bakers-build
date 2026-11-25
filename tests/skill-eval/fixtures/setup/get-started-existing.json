@@ -112,7 +112,7 @@
     },
     "[\"bakers\",\"auth\",\"login\"]": {
       "exit_code": 0,
-      "stdout": "Open https://setup.example.test/device and enter the code WXYZ-1234\nWaiting for confirmation… (synthetic)\nSigned in as quick@example.test\n"
+      "stdout": "Open https://setup.example.test/device and enter the code WXYZ-1234\nWaiting for confirmation… (synthetic: running in the background; the person confirms within a minute)\n"
     }
   },
   "server": {
@@ -249,7 +249,7 @@
     "bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli",
     "bakers auth login"
   ],
-  "first_question_fragments": [
+  "shown_before_answer": [
     "https://setup.example.test/device",
     "WXYZ-1234"
   ]

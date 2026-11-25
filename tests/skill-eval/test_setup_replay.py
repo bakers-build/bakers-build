@@ -91,15 +91,18 @@ const ordered = [tool('bakers_ticket_create',{title:'t'}), tool('bakers_ticket_u
 assert.equal(quickRow({tools:ordered}, 'tool-sequence'), true);
 assert.equal(quickRow({tools:[ordered[0], ordered[2], ordered[1]]}, 'tool-sequence'), false);
 assert.equal(quickRow({tools:[ordered[0], tool('bakers_ticket_update',{labels_add:['human-review'],conductor:'c'})]}, 'tool-sequence'), false);
-// Signed out: the sign-in command runs as given, and its URL and code come with the first question.
+// Signed out: the sign-in command runs as given, and its URL and code are shown before the person answers.
 const signedOut = {input:{...quick.input, required_commands:['bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli'],
-  first_question_fragments:['https://app.bakers.build/device','WXYZ-1234']}};
+  shown_before_answer:['https://app.bakers.build/device','WXYZ-1234']}};
 const outRow = (value, id) => checkOutput(signedOut, JSON.stringify({...saved,...value})).find(r=>r.id===id).met;
+const say = text => ({role:'assistant',content:{type:'message',text}});
+const answer = {role:'user',content:'demo'};
 assert.equal(outRow({tools:[run(['bakers','init','--yes','--base-url','https://app.bakers.build','--client-id','bakers-cli'])]}, 'required-bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli'), true);
 assert.equal(outRow({tools:[run(['bakers','init','--yes'])]}, 'required-bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli'), false);
-assert.equal(outRow({turns:[ask('Open https://app.bakers.build/device, code WXYZ-1234. Path or demo?')]}, 'first-question-WXYZ-1234'), true);
-assert.equal(outRow({turns:[ask('Path or demo?'), ask('Code WXYZ-1234. Path or demo?')]}, 'first-question-WXYZ-1234'), false);
-assert.equal(outRow({turns:[final('Code WXYZ-1234')]}, 'first-question-WXYZ-1234'), false);
+assert.equal(outRow({turns:[say('Open https://app.bakers.build/device, code WXYZ-1234'), ask('Path or demo?'), answer]}, 'shown-WXYZ-1234'), true);
+assert.equal(outRow({turns:[ask('Code WXYZ-1234. Path or demo?'), answer]}, 'shown-WXYZ-1234'), true);
+assert.equal(outRow({turns:[ask('Path or demo?'), answer, say('Code WXYZ-1234')]}, 'shown-WXYZ-1234'), false);
+assert.equal(outRow({turns:[final('Code WXYZ-1234')]}, 'shown-WXYZ-1234'), false);
 '''
         result = subprocess.run(['node', '--input-type=module', '-e', script],
                                 cwd=Path(__file__).resolve().parents[2], capture_output=True, text=True)

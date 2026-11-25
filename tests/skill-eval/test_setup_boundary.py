@@ -29,6 +29,9 @@ class SetupBoundaryTest(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 parse_action(text)
 
+    def test_a_message_shows_text_without_asking(self):
+        self.assertEqual(parse_action('{"type":"message","text":"Open the URL"}'), {'type': 'message', 'text': 'Open the URL'})
+
     def test_action_with_wrongly_typed_field_is_refused_not_a_crash(self):
         for text in ['{"type":"command","argv":5}', '{"type":"command","argv":["git",3]}', '{"type":"read","path":["a"]}']:
             with self.assertRaises(ValueError):

@@ -121,17 +121,18 @@ node --require ./tests/skill-eval/offline-guard.cjs tests/skill-eval/run.mjs rep
 
 `SETUP_MODEL` selects the setup agent's model and `SETUP_USER_MODEL` the synthetic user's; both default to `sonnet`. Each result records the model it ran with.
 
-Directories and replay files must be unused. The driver keeps private answers out of the setup
-role, retains per-role raw streams, and passes literal actions through a closed boundary. Local
-config commands use the real registered CLI implementation with `BAKERS_HOME` and auth state
-inside the case; external authentication and tracker responses are labelled fixture doubles.
-Direct machine/project config writes accept only `export default` followed by a strict JSON
-object; imports, expressions, extra statements and connection writes are rejected. After such a
-write, initialization of that scope is unavailable. Exact field assertions
-parse this data without executing it. Arbitrary config JavaScript, installation, cloning, hooks
-and conductor startup are unavailable. These restrictions can block
-a scenario and must not be reported as skill defects. `completed` means the conversation reached
-a final report, not that setup succeeded. Read the final report and file assertions separately.
+Directories and replay files must be unused. The driver keeps private answers out of the setup role,
+retains per-role raw streams, and passes literal actions through a closed boundary. A `message`
+action shows text without waiting for an answer, as an agent does while a command runs. Local config
+commands use the real registered CLI implementation with `BAKERS_HOME` and auth state inside the
+case; external authentication and tracker responses are labelled fixture doubles. Direct
+machine/project config writes accept only `export default` followed by a strict JSON object;
+imports, expressions, extra statements and connection writes are rejected. After such a write,
+initialization of that scope is unavailable. Exact field assertions parse this data without
+executing it. Arbitrary config JavaScript, installation, cloning, hooks and conductor startup are
+unavailable. These restrictions can block a scenario and must not be reported as skill defects.
+`completed` means the conversation reached a final report, not that setup succeeded. Read the final
+report and file assertions separately.
 
 Evidence commands answer only from a fixture's `commands`: exactly, by argv prefix for `gh` and
 `glab`, since their read flags vary, or by the prefix before a final `*` element of a declaration.
@@ -139,16 +140,16 @@ An absolute path inside the case matches its case-relative spelling. A declared 
 successive calls in order and repeats its last output. Any other command is blocked, which the
 setup must treat as missing evidence.
 
-Replay uses independently maintained expectations from `fixtures/setup/`, actual file snapshots
-and the existing provenance checks. Besides file expectations, a fixture may set `max_questions`
+Replay uses independently maintained expectations from `fixtures/setup/`, actual file snapshots and
+the existing provenance checks. Besides file expectations, a fixture may set `max_questions`
 (questions asked), `derived_sources` (each named in some question's preview) and `asked_values`
 (each shown open as `<key>: ?`), `min_questions`, `forbidden_commands` (words no command may run),
-`final_fragments` (each in the final report), `first_question_fragments` (each in the first
-question), `required_commands` (each run exactly) and `tool_sequence` (`bakers tools` calls in
-order, each naming its fragments). The `get-started-*` cases cover the quick start. Repeat replay
-to another unused output and compare named checks. Inspect recommendations, authorization,
-delegation and readiness claims separately; file checks cannot prove them. Preserve failed
-attempts and state the reason before any rerun.
+`final_fragments` (each in the final report), `shown_before_answer` (each in a message or question
+before the first answer), `required_commands` (each run exactly) and `tool_sequence` (`bakers tools`
+calls in order, each naming its fragments). The `get-started-*` cases cover the quick start. Repeat
+replay to another unused output and compare named checks. Inspect recommendations, authorization,
+delegation and readiness claims separately; file checks cannot prove them. Preserve failed attempts
+and state the reason before any rerun.
 
 Add coverage for another skill or explore a maintained example.
 

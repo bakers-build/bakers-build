@@ -21,6 +21,7 @@ SYSTEM = '''Apply the supplied setup skill and its documentation to the user req
 This is an isolated synthetic setup environment. You have no native tools; request exactly
 one action per response as a JSON object, without markdown fences:
 {"type":"question","text":"one question and any relevant explanation"}
+{"type":"message","text":"text shown to the person at once; no answer follows"}
 {"type":"command","argv":["bakers","config",...]}
 {"type":"read","path":"project/WORKFLOW.md"}
 {"type":"write","path":"project/WORKFLOW.md","content":"..."}
@@ -98,6 +99,9 @@ def main():
             if kind == 'final':
                 result['status'] = 'completed'
                 break
+            if kind == 'message':
+                (destination / 'conversation.json').write_text(encode(history))
+                continue
             if kind == 'question':
                 mode = fixture.get('interaction', 'interactive')
                 if mode in {'cancelled', 'unanswered', 'noninteractive'}:

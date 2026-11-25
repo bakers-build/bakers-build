@@ -21,7 +21,7 @@ const fixture = { synthetic: true, id: original.id, skill, profile: 'setup', ref
     asked_values: expectations.asked_values ?? [], max_doc_loads: expectations.max_doc_loads,
     forbidden_commands: expectations.forbidden_commands, final_fragments: expectations.final_fragments,
     min_questions: expectations.min_questions, tool_sequence: expectations.tool_sequence,
-    required_commands: expectations.required_commands, first_question_fragments: expectations.first_question_fragments },
+    required_commands: expectations.required_commands, shown_before_answer: expectations.shown_before_answer },
   rubric: expectations.rubric ?? [{ id: 'conversation-quality', criterion: 'Separately inspect question order, provenance, recommendations and honest readiness against saved source snapshots.' }] };
 const metadata = result.turns.find(turn => turn.role === 'assistant' && turn.metadata)?.metadata;
 if (!metadata?.isolation_confirmed) throw new Error('No verified model generation in this attempt');
