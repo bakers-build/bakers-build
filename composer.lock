@@ -1699,16 +1699,16 @@
         },
         {
             "name": "drupal/core",
-            "version": "11.3.22",
+            "version": "11.3.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/drupal/core.git",
-                "reference": "2c74a8702ee26bd395a50f1106fd419541e4926a"
+                "reference": "52cb84cec22b2dfc87f8e6b2a9fe37bd082c7316"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/drupal/core/zipball/2c74a8702ee26bd395a50f1106fd419541e4926a",
-                "reference": "2c74a8702ee26bd395a50f1106fd419541e4926a",
+                "url": "https://api.github.com/repos/drupal/core/zipball/52cb84cec22b2dfc87f8e6b2a9fe37bd082c7316",
+                "reference": "52cb84cec22b2dfc87f8e6b2a9fe37bd082c7316",
                 "shasum": ""
             },
             "require": {
@@ -1871,14 +1871,14 @@
             ],
             "description": "Drupal is an open source content management platform powering millions of websites and applications.",
             "support": {
-                "source": "https://github.com/drupal/core/tree/11.3.22"
+                "source": "https://github.com/drupal/core/tree/11.3.23"
             },
-            "time": "2026-11-18T14:44:46+00:00",
-            "published-time": "2026-11-18T17:36:04+00:00"
+            "time": "2026-11-25T16:43:16+00:00",
+            "published-time": "2026-11-25T17:55:17+00:00"
         },
         {
             "name": "drupal/core-composer-scaffold",
-            "version": "11.3.22",
+            "version": "11.3.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/drupal/core-composer-scaffold.git",
@@ -1922,14 +1922,14 @@
                 "drupal"
             ],
             "support": {
-                "source": "https://github.com/drupal/core-composer-scaffold/tree/11.3.22"
+                "source": "https://github.com/drupal/core-composer-scaffold/tree/11.3.23"
             },
             "time": "2026-02-10T11:39:53+00:00",
-            "published-time": "2026-11-18T17:37:13+00:00"
+            "published-time": "2026-11-25T17:56:25+00:00"
         },
         {
             "name": "drupal/core-project-message",
-            "version": "11.3.22",
+            "version": "11.3.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/drupal/core-project-message.git",
@@ -1964,14 +1964,14 @@
                 "drupal"
             ],
             "support": {
-                "source": "https://github.com/drupal/core-project-message/tree/11.3.22"
+                "source": "https://github.com/drupal/core-project-message/tree/11.3.23"
             },
             "time": "2025-02-03T10:59:29+00:00",
-            "published-time": "2026-11-18T17:36:38+00:00"
+            "published-time": "2026-11-25T17:55:51+00:00"
         },
         {
             "name": "drupal/core-recipe-unpack",
-            "version": "11.3.22",
+            "version": "11.3.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/drupal/core-recipe-unpack.git",
@@ -2009,30 +2009,30 @@
                 "drupal"
             ],
             "support": {
-                "source": "https://github.com/drupal/core-recipe-unpack/tree/11.3.22"
+                "source": "https://github.com/drupal/core-recipe-unpack/tree/11.3.23"
             },
             "time": "2025-10-28T11:20:22+00:00",
-            "published-time": "2026-11-18T17:37:15+00:00"
+            "published-time": "2026-11-25T17:56:26+00:00"
         },
         {
             "name": "drupal/core-recommended",
-            "version": "11.3.22",
+            "version": "11.3.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/drupal/core-recommended.git",
-                "reference": "e74029bacf15d4ac680f58d82579d84d583b5fae"
+                "reference": "46975216a3f3706235323e3c7efae9558d93f66b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/drupal/core-recommended/zipball/e74029bacf15d4ac680f58d82579d84d583b5fae",
-                "reference": "e74029bacf15d4ac680f58d82579d84d583b5fae",
+                "url": "https://api.github.com/repos/drupal/core-recommended/zipball/46975216a3f3706235323e3c7efae9558d93f66b",
+                "reference": "46975216a3f3706235323e3c7efae9558d93f66b",
                 "shasum": ""
             },
             "require": {
                 "asm89/stack-cors": "~v2.3.0",
                 "composer/semver": "~3.4.4",
                 "doctrine/lexer": "~3.0.1",
-                "drupal/core": "11.3.22",
+                "drupal/core": "11.3.23",
                 "egulias/email-validator": "~4.0.4",
                 "masterminds/html5": "~2.12.0",
                 "mck89/peast": "~v1.17.4",
@@ -2082,10 +2082,10 @@
             ],
             "description": "Core and its dependencies with known-compatible minor versions. Require this project INSTEAD OF drupal/core.",
             "support": {
-                "source": "https://github.com/drupal/core-recommended/tree/11.3.22"
+                "source": "https://github.com/drupal/core-recommended/tree/11.3.23"
             },
-            "time": "2026-11-18T14:44:46+00:00",
-            "published-time": "2026-11-18T17:36:53+00:00"
+            "time": "2026-11-25T16:43:16+00:00",
+            "published-time": "2026-11-25T17:56:04+00:00"
         },
         {
             "name": "drupal/crop",
@@ -13391,7 +13391,7 @@
         },
         {
             "name": "drupal/core-dev",
-            "version": "11.3.22",
+            "version": "11.3.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/drupal/core-dev.git",
@@ -13441,10 +13441,10 @@
             ],
             "description": "require-dev dependencies from drupal/drupal; use in addition to drupal/core-recommended to run tests from drupal/core.",
             "support": {
-                "source": "https://github.com/drupal/core-dev/tree/11.3.22"
+                "source": "https://github.com/drupal/core-dev/tree/11.3.23"
             },
             "time": "2026-05-20T15:34:10+00:00",
-            "published-time": "2026-11-18T17:37:19+00:00"
+            "published-time": "2026-11-25T17:56:30+00:00"
         },
         {
             "name": "fidry/cpu-core-counter",
