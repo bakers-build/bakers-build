@@ -146,6 +146,10 @@ final class UserSearch extends ToolBase {
    */
   protected function doExecute(array $values): ExecutableResult {
     $text = trim((string) $values['query']);
+    // NotBlank lets whitespace through; empty CONTAINS would match everyone.
+    if ($text === '') {
+      throw new \InvalidArgumentException('query must not be blank.');
+    }
     $storage = $this->entities()->getStorage('user');
     // Scope and status sit in the query, so pages count visible users only.
     $query = $storage->getQuery()->accessCheck(FALSE)

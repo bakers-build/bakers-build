@@ -33,8 +33,9 @@ final class TeamMembersToolTest extends BakersToolTestBase {
     $this->installFullNameField();
     $this->alpha = $this->entity('bb_team', ['name' => 'alpha', 'workspace_id' => $this->workspace->id()]);
     $this->addMembership($this->alpha, $this->actor, ['lead']);
-    $this->member('bea', 'Bea Berg');
+    // Created out of name order, so only the username sort lists bea first.
     $this->member('cem');
+    $this->member('bea', 'Bea Berg');
     $this->member('dan')->block()->save();
     $this->addMembership($this->alpha, $this->member('eve'))->setState(OgMembershipInterface::STATE_BLOCKED)->save();
     $this->container->get('bb_core.workspace_read_scope')->reset();
@@ -91,6 +92,8 @@ final class TeamMembersToolTest extends BakersToolTestBase {
     $definition = $manager->getDefinition('bakers_team_members');
     self::assertSame(['team', 'limit', 'offset'], array_keys($definition->getInputDefinitions()));
     self::assertStringContainsString('pick an assignee or reviewer', (string) $definition->getDescription());
+    $roles = $definition->getOutputDefinitions()['members']->getItemDefinition()->getPropertyDefinitions()['roles'];
+    self::assertSame('The team roles, alphabetically: lead, member, owner, reporter.', (string) $roles->getDescription());
     self::assertStringContainsString('bakers_team_members', (string) $manager->getDefinition('bakers_team_list')->getDescription());
   }
 

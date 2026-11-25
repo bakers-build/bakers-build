@@ -76,7 +76,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
           ),
           'roles' => new ListOutputDefinition(
             label: new TranslatableMarkup('Roles'),
-            description: new TranslatableMarkup('The team roles, sorted: member, lead, owner, reporter.'),
+            description: new TranslatableMarkup('The team roles, alphabetically: lead, member, owner, reporter.'),
             item_definition: new OutputDefinition(
               data_type: 'string',
               label: new TranslatableMarkup('Role'),

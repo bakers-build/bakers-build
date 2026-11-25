@@ -116,6 +116,7 @@ final class UserSearchToolTest extends BakersToolTestBase {
     self::assertStringContainsString('before assigning, mentioning or adding reviewers', (string) $definition->getDescription());
     self::assertStringContainsString('bakers_user_search', (string) $manager->getDefinition('bakers_user_read')->getDescription());
     self::assertFalse($this->runTool('bakers_user_search', ['query' => ''])->isSuccess());
+    $this->assertFailure($this->runTool('bakers_user_search', ['query' => '   ']), 'query must not be blank');
   }
 
   /**

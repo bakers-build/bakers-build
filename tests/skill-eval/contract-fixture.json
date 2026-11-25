@@ -1353,7 +1353,7 @@
                 },
                 "roles": {
                   "type": "array",
-                  "description": "The team roles, sorted: member, lead, owner, reporter.",
+                  "description": "The team roles, alphabetically: lead, member, owner, reporter.",
                   "items": {
                     "type": "string",
                     "description": "One team role.",
