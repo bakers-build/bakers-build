@@ -118,7 +118,7 @@
     "inspector": [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:inspector", { "surface": true }, { "rows": [
       $zone("About", {}, [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:text", { "text": $description, "as": "p", "size": "body", "tone": $p.description ? "default" : "faint", "align": "start" })]),
       $zone("Properties", {},
-        "Key: " & $or($p.key)
+        "Identifier prefix: " & $or($p.key)
         & "<br>Origin: " & $list($f.origin)
         & "<br>Repository: " & $or($p.repository.url)
         & "<br>Teams: " & $list([$map([$p.teams], function ($id) { $lookup($teams, $id) })])

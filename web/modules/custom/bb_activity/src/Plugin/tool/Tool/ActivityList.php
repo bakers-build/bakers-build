@@ -45,7 +45,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
     'project' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('Project key or UUID.'),
+      description: new TranslatableMarkup('Project identifier prefix or UUID.'),
       required: FALSE,
     ),
     'limit' => new InputDefinition(
