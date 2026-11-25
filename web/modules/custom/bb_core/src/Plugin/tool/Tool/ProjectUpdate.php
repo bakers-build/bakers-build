@@ -20,12 +20,12 @@ use Drupal\tool\TypedData\MapOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
 
 /**
- * Changes a project's repository settings; group and teams stay as they are.
+ * Changes a project's repository settings or identifier prefix; group and teams stay.
  */
 #[Tool(
   id: 'bakers_project_update',
   label: new TranslatableMarkup('Update a project'),
-  description: new TranslatableMarkup('Changes a project’s repository settings; keys not given are kept. Needs edit bb_project on the project, or update own bb_project as its owner. Returns the saved project.'),
+  description: new TranslatableMarkup('Changes a project’s repository settings or identifier prefix (key); give at least one, the rest is kept. Existing tickets keep their identifier. Needs edit bb_project on the project, or update own bb_project as its owner. Returns the saved project.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_project',
@@ -33,12 +33,13 @@ use Drupal\tool\TypedData\OutputDefinition;
     'project' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('The project key, e.g. BAKERS, or UUID.'),
+      description: new TranslatableMarkup('The project identifier prefix, e.g. BAKERS, or UUID.'),
       constraints: ['NotBlank' => []],
     ),
     'repository' => new MapInputDefinition(
       label: new TranslatableMarkup('Repository'),
       description: new TranslatableMarkup('The repository keys to change; url is required when the project has no repository yet.'),
+      required: FALSE,
       property_definitions: [
         'url' => new InputDefinition(
           data_type: 'string',
@@ -62,6 +63,13 @@ use Drupal\tool\TypedData\OutputDefinition;
         ),
       ],
     ),
+    'key' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Identifier prefix'),
+      description: new TranslatableMarkup('The new identifier prefix, e.g. NEW: 2–10 uppercase letters or digits, starting with a letter. Only tickets created afterwards use it.'),
+      required: FALSE,
+      constraints: ['NotBlank' => []],
+    ),
   ],
   output_definitions: [
     'uuid' => new OutputDefinition(
@@ -71,7 +79,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
     'key' => new OutputDefinition(
       data_type: 'string',
-      label: new TranslatableMarkup('Key'),
+      label: new TranslatableMarkup('Identifier prefix'),
       description: new TranslatableMarkup('The ticket identifier prefix, e.g. BAKERS.'),
     ),
     'name' => new OutputDefinition(
@@ -141,15 +149,31 @@ final class ProjectUpdate extends ToolBase {
    */
   protected function doExecute(array $values): ExecutableResult {
     $project = $this->readableProject($values['project']);
-    if (!$project->access('update', $this->currentUser) || !$project->get('repository')->access('edit', $this->currentUser)) {
+    $changes = array_filter([
+      'repository' => $values['repository'] ?? [],
+      'key' => $values['key'] ?? NULL,
+    ], static fn (mixed $value): bool => $value !== NULL && $value !== []);
+    if ($changes === []) {
+      throw new \InvalidArgumentException('Give key or repository.');
+    }
+    $editable = $project->access('update', $this->currentUser);
+    foreach (array_keys($changes) as $field) {
+      $editable = $editable && $project->get($field)->access('edit', $this->currentUser);
+    }
+    if (!$editable) {
       // Roles, not people: naming holders would disclose memberships.
       throw new \InvalidArgumentException(sprintf('You may not edit project %s: it needs edit bb_project, held by team leads, team owners and workspace leads of its workspace, update own bb_project as its owner, or administer bakers.', $project->getKey()));
     }
-    $repository = array_merge($project->get('repository')->first()?->getValue() ?? [], $values['repository']);
-    if (($repository['url'] ?? '') === '') {
-      throw new \InvalidArgumentException('repository.url: required, the project has no repository yet.');
+    if (isset($changes['repository'])) {
+      $repository = array_merge($project->get('repository')->first()?->getValue() ?? [], $changes['repository']);
+      if (($repository['url'] ?? '') === '') {
+        throw new \InvalidArgumentException('repository.url: required, the project has no repository yet.');
+      }
+      $project->set('repository', $repository);
     }
-    $project->set('repository', $repository);
+    if (isset($changes['key'])) {
+      $project->set('key', $changes['key']);
+    }
     $this->assertValid($project);
     $project->save();
     $saved = $this->entities()->getStorage('bb_project')->loadUnchanged($project->id());

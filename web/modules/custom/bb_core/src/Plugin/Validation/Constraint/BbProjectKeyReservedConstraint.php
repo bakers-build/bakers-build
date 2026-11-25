@@ -26,6 +26,6 @@ final class BbProjectKeyReservedConstraint extends SymfonyConstraint {
    *
    * @var string
    */
-  public string $message = "The identifier prefix %value is reserved: another project's tickets use it.";
+  public string $message = "The identifier prefix %value is reserved: another project’s tickets use it.";
 
 }

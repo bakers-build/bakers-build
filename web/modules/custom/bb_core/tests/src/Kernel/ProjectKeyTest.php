@@ -86,7 +86,7 @@ final class ProjectKeyTest extends KernelTestBase {
     $second = $this->container->get('entity_type.manager')->getStorage('bb_project')
       ->create(['name' => 'Second', 'key' => 'OLD']);
     $this->assertInstanceOf(BbProjectInterface::class, $second);
-    $this->assertSame(["The identifier prefix OLD is reserved: another project's tickets use it."], $this->keyViolations($second));
+    $this->assertSame(["The identifier prefix OLD is reserved: another project’s tickets use it."], $this->keyViolations($second));
   }
 
   /**
