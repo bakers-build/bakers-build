@@ -46,6 +46,11 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
   private array $projects = [];
 
   /**
+   * The team of project S; readers belong to it without a create right.
+   */
+  private ContentEntityInterface $teamS;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -54,7 +59,7 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
     $this->installConfig(['system', 'filter', 'bb_core']);
     $this->buildTwoWorkspaceWorld();
     $owner = $this->fixture('a', 'bb_project')->get('owner_user_id')->target_id;
-    $team = $this->createEntity('bb_team', [
+    $this->teamS = $this->createEntity('bb_team', [
       'name' => 'team-s',
       'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
       'owner_user_id' => $owner,
@@ -62,7 +67,7 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
     $sibling = $this->createEntity('bb_project', [
       'name' => 'project-s',
       'group_id' => $this->fixture('a', 'bb_project')->get('group_id')->target_id,
-      'teams' => [$team->id()],
+      'teams' => [$this->teamS->id()],
       'owner_user_id' => $owner,
     ]);
     $this->projects = [
@@ -85,19 +90,20 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
   }
 
   /**
-   * Creates a reader of workspace a, a member of team a, and acts as it.
+   * Creates a reader of workspace a, a member of teams a and s, and acts as it.
    *
    * @param string $name
    *   The account name.
    * @param array<string> $workspace_roles
    *   Its workspace a roles.
    * @param array<string> $team_roles
-   *   Its team a roles.
+   *   Its team a roles; on team s it is a plain member.
    */
   private function reader(string $name, array $workspace_roles, array $team_roles = []): UserInterface {
     $account = $this->createAccount($name, ['view bb_workspace', 'view bb_project', 'view bb_ticket']);
     $this->addMembership($this->fixture('a', 'bb_workspace'), $account, $workspace_roles);
     $this->addMembership($this->fixture('a', 'bb_team'), $account, $team_roles);
+    $this->addMembership($this->teamS, $account);
     $this->container->get('current_user')->setAccount($account);
     return $account;
   }
