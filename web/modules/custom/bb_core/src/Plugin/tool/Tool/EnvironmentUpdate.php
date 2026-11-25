@@ -30,7 +30,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'project' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('The project key, e.g. BAKERS, or UUID.'),
+      description: new TranslatableMarkup('The project identifier prefix, e.g. BAKERS, or UUID.'),
       constraints: ['NotBlank' => []],
     ),
     'environment' => new InputDefinition(
@@ -86,7 +86,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'project' => new OutputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('The project key.'),
+      description: new TranslatableMarkup('The project identifier prefix.'),
     ),
   ],
 )]

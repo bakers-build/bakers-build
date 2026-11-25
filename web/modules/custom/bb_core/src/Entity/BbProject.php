@@ -114,23 +114,25 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
     $fields['description'] = static::descriptionBaseFieldDefinition(2);
     $fields['image'] = static::imageBaseFieldDefinition('project-images', 3);
     $fields['key'] = BaseFieldDefinition::create('string')
-      ->setLabel(new TranslatableMarkup('Key'))
-      ->setDescription(new TranslatableMarkup('Short project prefix used to build ticket identifiers (KEY-<n>), e.g. BB. Uppercase letters/digits, editable.'))
+      ->setLabel(new TranslatableMarkup('Identifier prefix'))
+      ->setDescription(new TranslatableMarkup('Prefix of ticket identifiers (PREFIX-<n>), e.g. BB. A change applies only to tickets created afterwards; existing tickets keep their identifier.'))
       ->setSetting('max_length', 10)
       // Server-provided (not client-required): the default-value callback fills
       // it from the name, and it is editable in the UI. Declaring it required
       // would put `key` in the authoritative JSON:API create schema
       // (jsonapi_schema derives `required` from isRequired()), so a name-only
       // project create (the documented minimal) would be rejected client-side.
-      // UniqueField keeps the prefix distinct so identifiers never collide.
+      // UniqueField keeps the prefix distinct and BbProjectKeyReserved keeps
+      // other projects' old prefixes, so identifiers never collide.
       ->setDefaultValueCallback(self::class . '::defaultKey')
-      ->addConstraint('UniqueField')
+      ->addConstraint('UniqueField', ['message' => 'The identifier prefix %value is already used by another project.'])
+      ->addConstraint('BbProjectKeyReserved')
       // Regex validates the scalar, so it is a property constraint on `value`;
       // a field-list-level Regex would be handed the ItemList and blow up.
       ->addPropertyConstraints('value', [
         'Regex' => [
           'pattern' => '/^[A-Z][A-Z0-9]{1,9}$/',
-          'message' => 'The project key must be 2–10 uppercase letters or digits, starting with a letter (e.g. BB).',
+          'message' => 'The identifier prefix must be 2–10 uppercase letters or digits, starting with a letter (e.g. BB).',
         ],
       ])
       ->setDisplayConfigurable('form', TRUE)

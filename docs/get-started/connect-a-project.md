@@ -14,6 +14,8 @@ next:
 
 Connect a repository on your computer so agents can work on its tickets. A server **project** holds those tickets within your team's **workspace**; your checkout holds the code. This needs your [computer set up](/get-started/#set-up-your-computer).
 
+Ticket identifiers start with the project's **identifier prefix**, such as `SHOP` in `SHOP-42`, derived from the project name. A project editor can change it on the project's **Settings** tab or with `bakers_project_update`; existing tickets keep their identifier and only tickets created afterwards use the new prefix. A prefix that another project's tickets still carry stays reserved.
+
 <span id="skill-wizard-—-recommended"></span>
 <span id="connect-or-reuse"></span>
 

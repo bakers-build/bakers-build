@@ -28,7 +28,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_project_create',
   label: new TranslatableMarkup('Create a project'),
-  description: new TranslatableMarkup('Creates a project in a group for one or more teams of the same workspace; the key derives from the name and the ticket counter starts at 1. Returns the saved project.'),
+  description: new TranslatableMarkup('Creates a project in a group for one or more teams of the same workspace; the identifier prefix (key) derives from the name and the ticket counter starts at 1. Returns the saved project.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_project',
@@ -42,7 +42,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'name' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Name'),
-      description: new TranslatableMarkup('The project name; the key, e.g. BAKERS, derives from it.'),
+      description: new TranslatableMarkup('The project name; the identifier prefix, e.g. BAKERS, derives from it.'),
       constraints: ['NotBlank' => []],
     ),
     'teams' => new ListInputDefinition(
@@ -101,7 +101,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
     'key' => new OutputDefinition(
       data_type: 'string',
-      label: new TranslatableMarkup('Key'),
+      label: new TranslatableMarkup('Identifier prefix'),
       description: new TranslatableMarkup('The ticket identifier prefix, e.g. BAKERS.'),
     ),
     'name' => new OutputDefinition(

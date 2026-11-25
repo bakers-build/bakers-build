@@ -15,8 +15,8 @@ Start at the first step you have not completed. Keep working tools and project s
 As you prepare the project, decide which operations agents need and what they may access.
 
 <DocQuickLinks aria-label="Tools and security" :items="[
-  { label: 'Tools and integrations', text: 'Make operations available to agents, CLI commands and UI actions.', link: '/provision/tools' },
-  { label: 'Permissions and isolation', text: 'How permissions, isolation boundaries and tools such as provision_up fit together.', link: '/agents/security' }
+  { label: 'Tools and integrations', text: 'What the agent asks bakers.build to do outside its sandbox.', link: '/provision/tools' },
+  { label: 'Permissions and isolation', text: 'What limits an agent, and which permission mode to choose.', link: '/agents/security' }
 ]" />
 
 ## Environment examples

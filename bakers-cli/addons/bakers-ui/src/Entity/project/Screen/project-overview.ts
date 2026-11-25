@@ -17,7 +17,7 @@ import {
 } from '../Data/workload.js';
 
 const contextLines = (project: ProjectWorkContext): string[] => [
-  ...(project.key ? [`Key: ${project.key}`] : []),
+  ...(project.key ? [`Identifier prefix: ${project.key}`] : []),
   ...(project.group ? [`Group: ${project.group}`] : []),
   ...(project.teams.length > 0 ? [`Teams: ${project.teams.join(', ')}`] : []),
   ...(project.repository ? [`Repository: ${project.repository}`] : []),

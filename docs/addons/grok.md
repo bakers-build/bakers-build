@@ -28,8 +28,8 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 |---|---|
 | `sandbox` | `--sandbox workspace --permission-mode acceptEdits --allow 'Bash(*)' --deny 'MCPTool(*)'` |
 | `system` | none |
-| `yolo` | `--permission-mode bypassPermissions` |
 | `custom` | rejected |
+| other modes | see [Agent permissions › Modes](/provision/security/execution#modes) |
 
 | Sandbox key | Accepted value |
 |---|---|

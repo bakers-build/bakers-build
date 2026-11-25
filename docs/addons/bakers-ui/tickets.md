@@ -35,7 +35,7 @@ One `bb_activity` row per event: `created`; `status_changed` with the step's sum
 bakers tools tool_api__bakers_activity_list --data '{"ticket":"<identifier>","limit":20}'
 ```
 
-Pass `project` (key or UUID) instead of `ticket` for a whole project's feed, and `offset` with the returned `next_offset` for the next page. Clients cannot write these rows. The tool reference is [bakers tools](/cli/tools).
+Pass `project` (identifier prefix or UUID) instead of `ticket` for a whole project's feed, and `offset` with the returned `next_offset` for the next page. Clients cannot write these rows. The tool reference is [bakers tools](/cli/tools).
 
 ## Answer a waiting agent
 
