@@ -426,6 +426,11 @@ services:
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_health']
   Drupal\bb_core\Project\ProjectHealth:
     alias: bb_core.project_health
+  bb_core.ticket_facet_search:
+    class: Drupal\bb_core\Ticket\TicketFacetSearch
+    arguments: ['@entity_type.manager']
+  Drupal\bb_core\Ticket\TicketFacetSearch:
+    alias: bb_core.ticket_facet_search
   # Request-cached counts of referencing entities (a project's tickets, a
   # group's projects), shared by every listing that shows them.
   bb_core.reference_counter:
