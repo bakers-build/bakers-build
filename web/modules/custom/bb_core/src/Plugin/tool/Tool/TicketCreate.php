@@ -28,7 +28,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_create',
   label: new TranslatableMarkup('Create a ticket'),
-  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee user UUID assigns that user when they may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Each reviewer user UUID adds that user as a reviewer when they may review in the project’s workspace; otherwise it adds no one and the message says so. Each blocker (ticket identifier or UUID) must be a readable, open ticket of the same project; otherwise no ticket is created. Returns the new ticket’s UUID, identifier, state, assignee and reviewers (each with UUID, name and mail) and URL.'),
+  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee user UUID assigns that user when they may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Each reviewer user UUID adds that user as a reviewer when they may review in the project’s workspace; otherwise it adds no one and the message says so. Each blocker (ticket identifier or UUID) must be a readable, open ticket of the same project; otherwise no ticket is created. An optional priority is 1 (High), 2 (Medium) or 3 (Low); any other value creates nothing. Returns the new ticket’s UUID, identifier, state, assignee and reviewers (each with UUID, name and mail) and URL.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -109,6 +109,12 @@ use Drupal\tool\TypedData\OutputDefinition;
         description: new TranslatableMarkup('One ticket identifier or UUID.'),
         constraints: ['NotBlank' => []],
       ),
+    ),
+    'priority' => new InputDefinition(
+      data_type: 'integer',
+      label: new TranslatableMarkup('Priority'),
+      description: new TranslatableMarkup('1 High, 2 Medium or 3 Low; omit for none. Any other value creates nothing.'),
+      required: FALSE,
     ),
   ],
   output_definitions: [
@@ -230,6 +236,7 @@ final class TicketCreate extends ToolBase {
       'project_id' => $project->id(),
       'description' => ['value' => $values['description'] ?? NULL, 'format' => 'bb_rich'],
       'parent_id' => empty($values['parent']) ? NULL : $this->readableTicket($values['parent'])->id(),
+      'priority' => $this->priority($values['priority'] ?? NULL, FALSE),
     ];
     foreach (array_intersect_key(['type' => 'ticket_type', 'recipe' => 'recipe'], array_filter($values)) as $vid => $field) {
       $fields[$field] = $this->term($project->getGroup()?->getWorkspace(), $vid, $values[$vid])->id();

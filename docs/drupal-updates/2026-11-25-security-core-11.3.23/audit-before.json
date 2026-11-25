@@ -1,0 +1,27 @@
+{
+    "advisories": {
+        "drupal/core": [
+            {
+                "advisoryId": "SA-CORE-2026-019",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.6.23 || >= 11.0.0 <11.3.23 || >=11.4.0 <11.4.14",
+                "title": "Drupal core - Highly critical - Access bypass - SA-CORE-2026-019",
+                "cve": "CVE-2026-136716",
+                "link": "https://www.drupal.org/sa-core-2026-019",
+                "reportedAt": "2026-11-25T17:04:39+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Highly critical - Access bypass - SA-CORE-2026-019",
+                        "remoteId": "SA-CORE-2026-019"
+                    }
+                ],
+                "severity": null
+            }
+        ]
+    },
+    "abandoned": {
+        "doctrine/common": null
+    },
+    "filter": [],
+    "cooldown": []
+}
