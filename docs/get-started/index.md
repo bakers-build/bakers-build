@@ -46,7 +46,7 @@ bakers.build is a ticket-driven AI software factory: agents work each ticket, a 
 
    :::
 
-One question: your Git project's path (re-asked unless Git) or the [demo](https://github.com/bakers-build/northside-shop), cloned to `~/projects/northside-shop`. It installs a missing CLI and [herdr-core](/addons/herdr-core), signs you in, sets `permissions.mode: 'system'`, creates the project in group **Quick start**, writes the [setup files](/get-started/connect-a-project#what-setup-writes) (pushed to your default branch if it lacks `WORKFLOW.md`; demo never), starts the conductor and a `human-review` test ticket.
+One question: your Git project's path (re-asked unless Git) or the [demo](https://github.com/bakers-build/northside-shop) in `~/projects/northside-shop`. It installs a missing CLI and [herdr-core](/addons/herdr-core), signs you in, sets `permissions.mode: 'system'`, reuses or creates the project in group **Quick start**, writes the [setup files](/get-started/connect-a-project#what-setup-writes) (pushed to your default branch if it lacks `WORKFLOW.md`; demo never), starts the conductor and a `human-review` ticket.
 
 ::: warning
 Agents run unsandboxed with your rights. Sandboxed: [Advanced setup](#advanced-setup).

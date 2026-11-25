@@ -5,7 +5,7 @@ description: Use for a quick start — set up bakers.build on this computer in o
 
 # Quick start
 
-One question; all else takes the defaults below. Speak the system
+One question; all else defaults. Speak the system
 language (`LC_ALL`, `LC_MESSAGES`, `LANG`; unset, `C`, `POSIX`: English); commands, paths, keys and
 URLs stay verbatim. Never run `sudo`, `bubblewrap` or `socat`: a step needing them stops.
 
@@ -24,10 +24,10 @@ URLs stay verbatim. Never run `sudo`, `bubblewrap` or `socat`: a step needing th
 5. **herdr-core.** `hc --version`; missing: install per `https://herdr.dev/core/` into
    `~/.local/bin`. **Done when** it prints 0.1.18 or later.
 6. **Server project** through [tools](../bb-workflow/references/tools.md). Workspace and team: the
-   only one, else the connection's `workspace_id`, else the first by name. Group `Quick start`:
-   reuse or create. Project named after the repository folder: reuse it, or create it with the
-   `origin` URL and `default_branch` from `origin/HEAD`, else the current branch.
-   **Done when** `bakers_project_read` returns it.
+   only one, else the connection's `workspace_id`, else the first by name. Reuse a project listed
+   by the folder name or its words whose repository is `origin`; else create one named after the
+   folder in group `Quick start` (reuse or create), with `origin` and `default_branch` from
+   `origin/HEAD`, else the current branch. **Done when** `bakers_project_read` returns it.
 7. **Files.** `bakers config init --scope project --path <project> --project <name> --workspace
    <workspace name> --executor @bakers-build/addon-herdr-core --yes`; absent `WORKFLOW.md`: the
    [skeleton](../bb-init-project/references/WORKFLOW.template.md); missing `.gitignore` lines
@@ -38,17 +38,17 @@ URLs stay verbatim. Never run `sudo`, `bubblewrap` or `socat`: a step needing th
 8. **Conductor.** In `<project>`: `bakers conductor start`. **Done when** `bakers conductor status`
    shows it online, within 1 minute.
 9. **Test ticket.** `bakers_ticket_create`, workflow `bb_work`: demo "Show opening hours on the
-   contact page" (done when it lists every weekday's hours); own project the
+   contact page" (lists every weekday's hours); own project the
    [example](../bb-init-project/references/project-setup.md#start-the-session). Then
    `bakers_ticket_update` `labels_add: [human-review]`; then set the step-8 conductor
    ([people](../bb-workflow/references/people.md)). **Done when** `bakers_run_list` lists a run,
    or after 2 minutes.
 10. **Overview**, at most 15 lines: one line per step, only `✔` or `✖`,
     `<step> — <result>`, for sign-in, CLI, `hc`, machine (`permissions.mode`), server project
-    (workspace / group / name, new or reused), files (written, kept, pushed), conductor, test
-    ticket URL; a caveat stays in its line. A stop: `✖` with the remedy, later steps `not run`.
+    (workspace / group / name, new or reused), files (and push), conductor, test
+    ticket URL; caveats stay in-line. A stop: `✖` with the remedy, later steps `not run`.
     Then exactly three ways on: follow the test ticket (demo: push it to your own repository to
     deliver); create your own with `bakers:bb-create-ticket`; confine agents:
     `https://bakers.build/get-started/#advanced-setup`.
 
-A rerun fills only what is missing and creates a new test ticket.
+A rerun fills only gaps and creates a new test ticket.

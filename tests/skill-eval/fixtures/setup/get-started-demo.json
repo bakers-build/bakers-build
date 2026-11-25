@@ -114,12 +114,30 @@
       ],
       "groups": [
         {
-          "uuid": "44444444-4444-4444-8444-000000000001",
-          "name": "Quick start",
+          "uuid": "44444444-4444-4444-8444-000000000009",
+          "name": "Demos",
           "description": null
         }
       ],
-      "projects": [],
+      "projects": [
+        {
+          "uuid": "66666666-6666-4666-8666-000000000001",
+          "key": "NORTHSIDES",
+          "name": "Northside shop",
+          "workspace": "66666666-6666-4666-8666-666666666666",
+          "group": "44444444-4444-4444-8444-000000000009",
+          "teams": [
+            "77777777-7777-4777-8777-000000000001"
+          ],
+          "description": null,
+          "repository": {
+            "url": "https://github.com/bakers-build/northside-shop.git",
+            "default_branch": "main",
+            "branch_convention": null
+          },
+          "coder_config": null
+        }
+      ],
       "user": {
         "uuid": "88888888-8888-4888-8888-000000000001",
         "name": "quick",
@@ -155,7 +173,8 @@
     "authentication": "Use the supplied synthetic observations only; no real login.",
     "api": "Call control-plane tools as `bakers tools <tool> --data '<json>'`; they answer from a synthetic server.",
     "file_paths": "machine/ is BAKERS_HOME (~/.bakers); a path starting with ~ is a folder named ~ in the case directory. Git commands answer with case-relative paths.",
-    "repository": "~/projects/northside-shop holds a clone of https://github.com/bakers-build/northside-shop (default branch main) with its own WORKFLOW.md; the person has no push rights there."
+    "repository": "~/projects/northside-shop holds a clone of https://github.com/bakers-build/northside-shop (default branch main) with its own WORKFLOW.md; the person has no push rights there.",
+    "server": "The workspace already has a project for this repository under another name."
   },
   "expected_files": {
     "machine/machine.config.js": [
@@ -163,7 +182,7 @@
     ],
     "~/projects/northside-shop/.bakers/project.config.js": [
       "@bakers-build/addon-herdr-core",
-      "northside-shop"
+      "Northside shop"
     ]
   },
   "expected_config": {
@@ -181,7 +200,9 @@
     "bubblewrap",
     "socat",
     "git init",
-    "push"
+    "push",
+    "bakers_group_create",
+    "bakers_project_create"
   ],
   "tool_sequence": [
     {
