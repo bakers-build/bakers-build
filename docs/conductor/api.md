@@ -37,7 +37,7 @@ That read is intentionally only a candidate read. The assignee priority rule and
 
 ## Ticket reads
 
-The ticket collection and single ticket (`GET /jsonapi/bb_ticket/bb_ticket`, `…/{uuid}`) send an `ETag`. Repeat the request with `If-None-Match: <etag>` and an unchanged answer comes back as `304 Not Modified` without a body; any change to what you would receive gives `200` with a new `ETag`. The ETag only saves the transfer: the server still builds the answer, and a 304 only ever answers the account whose own answer is unchanged.
+The ticket collection and single ticket (`GET /jsonapi/bb_ticket/bb_ticket`, `…/{uuid}`) send an `ETag`. Repeat the request with `If-None-Match: <etag>` and an unchanged answer comes back as `304 Not Modified` without a body; any change to what you would receive gives `200` with a new `ETag`. The ETag only saves the transfer: the server still builds the answer, and a 304 only ever answers the account whose own answer is unchanged. Rows tied on the sort field (`sort=-changed`) come back in any order, which changes the ETag; add a tie-breaker: `sort=-changed,drupal_internal__id`.
 
 `include=runs` serializes every run of every ticket and is slow on lists. For each ticket's active run use [`bakers_ticket_list`](/cli/tools) with `closed: false` and `sort: -changed`: its `active_run` comes from one query per page.
 
