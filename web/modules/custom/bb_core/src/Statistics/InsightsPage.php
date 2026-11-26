@@ -28,7 +28,7 @@ use Symfony\Component\HttpFoundation\Request;
  * The Insights page: period, filters, figures.
  *
  * It serves the workspace Insights › Overview and, for one project, the
- * project's Stats tab.
+ * project's Insights tab.
  */
 final class InsightsPage {
 
@@ -351,7 +351,7 @@ final class InsightsPage {
   private function emptyCopy(BbWorkspaceInterface|BbProjectInterface $scope): array {
     if ($scope instanceof BbProjectInterface) {
       return [
-        $this->t('Stats counts the tickets of @project that reach done in the selected period, the runs on them and the AI tokens they used. The figures appear once a ticket is closed.', ['@project' => $scope->label()]),
+        $this->t('Insights counts the tickets of @project that reach done in the selected period, the runs on them and the AI tokens they used. The figures appear once a ticket is closed.', ['@project' => $scope->label()]),
         ['label' => (string) $this->t('Open tickets'), 'href' => $scope->toUrl()->toString() . '/tickets'],
       ];
     }
@@ -385,7 +385,7 @@ final class InsightsPage {
   }
 
   /**
-   * The page path: the workspace's Insights, or the project's Stats tab.
+   * The page path: the workspace's Insights, or the project's Insights tab.
    */
   private function pageUrl(BbWorkspaceInterface|BbProjectInterface $scope): string {
     return $this->url($scope)->toString();

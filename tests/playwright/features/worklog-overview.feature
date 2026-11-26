@@ -9,7 +9,7 @@ Feature: Employees review their own time in a workspace by day and week
     Then I see the My time action
     When I open My time from My work
     Then the address is "/bakers/time"
-    And the My work tabs are "Tickets, My time, Stats"
+    And the My work tabs are "Tickets, My time, Insights"
     And I see the My time overview
     And the page heading is "My time"
     And the My time heading describes recorded hours
