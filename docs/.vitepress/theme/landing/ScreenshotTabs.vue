@@ -58,7 +58,7 @@ function navigate(event: KeyboardEvent, index: number) {
     >
       <figure class="m-0 min-w-0">
         <img
-          :src="`/landing/${s.image}.png`"
+          :src="`/landing/${s.image}.webp`"
           :alt="s.alt"
           :width="sizes[s.image]?.[0] ?? 1440"
           :height="sizes[s.image]?.[1] ?? 900"
