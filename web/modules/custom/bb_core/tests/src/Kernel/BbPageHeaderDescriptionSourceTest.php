@@ -63,7 +63,7 @@ final class BbPageHeaderDescriptionSourceTest extends KernelTestBase {
   /**
    * A project tab shows its route text, not the key and group caption.
    */
-  public function testAProjectTabShowsItsOwnDescription(): void {
+  public function testProjectTabShowsItsOwnDescription(): void {
     $route = new Route('/_workspace/{bb_workspace}/project/{bb_project}/board', [
       '_description' => 'The tickets of this project, in one column per state.',
     ]);

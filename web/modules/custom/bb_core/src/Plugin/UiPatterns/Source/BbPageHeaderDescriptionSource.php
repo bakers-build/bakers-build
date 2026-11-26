@@ -66,6 +66,7 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
     }
     $description = $this->routeMatch->getRouteObject()?->getDefault('_description');
     if (is_string($description) && $description !== '') {
+      // Translated like core translates the route `_title`.
       // phpcs:ignore Drupal.Semantics.FunctionT.NotLiteralString
       return (string) new TranslatableMarkup($description);
     }
