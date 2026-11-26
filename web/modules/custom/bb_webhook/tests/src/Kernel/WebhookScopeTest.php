@@ -112,7 +112,11 @@ final class WebhookScopeTest extends WebhookKernelTestBase {
   public function testScopeDeleteCascades(): void {
     $owner = $this->leads['a']->id();
     $workspace = $this->fixture('a', 'bb_workspace');
-    $group = $this->createEntity('bb_group', ['name' => 'doomed', 'workspace_id' => $workspace->id(), 'owner_user_id' => $owner]);
+    $group = $this->createEntity('bb_group', [
+      'name' => 'doomed',
+      'workspace_id' => $workspace->id(),
+      'owner_user_id' => $owner,
+    ]);
     $project = $this->createEntity('bb_project', [
       'name' => 'doomed',
       'group_id' => $group->id(),
