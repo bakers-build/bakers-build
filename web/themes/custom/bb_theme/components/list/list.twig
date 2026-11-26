@@ -115,7 +115,7 @@
           {%- endset -%}
           {% set slots = slots|merge({ (region): region_markup }) %}
         {% endfor %}
-        {{ include('bb_theme:list_item', slots|merge({ accent: item.accent|default(null), url: item.url|default(null) }), with_context = false) }}
+        {{ include('bb_theme:list_item', slots|merge(item.accent ? { accent: item.accent } : {})|merge(item.url ? { url: item.url } : {}), with_context = false) }}
       {% else %}
       {% set item_classes = item_base %}
       {% if item.accent in ['wait', 'critical'] %}
