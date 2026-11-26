@@ -9,9 +9,9 @@ Use your signed-in account to create a personal key for scripts, or ask a worksp
 
 ## Put credentials at the operation boundary
 
-[Agent permissions](/provision/security/execution), [isolation](/agents/isolation) and account authorization control different things. A sandbox cannot reduce the server rights of a credential deliberately provided to a run.
+[Agent permissions](/provision/security/execution), [isolation](/agents/isolation-models) and account authorization control different things. A sandbox cannot reduce the server rights of a credential deliberately provided to a run.
 
-For operations exposed through [conductor tools](/provision/tools#work-across-permissions-and-isolation), keep the required credential with the integration. Forge tools can deliver work using the conductor's forge token; the agent needs permission to call the tool, not the token value. The tool still checks scope and authorization. A credential passed directly to an agent remains usable within its accessible environment.
+For operations exposed through [conductor tools](/provision/tools-and-integrations#work-across-permissions-and-isolation), keep the required credential with the integration. Forge tools can deliver work using the conductor's forge token; the agent needs permission to call the tool, not the token value. The tool still checks scope and authorization. A credential passed directly to an agent remains usable within its accessible environment.
 
 Give the worker only the project access it needs. Separate model-provider credentials from server/forge credentials, and inspect what a tool returns: secrets in results can enter model requests or transcripts. Tools that run worktree code also expose their execution authority to that code.
 

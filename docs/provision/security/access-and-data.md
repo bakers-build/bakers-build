@@ -2,11 +2,11 @@
 
 <span id="security"></span>
 
-Account authorization determines which server resources a person or service can access. [Agent permissions and isolation](/agents/security) determine how work runs on a machine. Configure these independently; a workspace rank does not confine a process, and a sandbox does not change an account’s server rights.
+Account authorization determines which server resources a person or service can access. [Agent permissions and isolation](/agents/permissions-and-isolation) determine how work runs on a machine. Configure these independently; a workspace rank does not confine a process, and a sandbox does not change an account’s server rights.
 
 ## Credentials and access
 
-Authorize chat connectors with your own account. [API keys and service accounts](/provision/security/credentials) explains issuing, revoking and limiting credentials. Keep connection files under `~/.bakers` private; sign-in tokens live in dropsh's per-host `~/.config/dropsh/` store. [Connections](/configuration/connection) owns the authentication profiles and file permissions.
+Authorize chat connectors with your own account. [API keys and service accounts](/provision/security/api-keys-and-service-accounts) explains issuing, revoking and limiting credentials. Keep connection files under `~/.bakers` private; sign-in tokens live in dropsh's per-host `~/.config/dropsh/` store. [Connections](/configuration/connection) owns the authentication profiles and file permissions.
 
 Never put credentials in tickets, README files or committed project configuration. Ignore `.bakers/connection.config.js`, `.bakers/log.txt` and `assets-ai/`; verify with `git check-ignore` during [project setup](/get-started/connect-a-project).
 
@@ -54,9 +54,9 @@ Review, merge and deployment stay explicit human decisions, whatever your rank.
 
 ## Agent execution boundaries
 
-Choose [agent permissions](/provision/security/execution) for allowed actions and [isolation](/agents/isolation) for process reach. Runs default to `system`; supported native sandbox mode must be selected explicitly. A worktree or application container alone is not an agent security boundary.
+Choose [agent permissions](/provision/security/execution) for allowed actions and [isolation](/agents/isolation-models) for process reach. Runs default to `system`; supported native sandbox mode must be selected explicitly. A worktree or application container alone is not an agent security boundary.
 
-[Conductor tools](/provision/tools#work-across-permissions-and-isolation) let restricted agents request operations without receiving every underlying credential. Their account access, execution rights and returned data need their own policy. Host tools and project hooks remain outside the agent boundary; inspect any editable worktree files they execute. Treat ticket text as task input, not authority to widen access.
+[Conductor tools](/provision/tools-and-integrations#work-across-permissions-and-isolation) let restricted agents request operations without receiving every underlying credential. Their account access, execution rights and returned data need their own policy. Host tools and project hooks remain outside the agent boundary; inspect any editable worktree files they execute. Treat ticket text as task input, not authority to widen access.
 
 ## Public previews and ports
 
@@ -66,7 +66,7 @@ Isolate each worktree's service names, ports and data. Cleanup that deletes a wo
 
 ## Hosting and data
 
-See [hosted or self-run](/self-hosting/choosing) for the server choice and [server operations](/self-hosting/server) for deployment and backups.
+See [hosted or self-run](/self-hosting/hosted-or-self-run) for the server choice and [server operations](/self-hosting/server) for deployment and backups.
 
 ## Where your code and data live
 

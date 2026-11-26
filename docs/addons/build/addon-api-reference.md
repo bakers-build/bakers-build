@@ -1,10 +1,10 @@
 # Addon API reference
 
-An addon is a JavaScript package whose preset declares contributions to bakers.build. The **preset** is a module with named exports that bakers.build recognizes, such as `tools` or `inbox`. Start with [Build your first addon](/addons/build/first-addon#how-bakers-loads-an-addon) for the package/module basics and a complete local example; this page defines the API.
+An addon is a JavaScript package whose preset declares contributions to bakers.build. The **preset** is a module with named exports that bakers.build recognizes, such as `tools` or `inbox`. Start with [Build your first addon](/addons/build/build-your-first-addon#how-bakers-loads-an-addon) for the package/module basics and a complete local example; this page defines the API.
 
 Expose a `./preset` entry in the package's `exports` so the loader can find your contributions. Packages under `bakers-cli/addons/` without a `./preset` (`docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in `bakers-cli/addons/ports` in a source checkout.
 
-To enable an addon, use [Addons](/addons/configure); this page is for people who change or add addons.
+To enable an addon, use [Addons](/addons/configure-addons); this page is for people who change or add addons.
 
 <span id="addon-contracts"></span>
 
@@ -23,17 +23,17 @@ A preset declares contributions through named accumulator functions of the form 
 |---|---|---|---|
 | command | `commands` | The registry of the `bakers` host | A descriptor: `name`, `plugin` module, `describe` text, optional `export` |
 | conductor | `servers`, `executors`, `worktrees` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
-| conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/provision/hooks#add-a-listener-from-an-addon) |
+| conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/provision/add-lifecycle-hooks#add-a-listener-from-an-addon) |
 | conductor | `agents` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `AgentCandidate` |
-| conductor | `inbox`, `tools` (values, not accumulators) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions); `AddonTools`: [agent tools](/addons/build/tools) |
+| conductor | `inbox`, `tools` (values, not accumulators) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/messages); `AddonTools`: [agent tools](/addons/build/tools) |
 | connection | `connectionPlugins` | `addons` of a connection config | A dropsh plugin: authentication, renderers, schema, request hooks |
 | connection | `uiEntries` | `addons` of the machine, connection or project config | A module specifier, a string |
 
-Contract 1 (`actions`: a contract definition and lazy handlers rendering tables/views/row actions) is retired; it is not a current surface and no addon may still export it (see [Migrating a contract-1 addon](/addons/build/actions#migrating-a-contract-1-addon)).
+Contract 1 (`actions`: a contract definition and lazy handlers rendering tables/views/row actions) is retired; it is not a current surface and no addon may still export it (see [Migrating a contract-1 addon](/addons/build/messages#migrating-a-contract-1-addon)).
 
 A conductor-surface plugin has a `kind`, an `id`, `requiredModules` and one factory: `createRemote(config)`, `createExecutor(config, deps)`, `createWorkspace(config, deps?)` or `createAgent(config)`. An agent candidate adds an optional `alias`, `description`, `model`, `modelVersion` and `priority`. The interfaces they return are `BbRemote`, `BbExecutor`, `BbWorkspace` and `BbAgent`, all exported from `@bakers-build/conductor/contract`.
 
-Use the [catalog](/addons/catalog) to choose an integration. The `@bakers-build/ui` package supplies the command; `@bakers-build/addon-bakers-ui` supplies its renderer.
+Use the [catalog](/addons/available-addons) to choose an integration. The `@bakers-build/ui` package supplies the command; `@bakers-build/addon-bakers-ui` supplies its renderer.
 
 ## Addon entry fields
 
@@ -91,25 +91,25 @@ export const mergeWith: BbPreset['mergeWith'] = (project, machine) => ({
 | `scopes` | Any non-empty subset of `'machine'` (`~/.bakers/machine.config.js`) and `'project'` (`.bakers/project.config.js`). Absent means both. |
 | `mergeWith(project, machine)` | Called when the addon is listed in both files, `undefined` for a missing `with`; returns the entry's `with`. Absent: a given machine `with` replaces the project `with` whole, else the project `with` is used. |
 
-[Configure addons](/addons/configure#which-file-takes-addons) lists the shipped declarations. An addon with hook listeners declares `['project']`, so no machine runs hooks for every project. Settings live only in the entry's `with`.
+[Configure addons](/addons/configure-addons#which-file-takes-addons) lists the shipped declarations. An addon with hook listeners declares `['project']`, so no machine runs hooks for every project. Settings live only in the entry's `with`.
 
 Terminal UI tabs are layered. The three lists concatenate in the order machine, connection, project, and the same module resolved from two layers renders one tab.
 
 ## Write an addon
 
-1. Create a JavaScript package with `"type": "module"` and an export such as `"./preset": "./preset.js"`. The [harness tutorial](/addons/build/agent#create-the-package) includes a complete manifest. A local package can live in `.bakers/addons/`; it does not need to be added to the bakers.build source repository.
+1. Create a JavaScript package with `"type": "module"` and an export such as `"./preset": "./preset.js"`. The [harness tutorial](/addons/build/add-a-new-agent-harness#create-the-package) includes a complete manifest. A local package can live in `.bakers/addons/`; it does not need to be added to the bakers.build source repository.
 2. Export only the contributions you need. Accumulators preserve previous contributions, for example `(acc, opts) => [...acc, myWorkspace(opts)]`. `tools` and `inbox` are values with their own contract versions.
 3. For TypeScript, import `BbPreset` from `@bakers-build/core`, or the typed conductor `Preset` from `@bakers-build/conductor/contract`. That subpath also exports `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin`, `AgentPlugin` and their interfaces. Use `import type` for types and compile before loading the package; export the compiled JavaScript path.
 4. Declare the contract packages you use as peer dependencies with compatible published versions. You can also use them as development dependencies for local type checking. Keep preset imports light: commands return lazy module descriptors, UI entries return module specifiers, and tool/message handler factories load their implementation only when needed.
 5. Make the package resolvable from the configuration directory, working directory or CLI installation. Add it to the correct `addons` list, validate configuration and restart the conductor. Listing a package never installs it.
 
-Do not export project identity, scheduler settings or shell-hook configuration from a preset; those belong to the project's configuration. For hooks, use the listener accumulator and its [lifecycle contract](/provision/hooks#add-a-listener-from-an-addon).
+Do not export project identity, scheduler settings or shell-hook configuration from a preset; those belong to the project's configuration. For hooks, use the listener accumulator and its [lifecycle contract](/provision/add-lifecycle-hooks#add-a-listener-from-an-addon).
 
-Validate the actual example through its loader and input/result validators, then exercise it on a disposable ticket. A successful type check or config report does not prove runtime behavior. Specialized [executor/workspace contracts](/addons/build/executor-workspace) also require lifecycle and cleanup tests.
+Validate the actual example through its loader and input/result validators, then exercise it on a disposable ticket. A successful type check or config report does not prove runtime behavior. Specialized [executor/workspace contracts](/addons/build/executor-and-workspace-api) also require lifecycle and cleanup tests.
 
 ## Addon inbox messages
 
-An addon can offer messages that run on the conductor's machine and are triggered from the message card inline in the ticket detail page's right column (web UI) or the ticket's own right-hand-column card in `bakers ui`. The preset exports them as `inbox` (contract 2): message definitions — a label, who may send it, an optional flat `input` — plus lazy `InboxMessageHandler`s or tool `bindings`, each giving one `{ markdown }` answer. Registration is unique per `(workspace, name, version)` and definition: two conductors of one workspace registering an identical definition share one record, and a differing definition gets its own, so each conductor's messages keep the access levels and input it declared. [Write an addon with inbox messages](/addons/build/actions) is the guide and holds the contract and the lifecycle.
+An addon can offer messages that run on the conductor's machine and are triggered from the message card inline in the ticket detail page's right column (web UI) or the ticket's own right-hand-column card in `bakers ui`. The preset exports them as `inbox` (contract 2): message definitions — a label, who may send it, an optional flat `input` — plus lazy `InboxMessageHandler`s or tool `bindings`, each giving one `{ markdown }` answer. Registration is unique per `(workspace, name, version)` and definition: two conductors of one workspace registering an identical definition share one record, and a differing definition gets its own, so each conductor's messages keep the access levels and input it declared. [Write an addon with inbox messages](/addons/build/messages) is the guide and holds the contract and the lifecycle.
 
 ## Before conductor start
 

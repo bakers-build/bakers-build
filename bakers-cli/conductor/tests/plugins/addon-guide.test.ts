@@ -38,7 +38,7 @@ afterEach(() => {
 });
 
 async function loadGuide(
-  page = 'control-panel',
+  page = 'extend-the-control-panel',
   name = 'worktree-check',
   options?: unknown,
 ) {
@@ -206,7 +206,7 @@ it('runs the ticket button in its bound worktree and distinguishes dirty from fa
 });
 
 it('loads a new harness that passes the prompt and run identity to its own program', async () => {
-  const found = await loadGuide('agent', 'my-agent');
+  const found = await loadGuide('add-a-new-agent-harness', 'my-agent');
   expect(found.agents).toMatchObject([
     {
       alias: 'my-agent',
@@ -245,7 +245,7 @@ it('loads a new harness that passes the prompt and run identity to its own progr
 });
 
 it('collects only its own agent transcript and tolerates absent logs and metrics', async () => {
-  const found = await loadGuide('agent', 'my-agent');
+  const found = await loadGuide('add-a-new-agent-harness', 'my-agent');
   const [{ agent: plugin }] = found.agents as AgentCandidate[];
   const agent = await plugin.createAgent({} as ConductorFileConfig);
   const logs = join(dir, '.my-agent');
@@ -315,7 +315,7 @@ fs.writeFileSync(file('sessions.json'), JSON.stringify(sessions));
 
 it('starts runs through the new client CLI and cleans up one session after reconnecting', async () => {
   installClientCli();
-  const found = await loadGuide('client', 'my-client');
+  const found = await loadGuide('connect-a-new-client', 'my-client');
   expect(found.executors).toMatchObject([
     { kind: 'executor', id: 'my-client' },
   ]);
@@ -383,7 +383,7 @@ it('starts runs through the new client CLI and cleans up one session after recon
 
 it('reports client start and cleanup failures without exposing client output', async () => {
   installClientCli();
-  const found = await loadGuide('client', 'my-client');
+  const found = await loadGuide('connect-a-new-client', 'my-client');
   const [plugin] = found.executors as ExecutorPlugin[];
   const logger = {
     debug: vi.fn(),

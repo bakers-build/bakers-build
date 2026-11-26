@@ -10,7 +10,7 @@ The [DDEV setup example](/addons/ddev/setup) shows preparation, cleanup and a `p
 
 The [DDEV addon](/addons/ddev#agent-tools) owns the tool catalog for inspecting, starting and executing commands inside that environment.
 
-Enable the addon in the machine or project configuration. It also supplies service discovery for Ports when configured as a claimer. The addon provides tools and discovery; your project owns application setup. [Tools and integrations](/provision/tools) explains how callers reach these functions.
+Enable the addon in the machine or project configuration. It also supplies service discovery for Ports when configured as a claimer. The addon provides tools and discovery; your project owns application setup. [Tools and integrations](/provision/tools-and-integrations) explains how callers reach these functions.
 
 ## Docker Compose
 
@@ -22,12 +22,12 @@ The [Docker Compose example](/provision/docker-compose) shows setup, readiness a
 
 A Node.js application can run directly on the machine. Install its locked dependencies in each worktree, give concurrent servers different ports and keep writable application data separate.
 
-The [Node.js project example](/provision/node-project) uses the repository's package manager and scripts. A project-specific `provision_up` command can prepare and check a running application when needed. No container runtime or Node provisioning addon is required. The Node.js installation needed by the bakers.build CLI is a separate [machine prerequisite](/get-started/#set-up-your-computer).
+The [Node.js project example](/provision/node-js-application) uses the repository's package manager and scripts. A project-specific `provision_up` command can prepare and check a running application when needed. No container runtime or Node provisioning addon is required. The Node.js installation needed by the bakers.build CLI is a separate [machine prerequisite](/get-started/#set-up-your-computer).
 
 ## Use another environment
 
 Apply the same [worktree requirements](/provision/guide#make-the-project-worktree-compatible) to your own stack. Provide repeatable setup, a readiness check and cleanup scoped to one ticket. Add an addon only when you need additional tools or integration.
 
-**Verify:** prepare two worktrees, repeat setup, and check both applications. Cleaning up one must leave the other working. Choose [security boundaries](/agents/security) for the agent as well as for the application.
+**Verify:** prepare two worktrees, repeat setup, and check both applications. Cleaning up one must leave the other working. Choose [security boundaries](/agents/permissions-and-isolation) for the agent as well as for the application.
 
 **Next:** return to [project preparation](/provision/guide#check-tools-and-access) to review access and verify independence, then connect the checkout.

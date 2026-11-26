@@ -1,6 +1,6 @@
 # Configure addons
 
-Enable an existing addon without writing one. Choose it in the [catalog](/addons/catalog), check its prerequisites, then append its entry to the correct file. Configuration does not install packages or their underlying tools.
+Enable an existing addon without writing one. Choose it in the [catalog](/addons/available-addons), check its prerequisites, then append its entry to the correct file. Configuration does not install packages or their underlying tools.
 
 ## AI first
 
@@ -33,7 +33,7 @@ The package must resolve from the configuration directory, working directory or 
 
 **Machine/project precedence:** the same package and alias become one entry. A machine `with` replaces the project `with` as a whole; absent machine options preserve project options. [Ports](/addons/ports-services#options) merges service rules by key. Wrong-scope entries warn and do not load; online checks report an error. Missing machine packages warn and are skipped; missing project or connection packages fail loading.
 
-UI entries layer in machine, connection, project order and deduplicate resolved modules. See the [API reference](/addons/build/contracts#addon-entry-fields) for aliases and author declarations.
+UI entries layer in machine, connection, project order and deduplicate resolved modules. See the [API reference](/addons/build/addon-api-reference#addon-entry-fields) for aliases and author declarations.
 
 ## Connection defaults
 
@@ -50,4 +50,4 @@ bakers config check --scope machine --online
 bakers config check --scope project --online
 ```
 
-Check the scope you changed, restart the conductor or UI, then follow the addon's success check. Old `agents.addons` and top-level `ports` settings require [configuration migration](/configuration/guides/updates).
+Check the scope you changed, restart the conductor or UI, then follow the addon's success check. Old `agents.addons` and top-level `ports` settings require [configuration migration](/configuration/guides/update-bakers-build).

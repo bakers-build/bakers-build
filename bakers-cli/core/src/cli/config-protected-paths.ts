@@ -6,7 +6,8 @@ import type {
   ConfigSourceProperty,
 } from './config-source.js';
 
-const DOCS = 'https://bakers.build/provision/hooks#protect-host-executed-files';
+const DOCS =
+  'https://bakers.build/provision/add-lifecycle-hooks#protect-host-executed-files';
 
 export interface ProtectedPathProblem {
   key: string;

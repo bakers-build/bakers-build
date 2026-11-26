@@ -10,7 +10,7 @@ Use hooks to prepare a ticket worktree, refresh it before a run or release its r
    hooks: { after_create: 'sh .bakers/scripts/prepare.sh' },
    ```
 
-   Supply `.bakers/scripts/prepare.sh`; the example does not create it. See the [Node.js example](/provision/node-project) for a locked dependency install, or [Compose](/provision/docker-compose) for service setup and scoped cleanup.
+   Supply `.bakers/scripts/prepare.sh`; the example does not create it. See the [Node.js example](/provision/node-js-application) for a locked dependency install, or [Compose](/provision/docker-compose) for service setup and scoped cleanup.
 
 2. Run the command twice in a disposable worktree. It should prepare missing resources and preserve resources that are already ready. Keep long-running servers out of blocking setup commands.
 
@@ -38,7 +38,7 @@ Configure [`provision_up`](/configuration/project/hooks#provision-on-an-agent-s-
 
 ## Add a listener from an addon
 
-Addon authors use the existing [hook listener contract](/addons/build/contracts#surfaces-and-extension-points).
+Addon authors use the existing [hook listener contract](/addons/build/addon-api-reference#surfaces-and-extension-points).
 
 ## Clean up a preview
 

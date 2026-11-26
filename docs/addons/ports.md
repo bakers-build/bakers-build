@@ -52,7 +52,7 @@ bakers ports reap                         # machine-wide reconciliation
 
 - Only claimed services get a tunnel: host processes by [`services`](/addons/ports-services), runtime services by `claimers`. A service key comes from `list`, never a raw port; `up` alone shares every eligible one.
 - In `bakers ui`, select the Overview message card to send **Share tunnels**.
-- Reap is no message: run `bakers ports reap` or wire the [`after_done` hook](/provision/hooks#clean-up-a-preview), so a finished ticket leaves no tunnel behind.
+- Reap is no message: run `bakers ports reap` or wire the [`after_done` hook](/provision/add-lifecycle-hooks#clean-up-a-preview), so a finished ticket leaves no tunnel behind.
 - A public URL is reachable from the internet while the tunnel lives.
 
 ::: tip Ask your AI

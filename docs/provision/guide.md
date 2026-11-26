@@ -4,7 +4,7 @@ prev:
   link: /provision/
 next:
   text: Choose an example
-  link: /provision/examples
+  link: /provision/choose-an-example
 ---
 
 <span id="prepare-your-project"></span>
@@ -34,17 +34,17 @@ Your project must support:
 
 Repository scripts prepare the application. Identify the commands to put in `.bakers/project.config.js`. The next step, [connecting the checkout](/get-started/connect-a-project), applies these choices and verifies the configuration.
 
-[Lifecycle hooks](/provision/hooks) connect setup and cleanup commands to ticket work. The [Node.js](/provision/node-project) and [Compose](/provision/docker-compose) examples show stack-specific commands. The [Configuration reference](/configuration/project/hooks) owns timing, environment and failure rules.
+[Lifecycle hooks](/provision/add-lifecycle-hooks) connect setup and cleanup commands to ticket work. The [Node.js](/provision/node-js-application) and [Compose](/provision/docker-compose) examples show stack-specific commands. The [Configuration reference](/configuration/project/hooks) owns timing, environment and failure rules.
 
 ## Prepare the application on demand
 
 If a task or its checks need a running application, configure the [`provision_up` tool](/configuration/project/hooks#provision-on-an-agent-s-request) to prepare or reuse it on demand. If they only need source files and installed dependencies, application services can stay stopped. The project script owns installation, readiness checks and the resulting URL.
 
-Runtime addons can add tools or discover services, but enabling an addon alone does not install your application. Need a concrete pattern? Follow the [example matching your project](/provision/examples), then return to the check below.
+Runtime addons can add tools or discover services, but enabling an addon alone does not install your application. Need a concrete pattern? Follow the [example matching your project](/provision/choose-an-example), then return to the check below.
 
 ## Check tools and access
 
-Review the [available tools](/provision/tools) and [security context](/agents/security) before the first run. `provision_up` and addon tools can execute outside the agent sandbox; their scripts and permissions must be trusted. Neither application containers nor worktrees automatically isolate the agent.
+Review the [available tools](/provision/tools-and-integrations) and [security context](/agents/permissions-and-isolation) before the first run. `provision_up` and addon tools can execute outside the agent sandbox; their scripts and permissions must be trusted. Neither application containers nor worktrees automatically isolate the agent.
 
 <span id="verify-and-isolate"></span>
 

@@ -8,15 +8,15 @@ Start at the first step you have not completed. Keep working tools and project s
 
 1. **[Choose where agents run](/provision/machine).** Reuse an existing environment, choose a remote server or use your own computer.
 2. **[Prepare your project](/get-started/connect-a-project).** Connect the repository and configure its workflow and worktree environment.
-3. **[Run your first ticket](/get-started/first-ticket).** Check the execution setup and read the first result.
+3. **[Run your first ticket](/get-started/run-the-first-ticket).** Check the execution setup and read the first result.
 
 ## Tools and security
 
 As you prepare the project, decide which operations agents need and what they may access.
 
 <DocQuickLinks aria-label="Tools and security" :items="[
-  { label: 'Tools and integrations', text: 'What the agent asks bakers.build to do outside its sandbox.', link: '/provision/tools' },
-  { label: 'Permissions and isolation', text: 'What limits an agent, and which permission mode to choose.', link: '/agents/security' }
+  { label: 'Tools and integrations', text: 'What the agent asks bakers.build to do outside its sandbox.', link: '/provision/tools-and-integrations' },
+  { label: 'Permissions and isolation', text: 'What limits an agent, and which permission mode to choose.', link: '/agents/permissions-and-isolation' }
 ]" />
 
 ## Environment examples
@@ -24,9 +24,9 @@ As you prepare the project, decide which operations agents need and what they ma
 Follow the example that matches your existing project. These are starting points, not required environments.
 
 <DocTiles :tiles="[
-  { title: 'DDEV', text: 'Separate DDEV projects and addon tools for each ticket.', link: '/provision/examples#ddev', icon: 'layers', meta: 'Explore the DDEV example →' },
-  { title: 'Docker Compose', text: 'Separate service identities, ports and data.', link: '/provision/examples#docker-compose', icon: 'layers', meta: 'Explore the Compose example →' },
-  { title: 'Node.js', text: 'Run the application directly in each worktree.', link: '/provision/examples#node-js', icon: 'code', meta: 'Explore the Node.js example →' }
+  { title: 'DDEV', text: 'Separate DDEV projects and addon tools for each ticket.', link: '/provision/choose-an-example#ddev', icon: 'layers', meta: 'Explore the DDEV example →' },
+  { title: 'Docker Compose', text: 'Separate service identities, ports and data.', link: '/provision/choose-an-example#docker-compose', icon: 'layers', meta: 'Explore the Compose example →' },
+  { title: 'Node.js', text: 'Run the application directly in each worktree.', link: '/provision/choose-an-example#node-js', icon: 'code', meta: 'Explore the Node.js example →' }
 ]" />
 
 Using another stack? Apply the same [worktree requirements](/provision/guide#make-the-project-worktree-compatible).
@@ -38,6 +38,6 @@ Using another stack? Apply the same [worktree requirements](/provision/guide#mak
 Continue here when you need precise command timing or want to operate the application server.
 
 <DocQuickLinks aria-label="Related provision guides" :items="[
-  { label: 'Lifecycle hooks', text: 'Connect repeatable project setup and cleanup commands.', link: '/provision/hooks' },
+  { label: 'Lifecycle hooks', text: 'Connect repeatable project setup and cleanup commands.', link: '/provision/add-lifecycle-hooks' },
   { label: 'Self-hosting', text: 'Run the bakers.build application server on your own infrastructure.', link: '/self-hosting/' }
 ]" />

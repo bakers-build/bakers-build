@@ -1,6 +1,6 @@
 # Agent policy reference
 
-Configure agent plugins and selection policy in `~/.bakers/machine.config.js`; keep it private. This reference is for machine owners with an installed harness program and a connected project checkout. Start with [Configure and select agents](/agents/guide) for the two separate tasks; after changes, [verify the resolved catalog](#old-keys-and-verification).
+Configure agent plugins and selection policy in `~/.bakers/machine.config.js`; keep it private. This reference is for machine owners with an installed harness program and a connected project checkout. Start with [Configure and select agents](/agents/configure-and-select-agents) for the two separate tasks; after changes, [verify the resolved catalog](#old-keys-and-verification).
 
 ## The agents object
 
@@ -61,7 +61,7 @@ Run `bakers agents` in the project checkout to see the aliases and models your i
 
 ## Run security
 
-Compare boundaries and support by agent and platform in [Isolation models](/agents/isolation).
+Compare boundaries and support by agent and platform in [Isolation models](/agents/isolation-models).
 
 Runs start in `system` mode by default; choose `permissions: 'sandbox'` for Claude, Codex or Grok runs on untrusted tickets. Set `permissions`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. The mode and the `deny_read`, `allow_write` and `trusted_commands` lists can also be set once for every agent in a top-level `permissions` block of `machine.config.js` or the project's `.bakers/project.config.js`; layers combine as [Shared run security](/provision/security/shared-settings) describes, including the risk of a committed project block that loosens the sandbox.
 
@@ -77,7 +77,7 @@ Modes, blocks, env var filter, risks and isolation: [Run security](/provision/se
 
 ## Mixed harnesses
 
-This complete file uses the special `default` route for Codex coding and Claude Opus review without a ticket label. The named `careful` route uses Opus throughout. For a complete opt-in route setup, follow [Use agent routes](/agents/guide#use-agent-routes).
+This complete file uses the special `default` route for Codex coding and Claude Opus review without a ticket label. The named `careful` route uses Opus throughout. For a complete opt-in route setup, follow [Use agent routes](/agents/configure-and-select-agents#use-agent-routes).
 
 ```js
 // @bakers-schema-version 1

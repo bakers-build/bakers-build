@@ -8,7 +8,7 @@ Use this example for an existing Node.js application. Installing Node.js for the
 
 ## Keep the project's setup
 
-Keep the project's version, package manager and scripts. [Lifecycle hooks](/provision/hooks) can run its dependency setup in each ticket worktree; `WORKFLOW.md` owns required checks.
+Keep the project's version, package manager and scripts. [Lifecycle hooks](/provision/add-lifecycle-hooks) can run its dependency setup in each ticket worktree; `WORKFLOW.md` owns required checks.
 
 A Node.js project does not need Docker or another container runtime unless your project chooses them.
 

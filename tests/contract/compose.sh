@@ -134,7 +134,7 @@ assert {str(p["published"]) for p in t["ports"]} == {"80", "443"}
 assert "internal" in t["networks"]
 assert "traefik.http.routers.bakers.rule" in c["services"]["nginx"]["labels"]
 
-for doc, file in (("docs/self-hosting/server.md", "docker-compose.yml"), ("docs/self-hosting/server.md", ".env.example"), ("docs/self-hosting/proxy.md", "traefik.yml")):
+for doc, file in (("docs/self-hosting/server.md", "docker-compose.yml"), ("docs/self-hosting/server.md", ".env.example"), ("docs/self-hosting/reverse-proxy.md", "traefik.yml")):
     assert open(f"{src}/{file}").read() in open(doc).read(), f"{doc} does not show {src}/{file} verbatim"
 shutil.rmtree(work)
 PYTEST

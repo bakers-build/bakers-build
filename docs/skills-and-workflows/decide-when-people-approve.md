@@ -39,7 +39,7 @@ Add `ticket-question` if you want questions in ticket comments rather than in th
 
 ## Optional: add a team label
 
-An ordinary label is just a tag unless a built-in rule or an installed `bb-label-<label>` skill gives it behavior. For example, install this skill as `bb-label-support-note` through your agent's [skill mechanism](/skills-and-workflows/skills):
+An ordinary label is just a tag unless a built-in rule or an installed `bb-label-<label>` skill gives it behavior. For example, install this skill as `bb-label-support-note` through your agent's [skill mechanism](/skills-and-workflows/install-the-bakers-skills):
 
 ```md
 ---
@@ -54,7 +54,7 @@ required evidence.
 
 Add `support-note` to a small ticket. **Verify:** the log shows the skill loaded, and the handoff contains that sentence. Merely creating the label does not install the skill. Use the supplied modes above for approval policy; this example only changes the handoff.
 
-[Agent labels and routes](/agents/guide) choose who runs the work. [Project rules](/skills-and-workflows/workflow-file) can separately mirror progress labels to a GitLab origin.
+[Agent labels and routes](/agents/configure-and-select-agents) choose who runs the work. [Project rules](/skills-and-workflows/workflow-file) can separately mirror progress labels to a GitLab origin.
 
 ## Runtime labels
 

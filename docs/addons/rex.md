@@ -64,6 +64,6 @@ Rex has no workspace of its own and opens no layout. Remote Rex servers (`rex -S
 
 ## Verify
 
-Run `bakers conductor check`, then [a first ticket](/get-started/first-ticket). The run appears in `rex ls` as `<identifier>-<run id> <branch>`; a Rex client shows its agent terminal. Close the client: the run keeps working. When the run is finalised, its session ends and disappears from `rex ls`.
+Run `bakers conductor check`, then [a first ticket](/get-started/run-the-first-ticket). The run appears in `rex ls` as `<identifier>-<run id> <branch>`; a Rex client shows its agent terminal. Close the client: the run keeps working. When the run is finalised, its session ends and disappears from `rex ls`.
 
 Package source in a checkout: `bakers-cli/addons/rex`.

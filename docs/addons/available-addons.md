@@ -2,7 +2,7 @@
 
 <span id="addons"></span>
 
-Choose an integration for your task, then follow its setup guide. [Configure addons](/addons/configure) explains file ownership and activation.
+Choose an integration for your task, then follow its setup guide. [Configure addons](/addons/configure-addons) explains file ownership and activation.
 
 ## Agents
 
@@ -75,4 +75,4 @@ The [DDEV addon](/addons/ddev) and [Compose discovery](/addons/docker-compose) f
 | [Docker runtime](/addons/runtime-docker) | Starts each agent run in its own container |
 | [Bubblewrap runtime](/addons/runtime-bwrap) | Isolates complete agent processes on Linux |
 
-[Configure addons](/addons/configure) · [Build your own](/addons/build/first-addon)
+[Configure addons](/addons/configure-addons) · [Build your own](/addons/build/build-your-first-addon)

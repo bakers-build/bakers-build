@@ -7,7 +7,7 @@ description: Set the permissions mode, read-denied paths, writable paths and tru
 
 <span id="shared-run-security"></span>
 
-Configure [agent permissions](/provision/security/execution) with a top-level `permissions` block for the mode and supported lists. Choose [isolation](/agents/isolation) separately; this block selects no runtime. The block may appear in `~/.bakers/machine.config.js` and in the project's `.bakers/project.config.js` (or the selected variant `.bakers/project.<name>.config.js`):
+Configure [agent permissions](/provision/security/execution) with a top-level `permissions` block for the mode and supported lists. Choose [isolation](/agents/isolation-models) separately; this block selects no runtime. The block may appear in `~/.bakers/machine.config.js` and in the project's `.bakers/project.config.js` (or the selected variant `.bakers/project.<name>.config.js`):
 
 ```js
 permissions: {
@@ -84,7 +84,7 @@ bakers.build mounts these paths read-only in the run's container.
 
 Every project hook and every `hooks.provision_up` or `hooks.provision_exec` command must begin with
 a script in a protected path; otherwise the config fails to load. See
-[the entry-point rule](/provision/hooks#protect-host-executed-files). The run installs dependencies
+[the entry-point rule](/provision/add-lifecycle-hooks#protect-host-executed-files). The run installs dependencies
 and builds in its own container, not on the host.
 
 A change to a protected path is made by a maintainer outside an isolated run. A run merges the

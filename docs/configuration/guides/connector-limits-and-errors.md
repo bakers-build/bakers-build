@@ -1,7 +1,7 @@
 # Claude.ai connector limits and errors
 
 What the claude.ai connector cannot do, which errors to expect, and how to reconnect. Setup is on
-[Connect Claude.ai to bakers.build](/get-started/connector).
+[Connect Claude.ai to bakers.build](/get-started/connect-your-chat).
 
 ## Reconnecting / refreshing
 
@@ -11,7 +11,7 @@ What the claude.ai connector cannot do, which errors to expect, and how to recon
 - **Permissions changed on your bakers.build account**: nothing to do — permissions are evaluated on
   every request, so the change applies to the next call without reconnecting.
 - **The connector URL changed**: remove the connector and add it again with the new URL from
-  [Connect Claude.ai to bakers.build](/get-started/connector). The client registers itself again.
+  [Connect Claude.ai to bakers.build](/get-started/connect-your-chat). The client registers itself again.
 
 ## Permission errors (expected, not a bug)
 
@@ -32,7 +32,7 @@ including one issued to the CLI.
   run commands. It works only through the bakers tools that bakers.build serves at `/mcp`.
 - No conductor assignment, no working/review/done transitions, no bug tickets. The
   connector's instructions stop at `plan` (feature/chore) by design — see the
-  [instructions bundle](/configuration/guides/project-instructions)'s "What this bundle
+  [instructions bundle](/configuration/guides/claude-project-instructions)'s "What this bundle
   deliberately drops" section. **This is an instructions-level policy**: `bakers_ticket_transition`
   allows every move the ticket's workflow and your permissions allow. Nothing in this setup blocks a
   later transition beyond Claude following the instructions and your account's permissions.

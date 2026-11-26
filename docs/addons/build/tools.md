@@ -2,11 +2,11 @@
 
 <span id="write-an-addon-with-agent-tools"></span>
 
-Give an agent a named operation with declared inputs and a text result. The [Is dirty? example](/addons/build/control-panel) provides a complete local package and a ticket button calling the same tool. This page defines the tool API; [Messages](/addons/build/actions) explains ticket requests.
+Give an agent a named operation with declared inputs and a text result. The [Is dirty? example](/addons/build/extend-the-control-panel) provides a complete local package and a ticket button calling the same tool. This page defines the tool API; [Messages](/addons/build/messages) explains ticket requests.
 
 ## The contract
 
-Export a `tools` value from the preset. Its type is `Preset['tools']` from `@bakers-build/conductor/contract`. The [dirty-check tutorial](/addons/build/control-panel#create-two-files) contains a complete declaration and working handler:
+Export a `tools` value from the preset. Its type is `Preset['tools']` from `@bakers-build/conductor/contract`. The [dirty-check tutorial](/addons/build/extend-the-control-panel#create-two-files) contains a complete declaration and working handler:
 
 | Field | Meaning |
 |---|---|
@@ -16,7 +16,7 @@ Export a `tools` value from the preset. Its type is `Preset['tools']` from `@bak
 | `tools.<name>.input` | Optional input schema; the dirty check omits it and accepts no arguments. |
 | `handlers(options)` | Async factory returning one implementation per declared tool name. |
 
-Use the [flat input schema](/addons/build/actions#contract-2). With no `input`, the tool accepts no arguments. Unknown keys and invalid values are refused before the handler runs; defaults do not fill in missing required arguments.
+Use the [flat input schema](/addons/build/messages#contract-2). With no `input`, the tool accepts no arguments. Unknown keys and invalid values are refused before the handler runs; defaults do not fill in missing required arguments.
 
 `handlers(options)` is an async factory receiving the entry's `with`. Each declared tool needs one handler, and every handler must be declared. Duplicate tool names across addons fail conductor startup. Prefix names to avoid collisions.
 
@@ -41,7 +41,7 @@ The conductor's serve process exposes a loopback MCP server named `bakers`. A ru
 - **Claude and Codex:** their launch configuration adds the conductor's MCP server. Claude measured runs omit this server and its run variables.
 - **Grok, Kimi, OpenCode and Pi:** use `bakers tools` from the running agent's shell.
 
-See [Tools](/provision/tools) for user access and [run security](/provision/security/execution) for harness policy. In particular, stripping `BAKERS_CONDUCTOR_TOKEN` from the shell environment prevents the run-bound CLI route; do not treat an operator-credential fallback as equivalent access.
+See [Tools](/provision/tools-and-integrations) for user access and [run security](/provision/security/execution) for harness policy. In particular, stripping `BAKERS_CONDUCTOR_TOKEN` from the shell environment prevents the run-bound CLI route; do not treat an operator-credential fallback as equivalent access.
 
 A conductor restart normally preserves the port and active grants. If that port is occupied, the conductor chooses another and warns; already-running agents need a new dispatch to receive the new endpoint. Endpoint and grant files under `<BAKERS_HOME>/conductors/` are private (0600); do not copy their contents into tickets.
 
@@ -51,7 +51,7 @@ An addon can expose the same functionality through a CLI command or a UI action.
 
 Addon commands such as `bakers ports up` call their tool through the conductor's private endpoint file and bind the selected worktree. An ordinary `bakers tools` invocation without run variables reaches the site's server instead; it does not select a local worktree's environment. An addon's UI action can send a message whose handler calls a tool for the selected ticket, and addons can call each other's tools on the same worktree.
 
-See [UI actions and messages](/addons/build/actions). Local CLI access and ticket actions have their own authentication and access checks; a tool is not automatically a public endpoint.
+See [UI actions and messages](/addons/build/messages). Local CLI access and ticket actions have their own authentication and access checks; a tool is not automatically a public endpoint.
 
 ## Shipped tools
 
@@ -63,7 +63,7 @@ See [UI actions and messages](/addons/build/actions). Local CLI access and ticke
 | `ports_reap()` | Remove routes for vanished worktrees or services. |
 | `provision_up(profile?)` | Run the project's configured provisioning hook/profile, when present. |
 
-[Ports](/addons/ports) owns transport prerequisites and public-exposure limits. [Provisioning hooks](/provision/hooks#provision-on-an-agent-s-request) own profile configuration. A runtime addon can add its own tools.
+[Ports](/addons/ports) owns transport prerequisites and public-exposure limits. [Provisioning hooks](/provision/add-lifecycle-hooks#provision-on-an-agent-s-request) own profile configuration. A runtime addon can add its own tools.
 
 `provision_up` runs for up to 30 minutes and returns the exit code plus the last 64 KB of output; nonzero exit is an error. The command outlives the caller; another call for the same running worktree/profile joins it.
 

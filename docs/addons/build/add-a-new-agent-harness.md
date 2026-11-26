@@ -118,7 +118,7 @@ Restart the conductor and expect the `my-agent` alias with harness ID `my-agent`
 
 ## Limits and responsibilities
 
-This adapter reports zero metrics because the example transcript API supplies no usage data. Implement `parseFootprint` for your program's format to collect them. It does not configure MCP or implement an OS sandbox: the program runs with the conductor user's access. See [run security](/agents/security) before enabling a real harness.
+This adapter reports zero metrics because the example transcript API supplies no usage data. Implement `parseFootprint` for your program's format to collect them. It does not configure MCP or implement an OS sandbox: the program runs with the conductor user's access. See [run security](/agents/permissions-and-isolation) before enabling a real harness.
 
 The optional `tools` argument is an object with a `url` field: `tools.url` is the run's conductor MCP URL. Its bearer token is provided in `BAKERS_CONDUCTOR_TOKEN`; use your program's MCP configuration mechanism without putting tokens in command arguments or logs. A program that cannot use MCP can call `bakers tools` from its run environment.
 
@@ -126,4 +126,4 @@ An agent that refuses reused session IDs also implements `sessionExists(worktree
 
 Remove the addon/catalog entry and restart the conductor before deleting this package.
 
-Continue with [Add a new client](/addons/build/client) or the [preset API](/addons/build/contracts).
+Continue with [Add a new client](/addons/build/connect-a-new-client) or the [preset API](/addons/build/addon-api-reference).
