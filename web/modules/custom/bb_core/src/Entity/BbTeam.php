@@ -93,6 +93,7 @@ final class BbTeam extends BbContentEntityBase implements BbTeamInterface, Entit
     $fields['workspace_id'] = static::workspaceBaseFieldDefinition(1)
       // Same workspace edge and constraint as BbGroup::workspace_id.
       ->addConstraint('BbWorkspaceScope');
+    $fields['image'] = static::imageBaseFieldDefinition('team-images', 1);
     // The inverse of bb_project.teams, computed: storing one relationship
     // twice lets the copies drift silently.
     $fields['projects'] = BaseFieldDefinition::create('entity_reference')

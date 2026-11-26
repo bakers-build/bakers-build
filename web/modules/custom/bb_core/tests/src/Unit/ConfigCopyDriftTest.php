@@ -259,12 +259,13 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'crop.type.bb_avatar',
     'core.entity_view_display.user.user.compact',
     'core.entity_form_display.user.user.default',
-    // The project, group and workspace forms crop their image too, and that
+    // The project, group, team and workspace forms crop their image too, and that
     // widget is bb_image's, which bb_core does not depend on.
     'core.entity_form_display.bb_project.bb_project.settings',
     'core.entity_form_display.bb_group.bb_group.create',
     'core.entity_form_display.bb_group.bb_group.settings',
     'core.entity_form_display.bb_workspace.bb_workspace.settings',
+    'core.entity_form_display.bb_team.bb_team.settings',
     // Machine and conductor Settings, beside the other Settings displays.
     'core.entity_form_display.bb_machine.bb_machine.settings',
     'core.entity_form_display.bb_conductor.bb_conductor.settings',
@@ -365,7 +366,6 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'core.entity_form_mode.bb_group.create',
     'core.entity_form_mode.bb_group.settings',
     'core.entity_form_mode.bb_team.settings',
-    'core.entity_form_display.bb_team.bb_team.settings',
     'core.entity_form_mode.bb_project.settings',
     'core.entity_form_mode.bb_ticket.create',
     'core.entity_form_display.bb_ticket.bb_ticket.create',

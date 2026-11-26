@@ -51,7 +51,7 @@ final class SettingsFormDisplayTest extends KernelTestBase {
   }
 
   /**
-   * Every project, group and workspace form crops its image where uploaded.
+   * Every project, group, team and workspace form crops its image where uploaded.
    */
   public function testImageFormsUseTheSquareCropWidget(): void {
     foreach ([
@@ -59,6 +59,7 @@ final class SettingsFormDisplayTest extends KernelTestBase {
       'bb_group.bb_group.create',
       'bb_group.bb_group.settings',
       'bb_workspace.bb_workspace.settings',
+      'bb_team.bb_team.settings',
     ] as $id) {
       self::assertSame('bb_square_image', self::orderedComponents($id)['image']['type'] ?? NULL, "$id crops its image.");
     }
@@ -81,7 +82,7 @@ final class SettingsFormDisplayTest extends KernelTestBase {
       array_keys(self::orderedComponents('bb_project.bb_project.settings')),
     );
     self::assertSame(['name', 'description', 'image', 'run_log_storage_enabled'], array_keys(self::orderedComponents('bb_workspace.bb_workspace.settings')));
-    self::assertSame(['name'], array_keys(self::orderedComponents('bb_team.bb_team.settings')));
+    self::assertSame(['name', 'image'], array_keys(self::orderedComponents('bb_team.bb_team.settings')));
     self::assertSame(['name', 'description', 'image'], array_keys(self::orderedComponents('bb_group.bb_group.settings')));
     self::assertSame(['name', 'description', 'image'], array_keys(self::orderedComponents('bb_group.bb_group.create')));
   }
