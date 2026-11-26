@@ -10,7 +10,7 @@ props:
     - label: Board
       url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
       active: false
-    - label: Stats
+    - label: Insights
       url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
       active: false
     - label: Tickets

@@ -11,9 +11,11 @@ use Drupal\Core\Form\EnforcedResponseException;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidget;
 use Drupal\bb_core\Entity\BbProjectInterface;
@@ -37,6 +39,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 #[RunTestsInSeparateProcesses]
 final class TicketCreateFormTest extends KernelTestBase {
 
+  use OgScopeFixtureTrait;
   use UserCreationTrait;
 
   /**
@@ -118,14 +121,14 @@ final class TicketCreateFormTest extends KernelTestBase {
   /**
    * AC2, structural — and it moved, because the thing it pins moved.
    */
-  public function testTheDisplayHoldsExactlyTheTenFieldsInGrammarOrder(): void {
+  public function testTheDisplayHoldsExactlyTheTwelveFieldsInGrammarOrder(): void {
     $components = $this->createDisplay()->getComponents();
     uasort($components, static fn (array $a, array $b): int => $a['weight'] <=> $b['weight']);
 
     self::assertSame(
       [
-        'project_id', 'workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe',
-        'ticket_type',
+        'project_id', 'workflow', 'title', 'description', 'origin', 'parent_id', 'blocked_by', 'conductor_id', 'reviewers',
+        'labels', 'recipe', 'ticket_type',
       ],
       array_keys($components),
     );
@@ -171,11 +174,11 @@ final class TicketCreateFormTest extends KernelTestBase {
 
       self::assertEqualsCanonicalizing(
         [
-          'project_id', 'workflow', 'title', 'description', 'parent_id', 'blocked_by', 'conductor_id', 'labels', 'recipe',
-          'ticket_type',
+          'project_id', 'workflow', 'title', 'description', 'origin', 'parent_id', 'blocked_by', 'conductor_id',
+          'reviewers', 'labels', 'recipe', 'ticket_type',
         ],
         $names,
-        'Every dialog emits exactly these ten names and no others.',
+        'Every dialog emits exactly these twelve names and no others.',
       );
       // Documentation only from here — the equality assertion above already
       // rules every one of these out; named individually so a reader sees
@@ -223,6 +226,102 @@ final class TicketCreateFormTest extends KernelTestBase {
   }
 
   /**
+   * Picked reviewers from the project's workspace are stored on the ticket.
+   */
+  public function testPickedReviewersAreStoredOnTheTicket(): void {
+    $workspace = $this->placeProjectInWorkspace();
+    $first = $this->newAccount([], 'reviewer-one');
+    $second = $this->newAccount([], 'reviewer-two');
+    $this->addMembership($workspace, $first);
+    $this->addMembership($workspace, $second);
+
+    $ticket = $this->submit([
+      'title' => $this->line('A reviewed ticket'),
+      'reviewers' => [$first->id(), $second->id()],
+    ]);
+
+    self::assertEqualsCanonicalizing(
+      [$first->id(), $second->id()],
+      array_column($ticket->get('reviewers')->getValue(), 'target_id'),
+    );
+  }
+
+  /**
+   * A reviewer outside the project's workspace is refused; nothing is saved.
+   */
+  public function testReviewerOutsideTheWorkspaceIsRefused(): void {
+    $this->placeProjectInWorkspace();
+    $outsider = $this->newAccount([], 'reviewer-outsider');
+    $before = $this->ticketCount();
+
+    $state = $this->submitExpectingRefusal([
+      'title' => $this->line('A ticket'),
+      'reviewers' => [$outsider->id()],
+    ]);
+
+    self::assertNotEmpty(
+      array_filter(array_keys($state->getErrors()), static fn (string $key): bool => str_starts_with($key, 'reviewers')),
+      implode(' | ', array_map('strval', $state->getErrors())),
+    );
+    self::assertSame($before, $this->ticketCount());
+  }
+
+  /**
+   * An origin URL is stored, trimmed of surrounding whitespace.
+   */
+  public function testOriginUrlIsStoredOnTheTicket(): void {
+    $ticket = $this->submit([
+      'title' => $this->line('A ticket with an origin'),
+      'origin' => $this->line('  https://github.com/acme/app/issues/19 '),
+    ]);
+
+    self::assertSame('https://github.com/acme/app/issues/19', $ticket->get('origin')->value);
+  }
+
+  /**
+   * Anything but an absolute http(s) URL is refused as origin.
+   */
+  #[DataProvider('invalidOrigins')]
+  public function testInvalidOriginUrlIsRefused(string $origin): void {
+    $before = $this->ticketCount();
+
+    $state = $this->submitExpectingRefusal([
+      'title' => $this->line('A ticket'),
+      'origin' => $this->line($origin),
+    ]);
+
+    self::assertSame(
+      'Enter a full http or https URL.',
+      (string) ($state->getErrors()['origin][0][value'] ?? ''),
+    );
+    self::assertSame($before, $this->ticketCount());
+  }
+
+  /**
+   * Origins the dialog refuses.
+   *
+   * @return array<string, array{string}>
+   *   Case name => [origin].
+   */
+  public static function invalidOrigins(): array {
+    return [
+      'not a url' => ['not a url'],
+      'other scheme' => ['ftp://x.test/a'],
+      'relative path' => ['/relative/path'],
+    ];
+  }
+
+  /**
+   * Untouched reviewers and origin create the ticket as before.
+   */
+  public function testEmptyReviewersAndOriginCreateTheTicketAsBefore(): void {
+    $ticket = $this->submit(['title' => $this->line('A plain ticket')]);
+
+    self::assertTrue($ticket->get('reviewers')->isEmpty());
+    self::assertTrue($ticket->get('origin')->isEmpty());
+  }
+
+  /**
    * AC1: the ticket lands in its workflow's first state.
    */
   public function testTheTicketLandsInItsWorkflowsFirstState(): void {
@@ -266,6 +365,7 @@ final class TicketCreateFormTest extends KernelTestBase {
     $state = $this->submitExpectingRefusal([
       'title' => $this->line(''),
       'description' => $this->line('Typed and not thrown away'),
+      'origin' => $this->line('https://github.com/acme/app/issues/19'),
       'conductor_id' => $this->conductor->id(),
     ]);
     self::assertNotEmpty($state->getErrors());
@@ -282,6 +382,11 @@ final class TicketCreateFormTest extends KernelTestBase {
       'Typed and not thrown away',
       $this->descriptionValue($state),
       'The description textarea comes back carrying what was typed into it.',
+    );
+    self::assertSame(
+      'https://github.com/acme/app/issues/19',
+      $state->getCompleteForm()['origin']['widget'][0]['value']['#value'] ?? NULL,
+      'The origin field comes back carrying what was typed into it.',
     );
     self::assertSame(
       [$this->conductor->id()],
@@ -1111,6 +1216,31 @@ final class TicketCreateFormTest extends KernelTestBase {
     $account = $this->createUser($permissions, $name);
     self::assertInstanceOf(UserInterface::class, $account);
     return $account;
+  }
+
+  /**
+   * Moves the fixture project into a workspace the creator belongs to.
+   *
+   * @return \Drupal\Core\Entity\ContentEntityInterface
+   *   The workspace.
+   */
+  private function placeProjectInWorkspace(): ContentEntityInterface {
+    $this->installConfig(['og']);
+    $this->registerShippedOgGroups();
+    $manager = $this->container->get('entity_type.manager');
+    $workspace = $manager->getStorage('bb_workspace')->create(['name' => 'Create-form workspace']);
+    $workspace->save();
+    self::assertInstanceOf(ContentEntityInterface::class, $workspace);
+    $creator = $this->container->get('current_user')->getAccount();
+    self::assertInstanceOf(UserInterface::class, $creator);
+    $this->addMembership($workspace, $creator);
+    $group = $manager->getStorage('bb_group')->create([
+      'name' => 'Create-form group',
+      'workspace_id' => $workspace->id(),
+    ]);
+    $group->save();
+    $this->project->set('group_id', $group->id())->save();
+    return $workspace;
   }
 
   /**

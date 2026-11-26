@@ -106,7 +106,7 @@ final class ActivityFeedLineTest extends KernelTestBase {
   public function testCreatedRowNamesWorkflowAndFirstState(): void {
     $props = $this->line(['kind' => 'created', 'new_state' => 'qualification']);
     self::assertSame('created', $props['tag']);
-    self::assertSame('created (work, qualification)', $props['statement']);
+    self::assertSame('created (Plan/Work/Review, qualification)', $props['statement']);
     self::assertArrayNotHasKey('role', $props);
   }
 

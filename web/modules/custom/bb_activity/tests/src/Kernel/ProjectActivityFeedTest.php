@@ -196,7 +196,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $html = $this->fullRows();
     $link = '<a href="' . $ticket->toUrl()->toString() . '" class="font-semibold">' . $ticket->getIdentifier() . '</a>';
     self::assertStringContainsString($link . ' qualification → plan', $html);
-    self::assertStringContainsString($link . ' created (work, qualification)', $html);
+    self::assertStringContainsString($link . ' created (Plan/Work/Review, qualification)', $html);
     self::assertStringContainsString('data-tag="status"', $html);
     self::assertStringContainsString('>human<', $html);
     self::assertStringNotContainsString('Shipped search', $html);
@@ -305,7 +305,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $this->workTicket('Fresh ticket');
 
     $row = $this->row($this->fullRows(), 'created');
-    self::assertStringContainsString('created (work, qualification)', $row);
+    self::assertStringContainsString('created (Plan/Work/Review, qualification)', $row);
     self::assertStringNotContainsString('>agent<', $row);
     self::assertStringNotContainsString('>human<', $row);
   }

@@ -296,7 +296,7 @@ config:
       # `field_config` entities), which is what keeps this display shippable
       # without pulling in anything that computes `next_number`.
       #
-      # The project, group and workspace displays below their modes are NOT
+      # The project, group, team and workspace displays below their modes are NOT
       # here: their image widget is `bb_square_image`, which `bb_core` does
       # not depend on, so they ship in this recipe's own `config/` and in
       # `config/sync/**`, and no longer from the module.
@@ -304,7 +304,6 @@ config:
       - core.entity_form_mode.bb_group.create
       - core.entity_form_mode.bb_group.settings
       - core.entity_form_mode.bb_team.settings
-      - core.entity_form_display.bb_team.bb_team.settings
       - core.entity_form_mode.bb_workspace.settings
       - core.entity_form_mode.bb_machine.settings
       - core.entity_form_mode.bb_conductor.settings

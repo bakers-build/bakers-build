@@ -2,7 +2,7 @@
 
 **Every ticket follows one workflow. Each state has a clear job and one state file.**
 
-Every work ticket follows the workflow `bb_work`. In every state except `done` and `cancelled`, the ticket's conductor may start a run. `done` and `cancelled` are final: follow-up work gets a new ticket. Any open ticket can be cancelled. Each state runs its state file in `bb-workflow`, phase by phase; the ticket's [recipe](/skills-and-workflows/recipes) supplies the method inside it.
+Every work ticket follows the workflow `bb_work`, shown as *Plan/Work/Review*. In every state except `done` and `cancelled`, the ticket's conductor may start a run. `done` and `cancelled` are final: follow-up work gets a new ticket. Any open ticket can be cancelled. Each state runs its state file in `bb-workflow`, phase by phase; the ticket's [recipe](/skills-and-workflows/recipes) supplies the method inside it.
 
 ## bb_work
 
