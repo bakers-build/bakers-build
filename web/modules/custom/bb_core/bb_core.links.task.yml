@@ -66,6 +66,13 @@ view.bb_ticket_templates.project_list:
   base_route: entity.bb_project.canonical
   weight: 5.5
 
+# A project's environments, edited in the dialog from their row.
+view.bb_environments.project_list:
+  title: 'Environments'
+  route_name: view.bb_environments.project_list
+  base_route: entity.bb_project.canonical
+  weight: 5.7
+
 bb_core.bb_project.settings:
   title: 'Settings'
   route_name: bb_core.bb_project.settings
@@ -219,7 +226,7 @@ bb_core.bb_workspace.templates:
   base_route: bb_core.bb_workspace.settings
   weight: 4
 
-# --- Catalog: a settings tab with Types, Recipes, Labels, Environments ---
+# --- Catalog: a settings tab with Types, Recipes, Labels ---
 # The categories tickets pick from; Types is the default of its second row.
 
 bb_core.bb_workspace.catalog:
@@ -245,12 +252,6 @@ bb_core.catalog.labels:
   route_name: view.bb_terms.labels
   parent_id: bb_core.bb_workspace.catalog
   weight: 2
-
-bb_core.catalog.environments:
-  title: Environments
-  route_name: view.bb_environments.catalog
-  parent_id: bb_core.bb_workspace.catalog
-  weight: 3
 
 # --- User: Profile after core's View and Edit ---
 # Position and background only; the tab shows where `edit profile` allows.

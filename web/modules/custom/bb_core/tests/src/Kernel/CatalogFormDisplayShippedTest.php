@@ -29,13 +29,11 @@ final class CatalogFormDisplayShippedTest extends KernelTestBase {
       'bb_core.bb_vocabulary.recipe',
       'bb_core.bb_vocabulary.label',
     ],
-    'entity_form_mode' => ['core.entity_form_mode.bb_environment.add'],
     'entity_form_display' => [
       'core.entity_form_display.bb_term.type.default',
       'core.entity_form_display.bb_term.recipe.default',
       'core.entity_form_display.bb_term.label.default',
       'core.entity_form_display.bb_environment.bb_environment.default',
-      'core.entity_form_display.bb_environment.bb_environment.add',
     ],
   ];
 
@@ -67,7 +65,7 @@ final class CatalogFormDisplayShippedTest extends KernelTestBase {
     }
 
     // The vocabularies are only the bundles the term displays need.
-    foreach ([...self::NAMES['entity_form_mode'], ...self::NAMES['entity_form_display']] as $name) {
+    foreach (self::NAMES['entity_form_display'] as $name) {
       $stored = $this->config($name)->getRawData();
       // The normalisation core's ConfigConfigurator applies before it decides
       // a recipe's config collides with the active config.

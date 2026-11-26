@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * A Catalog row is one link, to its term's or environment's edit form.
+ * A Catalog row is one link, opening its edit form in the dialog.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -63,6 +63,7 @@ final class CatalogRowLinkTest extends KernelTestBase {
     $html = $this->renderListDisplay('bb_terms', 'labels', ['space-a']);
 
     $this->assertRowsLinkOnlyToTheirDetail($html, ['/space-a/term/' . $this->term->id() . '/edit']);
+    self::assertStringContainsString('_wrapper_format=island_dialog', $this->rowLink($html), 'The row opens the edit form in the dialog.');
   }
 
   /**
@@ -75,17 +76,32 @@ final class CatalogRowLinkTest extends KernelTestBase {
 
     self::assertStringContainsString('href="/space-a/environment/' . $environment->id() . '/edit"', $html);
     self::assertStringNotContainsString('href="/space-a/environment/' . $environment->id() . '"', $html);
+    self::assertStringContainsString('_wrapper_format=island_dialog', $this->rowLink($html));
   }
 
   /**
-   * A guest may follow no row: the edit and delete forms stay denied.
+   * A guest gets the term's name without a link: the edit form is denied.
    */
-  public function testGuestIsDeniedTheEditForm(): void {
+  public function testGuestGetsNoRowLink(): void {
     $guest = $this->createAccount('north-guest', []);
     $this->addMembership($this->fixture('a', 'bb_workspace'), $guest, ['guest']);
+    $this->container->get('current_user')->setAccount($guest);
+
+    $html = $this->renderListDisplay('bb_terms', 'labels', ['space-a']);
+
+    self::assertStringContainsString((string) $this->term->label(), $html);
+    self::assertStringNotContainsString('/term/' . $this->term->id() . '/edit', $html);
 
     self::assertFalse($this->term->toUrl('edit-form')->access($guest));
     self::assertFalse($this->term->toUrl('delete-form')->access($guest));
+  }
+
+  /**
+   * The opening tag of the first row's link.
+   */
+  private function rowLink(string $html): string {
+    preg_match('/<li data-list-item.*?(<a\s[^>]*>)/s', $html, $match);
+    return html_entity_decode($match[1] ?? '');
   }
 
 }

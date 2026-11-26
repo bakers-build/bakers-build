@@ -1,13 +1,13 @@
 @feature:catalog-terms
 Feature: Catalog manages types, recipes and labels
   Each term bundle has a Catalog tab under workspace settings that lists the
-  workspace's terms; each row opens the term's edit form, which saves in place
-  and offers Delete. The page header's Add action opens the add form; saving
-  lands back on the tab. A term has no page of its own. Every rank that reads
-  terms lists them; adding needs `create bb_term`, so a guest gets no term
-  action.
+  workspace's terms; each row opens the term's edit form in the dialog, which
+  saves back to the tab and offers Delete. The page header's Add action opens
+  the add form; saving lands back on the tab. A term has no page of its own.
+  Every rank that reads terms lists them; adding needs `create bb_term`, so a
+  guest gets no term action.
 
-  Scenario Outline: A lead adds a term on the <tab> tab and renames it on its edit form
+  Scenario Outline: A lead adds a term on the <tab> tab and renames it in its dialog
     Given I am logged in as the account "north-lead"
     When I visit "/bakers/settings/catalog/<path>"
     Then the tab "<tab>" is current
@@ -17,11 +17,9 @@ Feature: Catalog manages types, recipes and labels
     And the term "Added term <noun>" is listed
     And the page loaded its own assets without htmx transport keys
     When I open the term "Added term <noun>"
-    And I rename the term on its edit form to "Renamed term <noun>"
-    Then the page shows "Renamed term <noun> saved."
-    And the page loaded its own assets without htmx transport keys
-    When I visit "/bakers/settings/catalog/<path>"
-    Then the term "Renamed term <noun>" is listed
+    And I rename the term in its dialog to "Renamed term <noun>"
+    Then the tab "<tab>" is current
+    And the term "Renamed term <noun>" is listed
     And the term "Added term <noun>" is not listed
 
     Examples:
@@ -30,12 +28,12 @@ Feature: Catalog manages types, recipes and labels
       | Recipes | recipes | recipe |
       | Labels  | labels  | label  |
 
-  Scenario: A lead deletes a term from its edit form
+  Scenario: A lead deletes a term from its dialog
     Given I am logged in as the account "north-lead"
     When I visit "/bakers/settings/catalog/labels"
     And I add the term "Deleted term label" with the action "Add label"
     And I open the term "Deleted term label"
-    And I delete the term from its edit form
+    And I delete the term from its dialog
     Then the tab "Labels" is current
     And the term "Deleted term label" is not listed
 
@@ -56,10 +54,10 @@ Feature: Catalog manages types, recipes and labels
     And I add the term "Added term contributor" with the action "Add label"
     Then the term "Added term contributor" is listed
     When I open the term "Added term contributor"
-    And I rename the term on its edit form to "Renamed term contributor"
-    Then the page shows "Renamed term contributor saved."
-    And the term edit form offers no Delete
-    And the delete page of this term answers 403
+    Then the term dialog offers no Delete
+    When I rename the term in its dialog to "Renamed term contributor"
+    Then the term "Renamed term contributor" is listed
+    And the delete page of the term "Renamed term contributor" answers 403
 
   Scenario Outline: A guest lists the <tab> tab without a term action
     Given I am logged in as the account "north-guest"

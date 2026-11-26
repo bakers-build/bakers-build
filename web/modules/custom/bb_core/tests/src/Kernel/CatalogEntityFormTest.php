@@ -40,9 +40,7 @@ final class CatalogEntityFormTest extends KernelTestBase {
     'core.entity_form_display.bb_term.type.default',
     'core.entity_form_display.bb_term.recipe.default',
     'core.entity_form_display.bb_term.label.default',
-    'core.entity_form_mode.bb_environment.add',
     'core.entity_form_display.bb_environment.bb_environment.default',
-    'core.entity_form_display.bb_environment.bb_environment.add',
   ];
 
   /**

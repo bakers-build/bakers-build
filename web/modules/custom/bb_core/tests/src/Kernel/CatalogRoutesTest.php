@@ -52,13 +52,6 @@ final class CatalogRoutesTest extends KernelTestBase {
    */
   public function testCatalogPagesLiveUnderSettings(): void {
     $provider = $this->container->get('router.route_provider');
-    $paths = [
-      'view.bb_environments.catalog' => 'environments',
-      'entity.bb_environment.add_for_workspace' => 'environments/add',
-    ];
-    foreach ($paths as $name => $tail) {
-      self::assertSame('/_workspace/{bb_workspace}/settings/catalog/' . $tail, $provider->getRouteByName($name)->getPath());
-    }
     foreach (['types', 'recipes', 'labels'] as $tab) {
       $route = $provider->getRouteByName('view.bb_terms.' . $tab);
       self::assertSame('/_workspace/{bb_workspace}/settings/catalog/' . $tab, $route->getPath());
@@ -68,16 +61,34 @@ final class CatalogRoutesTest extends KernelTestBase {
   }
 
   /**
-   * Catalog is a settings tab; its four pages are its second tab row.
+   * Environments are a project tab, not Catalog pages.
    */
-  public function testCatalogIsSettingsTabWithFourChildren(): void {
+  public function testEnvironmentsAreProjectTab(): void {
+    $provider = $this->container->get('router.route_provider');
+    self::assertSame('/_workspace/{bb_workspace}/project/{bb_project}/environments', $provider->getRouteByName('view.bb_environments.project_list')->getPath());
+    $gone = ['view.bb_environments.catalog', 'entity.bb_environment.add_for_workspace'];
+    self::assertSame([], $provider->getRoutesByNames($gone));
+
+    $tasks = $this->container->get('plugin.manager.menu.local_task')->getDefinitions();
+    $tab = $tasks['view.bb_environments.project_list'];
+    self::assertSame('entity.bb_project.canonical', $tab['base_route']);
+    self::assertSame('Environments', (string) $tab['title']);
+    self::assertGreaterThan($tasks['view.bb_ticket_templates.project_list']['weight'], $tab['weight']);
+    self::assertLessThan($tasks['bb_core.bb_project.settings']['weight'], $tab['weight']);
+    self::assertArrayNotHasKey('bb_core.catalog.environments', $tasks);
+  }
+
+  /**
+   * Catalog is a settings tab; its three term pages are its second tab row.
+   */
+  public function testCatalogIsSettingsTabWithThreeChildren(): void {
     $tasks = $this->container->get('plugin.manager.menu.local_task')->getDefinitions();
     $catalog = $tasks['bb_core.bb_workspace.catalog'];
     self::assertSame('bb_core.bb_workspace.settings', $catalog['base_route']);
     self::assertSame('view.bb_terms.types', $catalog['route_name']);
     self::assertGreaterThan($tasks['bb_core.bb_workspace.templates']['weight'], $catalog['weight'], 'Catalog follows Templates.');
     $weight = -1;
-    foreach (['types' => 'Types', 'recipes' => 'Recipes', 'labels' => 'Labels', 'environments' => 'Environments'] as $id => $title) {
+    foreach (['types' => 'Types', 'recipes' => 'Recipes', 'labels' => 'Labels'] as $id => $title) {
       $task = $tasks['bb_core.catalog.' . $id];
       self::assertSame('bb_core.bb_workspace.catalog', $task['parent_id']);
       self::assertSame($title, (string) $task['title']);

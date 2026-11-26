@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
-use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
@@ -24,24 +23,16 @@ use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
- * Adding and deleting an environment from the Catalog Environments tab.
+ * Adding and deleting an environment from its project's Environments tab.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
-final class EnvironmentCatalogFormTest extends KernelTestBase {
+final class EnvironmentProjectFormTest extends KernelTestBase {
 
   use UserCreationTrait;
   use WorkspaceReadScopeTestTrait;
 
-  private const ADD_ROUTE = 'entity.bb_environment.add_for_workspace';
-
-  /**
-   * The query of the add form opened as the dialog over the tab.
-   */
-  private const DIALOG_QUERY = [
-    '_wrapper_format' => 'island_dialog',
-    'destination' => '/space-a/settings/catalog/environments',
-  ];
+  private const ADD_ROUTE = 'entity.bb_environment.add_for_project';
 
   /**
    * {@inheritdoc}
@@ -60,6 +51,11 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
   private UserInterface $lead;
 
   /**
+   * The Environments tab of project A, the dialog's return address.
+   */
+  private string $tab;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -70,91 +66,68 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
     foreach (['a', 'b'] as $side) {
       $this->fixture($side, 'bb_workspace')->set('slug', "space-$side")->save();
     }
-    // The add form display offers the workspace's projects as a picker.
-    foreach (['core.entity_form_mode.bb_environment.add', 'core.entity_form_display.bb_environment.bb_environment.add'] as $name) {
-      $data = Yaml::decode((string) file_get_contents(dirname(DRUPAL_ROOT) . '/config/sync/' . $name . '.yml'));
-      $this->container->get('config.storage')->write($name, $data);
-    }
     $this->container->get('router.builder')->rebuild();
 
     $this->lead = $this->member('a');
     $this->addMembership($this->fixture('a', 'bb_workspace'), $this->lead, ['lead']);
     $this->setCurrentUser($this->lead);
+    $this->tab = '/space-a/project/' . $this->fixture('a', 'bb_project')->id() . '/environments';
   }
 
   /**
-   * The add route sits on the tab and needs the create right in its workspace.
+   * The add route sits on the project and needs the create right there.
    */
-  public function testAddNeedsTheCreateRightInThatWorkspace(): void {
-    $route = $this->container->get('router.route_provider')->getRouteByName(self::ADD_ROUTE);
-    self::assertSame('/_workspace/{bb_workspace}/settings/catalog/environments/add', $route->getPath());
-
+  public function testAddNeedsTheCreateRight(): void {
     $contributor = $this->createAccount('north-contributor');
     $this->addMembership($this->fixture('a', 'bb_workspace'), $contributor, ['contributor']);
-    $url = static fn (string $slug): Url => Url::fromRoute(self::ADD_ROUTE, ['bb_workspace' => $slug]);
+    $south = $this->member('b');
+    $this->addMembership($this->fixture('b', 'bb_workspace'), $south, ['lead']);
+    $parameters = ['bb_workspace' => 'space-a', 'bb_project' => $this->fixture('a', 'bb_project')->id()];
+    $url = Url::fromRoute(self::ADD_ROUTE, $parameters);
 
-    self::assertTrue($url('space-a')->access($this->lead));
-    self::assertFalse($url('space-a')->access($contributor), 'A contributor only reads environments.');
-    self::assertFalse($url('space-b')->access($this->lead), 'Nor in another workspace.');
+    self::assertTrue($url->access($this->lead));
+    self::assertFalse($url->access($contributor), 'A contributor only reads environments.');
+    self::assertFalse($url->access($south), 'Nor a lead of another workspace.');
   }
 
   /**
-   * A project of the workspace is saved and the form returns to the tab.
+   * The project comes from the route; its selector is hidden.
    */
-  public function testAddSavesForProjectOfTheWorkspace(): void {
-    $project = (string) $this->fixture('a', 'bb_project')->id();
-    // The tab's Add action carries the tab as its destination.
-    $state = $this->submitAdd('staging', $project, ['destination' => '/space-a/settings/catalog/environments']);
+  public function testAddTakesTheRouteProject(): void {
+    $this->pushAddRequest();
+    $form = $this->container->get('form_builder')->getForm($this->addForm());
+    self::assertFalse($form['project_id']['#access'] ?? TRUE, 'The project selector is hidden.');
+
+    $state = $this->submitAdd('staging', ['destination' => $this->tab]);
 
     self::assertSame([], array_map('strval', $state->getErrors()));
     $saved = $this->environments('staging');
     self::assertCount(1, $saved);
     $environment = reset($saved);
     self::assertInstanceOf(ContentEntityInterface::class, $environment);
-    self::assertSame($project, (string) $environment->get('project_id')->target_id);
-    // A programmed submission reports no redirect; read the one it set.
+    self::assertSame((string) $this->fixture('a', 'bb_project')->id(), (string) $environment->get('project_id')->target_id);
     $redirect = (new \ReflectionProperty(FormState::class, 'redirect'))->getValue($state);
     self::assertInstanceOf(Url::class, $redirect);
-    self::assertSame('/space-a/settings/catalog/environments', $redirect->toString());
+    self::assertSame($this->tab, $redirect->toString());
   }
 
   /**
-   * A project of another workspace is refused; nothing is saved.
+   * As the dialog, the add form offers Cancel and its save returns to the tab.
    */
-  public function testAddRejectsProjectOfAnotherWorkspace(): void {
-    // A lead of both workspaces may read and create there: only the form's
-    // own workspace check refuses B's project on A's Catalog.
-    $this->addMembership($this->fixture('b', 'bb_workspace'), $this->lead, ['lead']);
-    $state = $this->submitAdd('foreign', (string) $this->fixture('b', 'bb_project')->id());
-
-    self::assertSame(['project_id' => 'Pick a project of this workspace.'], array_map('strval', $state->getErrors()));
-    self::assertSame([], $this->environments('foreign'));
-  }
-
-  /**
-   * Opened as the dialog, the add form posts into it and offers Cancel.
-   */
-  public function testDialogPostsIntoTheDialogWithCancel(): void {
-    $this->pushAddRequest(self::DIALOG_QUERY);
+  public function testDialogReturnsToTheTab(): void {
+    $query = ['_wrapper_format' => 'island_dialog', 'destination' => $this->tab];
+    $this->pushAddRequest($query);
     $form = $this->container->get('form_builder')->getForm($this->addForm());
-
-    self::assertStringContainsString('_wrapper_format=island_dialog', (string) ($form['#attributes']['data-hx-post'] ?? ''));
     $actions = $form[WrappedRouteRenderer::ACTIONS_SLOT_PROPERTY] ?? [];
-    self::assertArrayHasKey('cancel', $actions, 'The action row in the hull offers Cancel.');
-    self::assertSame('/space-a/settings/catalog/environments', $actions['cancel']['#props']['href']);
-  }
+    self::assertSame($this->tab, $actions['cancel']['#props']['href'] ?? NULL);
 
-  /**
-   * A dialog save lands back on the tab the dialog was opened over.
-   */
-  public function testDialogSaveReturnsToTheTab(): void {
-    $state = $this->submitAdd('dialog', (string) $this->fixture('a', 'bb_project')->id(), self::DIALOG_QUERY);
+    $state = $this->submitAdd('dialog', $query);
 
     self::assertSame([], array_map('strval', $state->getErrors()));
     self::assertCount(1, $this->environments('dialog'));
     $response = $state->getResponse();
     self::assertNotNull($response, 'The dialog answers with a header, not a redirect.');
-    self::assertStringContainsString('/space-a/settings/catalog/environments', (string) $response->headers->get('HX-Location'));
+    self::assertStringContainsString($this->tab, (string) $response->headers->get('HX-Location'));
   }
 
   /**
@@ -174,54 +147,51 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
   }
 
   /**
-   * Deleting an environment returns to the Environments tab.
+   * Deleting an environment returns to its project's Environments tab.
    */
-  public function testDeleteReturnsToTheTab(): void {
+  public function testDeleteReturnsToTheProjectTab(): void {
     $form = $this->container->get('entity_type.manager')->getFormObject('bb_environment', 'delete');
     self::assertInstanceOf(BbContentEntityDeleteForm::class, $form);
     $form->setEntity($this->fixture('a', 'bb_environment'));
 
     $url = (new \ReflectionMethod($form, 'getRedirectUrl'))->invoke($form);
 
-    self::assertSame('view.bb_environments.catalog', $url->getRouteName());
+    self::assertSame('view.bb_environments.project_list', $url->getRouteName());
+    self::assertSame($this->fixture('a', 'bb_project')->toUrl()->getRouteParameters()['bb_project'], $url->getRouteParameters()['bb_project']);
   }
 
   /**
-   * Submits the workspace add form of workspace A.
+   * Submits the add form of project A.
    *
    * @param string $name
    *   The environment name.
-   * @param string $project
-   *   The project id.
    * @param array<string, string> $query
    *   The request query.
    */
-  private function submitAdd(string $name, string $project, array $query = []): FormStateInterface {
+  private function submitAdd(string $name, array $query = []): FormStateInterface {
     $this->pushAddRequest($query);
-    $state = (new FormState())->setValues([
-      'name' => [['value' => $name]],
-      'project_id' => $project,
-      'op' => 'Save',
-    ]);
+    $state = (new FormState())->setValues(['name' => [['value' => $name]], 'op' => 'Save']);
     $this->container->get('form_builder')->submitForm($this->addForm(), $state);
     return $state;
   }
 
   /**
-   * Pushes a request on the add route of workspace A.
+   * Pushes a request on the add route of project A.
    *
    * @param array<string, string> $query
    *   The request query.
    */
   private function pushAddRequest(array $query = []): void {
     $route = $this->container->get('router.route_provider')->getRouteByName(self::ADD_ROUTE);
+    $project = $this->fixture('a', 'bb_project');
     $request = Request::create('/add', 'GET', $query);
     $request->setSession(new Session(new MockArraySessionStorage()));
     $request->attributes->add([
       RouteObjectInterface::ROUTE_NAME => self::ADD_ROUTE,
       RouteObjectInterface::ROUTE_OBJECT => $route,
       'bb_workspace' => $this->fixture('a', 'bb_workspace'),
-      '_raw_variables' => new InputBag(['bb_workspace' => 'space-a']),
+      'bb_project' => $project,
+      '_raw_variables' => new InputBag(['bb_workspace' => 'space-a', 'bb_project' => (string) $project->id()]),
     ]);
     $this->container->get('request_stack')->push($request);
   }

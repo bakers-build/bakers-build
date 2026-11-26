@@ -1,12 +1,11 @@
-// Catalog Environments tab: add through the page header's action for a
-// picked project, filter by project, and edit or delete on the environment's
-// edit form, its only page. Tab, header-action and visit steps are shared.
+// A project's Environments tab: add through the page header's action, and a
+// row opens the environment's edit form in the dialog, its only page. Tab,
+// header-action, project and visit steps are shared.
 import { createBdd } from 'playwright-bdd';
 import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
 import { DEADLOCK, php, phpWithRetry } from '../../support/drush';
 import { clickHeaderAction } from '../../support/shell';
-import { pickOption } from '../../support/picker';
 
 const { Given, When, Then, After } = createBdd(test);
 
@@ -29,7 +28,7 @@ async function remember(page: Page, name: string): Promise<void> {
   await deleteEnvironments([name]);
 }
 
-After({ tags: '@feature:catalog-environments' }, async ({ page }) => {
+After({ tags: '@feature:project-environments' }, async ({ page }) => {
   const names = written.get(page) ?? [];
   if (names.length > 0) await deleteEnvironments(names);
 });
@@ -67,89 +66,90 @@ function environmentRow(page: Page, name: string): Locator {
   return page.locator('li[data-list-item]').filter({ has: page.getByText(name, { exact: true }) });
 }
 
-/** The open form: inside the dialog with JavaScript, the page without. */
-async function openForm(page: Page): Promise<{ form: Locator; scope: string }> {
-  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
-  const inDialog = (await page.locator('dialog[open]').count()) > 0;
-  return { form: page.locator(inDialog ? 'dialog[open]' : 'main'), scope: inDialog ? 'dialog[open]' : 'main' };
+/** The open environment dialog, for adding or editing. */
+function environmentDialog(page: Page): Locator {
+  return page.locator('dialog[open]:has(form[id^="bb-environment-"])');
 }
 
-When('I add the environment {string} for the project {string}', async ({ page }, name: string, project: string) => {
+/** The tab address of a project's environments, by the project's name. */
+function environmentsTab(project: string): string {
+  return (
+    php(
+      `$p = current(\\Drupal::entityTypeManager()->getStorage("bb_project")->loadByProperties(["name" => ${JSON.stringify(project)}]));` +
+        ' print $p->toUrl()->toString();',
+    ).trim() + '/environments'
+  );
+}
+
+When('I visit the Environments tab of the project {string}', async ({ page }, project: string) => {
+  await page.goto(environmentsTab(project));
+});
+
+When('I add the environment {string}', async ({ page }, name: string) => {
   await remember(page, name);
+  const tab = page.url();
   await clickHeaderAction(page, 'Add environment');
-  const { form, scope } = await openForm(page);
-  await form.getByLabel('Name', { exact: true }).fill(name);
-  await pickOption(page, scope, 'Project', project);
-  await form.getByRole('button', { name: 'Save', exact: true }).click();
+  await environmentDialog(page).getByLabel('Name', { exact: true }).fill(name);
+  await environmentDialog(page).getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.locator('dialog[open]')).toHaveCount(0);
-  await expect(page).toHaveURL(/\/catalog\/environments(\?|$)/);
+  await expect(page).toHaveURL(tab);
 });
 
-When('I filter the environments by the project {string}', async ({ page }, project: string) => {
-  await page.getByRole('combobox', { name: 'Project', exact: true }).selectOption({ label: project });
-  await expect(page).toHaveURL(/[?&]project=\d+/);
-});
-
-Then('the environment {string} is listed with the project {string}', async ({ page }, name: string, project: string) => {
-  const row = environmentRow(page, name);
-  await expect(row).toHaveCount(1);
-  await expect(row).toContainText(project);
+Then('the environment {string} is listed', async ({ page }, name: string) => {
+  await expect(environmentRow(page, name)).toHaveCount(1);
 });
 
 Then('the environment {string} is not listed', async ({ page }, name: string) => {
-  await expect(page.locator('li[data-list-item]').first().or(page.getByText('This workspace has no environments yet.'))).toBeVisible();
+  await expect(page.locator('li[data-list-item]').first().or(page.getByText('This project has no environments yet.'))).toBeVisible();
   await expect(environmentRow(page, name)).toHaveCount(0);
 });
 
 When('I open the environment {string}', async ({ page }, name: string) => {
+  const tab = page.url();
   await environmentRow(page, name).getByRole('link', { name, exact: true }).click();
-  await expect(page).toHaveURL(/\/environment\/\d+\/edit(\?|$)/);
-  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await expect(environmentDialog(page).getByLabel('Name', { exact: true })).toHaveValue(name);
+  await expect(page).toHaveURL(tab);
 });
 
-Then('the environment edit form offers no {string}, {string} or {string} field', async ({ page }, a: string, b: string, c: string) => {
-  const form = page.locator('main form');
-  await expect(form.getByLabel('Name', { exact: true })).toBeVisible();
+Then('the environment dialog offers no {string}, {string} or {string} field', async ({ page }, a: string, b: string, c: string) => {
+  const dialog = environmentDialog(page);
+  await expect(dialog.getByLabel('Name', { exact: true })).toBeVisible();
   for (const label of [a, b, c]) {
-    await expect(form.getByText(label, { exact: true })).toHaveCount(0);
+    await expect(dialog.getByText(label, { exact: true })).toHaveCount(0);
   }
 });
 
-When('I rename the environment on its edit form to {string}', async ({ page }, to: string) => {
+When('I rename the environment in its dialog to {string}', async ({ page }, to: string) => {
   await remember(page, to);
-  const edit = page.url();
-  const form = page.locator('main form');
-  await form.getByLabel('Name', { exact: true }).fill(to);
-  await form.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page).toHaveURL(edit);
+  const tab = page.url();
+  await environmentDialog(page).getByLabel('Name', { exact: true }).fill(to);
+  await environmentDialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0);
+  await expect(page).toHaveURL(tab);
 });
 
-When('I delete the environment from its edit form', async ({ page }) => {
-  await page.locator('main').getByRole('link', { name: 'Delete', exact: true }).click();
-  // The confirm opens in the dialog with JavaScript, on its own page without.
-  const dialog = page.locator('dialog[open]:has(form[id$="-delete-form"])');
-  await expect(dialog.or(page.locator('form[id$="-delete-form"]')).first()).toBeVisible();
-  const scope = (await dialog.count()) > 0 ? dialog : page.locator('main');
-  await scope.getByRole('button', { name: 'Delete', exact: true }).click();
-  await expect(page).toHaveURL(/\/catalog\/environments(\?|$)/);
+When('I delete the environment from its dialog', async ({ page }) => {
+  await environmentDialog(page).getByRole('link', { name: 'Delete', exact: true }).click();
+  const confirm = page.locator('dialog[open]:has(form[id$="-delete-form"])');
+  await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/project\/[^/]+\/environments(\?|$)/);
 });
 
-When('I save the new environment {string} without a project', async ({ page }, name: string) => {
-  await remember(page, name);
+When('I save a new environment without a name', async ({ page }) => {
   await clickHeaderAction(page, 'Add environment');
-  const { form } = await openForm(page);
-  await form.getByLabel('Name', { exact: true }).fill(name);
+  await expect(environmentDialog(page).getByLabel('Name', { exact: true })).toBeVisible();
   // The save must go back through the dialog format, not as a plain page post.
   const posted = page.waitForResponse(
     (r) => r.request().method() === 'POST' && r.url().includes('_wrapper_format=island_dialog'),
     { timeout: 15000 },
   );
-  await form.getByRole('button', { name: 'Save', exact: true }).click();
+  await environmentDialog(page).getByRole('button', { name: 'Save', exact: true }).click();
   expect((await posted).headers()['hx-location'], 'A refused save must not navigate').toBeUndefined();
 });
 
 /** A refused dialog save keeps the dialog open over the tab, with the error inside. */
 Then('the environment form stays open with the error {string}', async ({ page }, error: string) => {
-  await expect(page.locator('dialog[open]:has(form#bb-environment-add-form)').getByText(error)).toBeVisible();
-  await expect(page).toHaveURL(/\/catalog\/environments(\?|$)/);
+  await expect(environmentDialog(page).getByText(error)).toBeVisible();
+  await expect(page).toHaveURL(/\/project\/[^/]+\/environments(\?|$)/);
 });

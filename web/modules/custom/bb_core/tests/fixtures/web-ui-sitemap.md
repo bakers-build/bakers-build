@@ -55,7 +55,7 @@ The `bb_api_key` submodule adds a further tab, **Service accounts**
 (`view.bb_service_accounts.settings`, `/{ws}/settings/service-accounts`), when
 it is enabled; see service accounts.
 
-## Catalog — four tabs under Workspace settings › Catalog, Types default
+## Catalog — three tabs under Workspace settings › Catalog, Types default
 
 The categories tickets pick from. Each tab needs its kind's view right in the
 route's workspace, set on the Views route by `BbWorkspaceRouteSubscriber`.
@@ -65,7 +65,6 @@ route's workspace, set on the Views route by `BbWorkspaceRouteSubscriber`.
 | Types (default) | `view.bb_terms.types` | `/{ws}/settings/catalog/types` | View (page display) | `view bb_term` in this workspace | `_bb_workspace_permission`. Lists the `type` terms of this workspace. |
 | Recipes | `view.bb_terms.recipes` | `/{ws}/settings/catalog/recipes` | View (page display) | `view bb_term` in this workspace | As Types, for the `recipe` terms. |
 | Labels | `view.bb_terms.labels` | `/{ws}/settings/catalog/labels` | View (page display) | `view bb_term` in this workspace | As Types, for the `label` terms. |
-| Environments | `view.bb_environments.catalog` | `/{ws}/settings/catalog/environments` | View (page display) | `view bb_environment` in this workspace | `_bb_workspace_permission`, so a guest has no such tab. Lists the environments of every project of this workspace, filtered by an exposed **Project** select offering only this workspace's projects. Its *Add environment* header action opens `entity.bb_environment.add_for_workspace`, gated by `_bb_workspace_create`. |
 
 ## Workspace invitation — a dialog, not a tab
 
@@ -86,7 +85,7 @@ route; without JavaScript it is its own page.
 |---|---|---|---|---|---|
 | Add member | `bb_core.bb_team.member_add` | `/{ws}/team/{id}/members/add` | Form (island dialog) | `bb_team.update` | `_entity_access` |
 
-## Project detail — eight tabs, Overview default
+## Project detail — nine tabs, Overview default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
@@ -97,6 +96,7 @@ route; without JavaScript it is its own page.
 | Runs | `view.runs.project_runs` | `/{ws}/project/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Conductors | `view.conductors.project_list` | `/{ws}/project/{id}/conductors` | View (page display) | `view bb_conductor` | view's own `access: type: perm`. Rows are this project's conductors, any owner. |
 | Templates | `view.bb_ticket_templates.project_list` | `/{ws}/project/{id}/templates` | View (page display) | `view bb_ticket_template` | view's own `access: type: perm`; rows are scoped by the template read scope. Its *Add template* header action opens the project-scoped add form. |
+| Environments | `view.bb_environments.project_list` | `/{ws}/project/{id}/environments` | View (page display) | `view bb_environment` | view's own `access: type: perm`, so a guest has no such tab. Rows are this project's environments; a row opens the environment's edit form in the dialog. Its *Add environment* header action opens `entity.bb_environment.add_for_project`. |
 | Settings | `bb_core.bb_project.settings` | `/{ws}/project/{id}/settings` | Controller | `bb_project.update` (→ `edit bb_project`, or `update own bb_project` as owner) | `_entity_access` |
 
 ## Team detail — five tabs, Overview default
@@ -147,9 +147,9 @@ profiles) keep their admin pages, reachable by URL and never from the rail.
 - A ticket trigger (`entity.bb_ticket_trigger.canonical`,
   `/{ws}/ticket-template/{id}/trigger/{id}`) is opened from its Triggers row,
   under the entity's own view access.
-- A term and an environment have no page: their Catalog row opens the edit
-  form (`entity.bb_term.edit_form`, `entity.bb_environment.edit_form`), under
-  the entity's own update access.
+- A term and an environment have no page: their Catalog or project row opens
+  the edit form (`entity.bb_term.edit_form`, `entity.bb_environment.edit_form`)
+  in the dialog, under the entity's own update access.
 
 ## User area
 

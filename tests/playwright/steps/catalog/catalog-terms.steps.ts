@@ -1,5 +1,5 @@
 // Catalog term tabs (Types, Recipes, Labels): add through the page header's
-// create action; a row opens the term's edit form, which renames it in place. Tab,
+// create action; a row opens the term's edit form in the dialog. Tab,
 // header-action and visit steps are shared (support/steps/shell.steps.ts).
 import { createBdd } from 'playwright-bdd';
 import type { Locator, Page } from '@playwright/test';
@@ -64,26 +64,29 @@ When('I add the term {string} with the action {string}', async ({ page }, name: 
   await saveTermForm(page, name);
 });
 
+/** The open edit dialog of a term. */
+function termDialog(page: Page): Locator {
+  return page.locator('dialog[open]:has(form[id^="bb-term-"][id$="-edit-form"])');
+}
+
 When('I open the term {string}', async ({ page }, name: string) => {
+  const list = page.url();
   await termRow(page, name).getByRole('link', { name, exact: true }).click();
-  await expect(page).toHaveURL(/\/term\/\d+\/edit(\?|$)/);
-  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await expect(termDialog(page).getByLabel('Name', { exact: true })).toHaveValue(name);
+  await expect(page).toHaveURL(list);
 });
 
-When('I rename the term on its edit form to {string}', async ({ page }, to: string) => {
+When('I rename the term in its dialog to {string}', async ({ page }, to: string) => {
   await remember(page, to);
-  const edit = page.url();
   await saveTermForm(page, to);
-  await expect(page).toHaveURL(edit);
+  await expect(page).toHaveURL(/\/settings\/catalog\/(types|recipes|labels)(\?|$)/);
 });
 
-When('I delete the term from its edit form', async ({ page }) => {
-  await page.locator('main').getByRole('link', { name: 'Delete', exact: true }).click();
-  // The confirm opens in the dialog with JavaScript, on its own page without.
-  const dialog = page.locator('dialog[open]:has(form[id$="-delete-form"])');
-  await expect(dialog.or(page.locator('form[id$="-delete-form"]')).first()).toBeVisible();
-  const scope = (await dialog.count()) > 0 ? dialog : page.locator('main');
-  await scope.getByRole('button', { name: 'Delete', exact: true }).click();
+When('I delete the term from its dialog', async ({ page }) => {
+  await termDialog(page).getByRole('link', { name: 'Delete', exact: true }).click();
+  const confirm = page.locator('dialog[open]:has(form[id$="-delete-form"])');
+  await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0);
   await expect(page).toHaveURL(/\/settings\/catalog\/(types|recipes|labels)(\?|$)/);
 });
 
@@ -109,14 +112,15 @@ Then('the term {string} is not listed', async ({ page }, name: string) => {
   await expect(termRow(page, name)).toHaveCount(0);
 });
 
-Then('the term edit form offers no Delete', async ({ page }) => {
-  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
-  await expect(page.locator('main').getByRole('link', { name: 'Delete', exact: true })).toHaveCount(0);
+Then('the term dialog offers no Delete', async ({ page }) => {
+  await expect(termDialog(page).getByLabel('Name', { exact: true })).toBeVisible();
+  await expect(termDialog(page).getByRole('link', { name: 'Delete', exact: true })).toHaveCount(0);
 });
 
-Then('the delete page of this term answers {int}', async ({ page }, status: number) => {
-  const term = new URL(page.url()).pathname.replace(/\/edit$/, '');
-  expect(term).toMatch(/\/term\/\d+$/);
-  const response = await page.goto(`${term}/delete`);
-  expect(response?.status()).toBe(status);
+Then('the delete page of the term {string} answers {int}', async ({ page }, name: string, status: number) => {
+  const path = php(
+    `$t = current(\\Drupal::entityTypeManager()->getStorage("bb_term")->loadByProperties(["name" => ${JSON.stringify(name)}]));` +
+      ' print $t->toUrl("delete-form")->toString();',
+  ).trim();
+  await expectStatus(page, path, status);
 });

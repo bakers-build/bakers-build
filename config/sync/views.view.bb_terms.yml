@@ -25,22 +25,6 @@ display:
     display_options:
       title: Terms
       fields:
-        id:
-          id: id
-          table: bb_term
-          field: id
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_term
-          entity_field: id
-          plugin_id: field
-          label: ''
-          exclude: true
-          type: number_integer
-          settings:
-            thousand_separator: ''
-            prefix_suffix: false
         name:
           id: name
           table: bb_term
@@ -53,15 +37,11 @@ display:
           plugin_id: field
           label: ''
           exclude: false
-          alter:
-            make_link: true
-            path: '/{{ raw_arguments.workspace_id }}/term/{{ id }}/edit'
           element_label_colon: false
           hide_empty: true
           click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: false
+          type: bb_edit_dialog_link
+          settings: {  }
         description:
           id: description
           table: bb_term
