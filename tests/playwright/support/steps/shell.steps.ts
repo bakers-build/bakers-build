@@ -150,6 +150,14 @@ Then('the tabs are {string}', async ({ page }, labels: string) => {
   await expect(primaryTabLinks(page)).toHaveText(wanted);
 });
 
+// The secondary row, which Drupal labels "Subsections" beneath the primary one.
+Then('the subsection tabs are {string}', async ({ page }, labels: string) => {
+  const wanted = labels.split(',').map((label) => label.trim());
+  await expect(
+    page.locator(PAGE_HEADER_ISLAND).getByRole('navigation', { name: 'Subsections', exact: true }).getByRole('link'),
+  ).toHaveText(wanted);
+});
+
 // The primary tab row only: a secondary row is its own `<nav>` with its own
 // current entry, and counting across both would hide a doubled marker.
 function primaryTabLinks(page: Page) {

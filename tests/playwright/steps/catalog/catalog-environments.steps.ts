@@ -1,6 +1,6 @@
 // Catalog Environments tab: add through the page header's action for a
-// picked project, filter by project, and edit or delete from the
-// environment's page. Tab, header-action and visit steps are shared.
+// picked project, filter by project, and edit or delete on the environment's
+// edit form, its only page. Tab, header-action and visit steps are shared.
 import { createBdd } from 'playwright-bdd';
 import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
@@ -34,7 +34,7 @@ After({ tags: '@feature:catalog-environments' }, async ({ page }) => {
   if (names.length > 0) await deleteEnvironments(names);
 });
 
-/** The path of one environment's page or form, by name. */
+/** The path of one environment's form, by name. */
 function environmentPath(name: string, rel: string): string {
   return php(
     '$s = \\Drupal::entityTypeManager()->getStorage("bb_environment");' +
@@ -54,6 +54,12 @@ Given('the project {string} has the environment {string}', async ({ page }, proj
 
 Then('the {word} page of the environment {string} answers {int}', async ({ page }, form: string, name: string, status: number) => {
   const response = await page.goto(environmentPath(name, `${form}-form`));
+  expect(response?.status()).toBe(status);
+});
+
+// The address the environment's own page had, before it had none.
+Then('the page of the environment {string} answers {int}', async ({ page }, name: string, status: number) => {
+  const response = await page.goto(environmentPath(name, 'edit-form').replace(/\/edit$/, ''));
   expect(response?.status()).toBe(status);
 });
 
@@ -97,23 +103,29 @@ Then('the environment {string} is not listed', async ({ page }, name: string) =>
 
 When('I open the environment {string}', async ({ page }, name: string) => {
   await environmentRow(page, name).getByRole('link', { name, exact: true }).click();
-  await expect(page).toHaveURL(/\/environment\/\d+(\?|$)/);
+  await expect(page).toHaveURL(/\/environment\/\d+\/edit(\?|$)/);
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
 });
 
-When('I rename the environment on its page to {string}', async ({ page }, to: string) => {
+Then('the environment edit form offers no {string}, {string} or {string} field', async ({ page }, ...labels: string[]) => {
+  const form = page.locator('main form');
+  await expect(form.getByLabel('Name', { exact: true })).toBeVisible();
+  for (const label of labels) {
+    await expect(form.getByText(label, { exact: true })).toHaveCount(0);
+  }
+});
+
+When('I rename the environment on its edit form to {string}', async ({ page }, to: string) => {
   await remember(page, to);
-  const detail = page.url();
-  await page.getByRole('link', { name: 'Edit', exact: true }).first().click();
-  const { form } = await openForm(page);
+  const edit = page.url();
+  const form = page.locator('main form');
   await form.getByLabel('Name', { exact: true }).fill(to);
   await form.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.locator('dialog[open]')).toHaveCount(0);
-  await expect(page).not.toHaveURL(`${detail}/edit`);
+  await expect(page).toHaveURL(edit);
 });
 
-When('I delete the environment from its Edit tab', async ({ page }) => {
-  await page.getByRole('link', { name: 'Edit', exact: true }).first().click();
-  await page.getByRole('link', { name: 'Delete', exact: true }).first().click();
+When('I delete the environment from its edit form', async ({ page }) => {
+  await page.locator('main').getByRole('link', { name: 'Delete', exact: true }).click();
   // The confirm opens in the dialog with JavaScript, on its own page without.
   const dialog = page.locator('dialog[open]:has(form[id$="-delete-form"])');
   await expect(dialog.or(page.locator('form[id$="-delete-form"]')).first()).toBeVisible();

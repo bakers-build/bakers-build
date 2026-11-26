@@ -111,17 +111,17 @@ const SURFACES: Record<string, Surface> = {
     form: 'form#bb-team-create-form',
   },
   label: {
-    screen: () => `/${workspaceSlug()}/catalog/labels`,
+    screen: () => `/${workspaceSlug()}/settings/catalog/labels`,
     trigger: 'Add label',
     form: 'form#bb-term-label-add-form',
   },
   recipe: {
-    screen: () => `/${workspaceSlug()}/catalog/recipes`,
+    screen: () => `/${workspaceSlug()}/settings/catalog/recipes`,
     trigger: 'Add recipe',
     form: 'form#bb-term-recipe-add-form',
   },
   environment: {
-    screen: () => `/${workspaceSlug()}/catalog/environments`,
+    screen: () => `/${workspaceSlug()}/settings/catalog/environments`,
     trigger: 'Add environment',
     form: 'form#bb-environment-add-form',
   },

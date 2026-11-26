@@ -1,5 +1,5 @@
 // Catalog term tabs (Types, Recipes, Labels): add through the page header's
-// create action; a row opens the term's page, whose Edit renames it. Tab,
+// create action; a row opens the term's edit form, which renames it in place. Tab,
 // header-action and visit steps are shared (support/steps/shell.steps.ts).
 import { createBdd } from 'playwright-bdd';
 import type { Locator, Page } from '@playwright/test';
@@ -49,23 +49,12 @@ async function saveTermForm(page: Page, name: string): Promise<void> {
   await expect(dialog).toHaveCount(0);
 }
 
-/** The term page's inspector: its description and its actions. */
-function termPage(page: Page): Locator {
-  return page.locator('aside.inspector');
-}
-
-/** Opens the term page's Edit, the form on its own page. */
-async function editOnPage(page: Page): Promise<void> {
-  await termPage(page).getByRole('link', { name: 'Edit', exact: true }).click();
-  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
-}
-
-/** A seeded Northside label's page, by its name. */
-function seededLabelUrl(name: string): string {
+/** A seeded Northside label's path under its workspace, by its name. */
+function seededLabelPath(name: string): string {
   return php(
     '$w = current(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["slug" => "bakers"]));' +
       ` $t = current(\\Drupal::entityTypeManager()->getStorage("bb_term")->loadByProperties(["vid" => "label", "name" => ${JSON.stringify(name)}, "workspace_id" => $w->id()]));` +
-      ' print $t->toUrl()->toString();',
+      ' print "/" . $w->getSlug() . "/term/" . $t->id();',
   ).trim();
 }
 
@@ -77,44 +66,38 @@ When('I add the term {string} with the action {string}', async ({ page }, name: 
 
 When('I open the term {string}', async ({ page }, name: string) => {
   await termRow(page, name).getByRole('link', { name, exact: true }).click();
-  await expect(page).toHaveURL(/\/term\/\d+(\?|$)/);
+  await expect(page).toHaveURL(/\/term\/\d+\/edit(\?|$)/);
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
 });
 
-When('I rename the term on its page to {string}', async ({ page }, to: string) => {
+When('I rename the term on its edit form to {string}', async ({ page }, to: string) => {
   await remember(page, to);
-  const detail = page.url();
-  await editOnPage(page);
+  const edit = page.url();
   await saveTermForm(page, to);
-  await expect(page).toHaveURL(detail);
+  await expect(page).toHaveURL(edit);
 });
 
-When('I rename the term on its page to {string} and cancel', async ({ page }, to: string) => {
-  await remember(page, to);
-  const detail = page.url();
-  await editOnPage(page);
-  await page.getByLabel('Name', { exact: true }).fill(to);
-  await page.getByRole('link', { name: 'Cancel', exact: true }).click();
-  await expect(page.getByLabel('Name', { exact: true })).toHaveCount(0);
-  await expect(page).toHaveURL(detail);
+When('I delete the term from its edit form', async ({ page }) => {
+  await page.locator('main').getByRole('link', { name: 'Delete', exact: true }).click();
+  // The confirm opens in the dialog with JavaScript, on its own page without.
+  const dialog = page.locator('dialog[open]:has(form[id$="-delete-form"])');
+  await expect(dialog.or(page.locator('form[id$="-delete-form"]')).first()).toBeVisible();
+  const scope = (await dialog.count()) > 0 ? dialog : page.locator('main');
+  await scope.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page).toHaveURL(/\/settings\/catalog\/(types|recipes|labels)(\?|$)/);
 });
 
-Then('the term page shows {string}', async ({ page }, text: string) => {
-  await expect(termPage(page)).toContainText(text);
-});
+async function expectStatus(page: Page, path: string, status: number): Promise<void> {
+  const response = await page.goto(path);
+  expect(response?.status()).toBe(status);
+}
 
-When('I visit the page of the seeded label {string}', async ({ page }, name: string) => {
-  await page.goto(seededLabelUrl(name));
-});
-
-Then('the page offers no term action', async ({ page }) => {
-  for (const action of ['Edit', 'Delete']) {
-    await expect(page.getByRole('link', { name: action, exact: true })).toHaveCount(0);
-  }
+Then('the page of the seeded label {string} answers {int}', async ({ page }, name: string, status: number) => {
+  await expectStatus(page, seededLabelPath(name), status);
 });
 
 Then('the edit page of the seeded label {string} answers {int}', async ({ page }, name: string, status: number) => {
-  const response = await page.goto(`${seededLabelUrl(name)}/edit`);
-  expect(response?.status()).toBe(status);
+  await expectStatus(page, `${seededLabelPath(name)}/edit`, status);
 });
 
 Then('the term {string} is listed', async ({ page }, name: string) => {
@@ -126,13 +109,13 @@ Then('the term {string} is not listed', async ({ page }, name: string) => {
   await expect(termRow(page, name)).toHaveCount(0);
 });
 
-Then('the term page offers no Delete', async ({ page }) => {
-  await expect(termPage(page).getByRole('link', { name: 'Edit', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Delete', exact: true })).toHaveCount(0);
+Then('the term edit form offers no Delete', async ({ page }) => {
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await expect(page.locator('main').getByRole('link', { name: 'Delete', exact: true })).toHaveCount(0);
 });
 
 Then('the delete page of this term answers {int}', async ({ page }, status: number) => {
-  const term = new URL(page.url()).pathname;
+  const term = new URL(page.url()).pathname.replace(/\/edit$/, '');
   expect(term).toMatch(/\/term\/\d+$/);
   const response = await page.goto(`${term}/delete`);
   expect(response?.status()).toBe(status);
