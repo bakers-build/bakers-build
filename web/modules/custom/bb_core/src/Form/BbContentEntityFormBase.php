@@ -15,6 +15,7 @@ use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\island\Form\WrappedDialogFormTrait;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Shared content entity form that groups fields into a meta container.
@@ -36,6 +37,22 @@ use Drupal\island\Form\WrappedDialogFormTrait;
 class BbContentEntityFormBase extends ContentEntityForm {
 
   use WrappedDialogFormTrait;
+
+  /**
+   * {@inheritdoc}
+   *
+   * Core's construction, not the trait's: the base answers a dialog by
+   * navigation and sends no island intents, so it needs no
+   * `island.responder`. A subclass that returns intents from
+   * dialogResponse() uses the trait itself.
+   */
+  public static function create(ContainerInterface $container): static {
+    return new static(
+      $container->get('entity.repository'),
+      $container->get('entity_type.bundle.info'),
+      $container->get('datetime.time'),
+    );
+  }
 
   /**
    * Declares the meta groups for this entity form.
