@@ -2,7 +2,6 @@ langcode: en
 status: true
 dependencies:
   config:
-    - core.entity_view_mode.bb_run.list_item
     - search_api.index.bb_runs
   module:
     - bb_core
@@ -450,7 +449,7 @@ display:
         type: search_api
         options:
           view_modes:
-            entity:bb_run:
+            'entity:bb_run':
               bb_run: list_item
     cache_metadata:
       max-age: -1
@@ -541,7 +540,8 @@ display:
         display_builder:
           profile: default
           sources:
-            - source_id: component
+            -
+              source_id: component
               source:
                 component:
                   component_id: 'bb_theme:canvas'
@@ -550,7 +550,8 @@ display:
                   slots:
                     filters:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -575,13 +576,15 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: view_exposed
+                                    -
+                                      source_id: view_exposed
                                       source: {  }
                                       node_id: project_runs_exposed
                           node_id: project_runs_filters
                     main:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -605,17 +608,21 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: bb_view_search
+                                    -
+                                      source_id: bb_view_search
                                       source: {  }
                                       node_id: runs_project_runs_search
                           node_id: runs_project_runs_toolbar
-                        - source_id: view_header
+                        -
+                          source_id: view_header
                           source: {  }
                           node_id: project_runs_summary
-                        - source_id: view_rows
+                        -
+                          source_id: view_rows
                           source: {  }
                           node_id: project_runs_rows
-                        - source_id: view_pager
+                        -
+                          source_id: view_pager
                           source: {  }
                           node_id: project_runs_pager
               node_id: project_runs_canvas
@@ -709,7 +716,8 @@ display:
         display_builder:
           profile: default
           sources:
-            - source_id: component
+            -
+              source_id: component
               source:
                 component:
                   component_id: 'bb_theme:canvas'
@@ -718,7 +726,8 @@ display:
                   slots:
                     filters:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -743,13 +752,15 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: view_exposed
+                                    -
+                                      source_id: view_exposed
                                       source: {  }
                                       node_id: team_runs_exposed
                           node_id: team_runs_filters
                     main:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -773,17 +784,21 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: bb_view_search
+                                    -
+                                      source_id: bb_view_search
                                       source: {  }
                                       node_id: runs_team_runs_search
                           node_id: runs_team_runs_toolbar
-                        - source_id: view_header
+                        -
+                          source_id: view_header
                           source: {  }
                           node_id: team_runs_summary
-                        - source_id: view_rows
+                        -
+                          source_id: view_rows
                           source: {  }
                           node_id: team_runs_rows
-                        - source_id: view_pager
+                        -
+                          source_id: view_pager
                           source: {  }
                           node_id: team_runs_pager
               node_id: team_runs_canvas

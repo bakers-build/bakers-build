@@ -10,19 +10,21 @@ third_party_settings:
   display_builder:
     profile: default
     sources:
-      - source_id: component
+      -
+        source_id: component
         source:
           component:
-            component_id: bb_theme:list_item
+            component_id: 'bb_theme:list_item'
             variant_id: null
             props: {  }
             slots:
               avatar:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -32,13 +34,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_group:bb_group:name
-                                  field:bb_group:bb_group:name:
+                                  derivable_context: 'field:bb_group:bb_group:name'
+                                  'field:bb_group:bb_group:name':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_group:bb_group:name
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:name'
                                           source:
                                             type: bb_entity_avatar
                                             settings: {  }
@@ -46,10 +50,11 @@ third_party_settings:
                     node_id: list_item_name_avatar
               headline:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -63,13 +68,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_group:bb_group:name
-                                  field:bb_group:bb_group:name:
+                                  derivable_context: 'field:bb_group:bb_group:name'
+                                  'field:bb_group:bb_group:name':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_group:bb_group:name
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:name'
                                           source:
                                             type: string
                                             settings:
@@ -78,10 +85,11 @@ third_party_settings:
                     node_id: list_item_name
               description:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -91,13 +99,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_group:bb_group:description
-                                  field:bb_group:bb_group:description:
+                                  derivable_context: 'field:bb_group:bb_group:description'
+                                  'field:bb_group:bb_group:description':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_group:bb_group:description
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:description'
                                           source:
                                             type: basic_string
                                             settings: {  }
@@ -105,10 +115,11 @@ third_party_settings:
                     node_id: list_item_description
               right:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -126,28 +137,31 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_group:bb_group:projects
-                                  field:bb_group:bb_group:projects:
+                                  derivable_context: 'field:bb_group:bb_group:projects'
+                                  'field:bb_group:bb_group:projects':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_group:bb_group:projects
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:projects'
                                           source:
                                             type: bb_integer_badge
                                             settings:
                                               icon: project
                                               tone: neutral
-                                              singular: 1 project
+                                              singular: '1 project'
                                               plural: '@count projects'
                                             third_party_settings: {  }
                     node_id: list_item_projects
               right_meta:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -161,13 +175,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_group:bb_group:changed
-                                  field:bb_group:bb_group:changed:
+                                  derivable_context: 'field:bb_group:bb_group:changed'
+                                  'field:bb_group:bb_group:changed':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_group:bb_group:changed
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:changed'
                                           source:
                                             type: bb_time
                                             settings:
@@ -181,4 +197,6 @@ bundle: bb_group
 mode: list_item
 content: {  }
 hidden:
+  description: true
+  image: true
   search_api_excerpt: true

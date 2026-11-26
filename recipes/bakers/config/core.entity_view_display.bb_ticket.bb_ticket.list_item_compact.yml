@@ -6,6 +6,7 @@ dependencies:
   module:
     - bb_core
     - display_builder
+    - link
   enforced:
     config:
       - bb_core.bb_vocabulary.label
@@ -15,19 +16,21 @@ third_party_settings:
   display_builder:
     profile: default
     sources:
-      - source_id: component
+      -
+        source_id: component
         source:
           component:
-            component_id: bb_theme:list_item
+            component_id: 'bb_theme:list_item'
             variant_id: null
             props: {  }
             slots:
               headline:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -37,23 +40,26 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_ticket:bb_ticket:identifier
-                                  field:bb_ticket:bb_ticket:identifier:
+                                  derivable_context: 'field:bb_ticket:bb_ticket:identifier'
+                                  'field:bb_ticket:bb_ticket:identifier':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_ticket:bb_ticket:identifier
+                                        -
+                                          source_id: 'field_formatter:bb_ticket:bb_ticket:identifier'
                                           source:
                                             type: string
                                             settings:
                                               link_to_entity: true
                                             third_party_settings: {  }
                     node_id: list_item_compact_identifier
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -67,13 +73,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_ticket:bb_ticket:title
-                                  field:bb_ticket:bb_ticket:title:
+                                  derivable_context: 'field:bb_ticket:bb_ticket:title'
+                                  'field:bb_ticket:bb_ticket:title':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_ticket:bb_ticket:title
+                                        -
+                                          source_id: 'field_formatter:bb_ticket:bb_ticket:title'
                                           source:
                                             type: string
                                             settings:
@@ -85,6 +93,99 @@ id: bb_ticket.bb_ticket.list_item_compact
 targetEntityType: bb_ticket
 bundle: bb_ticket
 mode: list_item_compact
-content: {  }
+content:
+  environments:
+    type: entity_reference_label
+    label: above
+    weight: 15
+    region: content
+    settings:
+      link: true
+    third_party_settings: {  }
+  links:
+    type: link
+    label: above
+    weight: 14
+    settings:
+      trim_length: 80
+      url_only: false
+      url_plain: false
+      rel: ''
+      target: ''
+    region: content
+    third_party_settings: {  }
+  metrics:
+    type: bb_metric_default
+    label: above
+    weight: 40
+    region: content
+    settings: {  }
+    third_party_settings: {  }
+  referenced_tickets:
+    type: entity_reference_label
+    label: above
+    weight: 14
+    region: content
+    settings:
+      link: true
+    third_party_settings: {  }
+  state:
+    type: bb_state_label
+    weight: 5
+    region: content
+    label: above
+    settings: {  }
+    third_party_settings: {  }
+  time_estimate:
+    type: number_integer
+    label: inline
+    weight: 11
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+  time_spent:
+    type: number_integer
+    label: inline
+    weight: 12
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
 hidden:
+  assignee_color: true
+  assignee_initials: true
+  assignee_name: true
+  base_branch: true
+  blocked_by: true
+  branch_name: true
+  claim_machine: true
+  comments: true
+  conductor_id: true
+  derived_status: true
+  edit_url: true
+  effective_env_vars: true
+  env_vars: true
+  frozen: true
+  frozen_at: true
+  handoff_comments: true
+  number: true
+  owner_initials: true
+  owner_name: true
+  pending_reviews: true
+  recipe: true
+  recipient_profile: true
+  reviewers: true
+  runs: true
   search_api_excerpt: true
+  since_label: true
+  stall_reason: true
+  state_flow: true
+  sub_tickets: true
+  summary_comment: true
+  target_branch: true
+  template_id: true
+  ticket_type: true
+  work_state: true

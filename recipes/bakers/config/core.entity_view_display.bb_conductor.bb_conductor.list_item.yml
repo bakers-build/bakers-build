@@ -10,19 +10,21 @@ third_party_settings:
   display_builder:
     profile: default
     sources:
-      - source_id: component
+      -
+        source_id: component
         source:
           component:
-            component_id: bb_theme:list_item
+            component_id: 'bb_theme:list_item'
             variant_id: null
             props: {  }
             slots:
               headline:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -40,13 +42,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_conductor:bb_conductor:label
-                                  field:bb_conductor:bb_conductor:label:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:label'
+                                  'field:bb_conductor:bb_conductor:label':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_conductor:bb_conductor:label
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:label'
                                           source:
                                             type: string
                                             settings:
@@ -55,10 +59,11 @@ third_party_settings:
                     node_id: list_item_label
               meta:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -68,13 +73,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_conductor:bb_conductor:status
-                                  field:bb_conductor:bb_conductor:status:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:status'
+                                  'field:bb_conductor:bb_conductor:status':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_conductor:bb_conductor:status
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:status'
                                           source:
                                             type: bb_status_badge
                                             settings: {  }
@@ -82,10 +89,11 @@ third_party_settings:
                     node_id: list_item_status
               right:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -103,28 +111,31 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_conductor:bb_conductor:reported_load
-                                  field:bb_conductor:bb_conductor:reported_load:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:reported_load'
+                                  'field:bb_conductor:bb_conductor:reported_load':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_conductor:bb_conductor:reported_load
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:reported_load'
                                           source:
                                             type: bb_integer_badge
                                             settings:
                                               icon: run
                                               tone: neutral
-                                              singular: 1 load
+                                              singular: '1 load'
                                               plural: '@count loads'
                                             third_party_settings: {  }
                     node_id: list_item_reported_load
               right_meta:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -138,23 +149,26 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_conductor:bb_conductor:owner_user_id
-                                  field:bb_conductor:bb_conductor:owner_user_id:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:owner_user_id'
+                                  'field:bb_conductor:bb_conductor:owner_user_id':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_conductor:bb_conductor:owner_user_id
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:owner_user_id'
                                           source:
                                             type: entity_reference_label
                                             settings:
                                               link: false
                                             third_party_settings: {  }
                     node_id: list_item_owner_user_id
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -164,17 +178,19 @@ third_party_settings:
                           caption:
                             source_id: textfield
                             source:
-                              value: Last run
+                              value: 'Last run'
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_conductor:bb_conductor:last_seen
-                                  field:bb_conductor:bb_conductor:last_seen:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:last_seen'
+                                  'field:bb_conductor:bb_conductor:last_seen':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_conductor:bb_conductor:last_seen
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:last_seen'
                                           source:
                                             type: bb_time
                                             settings:
@@ -188,4 +204,9 @@ bundle: bb_conductor
 mode: list_item
 content: {  }
 hidden:
+  active: true
+  last_seen_label: true
+  node_load_label: true
+  node_states_label: true
+  node_status: true
   search_api_excerpt: true

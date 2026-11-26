@@ -3,8 +3,6 @@ langcode: en
 status: true
 dependencies:
   config:
-    - core.entity_view_mode.bb_ticket.list_item
-    - core.entity_view_mode.bb_ticket.list_item_mine
     - search_api.index.bb_tickets
   module:
     - bb_core
@@ -1028,7 +1026,7 @@ display:
         type: search_api
         options:
           view_modes:
-            entity:bb_ticket:
+            'entity:bb_ticket':
               bb_ticket: list_item
     cache_metadata:
       max-age: -1
@@ -1761,7 +1759,8 @@ display:
         display_builder:
           profile: default
           sources:
-            - source_id: component
+            -
+              source_id: component
               source:
                 component:
                   component_id: 'bb_theme:canvas'
@@ -1770,7 +1769,8 @@ display:
                   slots:
                     filters:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -1795,17 +1795,20 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: view_exposed
+                                    -
+                                      source_id: view_exposed
                                       source: {  }
                                       node_id: my_work_exposed
                           node_id: my_work_filters
                     main:
                       sources:
-                        - source_id: block
+                        -
+                          source_id: block
                           source:
                             plugin_id: system_messages_block
                           node_id: my_work_messages
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -1829,11 +1832,13 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: bb_view_search
+                                    -
+                                      source_id: bb_view_search
                                       source: {  }
                                       node_id: tickets_my_work_search
                           node_id: tickets_my_work_toolbar
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:active-filters'
@@ -1850,14 +1855,17 @@ display:
                               slots:
                                 chips:
                                   sources:
-                                    - source_id: view_header
+                                    -
+                                      source_id: view_header
                                       source: {  }
                                       node_id: my_work_summary
                           node_id: my_work_active_filters
-                        - source_id: view_rows
+                        -
+                          source_id: view_rows
                           source: {  }
                           node_id: my_work_rows
-                        - source_id: view_pager
+                        -
+                          source_id: view_pager
                           source: {  }
                           node_id: my_work_pager
               node_id: my_work_canvas
@@ -1880,7 +1888,7 @@ display:
         type: search_api
         options:
           view_modes:
-            entity:bb_ticket:
+            'entity:bb_ticket':
               bb_ticket: list_item_mine
     cache_metadata:
       max-age: -1
@@ -1905,7 +1913,8 @@ display:
         display_builder:
           profile: default
           sources:
-            - source_id: component
+            -
+              source_id: component
               source:
                 component:
                   component_id: 'bb_theme:canvas'
@@ -1914,7 +1923,8 @@ display:
                   slots:
                     filters:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -1939,13 +1949,15 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: view_exposed
+                                    -
+                                      source_id: view_exposed
                                       source: {  }
                                       node_id: tickets_exposed
                           node_id: tickets_filters
                     main:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -1969,11 +1981,13 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: bb_view_search
+                                    -
+                                      source_id: bb_view_search
                                       source: {  }
                                       node_id: tickets_page_1_search
                           node_id: tickets_page_1_toolbar
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:active-filters'
@@ -1990,14 +2004,17 @@ display:
                               slots:
                                 chips:
                                   sources:
-                                    - source_id: view_header
+                                    -
+                                      source_id: view_header
                                       source: {  }
                                       node_id: tickets_summary
                           node_id: tickets_active_filters
-                        - source_id: view_rows
+                        -
+                          source_id: view_rows
                           source: {  }
                           node_id: tickets_rows
-                        - source_id: view_pager
+                        -
+                          source_id: view_pager
                           source: {  }
                           node_id: tickets_pager
               node_id: tickets_canvas
@@ -2774,7 +2791,8 @@ display:
         display_builder:
           profile: default
           sources:
-            - source_id: component
+            -
+              source_id: component
               source:
                 component:
                   component_id: 'bb_theme:canvas'
@@ -2783,7 +2801,8 @@ display:
                   slots:
                     filters:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -2808,17 +2827,20 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: view_exposed
+                                    -
+                                      source_id: view_exposed
                                       source: {  }
                                       node_id: project_tickets_exposed
                           node_id: project_tickets_filters
                     main:
                       sources:
-                        - source_id: block
+                        -
+                          source_id: block
                           source:
                             plugin_id: system_messages_block
                           node_id: project_tickets_messages
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -2842,17 +2864,21 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: bb_view_search
+                                    -
+                                      source_id: bb_view_search
                                       source: {  }
                                       node_id: tickets_project_tickets_search
                           node_id: tickets_project_tickets_toolbar
-                        - source_id: view_header
+                        -
+                          source_id: view_header
                           source: {  }
                           node_id: project_tickets_summary
-                        - source_id: view_rows
+                        -
+                          source_id: view_rows
                           source: {  }
                           node_id: project_tickets_rows
-                        - source_id: view_pager
+                        -
+                          source_id: view_pager
                           source: {  }
                           node_id: project_tickets_pager
               node_id: project_tickets_canvas
@@ -3691,7 +3717,8 @@ display:
         display_builder:
           profile: default
           sources:
-            - source_id: component
+            -
+              source_id: component
               source:
                 component:
                   component_id: 'bb_theme:canvas'
@@ -3700,7 +3727,8 @@ display:
                   slots:
                     filters:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -3725,13 +3753,15 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: view_exposed
+                                    -
+                                      source_id: view_exposed
                                       source: {  }
                                       node_id: team_tickets_exposed
                           node_id: team_tickets_filters
                     main:
                       sources:
-                        - source_id: component
+                        -
+                          source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:filters'
@@ -3755,17 +3785,21 @@ display:
                               slots:
                                 controls:
                                   sources:
-                                    - source_id: bb_view_search
+                                    -
+                                      source_id: bb_view_search
                                       source: {  }
                                       node_id: tickets_team_tickets_search
                           node_id: tickets_team_tickets_toolbar
-                        - source_id: view_header
+                        -
+                          source_id: view_header
                           source: {  }
                           node_id: team_tickets_summary
-                        - source_id: view_rows
+                        -
+                          source_id: view_rows
                           source: {  }
                           node_id: team_tickets_rows
-                        - source_id: view_pager
+                        -
+                          source_id: view_pager
                           source: {  }
                           node_id: team_tickets_pager
               node_id: team_tickets_canvas

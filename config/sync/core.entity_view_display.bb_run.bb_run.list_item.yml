@@ -11,19 +11,21 @@ third_party_settings:
   display_builder:
     profile: default
     sources:
-      - source_id: component
+      -
+        source_id: component
         source:
           component:
-            component_id: bb_theme:list_item
+            component_id: 'bb_theme:list_item'
             variant_id: null
             props: {  }
             slots:
               headline:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -37,28 +39,32 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_reference
+                              -
+                                source_id: entity_reference
                                 source:
-                                  derivable_context: entity_reference:bb_run:bb_run:ticket_id:bb_ticket:bb_ticket
-                                  entity_reference:bb_run:bb_run:ticket_id:bb_ticket:bb_ticket:
+                                  derivable_context: 'entity_reference:bb_run:bb_run:ticket_id:bb_ticket:bb_ticket'
+                                  'entity_reference:bb_run:bb_run:ticket_id:bb_ticket:bb_ticket':
                                     value:
                                       sources:
-                                        - source_id: entity_field
+                                        -
+                                          source_id: entity_field
                                           source:
-                                            derivable_context: field:bb_ticket:bb_ticket:identifier
-                                            field:bb_ticket:bb_ticket:identifier:
+                                            derivable_context: 'field:bb_ticket:bb_ticket:identifier'
+                                            'field:bb_ticket:bb_ticket:identifier':
                                               value:
                                                 sources:
-                                                  - source_id: field_formatter:bb_ticket:bb_ticket:identifier
+                                                  -
+                                                    source_id: 'field_formatter:bb_ticket:bb_ticket:identifier'
                                                     source:
                                                       type: bb_ticket_identifier_cell
                                                       settings: {  }
                                                       third_party_settings: {  }
                     node_id: list_item_identifier
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -68,22 +74,25 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_run:bb_run:state
-                                  field:bb_run:bb_run:state:
+                                  derivable_context: 'field:bb_run:bb_run:state'
+                                  'field:bb_run:bb_run:state':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_run:bb_run:state
+                                        -
+                                          source_id: 'field_formatter:bb_run:bb_run:state'
                                           source:
                                             type: bb_ticket_state_cell
                                             settings: {  }
                                             third_party_settings: {  }
                     node_id: list_item_state
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -97,13 +106,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_run:bb_run:state_at_start
-                                  field:bb_run:bb_run:state_at_start:
+                                  derivable_context: 'field:bb_run:bb_run:state_at_start'
+                                  'field:bb_run:bb_run:state_at_start':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_run:bb_run:state_at_start
+                                        -
+                                          source_id: 'field_formatter:bb_run:bb_run:state_at_start'
                                           source:
                                             type: string
                                             settings:
@@ -112,10 +123,11 @@ third_party_settings:
                     node_id: list_item_state_at_start
               meta:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -125,22 +137,25 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_run:bb_run:conductor_id
-                                  field:bb_run:bb_run:conductor_id:
+                                  derivable_context: 'field:bb_run:bb_run:conductor_id'
+                                  'field:bb_run:bb_run:conductor_id':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_run:bb_run:conductor_id
+                                        -
+                                          source_id: 'field_formatter:bb_run:bb_run:conductor_id'
                                           source:
                                             type: bb_ticket_conductor_cell
                                             settings: {  }
                                             third_party_settings: {  }
                     node_id: list_item_conductor_id
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -150,23 +165,26 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_run:bb_run:agent
-                                  field:bb_run:bb_run:agent:
+                                  derivable_context: 'field:bb_run:bb_run:agent'
+                                  'field:bb_run:bb_run:agent':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_run:bb_run:agent
+                                        -
+                                          source_id: 'field_formatter:bb_run:bb_run:agent'
                                           source:
                                             type: string
                                             settings:
                                               link_to_entity: false
                                             third_party_settings: {  }
                     node_id: list_item_agent
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -180,13 +198,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_run:bb_run:started_at
-                                  field:bb_run:bb_run:started_at:
+                                  derivable_context: 'field:bb_run:bb_run:started_at'
+                                  'field:bb_run:bb_run:started_at':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_run:bb_run:started_at
+                                        -
+                                          source_id: 'field_formatter:bb_run:bb_run:started_at'
                                           source:
                                             type: bb_time
                                             settings:
@@ -195,10 +215,11 @@ third_party_settings:
                     node_id: list_item_started_at
               right:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -220,13 +241,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_run:bb_run:duration_s
-                                  field:bb_run:bb_run:duration_s:
+                                  derivable_context: 'field:bb_run:bb_run:duration_s'
+                                  'field:bb_run:bb_run:duration_s':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_run:bb_run:duration_s
+                                        -
+                                          source_id: 'field_formatter:bb_run:bb_run:duration_s'
                                           source:
                                             type: bb_integer_unit
                                             settings:
@@ -238,6 +261,98 @@ id: bb_run.bb_run.list_item
 targetEntityType: bb_run
 bundle: bb_run
 mode: list_item
-content: {  }
+content:
+  active_s:
+    type: number_integer
+    label: inline
+    weight: 26
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+  agent_turns:
+    type: number_integer
+    label: inline
+    weight: 22
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+  duration_s:
+    type: number_integer
+    label: inline
+    weight: 21
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+  harness:
+    type: string
+    label: inline
+    weight: 8
+    region: content
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+  model:
+    type: string
+    label: inline
+    weight: 9
+    region: content
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+  model_version:
+    type: string
+    label: inline
+    weight: 10
+    region: content
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+  tokens:
+    type: number_integer
+    label: inline
+    weight: 20
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+  tool_calls:
+    type: number_integer
+    label: inline
+    weight: 23
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+  user_prompt_words:
+    type: number_integer
+    label: inline
+    weight: 25
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
+  user_prompts:
+    type: number_integer
+    label: inline
+    weight: 24
+    region: content
+    settings:
+      thousand_separator: ''
+      prefix_suffix: true
+    third_party_settings: {  }
 hidden:
+  duration: true
+  error_log: true
+  error_log_file: true
+  log_file: true
   search_api_excerpt: true
+  state_flow: true

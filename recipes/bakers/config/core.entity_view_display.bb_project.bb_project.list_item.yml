@@ -10,19 +10,21 @@ third_party_settings:
   display_builder:
     profile: default
     sources:
-      - source_id: component
+      -
+        source_id: component
         source:
           component:
-            component_id: bb_theme:list_item
+            component_id: 'bb_theme:list_item'
             variant_id: null
             props: {  }
             slots:
               avatar:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -32,13 +34,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_project:bb_project:name
-                                  field:bb_project:bb_project:name:
+                                  derivable_context: 'field:bb_project:bb_project:name'
+                                  'field:bb_project:bb_project:name':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_project:bb_project:name
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:name'
                                           source:
                                             type: bb_entity_avatar
                                             settings: {  }
@@ -46,10 +50,11 @@ third_party_settings:
                     node_id: list_item_name_avatar
               headline:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -63,13 +68,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_project:bb_project:name
-                                  field:bb_project:bb_project:name:
+                                  derivable_context: 'field:bb_project:bb_project:name'
+                                  'field:bb_project:bb_project:name':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_project:bb_project:name
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:name'
                                           source:
                                             type: string
                                             settings:
@@ -78,10 +85,11 @@ third_party_settings:
                     node_id: list_item_name
               description:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -91,13 +99,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_project:bb_project:description
-                                  field:bb_project:bb_project:description:
+                                  derivable_context: 'field:bb_project:bb_project:description'
+                                  'field:bb_project:bb_project:description':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_project:bb_project:description
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:description'
                                           source:
                                             type: basic_string
                                             settings: {  }
@@ -105,10 +115,11 @@ third_party_settings:
                     node_id: list_item_description
               right:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -126,26 +137,29 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_project:bb_project:open_tickets
-                                  field:bb_project:bb_project:open_tickets:
+                                  derivable_context: 'field:bb_project:bb_project:open_tickets'
+                                  'field:bb_project:bb_project:open_tickets':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_project:bb_project:open_tickets
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:open_tickets'
                                           source:
                                             type: bb_integer_badge
                                             settings:
                                               icon: ticket
                                               tone: neutral
-                                              singular: 1 open ticket
+                                              singular: '1 open ticket'
                                               plural: '@count open tickets'
                                             third_party_settings: {  }
                     node_id: list_item_open_tickets
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -163,26 +177,29 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_project:bb_project:conductor_tickets
-                                  field:bb_project:bb_project:conductor_tickets:
+                                  derivable_context: 'field:bb_project:bb_project:conductor_tickets'
+                                  'field:bb_project:bb_project:conductor_tickets':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_project:bb_project:conductor_tickets
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:conductor_tickets'
                                           source:
                                             type: bb_integer_badge
                                             settings:
                                               icon: conductor
                                               tone: lease
-                                              singular: 1 open ticket with a conductor
+                                              singular: '1 open ticket with a conductor'
                                               plural: '@count open tickets with a conductor'
                                             third_party_settings: {  }
                     node_id: list_item_conductor_tickets
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -200,28 +217,31 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_project:bb_project:closed_tickets
-                                  field:bb_project:bb_project:closed_tickets:
+                                  derivable_context: 'field:bb_project:bb_project:closed_tickets'
+                                  'field:bb_project:bb_project:closed_tickets':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_project:bb_project:closed_tickets
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:closed_tickets'
                                           source:
                                             type: bb_integer_badge
                                             settings:
                                               icon: check
                                               tone: neutral
-                                              singular: 1 closed ticket
+                                              singular: '1 closed ticket'
                                               plural: '@count closed tickets'
                                             third_party_settings: {  }
                     node_id: list_item_closed_tickets
               right_meta:
                 sources:
-                  - source_id: component
+                  -
+                    source_id: component
                     source:
                       component:
-                        component_id: bb_theme:list_cell
+                        component_id: 'bb_theme:list_cell'
                         variant_id: null
                         props:
                           key:
@@ -235,13 +255,15 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              -
+                                source_id: entity_field
                                 source:
-                                  derivable_context: field:bb_project:bb_project:created
-                                  field:bb_project:bb_project:created:
+                                  derivable_context: 'field:bb_project:bb_project:created'
+                                  'field:bb_project:bb_project:created':
                                     value:
                                       sources:
-                                        - source_id: field_formatter:bb_project:bb_project:created
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:created'
                                           source:
                                             type: bb_time
                                             settings:
@@ -255,4 +277,11 @@ bundle: bb_project
 mode: list_item
 content: {  }
 hidden:
+  description: true
+  env_vars: true
+  environments: true
+  image: true
+  origin_sources: true
+  repository: true
   search_api_excerpt: true
+  teams: true
