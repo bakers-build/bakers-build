@@ -11788,7 +11788,7 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
 ### Step: validate
 Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, ctx:playwright-validate, ctx:component-contract-index, ctx:sdc-components]
 
-- [ ] validate — entities-bb-group-bb-group--list-item
+- [x] validate — entities-bb-group-bb-group--list-item
 
   Instruction: task:validate
 
@@ -11815,9 +11815,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — config-view-groups--default
+- [x] validate — config-view-groups--default
 
   Instruction: task:validate
 
@@ -11844,9 +11844,9 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
-- [ ] validate — designbook-sections-projects-scenes--groups
+- [x] validate — designbook-sections-projects-scenes--groups
 
   Instruction: task:validate
 
@@ -11873,5 +11873,5 @@ Context: [ctx:cli-surface, ctx:variant-transport, ctx:typed-component-boundary, 
   ```
 
   #### Results
-  <!-- pending -->
+  <!-- done -->
 
