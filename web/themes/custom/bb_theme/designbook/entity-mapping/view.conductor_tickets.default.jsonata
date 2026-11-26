@@ -1,26 +1,16 @@
 (
-  /* Tickets occupying one conductor. The occupancy source supplies explicit
-     numeric ids; this mapping previews the busy conductor's one visible row. */
-  $rows := [
-    { "id": "1", "identifier": "BB-1", "title": "Conductor product View" }
-  ];
+  /* THE TICKETS ONE CONDUCTOR HOLDS: `bb_theme:list` whose `rows` slot holds each ticket in its
+     `list_item_compact` view mode (identifier, linked title), as Drupal's `bb_rows` style renders
+     `views.view.conductor_tickets`. A view mapping takes no record, so it names the listed record
+     itself: BB-142, the one ticket conductor cw · framework holds. */
   [
     {
       "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
-      "props": {
-        "layout": "lines",
-        "pattern": {
-          "headline": ["identifier", "title"]
-        },
-        "items": [$map($rows, function ($t) {
-          {
-            "url": "/bakers/ticket/" & $lowercase($t.identifier),
-            "cells": {
-              "identifier": { "kind": "link", "value": $t.identifier, "url": "/bakers/ticket/" & $lowercase($t.identifier) },
-              "title": { "kind": "link", "value": $t.title, "url": "/bakers/ticket/" & $lowercase($t.identifier) }
-            }
-          }
-        })]
+      "props": { "layout": "lines" },
+      "slots": {
+        "rows": [
+          { "type": "entity", "entity_type": "bb_ticket", "bundle": "bb_ticket", "view_mode": "list_item_compact", "record": 0 }
+        ]
       }
     }
   ]

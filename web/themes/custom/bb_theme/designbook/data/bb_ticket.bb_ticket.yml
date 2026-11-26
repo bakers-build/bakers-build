@@ -87,6 +87,40 @@
   cleaned_up: true
   owner_user_id: '1'
   referenced_tickets: []
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Add
+    designbook entity view-mode for bb_ticket</a>
+  identifier_link: BB-142
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-142</a>
+  state_icon: Working
+  state_icon_formatted: >-
+    <span role="img" aria-label="Working" title="Working" class="inline-flex
+    shrink-0 items-center text-text"><svg class="icon inline-block shrink-0"
+    width="20" height="20" aria-hidden="true" focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-running"></use></svg></span>
+  priority_label: Medium
+  priority_tone: neutral
+  created_formatted: 3 days ago
+  owner_name: Christian Wiedemann
+  owner_initials: CW
+  owner_color: attention
+  assignee_name: Christian Wiedemann
+  assignee_initials: CW
+  assignee_color: attention
+  conductor_label: cw · framework
+  conductor_mine: true
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: 5 runs · last running
+  run_summary_tone: running
+  run_summary_suffix: 12 minutes ago
+  row_accent: running
   __designbook:
     section: bb_ticket
 - id: '2'
@@ -116,6 +150,41 @@
   branch_name: null
   closed: false
   closed_date: null
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Designbook
+    coverage for core bakers.build entities</a>
+  identifier_link: BB-100
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-100</a>
+  state_icon: Qualification
+  state_icon_formatted: >-
+    <span role="img" aria-label="Qualification" title="Qualification"
+    class="inline-flex shrink-0 items-center text-text-faint"><svg class="icon
+    inline-block shrink-0" width="20" height="20" aria-hidden="true"
+    focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-prepare"></use></svg></span>
+  priority_label: High
+  priority_tone: critical
+  created_formatted: 2 weeks ago
+  owner_name: ''
+  owner_initials: ''
+  owner_color: ''
+  assignee_name: Sven Gruber
+  assignee_initials: SG
+  assignee_color: unassigned
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: ''
   __designbook:
     section: bb_ticket
 - id: '3'
@@ -127,8 +196,8 @@
   workflow: bb_work
   title: Ship data-model schema for bb_ticket bundle
   description: >-
-    <p>Formalize the field list and reference targets for <em>bb_ticket</em>
-    in <code>designbook/data-model.yml</code>.</p>
+    <p>Formalize the field list and reference targets for <em>bb_ticket</em> in
+    <code>designbook/data-model.yml</code>.</p>
   state: qualification
   ticket_type: '4'
   recipe: '8'
@@ -144,6 +213,41 @@
   branch_name: null
   closed: false
   closed_date: null
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Ship
+    data-model schema for bb_ticket bundle</a>
+  identifier_link: BB-110
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-110</a>
+  state_icon: Qualification
+  state_icon_formatted: >-
+    <span role="img" aria-label="Qualification" title="Qualification"
+    class="inline-flex shrink-0 items-center text-text-faint"><svg class="icon
+    inline-block shrink-0" width="20" height="20" aria-hidden="true"
+    focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-prepare"></use></svg></span>
+  priority_label: Low
+  priority_tone: neutral
+  created_formatted: 2 weeks ago
+  owner_name: ''
+  owner_initials: ''
+  owner_color: ''
+  assignee_name: Christian Wiedemann
+  assignee_initials: CW
+  assignee_color: attention
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: ''
   __designbook:
     section: bb_ticket
 - id: '4'
@@ -172,6 +276,41 @@
   branch_name: bakers/bb-118-ticket-detail-spec
   closed: false
   closed_date: null
+  owner_user_id: '1'
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Draft
+    ticket_detail component spec</a>
+  identifier_link: BB-118
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-118</a>
+  state_icon: Plan
+  state_icon_formatted: >-
+    <span role="img" aria-label="Plan" title="Plan" class="inline-flex shrink-0
+    items-center text-text-faint"><svg class="icon inline-block shrink-0"
+    width="20" height="20" aria-hidden="true" focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-prepare"></use></svg></span>
+  priority_label: Medium
+  priority_tone: neutral
+  created_formatted: 3 weeks ago
+  owner_name: Christian Wiedemann
+  owner_initials: CW
+  owner_color: attention
+  assignee_name: Sven Gruber
+  assignee_initials: SG
+  assignee_color: unassigned
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: no conductor
+  stall_suffix: ''
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: ''
   __designbook:
     section: bb_ticket
 - id: '5'
@@ -207,6 +346,41 @@
   branch_name: bakers/bb-105-comment-event-review
   closed: false
   closed_date: null
+  owner_user_id: '2'
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Review
+    comment-event rendering for typed comments</a>
+  identifier_link: BB-105
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-105</a>
+  state_icon: Review
+  state_icon_formatted: >-
+    <span role="img" aria-label="Review" title="Review" class="inline-flex
+    shrink-0 items-center text-text-faint"><svg class="icon inline-block
+    shrink-0" width="20" height="20" aria-hidden="true" focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-prepare"></use></svg></span>
+  priority_label: Medium
+  priority_tone: neutral
+  created_formatted: 1 week ago
+  owner_name: Sven Gruber
+  owner_initials: SG
+  owner_color: unassigned
+  assignee_name: Christian Wiedemann
+  assignee_initials: CW
+  assignee_color: attention
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: attention
   __designbook:
     section: bb_ticket
 - id: '6'
@@ -235,6 +409,40 @@
   branch_name: bakers/bb-90-sdc-scaffolding
   closed: true
   closed_date: '2026-04-20T12:00:00+00:00'
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Bootstrap
+    bb_theme SDC scaffolding</a>
+  identifier_link: BB-90
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-90</a>
+  state_icon: Done
+  state_icon_formatted: >-
+    <span role="img" aria-label="Done" title="Done" class="inline-flex shrink-0
+    items-center text-text-faint"><svg class="icon inline-block shrink-0"
+    width="20" height="20" aria-hidden="true" focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-prepare"></use></svg></span>
+  priority_label: Low
+  priority_tone: neutral
+  created_formatted: 2 weeks ago
+  owner_name: ''
+  owner_initials: ''
+  owner_color: ''
+  assignee_name: Sven Gruber
+  assignee_initials: SG
+  assignee_color: unassigned
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: ''
   __designbook:
     section: bb_ticket
 - id: '7'
@@ -261,6 +469,41 @@
   branch_name: bakers/bb-145-comment-feed-region
   closed: false
   closed_date: null
+  owner_user_id: '1'
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Comment
+    feed region in ticket_detail</a>
+  identifier_link: BB-145
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-145</a>
+  state_icon: Working
+  state_icon_formatted: >-
+    <span role="img" aria-label="Working" title="Working" class="inline-flex
+    shrink-0 items-center text-text"><svg class="icon inline-block shrink-0"
+    width="20" height="20" aria-hidden="true" focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-running"></use></svg></span>
+  priority_label: Medium
+  priority_tone: neutral
+  created_formatted: 2 days ago
+  owner_name: Christian Wiedemann
+  owner_initials: CW
+  owner_color: attention
+  assignee_name: Christian Wiedemann
+  assignee_initials: CW
+  assignee_color: attention
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: frozen
+  stall_suffix: 2 hours ago
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: ''
   __designbook:
     section: bb_ticket
 - id: '8'
@@ -290,13 +533,43 @@
   branch_name: bakers/bb-146-reverse-sections
   closed: false
   closed_date: null
+  owner_user_id: '4'
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Runs,
+    sub-tickets and footprint sections</a>
+  identifier_link: BB-146
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-146</a>
+  state_icon: Review
+  state_icon_formatted: >-
+    <span role="img" aria-label="Review" title="Review" class="inline-flex
+    shrink-0 items-center text-text-faint"><svg class="icon inline-block
+    shrink-0" width="20" height="20" aria-hidden="true" focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-prepare"></use></svg></span>
+  priority_label: Low
+  priority_tone: neutral
+  created_formatted: 4 days ago
+  owner_name: bakers.build agent
+  owner_initials: BA
+  owner_color: offline
+  assignee_name: Sven Gruber
+  assignee_initials: SG
+  assignee_color: unassigned
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: attention
   __designbook:
     section: bb_ticket
-# Northwind (workspace 2, project 2, key NWS). Selecting workspace 2 must yield
-# a non-empty Board, Tickets list and Runs list, so this workspace carries its
-# own tickets, run and comments, with assignees and owners drawn only from
-# Northwind's people (users 3 and 4). Numbers sit below the project's
-# next_number of 84.
 - id: '9'
   created: '2026-06-08T09:00:00+00:00'
   changed: '2026-06-29T16:20:00+00:00'
@@ -347,6 +620,40 @@
   cleaned_up: false
   owner_user_id: '3'
   referenced_tickets: []
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Checkout
+    address step rewrite</a>
+  identifier_link: NWS-80
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">NWS-80</a>
+  state_icon: Working
+  state_icon_formatted: >-
+    <span role="img" aria-label="Working" title="Working" class="inline-flex
+    shrink-0 items-center text-text"><svg class="icon inline-block shrink-0"
+    width="20" height="20" aria-hidden="true" focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-running"></use></svg></span>
+  priority_label: High
+  priority_tone: critical
+  created_formatted: 5 hours ago
+  owner_name: Marieke van Dijk
+  owner_initials: MV
+  owner_color: lease
+  assignee_name: Marieke van Dijk
+  assignee_initials: MV
+  assignee_color: lease
+  conductor_label: mvd · shop
+  conductor_mine: false
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: 1 run · last done
+  run_summary_tone: idle
+  run_summary_suffix: 1 day ago
+  row_accent: running
   __designbook:
     section: bb_ticket
 - id: '10'
@@ -376,6 +683,40 @@
   closed: false
   closed_date: null
   owner_user_id: '3'
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Cart
+    total ignores per-item discounts</a>
+  identifier_link: NWS-81
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">NWS-81</a>
+  state_icon: Review
+  state_icon_formatted: >-
+    <span role="img" aria-label="Review" title="Review" class="inline-flex
+    shrink-0 items-center text-text-faint"><svg class="icon inline-block
+    shrink-0" width="20" height="20" aria-hidden="true" focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-prepare"></use></svg></span>
+  priority_label: High
+  priority_tone: critical
+  created_formatted: 6 days ago
+  owner_name: Marieke van Dijk
+  owner_initials: MV
+  owner_color: lease
+  assignee_name: bakers.build agent
+  assignee_initials: BA
+  assignee_color: offline
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: attention
   __designbook:
     section: bb_ticket
 - id: '11'
@@ -407,5 +748,40 @@
   environments:
     - '3'
   owner_user_id: '3'
+  title_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">Move
+    the staging deploy onto the shared runner</a>
+  identifier_link: NWS-82
+  identifier_link_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">NWS-82</a>
+  state_icon: Qualification
+  state_icon_formatted: >-
+    <span role="img" aria-label="Qualification" title="Qualification"
+    class="inline-flex shrink-0 items-center text-text-faint"><svg class="icon
+    inline-block shrink-0" width="20" height="20" aria-hidden="true"
+    focusable="false"><use
+    href="/themes/custom/bb_theme/dist/assets/icons/sprite.svg#status-prepare"></use></svg></span>
+  priority_label: Low
+  priority_tone: neutral
+  created_formatted: 1 week ago
+  owner_name: Marieke van Dijk
+  owner_initials: MV
+  owner_color: lease
+  assignee_name: Marieke van Dijk
+  assignee_initials: MV
+  assignee_color: lease
+  conductor_label: ''
+  conductor_mine: false
+  stall_reason: ''
+  stall_suffix: ''
+  run_summary: ''
+  run_summary_tone: ''
+  run_summary_suffix: ''
+  row_accent: ''
   __designbook:
     section: bb_ticket

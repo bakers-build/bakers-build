@@ -967,6 +967,15 @@ content:
           template: field-map
         full:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
+        list_item_mine:
+          template: field-map
+          label: List item (my work)
+        list_item_compact:
+          template: field-map
+          label: List item (compact)
       fields:
         created:
           type: datetime
@@ -1320,6 +1329,149 @@ content:
         edit_url:
           type: url
           title: Edit URL
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        row_accent:
+          type: string
+          title: Row accent
+          description: >-
+            Computed, internal: the listing row's accent rail, attention in the review
+            phase, running while a conductor holds the ticket, otherwise none.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_summary:
+          type: string
+          title: Run summary
+          description: >-
+            Computed, internal: the run count and the latest run's state, as the
+            bb_run_summary formatter's badge label ("5 runs · last running").
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_summary_tone:
+          type: string
+          title: Run summary tone
+          description: >-
+            Design-only. Not a Drupal field: bb_run_summary keys the badge tone on the
+            latest run's state. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_summary_suffix:
+          type: string
+          title: Run summary time
+          description: >-
+            Design-only. Not a Drupal field: bb_run_summary appends the latest run's
+            relative time. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        stall_suffix:
+          type: string
+          title: Stall time
+          description: >-
+            Design-only. Not a Drupal field: bb_stall_reason appends how long a frozen
+            ticket has been frozen. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        identifier_link:
+          type: string
+          title: Identifier link
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_identifier_cell renders
+            `identifier` as a mono link to the ticket, while the compact row prints
+            it plain. The value is the identifier; its `_formatted` companion
+            carries the link.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        state_icon:
+          type: string
+          title: State icon
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_state_icon_cell draws the state
+            as an icon labelled with the state (running phase full, otherwise faint).
+            The value is the label; its `_formatted` companion carries the mark.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        priority_label:
+          type: string
+          title: Priority label
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_priority_cell labels the priority
+            from its allowed values. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        priority_tone:
+          type: string
+          title: Priority tone
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_priority_cell marks the highest
+            priority critical. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_label:
+          type: string
+          title: Conductor label
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_conductor_cell prints the
+            conductor's label as a mono lease badge. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_mine:
+          type: boolean
+          title: Conductor is the reader's
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_conductor_cell marks the badge
+            when the conductor belongs to the reader. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        owner_name:
+          type: string
+          title: Owner name
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_owner_cell draws the owner as a
+            person cell. Present so the person component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        owner_initials:
+          type: string
+          title: Owner initials
+          description: >-
+            Design-only. Not a Drupal field: the owner's person initials. Present so the
+            person component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        owner_color:
+          type: string
+          title: Owner colour
+          description: >-
+            Design-only. Not a Drupal field: the owner's person colour. Present so the
+            person component has a prop.
           required: false
           multiple: false
           computed: true
@@ -2558,8 +2710,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_ticket records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_ticket records the View lists; Drupal renders each row as the
+            ticket in its `list_item_compact` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2567,7 +2719,7 @@ config:
             settings:
               entity_type: bb_ticket
               bundle: bb_ticket
-              view_mode: default
+              view_mode: list_item_compact
         empty:
           type: text
           title: Empty
@@ -3040,8 +3192,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_ticket records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_ticket records the View lists; Drupal renders each row as the
+            ticket in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -3049,7 +3201,7 @@ config:
             settings:
               entity_type: bb_ticket
               bundle: bb_ticket
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
