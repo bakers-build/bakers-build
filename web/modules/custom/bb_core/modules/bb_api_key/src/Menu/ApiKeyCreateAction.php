@@ -54,7 +54,8 @@ final class ApiKeyCreateAction extends LocalActionDefault implements CreateActio
    */
   public function createAccess(RouteMatchInterface $route_match, AccountInterface $account): AccessResultInterface {
     $personal_on_service = $this->getRouteName() !== self::SERVICE_ACCOUNT_ROUTE && $this->serviceWorkspace($route_match) !== NULL;
-    return AccessResult::forbiddenIf($personal_on_service)->addCacheContexts(['route']);
+    // allowedIf, not forbiddenIf: the source ANDs this, and neutral hides.
+    return AccessResult::allowedIf(!$personal_on_service)->addCacheContexts(['route']);
   }
 
   /**

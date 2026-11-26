@@ -62,3 +62,8 @@ bb_create_action_test.elsewhere:
   title: 'Elsewhere'
   appears_on: [bb_core.bb_team.members]
   dialog: {}
+bb_create_action_test.untitled:
+  route_name: entity.bb_team.create_form
+  title: ''
+  appears_on: [bb_core.bb_workspace.members]
+  dialog: {}

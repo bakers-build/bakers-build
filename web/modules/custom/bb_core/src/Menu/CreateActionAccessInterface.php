@@ -24,7 +24,8 @@ interface CreateActionAccessInterface {
    *   The account.
    *
    * @return \Drupal\Core\Access\AccessResultInterface
-   *   The result, with its cacheability.
+   *   The result, with its cacheability; only "allowed" offers the plus, so
+   *   neutral (e.g. `forbiddenIf(FALSE)`) hides it.
    */
   public function createAccess(RouteMatchInterface $route_match, AccountInterface $account): AccessResultInterface;
 
