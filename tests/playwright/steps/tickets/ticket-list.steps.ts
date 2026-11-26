@@ -1344,7 +1344,7 @@ Then('the facets sit in the filters aside, not above the ticket listing', async 
 
 Then('the page carries exactly one main heading and one workspace description', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  await expect(page.getByText(/^Every ticket in the .+ workspace/)).toHaveCount(1);
+  await expect(page.getByText('Every ticket in this workspace.', { exact: true })).toHaveCount(1);
 });
 
 Then('exactly one active-filters strip sits above the ticket listing', async ({ page }) => {

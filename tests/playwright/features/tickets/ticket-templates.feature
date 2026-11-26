@@ -47,7 +47,7 @@ Feature: Projects and workspaces list their ticket templates
     And I click the tab "Overview"
     And I click the tab "Templates"
     Then the listing shows the empty state "This project has no ticket templates yet."
-    And the page header describes the screen as "Reusable ticket recipes for this project."
+    And the page header describes the screen as "The ticket templates of this project."
 
   Scenario: A lead adds a template from the tab
     Given I am logged in as the account "north-lead"
