@@ -14,11 +14,11 @@ Point an HTTPS endpoint at a project, a group or a whole workspace. Every ticket
 
 2. Choose **Create webhook**, enter a **Name** and the **URL** (`https://` only), keep **Enabled** ticked, and save.
 
-3. Copy the **signing secret** from the message shown after saving. It is not shown again.
+3. Copy the **signing secret** with its copy button, then choose **Done**. It is shown only this once.
 
 **Done when:** the webhook is listed on the tab, and your endpoint receives a POST after the next ticket change in that scope.
 
-A webhook keeps its scope for life. To move it, or to get a new secret, delete it and create it again. To pause it, open **Settings** and untick **Enabled**. Each tab lists only the webhooks of its own scope, so a group or workspace webhook is not listed on a project's tab, even though it fires for that project's tickets.
+A webhook keeps its scope for life. To move it, or to get a new secret, delete it and create it again. To pause it, open it from the tab and untick **Enabled**; **Delete** is on the same form. Each tab lists only the webhooks of its own scope, so a group or workspace webhook is not listed on a project's tab, even though it fires for that project's tickets.
 
 ## What is sent
 

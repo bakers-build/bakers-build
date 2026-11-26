@@ -13,7 +13,7 @@ use Drupal\bb_core\Entity\BbBaseFieldsTrait;
 use Drupal\bb_core\Entity\BbContentEntityBase;
 use Drupal\bb_core\Entity\BbGroupInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
-use Drupal\bb_core\Routing\BbTicketTemplateRouteProvider;
+use Drupal\bb_webhook\Routing\BbWebhookRouteProvider;
 use Drupal\bb_webhook\Access\BbWebhookAccessControlHandler;
 use Drupal\bb_webhook\Access\BbWebhookQueryAccessHandler;
 use Drupal\bb_webhook\Form\BbWebhookDeleteForm;
@@ -45,12 +45,11 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
       'edit' => BbWebhookForm::class,
       'delete' => BbWebhookDeleteForm::class,
     ],
-    // Its only job is titling the edit route "Settings", which fits here too.
-    'route_provider' => ['html' => BbTicketTemplateRouteProvider::class],
+    'route_provider' => ['html' => BbWebhookRouteProvider::class],
   ],
   links: [
-    // Added from the owning scope's Webhooks tab (bb_webhook.routing.yml).
-    'canonical' => '/_workspace/{bb_workspace}/webhook/{bb_webhook}',
+    // Added from the owning scope's Webhooks tab (bb_webhook.routing.yml); a
+    // webhook has no page of its own, its rows open the edit form.
     'edit-form' => '/_workspace/{bb_workspace}/webhook/{bb_webhook}/settings',
     'delete-form' => '/_workspace/{bb_workspace}/webhook/{bb_webhook}/delete',
   ],

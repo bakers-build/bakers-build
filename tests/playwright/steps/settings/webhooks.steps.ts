@@ -1,5 +1,5 @@
 // Webhooks: the Webhooks tab of a project, a group and the workspace, the
-// add form with its one-time secret, and the webhook's Settings and Delete.
+// add form with its one-time secret, and the webhook's edit form with Delete.
 // `I click the tab`, `the page shows`, `the page heading is` and
 // `the page header offers the action` come from support/steps/shell.steps.ts.
 import { createBdd } from 'playwright-bdd';
@@ -59,17 +59,22 @@ When('I create the webhook {string} for {string}', async ({ page }, name: string
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 });
 
-Then('the page shows the signing secret once', async ({ page }) => {
-  const message = page.getByText(/Signing secret: [0-9a-f]{64}\./).first();
-  await expect(message).toBeVisible();
-  const secret = /[0-9a-f]{64}/.exec((await message.textContent()) ?? '')?.[0];
-  expect(secret).toBeTruthy();
-  secrets.set(page, secret as string);
+Then('the signing secret is shown once in a copy field', async ({ page }) => {
+  await expect(page.getByText(/This signing secret is shown once\./).first()).toBeVisible();
+  // The `setup_command` copy item, as an API key's secret (ApiKeyCreateForm::buildResult()).
+  const secret = await page
+    .locator('xpath=//div[@x-data][.//button[@aria-label="Copy the secret"]]//code')
+    .first()
+    .innerText();
+  expect(secret).toMatch(/^[0-9a-f]{64}$/);
+  secrets.set(page, secret);
 });
 
 When('I open the webhook {string}', async ({ page }, name: string) => {
   await page.locator(CONTENT_ISLAND).getByRole('link', { name, exact: true }).click();
+  // No detail page: the row opens the edit form, titled with the name.
   await expect(page.locator('h1').filter({ hasText: name })).toBeVisible();
+  await expect(page.getByLabel('URL', { exact: true })).toBeVisible();
 });
 
 When('I save the webhook with the URL {string} and Enabled unticked', async ({ page }, url: string) => {
@@ -86,7 +91,6 @@ Then('the signing secret is not shown', async ({ page }) => {
 });
 
 When('I delete the webhook', async ({ page }) => {
-  await page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByRole('link', { name: 'Delete', exact: true }).first().click();
   await page.getByRole('button', { name: /^(Delete|Confirm)$/ }).click();
   await expect(page.getByText(/^Deleted .+\.$/).first()).toBeVisible();

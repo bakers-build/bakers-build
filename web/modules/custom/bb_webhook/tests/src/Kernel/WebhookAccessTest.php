@@ -181,6 +181,9 @@ final class WebhookAccessTest extends WebhookKernelTestBase {
       $listed = array_map(static fn ($row): int => (int) $row->_entity->id(), $view->result);
       $scope = str_replace('_list', '', $display);
       $this->assertSame([(int) $own[$scope]->id()], $listed, "$display lists only its own scope");
+      // No detail page: the name opens the edit form.
+      $name = (string) $view->style_plugin->getField(0, 'name');
+      $this->assertStringContainsString('href="' . $own[$scope]->toUrl('edit-form')->toString() . '"', $name, "$display links the name to the edit form");
     }
   }
 

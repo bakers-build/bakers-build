@@ -137,4 +137,14 @@ final class WebhookScopeTest extends WebhookKernelTestBase {
     $this->assertSame([(int) $hooks['kept']->id()], array_map('intval', $left));
   }
 
+  /**
+   * A webhook has no page of its own: its link is the edit form.
+   */
+  public function testNoDetailPage(): void {
+    $webhook = $this->newWebhook('a');
+    $webhook->save();
+    $this->assertFalse($webhook->hasLinkTemplate('canonical'));
+    $this->assertSame('entity.bb_webhook.edit_form', $webhook->toUrl()->getRouteName());
+  }
+
 }

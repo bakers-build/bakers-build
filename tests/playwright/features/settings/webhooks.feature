@@ -1,26 +1,29 @@
 @feature:webhooks
 Feature: Admins manage webhooks of a project, a group and the workspace
   A project, a group and the workspace Settings each have a Webhooks tab that
-  lists only that scope's webhooks, with a Create webhook action. The signing
-  secret is shown once, right after the first save. Only the workspace Admin
-  sees or opens these screens; delivery itself is covered by the Kernel tests.
+  lists only that scope's webhooks, with a Create webhook action. A row opens
+  the webhook's edit form; there is no detail page. The signing secret is shown
+  once, right after the first save, in a copy field like an API key's. Only the
+  workspace Admin sees or opens these screens; delivery itself is covered by the
+  Kernel tests.
 
   Scenario Outline: A lead creates, edits, disables and deletes a <scope> webhook
     Given I am logged in as the account "north-lead"
     When I open the Webhooks tab of the <scope> "<owner>"
     Then the page header offers the action "Create webhook"
     When I create the webhook "<name>" for "https://hooks.example.com/<name>"
-    Then the page shows the signing secret once
+    Then the signing secret is shown once in a copy field
     When I open the Webhooks tab of the <scope> "<owner>"
     Then the page shows "<name>"
     When I open the webhook "<name>"
-    And I click the tab "Settings"
-    And I save the webhook with the URL "https://hooks.example.com/<name>-moved" and Enabled unticked
-    And I click the tab "Overview"
+    Then the signing secret is not shown
+    When I save the webhook with the URL "https://hooks.example.com/<name>-moved" and Enabled unticked
+    And I open the Webhooks tab of the <scope> "<owner>"
     Then the page shows "https://hooks.example.com/<name>-moved"
     And the page shows "Disabled"
     And the signing secret is not shown
-    When I delete the webhook
+    When I open the webhook "<name>"
+    And I delete the webhook
     And I open the Webhooks tab of the <scope> "<owner>"
     Then the page does not show "<name>"
 

@@ -9,9 +9,11 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Form\BbContentEntityFormBase;
 use Drupal\bb_core\Form\HtmxTransport;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
 use Drupal\bb_webhook\Entity\BbWebhookInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Template\Attribute;
 use Drupal\island\Form\WrappedDialogFormTrait;
 
 /**
@@ -67,7 +69,22 @@ final class BbWebhookForm extends BbContentEntityFormBase {
   /**
    * {@inheritdoc}
    *
-   * The secret is shown once, right after the first save.
+   * After the first save the form is rebuilt into the one-time secret.
+   */
+  public function buildForm(array $form, FormStateInterface $form_state): array {
+    $secret = $form_state->get('secret');
+    if (!is_string($secret)) {
+      return parent::buildForm($form, $form_state);
+    }
+    $form = $this->buildResult($form, $secret);
+    $this->attachDialogHtmx($form);
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * The secret is shown once, right after the first save, as an API key's is.
    */
   public function save(array $form, FormStateInterface $form_state): int {
     $new = $this->entity->isNew();
@@ -75,16 +92,78 @@ final class BbWebhookForm extends BbContentEntityFormBase {
     $webhook = $this->entity;
     assert($webhook instanceof BbWebhookInterface);
     if ($new) {
-      $this->messenger()->addWarning($this->t('Signing secret: %secret. Copy it now; it is not shown again.', ['%secret' => $webhook->getSecret()]));
+      // Only in this response: a rebuild is cached by default, and a message
+      // would keep the secret in the session.
+      $form_state->set('secret', $webhook->getSecret());
+      $form_state->disableCache();
+      $form_state->setRebuild();
+      return $result;
     }
     if ($this->isDialogRequest() || $this->getRequest()->query->has(static::RETURN_PARAMETER)) {
       $this->respondAtReturnUrl($form_state);
     }
-    elseif (!$new) {
-      // The Settings tab stays where it is and shows its save confirmation.
+    else {
+      // The edit form stays where it is and shows its save confirmation.
       $form_state->setRedirectUrl(HtmxTransport::currentUrl($this->getRequest()));
     }
     return $result;
+  }
+
+  /**
+   * The one-time secret, rendered in place of the form fields.
+   *
+   * The same shape as an API key's (ApiKeyCreateForm::buildResult()): in the
+   * dialog the whole hull is swapped, so Save becomes Done, which reloads the
+   * list.
+   *
+   * @param array<string, mixed> $form
+   *   The form render array to fill.
+   * @param string $secret
+   *   The signing secret, present only in this response.
+   *
+   * @return array<string, mixed>
+   *   The result form.
+   */
+  private function buildResult(array $form, string $secret): array {
+    $form['#cache']['max-age'] = 0;
+    if ($this->isDialogRequest()) {
+      $form['#attached']['http_header'][] = ['HX-Retarget', '#' . CreateActionSourceBase::TARGET_ID, TRUE];
+      $form['#attached']['http_header'][] = ['HX-Reselect', 'dialog:not(dialog dialog)', TRUE];
+      $form['#attached']['http_header'][] = ['HX-Reswap', 'innerHTML', TRUE];
+    }
+    $form['warning'] = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:note',
+      '#props' => ['tone' => 'attention'],
+      '#slots' => [
+        'body' => (string) $this->t('This signing secret is shown once. Save it now — it cannot be shown again. If you lose it, delete this webhook and create a new one.'),
+      ],
+    ];
+    $form['secret'] = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:setup_command',
+      '#props' => [
+        'command' => $secret,
+        'label' => (string) $this->t('Copy the secret'),
+      ],
+    ];
+    $form['actions'] = [
+      '#type' => 'actions',
+      'done' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:button',
+        '#props' => [
+          'variant' => 'primary',
+          'label' => (string) $this->t('Done'),
+          'href' => $this->returnUrl()->toString(),
+          'attributes' => new Attribute([
+            'data-dialog-cancel' => 'data-dialog-cancel',
+            'data-dialog-reload' => 'data-dialog-reload',
+          ]),
+        ],
+      ],
+    ];
+    return $form;
   }
 
 }
