@@ -1,0 +1,32 @@
+uuid: bab24fe8-a541-4570-8cf6-b9b4d7406a45
+langcode: en
+status: true
+dependencies:
+  config:
+    - bb_core.bb_vocabulary.label
+  module:
+    - bb_core
+id: bb_term.label.default
+targetEntityType: bb_term
+bundle: label
+mode: default
+content:
+  description:
+    type: string_textarea
+    weight: 1
+    region: content
+    settings:
+      rows: 5
+      placeholder: ''
+    third_party_settings: {  }
+  name:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+hidden:
+  owner_user_id: true
+  workspace_id: true

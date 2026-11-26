@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
@@ -69,6 +70,11 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
     foreach (['a', 'b'] as $side) {
       $this->fixture($side, 'bb_workspace')->set('slug', "space-$side")->save();
     }
+    // The add form display offers the workspace's projects as a picker.
+    foreach (['core.entity_form_mode.bb_environment.add', 'core.entity_form_display.bb_environment.bb_environment.add'] as $name) {
+      $data = Yaml::decode((string) file_get_contents(dirname(DRUPAL_ROOT) . '/config/sync/' . $name . '.yml'));
+      $this->container->get('config.storage')->write($name, $data);
+    }
     $this->container->get('router.builder')->rebuild();
 
     $this->lead = $this->member('a');
@@ -97,7 +103,8 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
    */
   public function testAddSavesForProjectOfTheWorkspace(): void {
     $project = (string) $this->fixture('a', 'bb_project')->id();
-    $state = $this->submitAdd('staging', $project);
+    // The tab's Add action carries the tab as its destination.
+    $state = $this->submitAdd('staging', $project, ['destination' => '/space-a/settings/catalog/environments']);
 
     self::assertSame([], array_map('strval', $state->getErrors()));
     $saved = $this->environments('staging');
@@ -108,7 +115,7 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
     // A programmed submission reports no redirect; read the one it set.
     $redirect = (new \ReflectionProperty(FormState::class, 'redirect'))->getValue($state);
     self::assertInstanceOf(Url::class, $redirect);
-    self::assertSame('view.bb_environments.catalog', $redirect->getRouteName());
+    self::assertSame('/space-a/settings/catalog/environments', $redirect->toString());
   }
 
   /**

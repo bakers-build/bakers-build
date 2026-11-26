@@ -1,0 +1,11 @@
+uuid: 6466c4ca-131a-49f9-8027-8c0d1e9599a2
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_environment.add
+label: Add
+description: null
+targetEntityType: bb_environment
+cache: true

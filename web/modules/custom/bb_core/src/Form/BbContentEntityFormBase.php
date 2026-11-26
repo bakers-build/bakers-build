@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\island\Form\WrappedDialogFormTrait;
 
 /**
  * Shared content entity form that groups fields into a meta container.
@@ -22,8 +26,16 @@ use Drupal\Core\Url;
  * Each listed field is assigned to its group only when present on the form, so
  * fields hidden by other code are left untouched. Fields not listed in any
  * group stay in the main column.
+ *
+ * An entity without a page of its own (no `canonical` link) is edited in
+ * place like a Settings tab: the save stays on its edit form, or lands on a
+ * given `destination`. Opened through the dialog wrapper format, the form
+ * posts into the dialog and answers the save there. A new entity with a
+ * `workspace_id` takes the route's workspace, which is still validated.
  */
 class BbContentEntityFormBase extends ContentEntityForm {
+
+  use WrappedDialogFormTrait;
 
   /**
    * Declares the meta groups for this entity form.
@@ -43,22 +55,8 @@ class BbContentEntityFormBase extends ContentEntityForm {
    */
   public function form(array $form, FormStateInterface $form_state): array {
     $form = parent::form($form, $form_state);
-    if ($this->getOperation() === 'settings') {
-      // The tab body marker the browser suite locates a settings tab by.
-      $form['#attributes']['data-bakers-tab-body'] = 'settings';
-      // Settings save on an explicit Save through a native page round trip;
-      // a boosted submit would swap the response instead of reloading it.
-      $form['#attributes']['data-hx-boost'] = 'false';
-      $form['#action'] = $this->settingsUrl()->toString();
-      // The shell island profile places no messages region, so the Save
-      // confirmation and validation errors render inside the form.
-      $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
-      unset($form['created'], $form['changed']);
-      $text = $this->dangerZoneText();
-      if ($text !== []) {
-        $form += static::dangerZone($this->entity, ...$text);
-      }
-      return $form;
+    if ($this->editsInPlace()) {
+      return $this->inPlaceForm($form);
     }
 
     $groups = static::metaGroups();
@@ -102,13 +100,73 @@ class BbContentEntityFormBase extends ContentEntityForm {
   }
 
   /**
+   * The in-place form: no meta groups, messages inside, read-only fields out.
+   *
+   * @param array<string, mixed> $form
+   *   The built form.
+   *
+   * @return array<string, mixed>
+   *   The form, saved through a native round trip or into its dialog.
+   */
+  private function inPlaceForm(array $form): array {
+    if ($this->getOperation() === 'settings') {
+      // The tab body marker the browser suite locates a settings tab by.
+      $form['#attributes']['data-bakers-tab-body'] = 'settings';
+    }
+    if (!$this->isDialogRequest()) {
+      // Saved by an explicit Save through a native page round trip; a
+      // boosted submit would swap the response instead of reloading it.
+      $form['#attributes']['data-hx-boost'] = 'false';
+      $form['#action'] = $this->settingsUrl()->toString();
+    }
+    // The shell island profile places no messages region, so the Save
+    // confirmation and validation errors render inside the form.
+    $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
+    unset($form['created'], $form['changed']);
+    $text = $this->dangerZoneText();
+    if ($text !== []) {
+      $form += static::dangerZone($this->entity, ...$text);
+    }
+    $this->attachDialogHtmx($form);
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEntityFromRouteMatch(RouteMatchInterface $route_match, $entity_type_id) {
+    $entity = parent::getEntityFromRouteMatch($route_match, $entity_type_id);
+    $workspace = $route_match->getParameter('bb_workspace');
+    if ($entity->isNew() && !$entity->hasLinkTemplate('canonical') && $workspace instanceof BbWorkspaceInterface
+      && $entity instanceof FieldableEntityInterface && $entity->hasField('workspace_id') && $entity->get('workspace_id')->isEmpty()) {
+      $entity->set('workspace_id', $workspace->id());
+    }
+    return $entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
+    $entity = parent::validateForm($form, $form_state);
+    // Core filters violations of unedited fields; the route-bound workspace
+    // must still satisfy its scope constraint.
+    if ($this->editsInPlace() && $entity->hasField('workspace_id')) {
+      foreach ($entity->get('workspace_id')->validate() as $violation) {
+        $form_state->setErrorByName('', $violation->getMessage());
+      }
+    }
+    return $entity;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state): int {
-    if ($this->getOperation() === 'settings') {
+    if ($this->editsInPlace()) {
       $result = $this->entity->save();
       $this->addSavedMessage();
-      $form_state->setRedirectUrl($this->settingsUrl());
+      $this->landInPlace($form_state);
       return $result;
     }
     $result = parent::save($form, $form_state);
@@ -116,6 +174,23 @@ class BbContentEntityFormBase extends ContentEntityForm {
     $form_state->setRedirectUrl($this->landing());
 
     return $result;
+  }
+
+  /**
+   * Where an in-place save lands: its tab, the opening screen or its edit form.
+   */
+  private function landInPlace(FormStateInterface $form_state): void {
+    if ($this->getOperation() === 'settings') {
+      $form_state->setRedirectUrl($this->settingsUrl());
+      return;
+    }
+    if ($this->isDialogRequest() || $this->getRequest()->query->has(static::RETURN_PARAMETER)) {
+      $this->respondAtReturnUrl($form_state);
+      // Core would redirect to the raw destination, htmx keys and all.
+      $this->getRequest()->query->remove(static::RETURN_PARAMETER);
+      return;
+    }
+    $form_state->setRedirectUrl($this->entity->toUrl('edit-form'));
   }
 
   /**
@@ -165,7 +240,28 @@ class BbContentEntityFormBase extends ContentEntityForm {
     if ($this->getOperation() === 'settings' && $this->dangerZoneText() !== []) {
       return $actions;
     }
+    // Opened over a screen, Cancel returns there without saving.
+    if ($this->editsInPlace() && $this->getRequest()->query->has(static::RETURN_PARAMETER)) {
+      $actions['cancel'] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:button',
+        '#props' => [
+          'variant' => 'ghost',
+          'label' => (string) $this->t('Cancel'),
+          'href' => $this->returnUrl()->toString(),
+          'attributes' => new Attribute(['data-dialog-cancel' => 'data-dialog-cancel']),
+        ],
+        '#weight' => -10,
+      ];
+    }
     return $actions + static::deleteAction($this->getEntity());
+  }
+
+  /**
+   * Whether the form edits in place: a Settings tab, or an entity with no page.
+   */
+  private function editsInPlace(): bool {
+    return $this->getOperation() === 'settings' || !$this->entity->hasLinkTemplate('canonical');
   }
 
   /**

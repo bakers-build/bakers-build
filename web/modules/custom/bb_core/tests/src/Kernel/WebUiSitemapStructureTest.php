@@ -739,7 +739,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   }
 
   /**
-   * Catalog's second tab row: Types, Recipes, Labels, Environments, on every tab.
+   * Catalog's second tab row: Types, Recipes, Labels, Environments, everywhere.
    */
   public function testCatalogTabRowMatchesTheAgreedOrder(): void {
     foreach ($this->tabOrder['Catalog'] as $route_name) {

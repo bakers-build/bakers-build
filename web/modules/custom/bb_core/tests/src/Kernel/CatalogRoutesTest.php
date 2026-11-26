@@ -70,7 +70,7 @@ final class CatalogRoutesTest extends KernelTestBase {
   /**
    * Catalog is a settings tab; its four pages are its second tab row.
    */
-  public function testCatalogIsASettingsTabWithFourChildren(): void {
+  public function testCatalogIsSettingsTabWithFourChildren(): void {
     $tasks = $this->container->get('plugin.manager.menu.local_task')->getDefinitions();
     $catalog = $tasks['bb_core.bb_workspace.catalog'];
     self::assertSame('bb_core.bb_workspace.settings', $catalog['base_route']);
