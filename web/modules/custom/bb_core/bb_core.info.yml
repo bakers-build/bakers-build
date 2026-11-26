@@ -14,7 +14,7 @@ dependencies:
   # bb_run's log file base fields reference 'file'; without it, installing
   # the entity schema throws a FieldException.
   - drupal:file
-  # bb_project and bb_group carry an `image` base field.
+  # bb_project, bb_group and bb_team carry an `image` base field.
   - drupal:image
   - og:og
   - markdown_easy:markdown_easy

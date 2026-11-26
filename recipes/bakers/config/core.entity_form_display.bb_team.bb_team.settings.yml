@@ -5,11 +5,20 @@ dependencies:
     - core.entity_form_mode.bb_team.settings
   module:
     - bb_core
+    - bb_image
 id: bb_team.bb_team.settings
 targetEntityType: bb_team
 bundle: bb_team
 mode: settings
 content:
+  image:
+    type: bb_square_image
+    weight: 1
+    region: content
+    settings:
+      progress_indicator: throbber
+      preview_image_style: ''
+    third_party_settings: {  }
   name:
     type: string_textfield
     weight: 0

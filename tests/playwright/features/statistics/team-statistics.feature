@@ -21,13 +21,13 @@ Feature: The team Stats tab has one period switch and a painted chart
   # is applied to all of them, so a control per figure was several identical
   # switches for one effect.
   Scenario: The Stats tab offers exactly one period switch
-    When I visit the team "Platform Crew" tab "Stats"
+    When I visit the team "Platform Crew" tab "Insights"
     Then the statistics page has exactly one period switch
     And no statistics figure carries a period switch of its own
 
   # AC 2. The one switch has to move the whole page, not the figure it sits in.
   Scenario: The single switch changes every figure
-    Given I visit the team "Platform Crew" tab "Stats"
+    Given I visit the team "Platform Crew" tab "Insights"
     And I note the statistics figures
     When I choose the period "Year"
     Then the address carries the period "year"
@@ -39,7 +39,7 @@ Feature: The team Stats tab has one period switch and a painted chart
   # AC 3, AC 8, AC 12 — the painting, on the entry path that can lose the race.
   Scenario: The comparison chart paints after the Stats tab is swapped in
     Given I visit the team "Platform Crew"
-    When I click the tab "Stats"
+    When I click the tab "Insights"
     Then the document was not reloaded
     And the comparison chart is painted
     And the comparison chart spans the content width
@@ -50,10 +50,10 @@ Feature: The team Stats tab has one period switch and a painted chart
   # gone from the document, but its Chart instance and its observer on <html>
   # are not, and nothing in the painting assertion can see what was left behind.
   Scenario: The chart still paints when the Stats tab is reached a second time
-    Given I visit the team "Platform Crew" tab "Stats"
+    Given I visit the team "Platform Crew" tab "Insights"
     When I click the tab "Runs"
     Then the document was not reloaded
-    When I click the tab "Stats"
+    When I click the tab "Insights"
     Then the document was not reloaded
     And the comparison chart is painted
     And no comparison chart instance is left behind
@@ -63,7 +63,7 @@ Feature: The team Stats tab has one period switch and a painted chart
   # chart follow both modes. Switching the mode has to change what the canvas
   # contains.
   Scenario: The chart follows the colour mode
-    Given I visit the team "Platform Crew" tab "Stats"
+    Given I visit the team "Platform Crew" tab "Insights"
     And I note the chart ink
     When I switch to the dark colour mode
     Then the chart ink changed

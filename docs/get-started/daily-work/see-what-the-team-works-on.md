@@ -11,8 +11,8 @@ Start with the ticket list for current work; use statistics to understand activi
 | Where | What you see |
 |---|---|
 | Workspace **Insights → Overview** | Closed tickets, runs and AI usage across projects, within the selected period. |
-| Project **Stats** | The project's figures, with epic and person filters. |
-| **My work → Stats** | Activity attributed to tickets currently assigned to you, across workspaces. |
+| Project **Insights** | The project's figures, with epic and person filters. |
+| **My work → Insights** | Activity attributed to tickets currently assigned to you, across workspaces. |
 | A project's ticket list | State, assignee, conductor and dispatch holds such as *frozen*, *blocked* or *failing*. |
 | A ticket's **Runs** | Execution attempts, their status and reported metrics such as tokens, turns and tool calls. A step can need several attempts. |
 | **Team → Time** | Recorded hours of team members, visible to team leads. |

@@ -9,7 +9,7 @@ Feature: Everyone reads their own figures on My work › Stats
 
   Scenario: A lead reads their own figures
     Given I am logged in as the account "north-lead"
-    When I visit My work tab "Stats"
+    When I visit My work tab "Insights"
     Then the page header describes the screen as "Your own figures in every workspace, always visible to you."
     And the page shows "Throughput"
     And the page shows "Runs per ticket"
@@ -22,14 +22,14 @@ Feature: Everyone reads their own figures on My work › Stats
 
   Scenario: Changing the period updates the page
     Given I am logged in as the account "north-lead"
-    When I visit My work tab "Stats"
+    When I visit My work tab "Insights"
     And I choose the period kind "Year"
     Then the address carries "filter[period]=year"
     And the period compares with the previous year
 
   Scenario: Choosing Today and then Yesterday shows one day per hour
     Given I am logged in as the account "north-lead"
-    When I visit My work tab "Stats"
+    When I visit My work tab "Insights"
     And I choose the period kind "Today"
     Then the address carries "filter[period]=day"
     And the period shows the day "Today"
@@ -41,7 +41,7 @@ Feature: Everyone reads their own figures on My work › Stats
 
   Scenario: The project filter narrows the page to one project
     Given I am logged in as the account "north-lead"
-    When I visit My work tab "Stats"
+    When I visit My work tab "Insights"
     And I open the filter "Project"
     And I tick "Statistics demo" in the filter
     Then the address carries "filter[project][]="
@@ -50,15 +50,15 @@ Feature: Everyone reads their own figures on My work › Stats
 
   Scenario: An abbreviated token value reveals its exact value
     Given I am logged in as the account "north-lead"
-    When I visit My work tab "Stats"
+    When I visit My work tab "Insights"
     Then hovering the tile "AI usage" reveals its exact token count
 
   Scenario: Without a closed ticket the page explains what it counts
     Given I am logged in as the account "north-contributor"
-    When I visit My work tab "Stats"
+    When I visit My work tab "Insights"
     Then the page shows "No closed tickets in"
 
   Scenario: An anonymous visitor is sent to the login form
     Given I am signed out
-    When I visit My work tab "Stats"
+    When I visit My work tab "Insights"
     Then I am redirected to the login form

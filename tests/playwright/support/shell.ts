@@ -135,3 +135,13 @@ export function uidOf(value: string): string {
 
 /** JavaScript errors a page raised since `I open a themed workspace screen`. */
 export const pageErrors = new WeakMap<Page, string[]>();
+
+/**
+ * The path segment of a tab, by its visible label.
+ *
+ * The figures tab reads Insights but keeps its `/stats` address, so old links
+ * still work: label and path differ by design.
+ */
+export function tabPathSegment(tab: string): string {
+  return tab === 'Insights' ? 'stats' : tab.toLowerCase();
+}

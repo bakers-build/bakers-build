@@ -161,7 +161,7 @@ bb_core.my_work.stats:
   path: '/_workspace/{bb_workspace}/stats'
   defaults:
     _controller: '\Drupal\bb_core\Controller\BbStatsController::myWork'
-    _title: 'Stats'
+    _title: 'Insights'
     _description: 'Your own figures in every workspace, always visible to you.'
   requirements:
     _user_is_logged_in: 'TRUE'
