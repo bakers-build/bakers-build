@@ -51,7 +51,7 @@ final class SettingsFormDisplayTest extends KernelTestBase {
   }
 
   /**
-   * Every project, group, team and workspace form crops its image where uploaded.
+   * Every project, group, team and workspace form crops its uploaded image.
    */
   public function testImageFormsUseTheSquareCropWidget(): void {
     foreach ([

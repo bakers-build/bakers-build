@@ -8,6 +8,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Plugin\UiPatterns\Source\BbEntityPageHeaderMarkSource;
 use Drupal\file\Entity\File;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
@@ -108,9 +109,10 @@ final class EntityPageHeaderMarkTest extends KernelTestBase {
     $prop_definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
       ->getDefinition('slot')['schema'];
     $configuration = SourcePluginBase::buildConfiguration('leading', $prop_definition, ['source' => []], []);
-    $value = $this->container->get('plugin.manager.ui_patterns_source')
-      ->createInstance('bb_entity_page_header_mark', $configuration)
-      ->getPropValue();
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_entity_page_header_mark', $configuration);
+    self::assertInstanceOf(BbEntityPageHeaderMarkSource::class, $source);
+    $value = $source->getPropValue();
     self::assertIsArray($value);
     return $value;
   }

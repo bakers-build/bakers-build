@@ -259,8 +259,8 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'crop.type.bb_avatar',
     'core.entity_view_display.user.user.compact',
     'core.entity_form_display.user.user.default',
-    // The project, group, team and workspace forms crop their image too, and that
-    // widget is bb_image's, which bb_core does not depend on.
+    // The project, group, team and workspace forms crop their image too, and
+    // that widget is bb_image's, which bb_core does not depend on.
     'core.entity_form_display.bb_project.bb_project.settings',
     'core.entity_form_display.bb_group.bb_group.create',
     'core.entity_form_display.bb_group.bb_group.settings',

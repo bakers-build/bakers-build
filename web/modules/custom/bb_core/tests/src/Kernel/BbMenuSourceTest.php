@@ -699,7 +699,7 @@ final class BbMenuSourceTest extends KernelTestBase {
    * A favorite with an image shows its avatar derivative in the rail mark.
    */
   public function testFavoriteShowsItsImage(): void {
-    $project = $this->favoriteOfALead();
+    $project = $this->favoriteOfLead();
     $project->set('image', $this->privateImage('project-images'))->save();
     $picture = $this->projectsRow()['below'][0]['mark']['picture'] ?? NULL;
     self::assertIsString($picture);
@@ -710,7 +710,7 @@ final class BbMenuSourceTest extends KernelTestBase {
    * Without an image, or with a lost file, the favorite keeps its initials.
    */
   public function testFavoriteWithoutImageKeepsInitials(): void {
-    $project = $this->favoriteOfALead();
+    $project = $this->favoriteOfLead();
     $mark = $this->projectsRow()['below'][0]['mark'];
     self::assertSame(['initials' => 'A', 'picture' => ''], array_intersect_key($mark, ['initials' => 1, 'picture' => 1]));
 
@@ -748,7 +748,7 @@ final class BbMenuSourceTest extends KernelTestBase {
   /**
    * A workspace lead with one favorite project named Alpha.
    */
-  private function favoriteOfALead(): BbProjectInterface {
+  private function favoriteOfLead(): BbProjectInterface {
     $this->installOgScopeFixture();
     $lead = $this->createUser([], 'acme-lead');
     self::assertInstanceOf(UserInterface::class, $lead);
