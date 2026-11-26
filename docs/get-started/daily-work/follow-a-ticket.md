@@ -13,7 +13,7 @@ See where a ticket stands, read its evidence and respond when a decision is need
 
    A completed workflow step records a `summary`. An interrupted run may have none; inspect **Runs** for its status and errors.
 
-2. **Check the state.** The standard workflow uses `qualification`, `plan`, `working`, `review` and `done`. An already approved specification can enter `working` directly. [Recipes and states](/skills-and-workflows/states) determine required steps: the Matt recipe requires agent review for features.
+2. **Check the state.** The standard workflow uses `qualification`, `plan`, `working`, `review` and `done`. An already approved specification can enter `working` directly. [Recipes and states](/skills-and-workflows/workflow-reference) determine required steps: the Matt recipe requires agent review for features.
 
 3. **Distinguish the reviews.** In workflow review, an agent checks the produced changes against requirements and repository standards. A person assigned under **Reviewers** separately checks the result, often through a shared preview. Mandatory agent review does not require a named human reviewer. Follow [Accept results](/skills-and-workflows/accept-results) for that walkthrough.
 

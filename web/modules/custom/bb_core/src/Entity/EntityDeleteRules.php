@@ -71,6 +71,7 @@ final class EntityDeleteRules {
       [self::CASCADE, 'bb_conductor', 'project_id'],
       // Their triggers follow through TicketTriggerHooks::entityDelete().
       [self::CASCADE, 'bb_ticket_template', 'project_id'],
+      [self::CASCADE, 'bb_webhook', 'project_id'],
     ],
     'bb_track_account' => [
       [self::BLOCK, 'bb_track_worklog', 'account_id'],
@@ -83,6 +84,7 @@ final class EntityDeleteRules {
     ],
     'bb_group' => [
       [self::BLOCK, 'bb_project', 'group_id'],
+      [self::CASCADE, 'bb_webhook', 'group_id'],
     ],
     'bb_environment' => [
       [self::DETACH, 'bb_ticket', 'environments'],
@@ -119,6 +121,7 @@ final class EntityDeleteRules {
       // The first team is the one provisioning created; any later one blocks.
       [self::FIRST, 'bb_team', 'workspace_id'],
       [self::CASCADE, 'bb_ticket_trigger', 'workspace_id'],
+      [self::CASCADE, 'bb_webhook', 'workspace_id'],
       [self::CASCADE, 'bb_addon', 'workspace_id'],
       [self::CASCADE, 'bb_ticket_template', 'workspace_id'],
       [self::CASCADE, 'bb_term', 'workspace_id'],

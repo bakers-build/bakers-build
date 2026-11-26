@@ -7,7 +7,7 @@ description: Run the bakers.build server with one Docker Compose file behind you
 
 The server runs from one Docker Compose file on a Linux `amd64` host with Docker Compose v2.24.4
 or newer. You need a DNS name for the host, an SMTP account (sign-in works by email link) and an
-HTTPS reverse proxy ([examples](/self-hosting/proxy)). Releases are listed on
+HTTPS reverse proxy ([examples](/self-hosting/reverse-proxy)). Releases are listed on
 [GitHub](https://github.com/bakers-build/bakers-build/releases); their images are public.
 
 ## Compose file
@@ -187,7 +187,7 @@ docker compose logs deploy
 
 On the first start the `deploy` service finds an empty database and installs the site with
 `ADMIN_EMAIL` as administrator. It installs only into a database without any table and stops on
-anything else, so it never overwrites data. Then set up your [reverse proxy](/self-hosting/proxy).
+anything else, so it never overwrites data. Then set up your [reverse proxy](/self-hosting/reverse-proxy).
 
 ## First sign-in
 

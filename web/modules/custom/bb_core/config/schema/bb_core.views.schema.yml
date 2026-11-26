@@ -101,6 +101,10 @@ views.field.bb_related_max_timestamp:
   type: views_field
   label: 'Related max timestamp'
 
+views.field.bb_entity_edit_dialog:
+  type: views.field.entity_link_edit
+  label: 'Entity label opening its edit form in the dialog'
+
 # The `bb_list` Views style: ordered field IDs per row region.
 views.style.bb_list:
   type: views_style
