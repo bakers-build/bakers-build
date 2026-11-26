@@ -10,6 +10,7 @@ dependencies:
     - bb_core
     - bb_ticket_trigger
     - bb_track
+    - bb_webhook
     - island_ui_patterns
     - ui_patterns
   theme:
@@ -193,6 +194,9 @@ placements:
                 source: {  }
               -
                 source_id: bb_ticket_trigger_create_action
+                source: {  }
+              -
+                source_id: bb_webhook_create_action
                 source: {  }
               -
                 source_id: bb_group_create_action

@@ -1,0 +1,34 @@
+# A webhook is added from its owning scope's Webhooks tab; the route fixes the
+# scope. The workspace-scoped create check reads the right in that workspace
+# only.
+entity.bb_webhook.add_for_project:
+  path: '/_workspace/{bb_workspace}/project/{bb_project}/webhook/add'
+  defaults:
+    _entity_form: 'bb_webhook.add'
+    _title: 'Create webhook'
+  requirements:
+    _bb_workspace_create: 'bb_webhook'
+  options:
+    parameters:
+      bb_project:
+        type: 'entity:bb_project'
+
+entity.bb_webhook.add_for_group:
+  path: '/_workspace/{bb_workspace}/group/{bb_group}/webhook/add'
+  defaults:
+    _entity_form: 'bb_webhook.add'
+    _title: 'Create webhook'
+  requirements:
+    _bb_workspace_create: 'bb_webhook'
+  options:
+    parameters:
+      bb_group:
+        type: 'entity:bb_group'
+
+entity.bb_webhook.add_for_workspace:
+  path: '/_workspace/{bb_workspace}/settings/webhooks/add'
+  defaults:
+    _entity_form: 'bb_webhook.add'
+    _title: 'Create webhook'
+  requirements:
+    _bb_workspace_create: 'bb_webhook'

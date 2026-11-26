@@ -48,6 +48,7 @@ final class BbGroupScopeConstraint extends SymfonyConstraint {
     'bb_ticket' => 'project_id',
     'bb_ticket_template' => 'project_id',
     'bb_ticket_trigger' => 'workspace_id',
+    'bb_webhook' => 'workspace_id',
     'bb_comment' => 'ticket_id',
     'bb_environment' => 'project_id',
     // The actor must hold `create bb_project` in a team the project is

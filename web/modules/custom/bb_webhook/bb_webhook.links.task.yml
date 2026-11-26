@@ -1,0 +1,17 @@
+view.bb_webhooks.project_list:
+  title: 'Webhooks'
+  route_name: view.bb_webhooks.project_list
+  base_route: entity.bb_project.canonical
+  weight: 5.6
+
+view.bb_webhooks.group_list:
+  title: 'Webhooks'
+  route_name: view.bb_webhooks.group_list
+  base_route: entity.bb_group.canonical
+  weight: 5
+
+view.bb_webhooks.workspace_list:
+  title: 'Webhooks'
+  route_name: view.bb_webhooks.workspace_list
+  base_route: bb_core.bb_workspace.settings
+  weight: 4.5

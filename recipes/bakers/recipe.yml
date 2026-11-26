@@ -33,6 +33,8 @@ install:
   # Ticket activities and their opt-in mails; an account's mail settings row
   # is written only when it saves its notifications page.
   - bb_activity
+  # Signed webhooks per project, group or workspace, fed by ticket activities.
+  - bb_webhook
   # The island link layer (BB-398). Path-based custom code, not a composer
   # package, so nothing enables it implicitly — and every hook it ships is
   # silently inert while it is uninstalled.

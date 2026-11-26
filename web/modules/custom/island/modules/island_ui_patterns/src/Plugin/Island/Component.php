@@ -21,6 +21,7 @@ use Drupal\island\Attribute\Island;
 use Drupal\island\IslandBoost;
 use Drupal\island\IslandEvent;
 use Drupal\island\IslandConfigurationValidationInterface;
+use Drupal\island\IslandDependencyRemovalInterface;
 use Drupal\island\IslandEmbeddingInterface;
 use Drupal\island\IslandPluginBase;
 use Drupal\island\IslandPluginManagerInterface;
@@ -44,7 +45,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
   type: 'component',
   modules: ['island_ui_patterns'],
 )]
-final class Component extends IslandPluginBase implements ConfigurableInterface, DependentPluginInterface, IslandConfigurationValidationInterface, IslandEmbeddingInterface {
+final class Component extends IslandPluginBase implements ConfigurableInterface, DependentPluginInterface, IslandConfigurationValidationInterface, IslandDependencyRemovalInterface, IslandEmbeddingInterface {
 
   use ConfigurableTrait;
 
@@ -211,12 +212,9 @@ final class Component extends IslandPluginBase implements ConfigurableInterface,
    */
   private function sourceProviders(array $configuration): array {
     $providers = [];
-    $source_id = $configuration['source_id'] ?? '';
-    if (is_string($source_id) && $source_id !== '' && $this->sourceManager->hasDefinition($source_id)) {
-      $definition = $this->sourceManager->getDefinition($source_id);
-      if (is_array($definition) && isset($definition['provider']) && $definition['provider'] !== 'core') {
-        $providers[] = $definition['provider'];
-      }
+    $provider = $this->sourceProvider($configuration['source_id'] ?? NULL);
+    if ($provider !== NULL) {
+      $providers[] = $provider;
     }
     foreach ($configuration as $value) {
       if (is_array($value)) {
@@ -224,6 +222,52 @@ final class Component extends IslandPluginBase implements ConfigurableInterface,
       }
     }
     return array_values(array_unique($providers));
+  }
+
+  /**
+   * The module providing a source plugin, or NULL for core or an unknown id.
+   */
+  private function sourceProvider(mixed $source_id): ?string {
+    if (!is_string($source_id) || $source_id === '' || !$this->sourceManager->hasDefinition($source_id)) {
+      return NULL;
+    }
+    $definition = $this->sourceManager->getDefinition($source_id);
+    $provider = is_array($definition) ? ($definition['provider'] ?? NULL) : NULL;
+    return is_string($provider) && $provider !== 'core' ? $provider : NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function withoutDependencies(array $configuration, array $dependencies): ?array {
+    $pruned = $this->pruneSources($configuration, $dependencies['module'] ?? []);
+    return $pruned === $configuration ? NULL : $pruned;
+  }
+
+  /**
+   * Removes every source item whose provider is among the given modules.
+   *
+   * @param array<mixed> $configuration
+   *   A mapping tree.
+   * @param string[] $modules
+   *   The modules being removed.
+   *
+   * @return array<mixed>
+   *   The tree without those items; lists stay lists.
+   */
+  private function pruneSources(array $configuration, array $modules): array {
+    $list = array_is_list($configuration);
+    foreach ($configuration as $key => $value) {
+      if (!is_array($value)) {
+        continue;
+      }
+      if (in_array($this->sourceProvider($value['source_id'] ?? NULL), $modules, TRUE)) {
+        unset($configuration[$key]);
+        continue;
+      }
+      $configuration[$key] = $this->pruneSources($value, $modules);
+    }
+    return $list ? array_values($configuration) : $configuration;
   }
 
   /**
