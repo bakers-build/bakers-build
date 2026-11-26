@@ -9,6 +9,7 @@ use Drupal\KernelTests\KernelTestBase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\Routing\Route;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Every shell page route carries a one-sentence `_description` default.
@@ -62,14 +63,39 @@ final class PageDescriptionContractTest extends KernelTestBase {
   ];
 
   /**
-   * Shipped Views with a page path under the shell.
+   * Routes that must be in the page set, so the test cannot pass vacuously.
    */
-  private const VIEWS = [
-    'addons', 'bb_api_keys', 'bb_environments', 'bb_service_accounts',
-    'bb_terms', 'bb_ticket_templates', 'bb_ticket_triggers', 'bb_webhooks',
-    'conductors', 'groups', 'machines', 'project_board', 'projects', 'runs',
-    'tickets', 'worklog',
+  private const KNOWN_PAGES = [
+    'view.tickets.my_work',
+    'entity.bb_ticket.add_form',
+    'bb_core.user.profile',
+    'view.worklog.page',
   ];
+
+  /**
+   * The shipped views with a page display under a shell path prefix.
+   *
+   * Every one installs in a kernel test; a view that cannot would need an
+   * explicit skip here, with its reason.
+   *
+   * @return array<int, string>
+   *   Config object names, e.g. `views.view.tickets`.
+   */
+  private static function shellViews(): array {
+    $names = [];
+    foreach (glob(dirname(__DIR__, 7) . '/recipes/bakers/config/views.view.*.yml') ?: [] as $file) {
+      $name = basename($file, '.yml');
+      foreach (Yaml::parseFile($file)['display'] ?? [] as $display) {
+        $path = $display['display_options']['path'] ?? '';
+        if (($display['display_plugin'] ?? '') === 'page'
+          && preg_match('#^(_workspace/|user/|time/submission/)#', $path)) {
+          $names[] = $name;
+          break;
+        }
+      }
+    }
+    return $names;
+  }
 
   /**
    * {@inheritdoc}
@@ -82,8 +108,8 @@ final class PageDescriptionContractTest extends KernelTestBase {
     $this->installConfig(['system', 'search_api']);
     $this->container->get('config.installer')
       ->installOptionalConfig(NULL, ['module' => 'bb_core']);
-    foreach (self::VIEWS as $view) {
-      $this->installShippedView('views.view.' . $view);
+    foreach (self::shellViews() as $view) {
+      $this->installShippedView($view);
     }
     $this->container->get('router.builder')->rebuild();
   }
@@ -134,8 +160,13 @@ final class PageDescriptionContractTest extends KernelTestBase {
    */
   public function testEveryShellPageHasDescription(): void {
     $missing = [];
+    $pages = [];
     foreach ($this->container->get('router.route_provider')->getAllRoutes() as $name => $route) {
-      if (!$this->isPage($name, $route) || $this->isDynamic($name, $route)) {
+      if (!$this->isPage($name, $route)) {
+        continue;
+      }
+      $pages[] = $name;
+      if ($this->isDynamic($name, $route)) {
         continue;
       }
       $description = $route->getDefault('_description');
@@ -143,6 +174,7 @@ final class PageDescriptionContractTest extends KernelTestBase {
         $missing[$name] = $route->getPath();
       }
     }
+    self::assertSame([], array_diff(self::KNOWN_PAGES, $pages), 'Known pages are missing from the page set.');
     ksort($missing);
     self::assertSame(
       [],
