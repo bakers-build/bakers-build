@@ -6,11 +6,8 @@ dependencies:
     - island.app.bakers
     - system.menu.bakers-rail
   module:
-    - bb_api_key
     - bb_core
-    - bb_ticket_trigger
     - bb_track
-    - bb_webhook
     - island_ui_patterns
     - system
     - ui_patterns

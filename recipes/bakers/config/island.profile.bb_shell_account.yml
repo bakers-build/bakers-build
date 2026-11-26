@@ -7,9 +7,7 @@ dependencies:
   module:
     - bb_api_key
     - bb_core
-    - bb_ticket_trigger
     - bb_track
-    - bb_webhook
     - island_ui_patterns
     - ui_patterns
   theme:
