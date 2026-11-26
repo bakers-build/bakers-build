@@ -208,18 +208,11 @@ third_party_settings:
                           value:
                             sources:
                               -
-                                source_id: entity_field
+                                source_id: bb_field
                                 source:
-                                  derivable_context: 'field:bb_addon:bb_addon:conductors'
-                                  'field:bb_addon:bb_addon:conductors':
-                                    value:
-                                      sources:
-                                        -
-                                          source_id: 'field_formatter:bb_addon:bb_addon:conductors'
-                                          source:
-                                            type: bb_addon_conductors
-                                            settings: {  }
-                                            third_party_settings: {  }
+                                  field: conductors
+                                  type: bb_addon_conductors
+                                  settings: {  }
                     node_id: list_item_conductors
         node_id: bb_addon_list_item
 id: bb_addon.bb_addon.list_item
