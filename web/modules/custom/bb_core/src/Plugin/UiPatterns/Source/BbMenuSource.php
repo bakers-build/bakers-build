@@ -14,6 +14,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Navigation\AccountWorkspaceContext;
+use Drupal\bb_core\Plugin\Field\FieldFormatter\EntityImageTrait;
 use Drupal\bb_core\Plugin\Menu\AmbientScopedMenuLinkInterface;
 use Drupal\bb_core\Profile\Profiles;
 use Drupal\ui_patterns\Attribute\Source;
@@ -49,6 +50,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
   prop_types: ['links'],
 )]
 final class BbMenuSource extends MenuSource {
+
+  use EntityImageTrait;
 
   /**
    * Resolves the route workspace or the validated profile origin.
@@ -125,7 +128,10 @@ final class BbMenuSource extends MenuSource {
       // Team rows come from an access-checked query, and link access depends
       // on permissions and memberships.
       ->addCacheTags(['bb_team_list', 'og_membership_list', 'bb_profile_list', 'bb_project_list'])
-      ->addCacheContexts(['user', 'user.permissions', 'route']);
+      // Team and favorite marks carry absolute `avatar` derivative URLs; an
+      // image change saves its entity, which the list tags above cover.
+      ->addCacheTags(['config:image.style.avatar'])
+      ->addCacheContexts(['user', 'user.permissions', 'route', 'url.site']);
     $this->workspaceContext->resolve($cache);
     $cache->applyTo($element);
     return $element;
@@ -263,6 +269,7 @@ final class BbMenuSource extends MenuSource {
         'mark' => [
           'initials' => self::markInitials((string) $team->label()),
           'color' => self::markColor((int) $team->id()),
+          'picture' => $this->entityImageUrl($team, new CacheableMetadata(), $this->entityTypeManager),
         ],
         'below' => [],
       ];
@@ -309,6 +316,7 @@ final class BbMenuSource extends MenuSource {
         'mark' => [
           'initials' => self::markInitials((string) $project->label()),
           'color' => self::markColor((int) $project->id()),
+          'picture' => $this->entityImageUrl($project, new CacheableMetadata(), $this->entityTypeManager),
         ],
         // The Tickets route applies the same bb_project.view check.
         'below' => [
@@ -338,9 +346,10 @@ final class BbMenuSource extends MenuSource {
    *   The create action, or cache metadata alone when forbidden.
    */
   private function teamCreateAction(): array {
-    $source = $this->sourceManager->createInstance('bb_team_create_action', SourcePluginBase::buildConfiguration('actions', ['type' => 'object'], ['source' => []], []));
+    $source = $this->sourceManager->createInstance('bb_create_action', SourcePluginBase::buildConfiguration('actions', ['type' => 'object'], ['source' => ['action' => 'bb_core.create.team']], []));
     assert($source instanceof SourcePluginBase);
-    return $source->getPropValue();
+    $build = $source->getPropValue();
+    return ($build['bb_core.create.team'] ?? []) + ['#cache' => $build['#cache']];
   }
 
   /**

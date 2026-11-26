@@ -24,7 +24,7 @@ Feature: A workspace invitation
     And the create action stands 20 pixels below the content above it
     When I join the invited workspace "bakers"
     Then the address is "/bakers/tickets"
-    When I click the tab "Stats" and count the requests
+    When I click the tab "Insights" and count the requests
     Then the tab change made exactly one navigation request
     And the tab change made no full document request
 
@@ -38,7 +38,7 @@ Feature: A workspace invitation
     Then the overview offers joining "bakers"
     When I join the invited workspace "bakers"
     Then the address is "/bakers/tickets"
-    When I click the tab "Stats" and count the requests
+    When I click the tab "Insights" and count the requests
     Then the tab change made exactly one navigation request
     And the tab change made no full document request
 

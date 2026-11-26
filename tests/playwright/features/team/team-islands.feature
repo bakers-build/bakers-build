@@ -129,7 +129,7 @@ Feature: The team screen's five tabs are routes inside one island
   # AC 1, enumerated over ALL FIVE IA D12.3 tabs instead of a sample (BB-454:
   # Load/Delivery retired in favour of Overview/Stats). Overview is the
   # canonical address and carries no suffix of its own, so it is covered by
-  # "The canonical address shows Overview" above; Stats, Runs, Members and
+  # "The canonical address shows Overview" above; Insights, Runs, Members and
   # Tickets are the four suffixes under it. Each address is entered DIRECTLY,
   # so what is proved is that the URL alone renders its tab — not merely that
   # some click can arrive there.
@@ -142,11 +142,11 @@ Feature: The team screen's five tabs are routes inside one island
     And exactly one tab body is present in the document
 
     Examples:
-      | tab     | suffix   |
-      | Stats   | /stats   |
-      | Runs    | /runs    |
-      | Members | /members |
-      | Tickets | /tickets |
+      | tab      | suffix   |
+      | Insights | /stats   |
+      | Runs     | /runs    |
+      | Members  | /members |
+      | Tickets  | /tickets |
 
   # AC 3's OTHER half. "No full page load" is asserted by the document mark all
   # over this file; the request COUNT — "in one HTTP request" — was asserted

@@ -667,7 +667,7 @@ props:
                   title: Action htmx request
                   description: >-
                     An `action` cell's htmx request, as the attribute set a
-                    create trigger carries (`CreateActionSourceBase`): each key
+                    create trigger carries (`CreateActionSource`): each key
                     that is set becomes a `data-hx-<key>` attribute on the
                     control, so an action can open a dialog — `get` the
                     wrapper-format dialog URL, `target` the overlay

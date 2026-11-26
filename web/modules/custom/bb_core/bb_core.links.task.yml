@@ -14,7 +14,7 @@
 # the two share a weight and discovery order puts Stats first.
 
 bb_core.my_work.stats:
-  title: 'Stats'
+  title: 'Insights'
   route_name: bb_core.my_work.stats
   base_route: view.tickets.my_work
   weight: 2
@@ -37,7 +37,7 @@ entity.bb_project.canonical:
   weight: 0
 
 bb_core.bb_project.stats:
-  title: 'Stats'
+  title: 'Insights'
   route_name: bb_core.bb_project.stats
   base_route: entity.bb_project.canonical
   weight: 2
@@ -167,7 +167,7 @@ entity.bb_team.canonical:
   weight: 0
 
 bb_core.bb_team.stats:
-  title: 'Stats'
+  title: 'Insights'
   route_name: bb_core.bb_team.stats
   base_route: entity.bb_team.canonical
   weight: 1

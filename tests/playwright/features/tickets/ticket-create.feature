@@ -56,7 +56,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
   # requires — the SECOND click lands on markup that arrived through a
   # swap, not on the page's first paint — proved by clicking the
   # same trigger twice in a row: the trigger's own container targets
-  # ITSELF (`TicketCreateActionSource` — nesting it under `#island-content`
+  # ITSELF (`CreateActionSource` — nesting it under `#island-content`
   # would have detached it from the very swap it caused, see that class's
   # docblock), so the FIRST click already replaces the small container the
   # trigger itself lives in, and the second click is made on that
@@ -116,7 +116,8 @@ Feature: The create-ticket dialog's pickers write the values the form submits
   # looking for.
   #
   # The action is the SAME ui_patterns source on both displays
-  # (`bb_ticket_create_action`), so what is worth observing here is not that
+  # (the `bb_core.create.ticket` local action), so what is worth
+  # observing here is not that
   # the source works — the scenarios above already prove that — but that this
   # display now carries it and that it behaves the same way when it does.
   #
@@ -208,7 +209,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     And the dialog has exactly one submit and one cancel
     And the dialog has no assignee control
     And "workflow" has a labelled group alongside the text lines
-    And the peer pills are exactly "project_id, parent_id, blocked_by, conductor_id, labels, recipe, ticket_type"
+    And the peer pills are exactly "project_id, parent_id, blocked_by, conductor_id, reviewers, labels, recipe, ticket_type"
     And no pill renders a bare dash
     And the dialog shows no text-format help
     And every picker menu in the dialog opens inside the dialog
@@ -390,7 +391,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     And I click the "New ticket" action
     Then the create-ticket dialog is present
     And the dialog offers an editable project picker
-    And the peer pills are exactly "project_id, parent_id, blocked_by, conductor_id, labels, recipe, ticket_type"
+    And the peer pills are exactly "project_id, parent_id, blocked_by, conductor_id, reviewers, labels, recipe, ticket_type"
 
   # A dialog opened on one project files the ticket in another the reader may
   # create in; the conductor follows the picked project.
@@ -408,3 +409,27 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     When I submit the dialog
     Then the dialog closed
     And the stored ticket belongs to project "bakers-e2e-project"
+
+  Scenario: Reviewers and origin URL are stored as entered
+    Given I am logged in as the account "north-lead"
+    When I visit the ticket list of project "bakers.build Platform"
+    And I click the "New ticket" action
+    And I type "Reviewed from the start" into the title line
+    And I type "https://github.com/acme/app/issues/19" into the origin line
+    And I open the "Reviewers" picker
+    And I pick the option "north-contributor"
+    And I pick the option "north-member"
+    And I submit the dialog
+    Then the dialog closed
+    And the stored ticket has reviewers "north-contributor, north-member"
+    And the stored ticket has origin "https://github.com/acme/app/issues/19"
+
+  Scenario: An invalid origin URL keeps the dialog open
+    Given I am logged in as the account "north-lead"
+    When I visit the ticket list of project "bakers.build Platform"
+    And I click the "New ticket" action
+    And I type "Origin refused" into the title line
+    And I type "not a url" into the origin line
+    And I submit the dialog
+    Then the dialog is still present
+    And the dialog shows the error "Enter a full http or https URL."

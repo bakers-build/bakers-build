@@ -402,6 +402,14 @@ ui_patterns_source.entity_form:
       type: string
       label: 'Form operation'
 
+ui_patterns_source.bb_create_action:
+  type: mapping
+  label: 'Source: bakers.build create actions'
+  mapping:
+    action:
+      type: string
+      label: 'Local action rendered on every screen; empty renders the screen dialog actions'
+
 ui_patterns_source.bb_menu:
   type: mapping
   label: 'Source: bakers.build ambient menu'

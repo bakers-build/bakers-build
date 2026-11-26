@@ -95,7 +95,7 @@ Feature: The ticket list is the nav home
     And the ticket listing lists at least 1 ticket
     And the active filters read "All tickets"
     And the facets sit in the filters aside, not above the ticket listing
-    And the "Workflow" facet offers "bakers.build work"
+    And the "Workflow" facet offers "Plan/Work/Review"
     And the "Priority" facet offers "High, Medium, Low"
     And the page carries exactly one main heading and one workspace description
 

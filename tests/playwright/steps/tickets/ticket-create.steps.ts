@@ -793,14 +793,14 @@ Then('the create-ticket dialog is still operable', async ({ page }) => {
     'The refused dialog holds no form_build_id — the next submit cannot be made',
   ).toHaveCount(1);
 
-  // Eight: every create dialog renders the "Project" picker beside the
-  // seven others.
+  // Nine: every create dialog renders the "Project" picker beside the
+  // eight others.
   const pickers = dialog.locator('[data-option-picker]');
   await expect(
     pickers,
-    'The refused dialog does not render all eight pickers of the create display',
-  ).toHaveCount(8);
-  for (let index = 0; index < 7; index += 1) {
+    'The refused dialog does not render all nine pickers of the create display',
+  ).toHaveCount(9);
+  for (let index = 0; index < 8; index += 1) {
     await expect(
       pickers.nth(index),
       `Picker ${index} came back without its JavaScript — did the swapped dialog lose it?`,
@@ -1007,8 +1007,8 @@ When('I visit the My work list', async ({ page }) => {
  * BB-664 review finding 2: the two scenarios below used to visit the
  * route-less `/tickets/all` table and then assert the route-bound dialog
  * behaviour (no picker, a scoped conductor) — a claim that table can never
- * make, since nothing on it binds a project at all. `TicketCreateActionSource
- * ::routeBoundQuery()` reads the `bb_project` route parameter specifically,
+ * make, since nothing on it binds a project at all. The ticket trigger's
+ * `dialog.route_query` (`bb_core.create.ticket`) reads the `bb_project` route parameter,
  * so this is the one navigation that exercises the actual AC-1 path: a
  * screen whose OWN route names a project.
  */
@@ -1241,6 +1241,35 @@ When('I post {string} as {string} instead', async ({ page }, identifier: string,
 
 Then('the dialog shows the error {string}', async ({ page }, text: string) => {
   await expect(dialogRoot(page).locator('[data-component-id="bb_theme:message"]')).toContainText(text);
+});
+
+When('I type {string} into the origin line', async ({ page }, text: string) => {
+  await dialogRoot(page).getByRole('textbox', { name: 'Origin URL' }).fill(text);
+});
+
+/** The reviewers' display names and the origin of the ticket titled as typed. */
+function storedReviewersAndOrigin(): { reviewers: string[]; origin: string } {
+  const line = php(
+    [
+      `$found = \\Drupal::entityTypeManager()->getStorage("bb_ticket")->loadByProperties(["title" => "${safe(requireLastTypedTitle())}"]);`,
+      '$t = $found ? end($found) : NULL;',
+      'print $t ? "ok|" . implode(",", array_map(fn ($u) => $u->getDisplayName(), $t->get("reviewers")->referencedEntities())) . "|" . ($t->get("origin")->value ?? "") : "";',
+    ].join(' '),
+  );
+  const [ok, reviewers, origin] = line.split('|');
+  if (ok !== 'ok') {
+    throw new Error(`No bb_ticket titled "${requireLastTypedTitle()}" was stored.`);
+  }
+  return { reviewers: reviewers ? reviewers.split(',').sort() : [], origin: origin ?? '' };
+}
+
+Then('the stored ticket has reviewers {string}', async ({}, expected: string) => {
+  const names = expected.split(',').map((s) => s.trim()).sort();
+  expect(storedReviewersAndOrigin().reviewers).toEqual(names);
+});
+
+Then('the stored ticket has origin {string}', async ({}, expected: string) => {
+  expect(storedReviewersAndOrigin().origin).toBe(expected);
 });
 
 function storedRelations(): { parent: string; blockers: string[] } {

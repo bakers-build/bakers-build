@@ -113,7 +113,7 @@
           {%- if item.full_page|default(false) %} data-hx-boost="false"{% endif %}
           {%- if item.in_active_trail|default(false) %} aria-current="page"{% endif %}>
           {%- if item.mark %}
-            {{- include('bb_theme:person', { variant: 'compact', initials: item.mark.initials, color: item.mark.color, size: 'sm' }, with_context = false) -}}
+            {{- include('bb_theme:person', { variant: 'compact', initials: item.mark.initials, color: item.mark.color, size: 'sm', picture: item.mark.picture|default(''), image_fit: 'contain' }, with_context = false) -}}
           {%- elseif item.icon %}
             {{- include('bb_theme:icon', { name: item.icon, size: 'md' }, with_context = false) -}}
           {%- endif %}

@@ -32,6 +32,7 @@ props:
           in_active_trail: false
           mark:
             initials: TB
+            picture: /themes/custom/bb_theme/logo.svg
             color: lease
     - title: Settings
       url: /bakers/settings

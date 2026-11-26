@@ -142,9 +142,10 @@ REGISTRY_IMAGE_DOCS=ghcr.io/bakers-build/bakers-build/docs:main
 BB_OAUTH_GOOGLE_CLIENT_ID=[[BB_PROD_OAUTH_GOOGLE_CLIENT_ID]]
 BB_OAUTH_GOOGLE_CLIENT_SECRET=[[BB_PROD_OAUTH_GOOGLE_CLIENT_SECRET]]
 # BB_PROD_MAIL_SMTP_DSN and BB_PROD_MAIL_FROM_ADDRESS must hold the REAL SMTP
-# values in Komodo (copied from the previous instance's mail variables); provision-secrets
-# would fill hex-random and break passwordless sign-in. BB_PROD_MAIL_FROM_NAME is
-# "bakers.build".
+# values in Komodo as secret Variables; provision-secrets would fill hex-random and break
+# passwordless sign-in. The DSN is Google SMTP (smtp.gmail.com:587) with the user and app
+# password from Vault secret/infrastructure/bakers-mail; the sender is noreply@bakers.build.
+# BB_PROD_MAIL_FROM_NAME is "bakers.build".
 MAIL_SMTP_DSN=[[BB_PROD_MAIL_SMTP_DSN]]
 MAIL_FROM_ADDRESS=[[BB_PROD_MAIL_FROM_ADDRESS]]
 MAIL_FROM_NAME=[[BB_PROD_MAIL_FROM_NAME]]

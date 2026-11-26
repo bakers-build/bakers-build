@@ -230,7 +230,7 @@ final class TicketCreateProjectPickerTest extends KernelTestBase {
 
     self::assertSame([$this->conductors['S']], $this->pickerOptions($form, 'conductor_id'));
     self::assertSame([], $this->pickerProps($form, 'conductor_id')['values']);
-    self::assertSame('#bakers-ticket-create-blocked-by,#bakers-ticket-create-conductor', $form['project_id']['#attributes']['data-hx-select-oob'] ?? NULL);
+    self::assertSame('#bakers-ticket-create-blocked-by,#bakers-ticket-create-conductor,#bakers-ticket-create-reviewers', $form['project_id']['#attributes']['data-hx-select-oob'] ?? NULL);
     self::assertSame('bakers-ticket-create-conductor', $form['conductor_id']['#id'] ?? NULL);
   }
 

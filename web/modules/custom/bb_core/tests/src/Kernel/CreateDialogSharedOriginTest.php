@@ -14,12 +14,12 @@ use Drupal\bb_core\Form\BbGroupTeamCreateForm;
 use Drupal\bb_core\Form\BbCreateDialogFormBase;
 use Drupal\island\Render\WrappedRouteRenderer;
 use Drupal\bb_core\Form\BbTicketCreateForm;
-use Drupal\bb_core\Plugin\UiPatterns\Source\ProjectCreateActionSource;
-use Drupal\bb_core\Plugin\UiPatterns\Source\TicketCreateActionSource;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Route;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
@@ -107,6 +107,8 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
       // Parent and Blocked by are scoped to the new ticket's project: the
       // refresh on a project change and the server-side rule.
       'form', 'attachRelationRefresh', 'validateForm', 'rejectProjectScopedRelations',
+      // Only this dialog refuses an origin that is not an http(s) URL.
+      'validateOrigin',
     ]));
   }
 
@@ -151,25 +153,23 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
   }
 
   /**
-   * The TRIGGER that opens each dialog declares only its subject either.
+   * The TRIGGER is one source; its subjects are local actions, not classes.
+   *
+   * Every dialog action names a route that exists, so a renamed route fails
+   * here instead of silently dropping a plus.
    */
-  public function testEachCreateTriggerDeclaresOnlyItsSubject(): void {
-    foreach ([TicketCreateActionSource::class, ProjectCreateActionSource::class] as $class) {
-      $allowed = [
-        'dialogRoute', 'triggerLabel', 'forwardsScreenQuery',
-        'appliesToCurrentRoute',
-      ];
-      // BB-664: only the ticket trigger overrides this, to force its
-      // per-project screen's ROUTE context onto the dialog, which the
-      // forwarded screen query alone cannot carry.
-      if ($class === TicketCreateActionSource::class) {
-        $allowed[] = 'routeBoundQuery';
-      }
-      self::assertSame(
-        [],
-        $this->declaredBeyond($class, $allowed),
-        $class . ' declares more than its subject — the plumbing belongs to CreateActionSourceBase.',
-      );
+  public function testCreateTriggersAreLocalActionsOfOneSource(): void {
+    self::assertTrue((new \ReflectionClass(CreateActionSource::class))->isFinal());
+    $this->container->get('router.builder')->rebuild();
+    $routes = $this->container->get('router.route_provider');
+    $dialogs = array_filter(
+      $this->container->get('plugin.manager.menu.local_action')->getDefinitions(),
+      static fn (array $definition): bool => is_array($definition['dialog'] ?? NULL),
+    );
+    self::assertNotEmpty($dialogs);
+    foreach ($dialogs as $id => $definition) {
+      // An unknown route throws RouteNotFoundException here.
+      self::assertInstanceOf(Route::class, $routes->getRouteByName($definition['route_name']), $id);
     }
   }
 

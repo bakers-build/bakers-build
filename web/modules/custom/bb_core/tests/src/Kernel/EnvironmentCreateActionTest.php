@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
-use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -21,6 +20,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 #[RunTestsInSeparateProcesses]
 final class EnvironmentCreateActionTest extends KernelTestBase {
 
+  use CreateActionTestTrait;
   use WorkspaceReadScopeTestTrait;
   use ProjectsViewTestTrait;
 
@@ -82,14 +82,16 @@ final class EnvironmentCreateActionTest extends KernelTestBase {
     $this->addMembership($this->fixture('a', 'bb_workspace'), $account, [$rank]);
     $this->container->get('current_user')->setAccount($account);
     $project = $this->fixture('a', 'bb_project');
-    $request = Request::create('/space-a/project/' . $project->id() . '/environments');
+    // The tab is reached by the project's canonical slot, as links write it.
+    $slot = (string) $project->toUrl()->getRouteParameters()['bb_project'];
+    $request = Request::create('/space-a/project/' . $slot . '/environments');
     $request->setSession(new Session(new MockArraySessionStorage()));
     $request->attributes->add([
       '_route' => 'view.bb_environments.project_list',
       '_route_object' => $this->container->get('router.route_provider')->getRouteByName('view.bb_environments.project_list'),
       'bb_workspace' => $this->fixture('a', 'bb_workspace'),
       'bb_project' => $project,
-      '_raw_variables' => new InputBag(['bb_workspace' => 'space-a', 'bb_project' => (string) $project->id()]),
+      '_raw_variables' => new InputBag(['bb_workspace' => 'space-a', 'bb_project' => $slot]),
     ]);
     $this->container->get('request_stack')->push($request);
     return $account;
@@ -102,11 +104,7 @@ final class EnvironmentCreateActionTest extends KernelTestBase {
    *   The render array.
    */
   private function action(): array {
-    $schema = $this->container->get('plugin.manager.ui_patterns_prop_type')->getDefinition('slot')['schema'];
-    $source = $this->container->get('plugin.manager.ui_patterns_source')
-      ->createInstance('bb_environment_create_action', SourcePluginBase::buildConfiguration('items', $schema, ['source' => []], []));
-    self::assertInstanceOf(SourcePluginBase::class, $source);
-    return $source->getPropValue();
+    return $this->createTrigger('bb_core.create.environment');
   }
 
 }
