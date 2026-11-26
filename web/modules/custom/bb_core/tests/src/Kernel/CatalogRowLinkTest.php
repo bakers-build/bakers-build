@@ -67,12 +67,14 @@ final class CatalogRowLinkTest extends KernelTestBase {
   }
 
   /**
-   * An environment row opens the environment's edit form.
+   * An environment row on the project's Environments tab opens its edit form.
    */
   public function testEnvironmentRowOpensTheEditForm(): void {
     $environment = $this->fixture('a', 'bb_environment');
 
-    $html = $this->renderListDisplay('bb_environments', 'catalog', ['space-a']);
+    $project = $environment->get('project_id')->target_id;
+
+    $html = $this->renderListDisplay('bb_environments', 'project_list', ['space-a', $project]);
 
     self::assertStringContainsString('href="/space-a/environment/' . $environment->id() . '/edit"', $html);
     self::assertStringNotContainsString('href="/space-a/environment/' . $environment->id() . '"', $html);
