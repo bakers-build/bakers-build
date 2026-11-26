@@ -1,0 +1,10 @@
+name: bakers.build Webhooks
+type: module
+description: 'Signed webhooks per project, group or workspace for ticket activities.'
+package: bakers.build
+core_version_requirement: ^11
+dependencies:
+  - drupal:views
+  - entity:entity
+  - bb_core:bb_core
+  - bb_activity:bb_activity
