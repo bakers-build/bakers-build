@@ -26,6 +26,12 @@ Feature: Catalog manages the workspace's environments
     Then the tab "Environments" is current
     And the environment "Catalog env renamed" is not listed
 
+  Scenario: A lead adding an environment without a project keeps the form with its error
+    Given I am logged in as the account "north-lead"
+    When I visit "/bakers/catalog/environments"
+    And I save the new environment "Catalog env no project" without a project
+    Then the environment form stays open with the error "Project field is required."
+
   Scenario: A contributor reads environments but cannot change them
     Given the project "API home" has the environment "Catalog env read only"
     And I am logged in as the account "north-contributor"

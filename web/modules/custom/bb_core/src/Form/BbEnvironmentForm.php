@@ -8,6 +8,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbEnvironmentInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
@@ -125,7 +126,31 @@ final class BbEnvironmentForm extends BbContentEntityFormBase {
       $form['#action'] = HtmxTransport::currentUrl($this->getRequest())->toString();
       $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
     }
+    $this->attachDialogHtmx($form);
     return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * Opened over a screen, Cancel returns there without saving.
+   */
+  protected function actions(array $form, FormStateInterface $form_state): array {
+    $actions = parent::actions($form, $form_state);
+    if ($this->getRequest()->query->has(static::RETURN_PARAMETER)) {
+      $actions['cancel'] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:button',
+        '#props' => [
+          'variant' => 'ghost',
+          'label' => (string) $this->t('Cancel'),
+          'href' => $this->returnUrl()->toString(),
+          'attributes' => new Attribute(['data-dialog-cancel' => 'data-dialog-cancel']),
+        ],
+        '#weight' => -10,
+      ];
+    }
+    return $actions;
   }
 
   /**
@@ -148,8 +173,8 @@ final class BbEnvironmentForm extends BbContentEntityFormBase {
    * {@inheritdoc}
    *
    * The parent redirects to the entity collection, which this entity has no
-   * link for. The Catalog add returns to its tab; any other save to the
-   * owning project.
+   * link for. A dialog returns to the screen it was opened over, the Catalog
+   * add page to its tab, any other save to the owning project.
    */
   public function save(array $form, FormStateInterface $form_state): int {
     $entity = $this->getEntity();
@@ -162,7 +187,10 @@ final class BbEnvironmentForm extends BbContentEntityFormBase {
       '%label' => $entity->label() ?? $entity->id(),
     ]));
     $project = $entity->getProject();
-    if ($from_catalog) {
+    if ($this->isDialogRequest()) {
+      $this->respondAtReturnUrl($form_state);
+    }
+    elseif ($from_catalog) {
       $form_state->setRedirectUrl(Url::fromRoute('view.bb_environments.catalog'));
     }
     elseif ($project instanceof BbProjectInterface) {

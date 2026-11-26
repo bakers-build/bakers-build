@@ -120,6 +120,11 @@ const SURFACES: Record<string, Surface> = {
     trigger: 'Add recipe',
     form: 'form#bb-term-recipe-add-form',
   },
+  environment: {
+    screen: () => `/${workspaceSlug()}/catalog/environments`,
+    trigger: 'Add environment',
+    form: 'form#bb-environment-add-form',
+  },
 };
 
 /**

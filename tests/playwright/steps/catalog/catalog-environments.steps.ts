@@ -121,3 +121,19 @@ When('I delete the environment from its Edit tab', async ({ page }) => {
   await scope.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(page).toHaveURL(/\/catalog\/environments(\?|$)/);
 });
+
+When('I save the new environment {string} without a project', async ({ page }, name: string) => {
+  await remember(page, name);
+  await clickHeaderAction(page, 'Add environment');
+  const { form } = await openForm(page);
+  await form.getByLabel('Name', { exact: true }).fill(name);
+  await form.getByRole('button', { name: 'Save', exact: true }).click();
+});
+
+/** A refused save keeps the form, in the dialog with JavaScript, on its page without. */
+Then('the environment form stays open with the error {string}', async ({ page }, error: string) => {
+  const withJs = await page.evaluate(() => 'htmx' in window);
+  const form = page.locator(withJs ? 'dialog[open]:has(form#bb-environment-add-form)' : 'main');
+  await expect(form.getByText(error)).toBeVisible();
+  await expect(page).toHaveURL(withJs ? /\/catalog\/environments(\?|$)/ : /\/catalog\/environments\/add(\?|$)/);
+});

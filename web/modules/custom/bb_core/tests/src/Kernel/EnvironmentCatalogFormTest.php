@@ -13,6 +13,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\bb_core\Form\BbEnvironmentForm;
+use Drupal\island\Render\WrappedRouteRenderer;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -32,6 +33,14 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
   use WorkspaceReadScopeTestTrait;
 
   private const ADD_ROUTE = 'entity.bb_environment.add_for_workspace';
+
+  /**
+   * The query of the add form opened as the dialog over the tab.
+   */
+  private const DIALOG_QUERY = [
+    '_wrapper_format' => 'island_dialog',
+    'destination' => '/space-a/catalog/environments',
+  ];
 
   /**
    * {@inheritdoc}
@@ -116,6 +125,32 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
   }
 
   /**
+   * Opened as the dialog, the add form posts into it and offers Cancel.
+   */
+  public function testDialogPostsIntoTheDialogWithCancel(): void {
+    $this->pushAddRequest(self::DIALOG_QUERY);
+    $form = $this->container->get('form_builder')->getForm($this->addForm());
+
+    self::assertStringContainsString('_wrapper_format=island_dialog', (string) ($form['#attributes']['data-hx-post'] ?? ''));
+    $actions = $form[WrappedRouteRenderer::ACTIONS_SLOT_PROPERTY] ?? [];
+    self::assertArrayHasKey('cancel', $actions, 'The action row in the hull offers Cancel.');
+    self::assertSame('/space-a/catalog/environments', $actions['cancel']['#props']['href']);
+  }
+
+  /**
+   * A dialog save lands back on the tab the dialog was opened over.
+   */
+  public function testDialogSaveReturnsToTheTab(): void {
+    $state = $this->submitAdd('dialog', (string) $this->fixture('a', 'bb_project')->id(), self::DIALOG_QUERY);
+
+    self::assertSame([], array_map('strval', $state->getErrors()));
+    self::assertCount(1, $this->environments('dialog'));
+    $response = $state->getResponse();
+    self::assertNotNull($response, 'The dialog answers with a header, not a redirect.');
+    self::assertStringContainsString('/space-a/catalog/environments', (string) $response->headers->get('HX-Location'));
+  }
+
+  /**
    * The edit page saves by a native round trip, so its redirect is followed.
    */
   public function testEditPageIsNotBoosted(): void {
@@ -146,10 +181,34 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
 
   /**
    * Submits the workspace add form of workspace A.
+   *
+   * @param string $name
+   *   The environment name.
+   * @param string $project
+   *   The project id.
+   * @param array<string, string> $query
+   *   The request query.
    */
-  private function submitAdd(string $name, string $project): FormStateInterface {
+  private function submitAdd(string $name, string $project, array $query = []): FormStateInterface {
+    $this->pushAddRequest($query);
+    $state = (new FormState())->setValues([
+      'name' => [['value' => $name]],
+      'project_id' => $project,
+      'op' => 'Save',
+    ]);
+    $this->container->get('form_builder')->submitForm($this->addForm(), $state);
+    return $state;
+  }
+
+  /**
+   * Pushes a request on the add route of workspace A.
+   *
+   * @param array<string, string> $query
+   *   The request query.
+   */
+  private function pushAddRequest(array $query = []): void {
     $route = $this->container->get('router.route_provider')->getRouteByName(self::ADD_ROUTE);
-    $request = Request::create('/add', 'GET');
+    $request = Request::create('/add', 'GET', $query);
     $request->setSession(new Session(new MockArraySessionStorage()));
     $request->attributes->add([
       RouteObjectInterface::ROUTE_NAME => self::ADD_ROUTE,
@@ -158,16 +217,16 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
       '_raw_variables' => new InputBag(['bb_workspace' => 'space-a']),
     ]);
     $this->container->get('request_stack')->push($request);
+  }
+
+  /**
+   * The add form object for the current request.
+   */
+  private function addForm(): BbEnvironmentForm {
     $form = $this->container->get('entity_type.manager')->getFormObject('bb_environment', 'add');
     self::assertInstanceOf(BbEnvironmentForm::class, $form);
     $form->setEntity($form->getEntityFromRouteMatch($this->container->get('current_route_match'), 'bb_environment'));
-    $state = (new FormState())->setValues([
-      'name' => [['value' => $name]],
-      'project_id' => $project,
-      'op' => 'Save',
-    ]);
-    $this->container->get('form_builder')->submitForm($form, $state);
-    return $state;
+    return $form;
   }
 
   /**
