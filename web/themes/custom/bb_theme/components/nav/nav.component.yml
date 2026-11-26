@@ -75,10 +75,13 @@ props:
             title: Mark
             description: >-
               An initials mark rendered through `person` in place of the icon.
-              What distinguishes a team row from an icon-led entry, in the
-              collapsed rail too.
+              What distinguishes a team or favorite project row from an
+              icon-led entry, in the collapsed rail too. `picture` replaces the
+              initials with the entity image, contained; empty keeps them.
             properties:
               initials:
+                type: string
+              picture:
                 type: string
               color:
                 type: string

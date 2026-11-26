@@ -9,7 +9,7 @@ use Symfony\Component\Yaml\Yaml;
 /**
  * Installs the recipe-shipped config the entity image crop depends on.
  *
- * The project, group and workspace form displays use bb_image's
+ * The project, group, team and workspace form displays use bb_image's
  * `bb_square_image` widget and the avatar image style applies Crop API's
  * effect; bb_core depends on neither module, so all of it ships from
  * `recipes/bakers/config` and `config/sync` rather than the module, and
@@ -19,13 +19,13 @@ use Symfony\Component\Yaml\Yaml;
 trait ShippedImageConfigTrait {
 
   /**
-   * Creates the project, group and workspace form displays.
+   * Creates the project, group, team and workspace form displays.
    *
    * Their form modes must already exist, as `installConfig(['bb_core'])`
    * leaves them.
    *
    * @param string ...$ids
-   *   The display ids to create; all four when none are given.
+   *   The display ids to create; all five when none are given.
    */
   protected function installShippedFormDisplays(string ...$ids): void {
     $ids = $ids ?: [
@@ -33,6 +33,7 @@ trait ShippedImageConfigTrait {
       'bb_group.bb_group.create',
       'bb_group.bb_group.settings',
       'bb_workspace.bb_workspace.settings',
+      'bb_team.bb_team.settings',
     ];
     foreach ($ids as $id) {
       $this->installShippedConfigEntity('entity_form_display', 'core.entity_form_display.' . $id);

@@ -1,5 +1,11 @@
-{# Style a text format field's help text like every other field's; stable9 puts `attributes` on the description. #}
-{% if description %}
-  {% do attributes.addClass(['text-meta', 'text-text-light', 'pt-inline-xs']) %}
-{% endif %}
-{% include '@stable9/content-edit/text-format-wrapper.html.twig' %}
+{# stable9's text-format wrapper, laid out as a flex column: the text field is
+   followed by the format container (only a hidden input, one format), so as
+   form_field's not-last child in a block parent it would add `mb-group` below
+   the field; a flex parent spaces its children itself and adds none. Help text
+   is styled like every other field's; stable9 puts `attributes` on it. #}
+<div class="js-text-format-wrapper js-form-item form-item flex flex-col">
+  {{ children }}
+  {% if description %}
+    <div{{ attributes.addClass(['text-meta', 'text-text-light', 'pt-inline-xs']) }}>{{ description }}</div>
+  {% endif %}
+</div>

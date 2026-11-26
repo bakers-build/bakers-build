@@ -107,6 +107,8 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
       // Parent and Blocked by are scoped to the new ticket's project: the
       // refresh on a project change and the server-side rule.
       'form', 'attachRelationRefresh', 'validateForm', 'rejectProjectScopedRelations',
+      // Only this dialog refuses an origin that is not an http(s) URL.
+      'validateOrigin',
     ]));
   }
 

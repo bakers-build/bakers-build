@@ -12,7 +12,8 @@
 import { randomUUID } from 'node:crypto';
 import { createBdd } from 'playwright-bdd';
 import { Drush } from '../../support/drush';
-import type { Page, Request } from '@playwright/test';
+import { join } from 'node:path';
+import type { Locator, Page, Request } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
 import { RAIL_ISLAND } from '../../support/shell';
 
@@ -21,6 +22,7 @@ const { Given, When, Then, After } = createBdd(test);
 type Surface = 'workspace' | 'project' | 'group' | 'team';
 
 interface SettingsWorld {
+  uid: string;
   slug: string;
   projectPage: string;
   ids: Record<Surface, string>;
@@ -121,8 +123,8 @@ Given('I lead a disposable workspace world', async ({ page, authProvider, apiCli
       ']]);',
     ].join(' '),
   );
-  const built = JSON.parse(out) as Omit<SettingsWorld, 'slug'> & { uid: string };
-  world = { slug, projectPage: built.projectPage, ids: built.ids, urls: built.urls, names: built.names };
+  const built = JSON.parse(out) as Omit<SettingsWorld, 'slug' | 'uid'> & { uid: string };
+  world = { slug, uid: String(built.uid), projectPage: built.projectPage, ids: built.ids, urls: built.urls, names: built.names };
   await authProvider.login(page, String(built.uid));
 });
 
@@ -322,4 +324,50 @@ Then('the Settings offer {string}', async ({ page }, label: string) => {
 
 Then('the Settings offer the action {string}', async ({ page }, name: string) => {
   await expect(settingsForm(page).getByRole('link', { name, exact: true })).toBeVisible();
+});
+
+// Team and favorite project images. The crop dialog's own steps (apply) come
+// from avatar-crop.steps.ts; the image fixtures are the crop suite's.
+function railMark(page: Page, name: string): Locator {
+  return page.locator(RAIL_ISLAND).locator(`li:has(> div > a[aria-label="${name.replace(/"/g, '\\"')}"])`).locator('[data-person-mark]').first();
+}
+
+async function expectMark(mark: Locator, image: boolean): Promise<void> {
+  await expect(mark).toHaveCount(1);
+  if (image) {
+    await expect(mark).toHaveJSProperty('tagName', 'IMG');
+    // Loaded, not broken: the private avatar derivative answered for this reader.
+    await expect.poll(() => mark.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  } else {
+    await expect(mark).not.toHaveJSProperty('tagName', 'IMG');
+  }
+}
+
+When('I choose the image {string} in the Settings', async ({ page }, file: string) => {
+  await page.locator('input[type="file"][name^="files[image"]').setInputFiles(join(__dirname, '..', '..', 'fixtures', file));
+  await expect(page.getByRole('dialog', { name: 'Crop image' })).toBeVisible();
+});
+
+When('I remove the image in the Settings', async ({ page }) => {
+  await Promise.all([page.waitForEvent('load'), page.getByRole('button', { name: 'Remove', exact: true }).click()]);
+  await save(page);
+});
+
+Then(/^the team page and its rail row show its (image|initials)$/, async ({ page }, shown: string) => {
+  if (!world) throw new Error('No disposable Settings world was built.');
+  const teamPage = php(`print \\Drupal::entityTypeManager()->getStorage("bb_team")->load(${world.ids.team})->toUrl()->toString();`);
+  expect((await page.goto(teamPage))?.status()).toBe(200);
+  await expectMark(page.locator('[data-page-header] [data-person-mark]').first(), shown === 'image');
+  await expectMark(railMark(page, world.names.team), shown === 'image');
+});
+
+Given('the project is my favorite', async () => {
+  if (!world) throw new Error('No disposable Settings world was built.');
+  php(`\\Drupal::service(\\Drupal\\bb_core\\Profile\\Profiles::class)->forAccount(${world.uid}, ${world.ids.workspace})->toggleFavorite(${world.ids.project})->save();`);
+});
+
+Then(/^the rail row of the favorite project shows its (image|initials)$/, async ({ page }, shown: string) => {
+  if (!world) throw new Error('No disposable Settings world was built.');
+  expect((await page.goto(world.projectPage))?.status()).toBe(200);
+  await expectMark(railMark(page, world.names.project), shown === 'image');
 });
