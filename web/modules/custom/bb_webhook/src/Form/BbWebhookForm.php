@@ -109,26 +109,22 @@ final class BbWebhookForm extends BbContentEntityFormBase {
    * {@inheritdoc}
    *
    * The secret is shown once, right after the first save, as an API key's is.
+   * A new webhook skips the parent's in-place landing: its response would win
+   * over the rebuild into the secret. An edit lands as the parent's does.
    */
   public function save(array $form, FormStateInterface $form_state): int {
-    $new = $this->entity->isNew();
-    $result = parent::save($form, $form_state);
     $webhook = $this->entity;
     assert($webhook instanceof BbWebhookInterface);
-    if ($new) {
-      // Only in this response: a rebuild is cached by default, and a message
-      // would keep the secret in the session.
-      $form_state->set('secret', $webhook->getSecret());
-      $form_state->disableCache();
-      $form_state->setRebuild();
-      return $result;
+    if (!$webhook->isNew()) {
+      return parent::save($form, $form_state);
     }
-    if ($this->isDialogRequest() || $this->getRequest()->query->has(static::RETURN_PARAMETER)) {
-      $this->respondAtReturnUrl($form_state);
-      return $result;
-    }
-    // The edit form stays where it is and shows its save confirmation.
-    $form_state->setRedirectUrl(HtmxTransport::currentUrl($this->getRequest()));
+    $result = $webhook->save();
+    $this->addSavedMessage();
+    // Only in this response: a rebuild is cached by default, and a message
+    // would keep the secret in the session.
+    $form_state->set('secret', $webhook->getSecret());
+    $form_state->disableCache();
+    $form_state->setRebuild();
     return $result;
   }
 
