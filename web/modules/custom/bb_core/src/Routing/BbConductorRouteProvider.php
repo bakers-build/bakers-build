@@ -23,6 +23,15 @@ use Symfony\Component\Routing\Route;
 final class BbConductorRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_conductor.canonical' => 'This conductor and its details.',
+    'bb_core.bb_conductor.settings' => "Change this conductor's settings.",
+    'entity.bb_conductor.delete_form' => 'Confirm the deletion of this conductor.',
+  ];
+
+  /**
    * Titles the conductor, "(unnamed)" when its label is blank.
    *
    * Core's `EntityController::title()` titles the FIRST entity parameter, and
@@ -50,6 +59,9 @@ final class BbConductorRouteProvider extends AdminHtmlRouteProvider {
       ['_entity_access' => 'bb_conductor.update'],
       ['parameters' => ['bb_conductor' => ['type' => 'entity:bb_conductor']]],
     ));
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
     return $collection;
   }
 

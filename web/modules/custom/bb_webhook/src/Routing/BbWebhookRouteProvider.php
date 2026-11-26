@@ -15,6 +15,25 @@ use Symfony\Component\Routing\Route;
 final class BbWebhookRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_webhook.edit_form' => "Change this webhook's settings.",
+    'entity.bb_webhook.delete_form' => 'Confirm the deletion of this webhook.',
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRoutes(EntityTypeInterface $entity_type) {
+    $collection = parent::getRoutes($entity_type);
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
+    return $collection;
+  }
+
+  /**
    * The webhook's name.
    */
   public static function title(BbWebhookInterface $bb_webhook): string {

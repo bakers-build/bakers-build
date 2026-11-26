@@ -251,7 +251,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
   }
 
   /**
-   * The shell sub-line names recorded hours on My time.
+   * The shell sub-line names recorded hours on My time, not the workspace.
    */
   public function testTheHeaderDescribesRecordedHours(): void {
     $this->asRecorder();
@@ -266,7 +266,8 @@ final class WorklogCreateActionTest extends KernelTestBase {
       self::assertInstanceOf(BbPageHeaderDescriptionSource::class, $source);
       return $source->getPropValue();
     });
-    self::assertSame('Your recorded hours in the Workspace A workspace', $value);
+    self::assertSame('Your recorded hours in this workspace.', (string) $value);
+    self::assertStringNotContainsString('Workspace A', (string) $value);
   }
 
   /**

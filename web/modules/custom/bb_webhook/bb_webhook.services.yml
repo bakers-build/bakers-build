@@ -1,4 +1,8 @@
 services:
+  bb_webhook.page_description_route_subscriber:
+    class: Drupal\bb_webhook\Routing\PageDescriptionRouteSubscriber
+    tags:
+      - { name: event_subscriber }
   bb_webhook.no_store_subscriber:
     class: Drupal\bb_webhook\EventSubscriber\WebhookNoStoreSubscriber
     tags:
