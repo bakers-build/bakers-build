@@ -286,7 +286,7 @@ for args in 'nope' 'intake --config=x' 'intake x --config-dir y' 'plan build w -
   dispatch exec designbook -- $args
   [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid designbook exec ran actions: $args: $out"
 done
-for args in 'save ../../x/fedcba9876543210 s d none''save 0123456789abcdef/fedcba9876543210 s d ../x.mjs' 'save 0123456789abcdef/fedcba9876543210 s --state=x none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d wide none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none --selector=x' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none a;id' 'check' 'start x'; do
+for args in 'save ../../x/fedcba9876543210 s d none' 'save 0123456789abcdef/fedcba9876543210 s d ../x.mjs' 'save 0123456789abcdef/fedcba9876543210 s --state=x none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d wide none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none --selector=x' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none a;id' 'check' 'start x'; do
   # shellcheck disable=SC2086
   dispatch exec designbook -- $args
   [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid designbook exec ran actions: $args: $out"
