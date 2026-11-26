@@ -23,6 +23,19 @@
   tool_calls: 214
   user_prompts: 3
   user_prompt_words: 96
+  ticket_identifier: BB-142
+  ticket_identifier_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-142</a>
+  state_label: Done
+  state_tone: idle
+  conductor_label: cw · framework
+  conductor_mine: false
+  started_at_formatted: 4 weeks ago
+  duration_s_formatted: 4210 s
   __designbook:
     section: bb_ticket
 - id: '2'
@@ -49,6 +62,19 @@
   tool_calls: 73
   user_prompts: 1
   user_prompt_words: 22
+  ticket_identifier: BB-142
+  ticket_identifier_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-142</a>
+  state_label: Failed
+  state_tone: critical
+  conductor_label: cw · framework
+  conductor_mine: false
+  started_at_formatted: 12 days ago
+  duration_s_formatted: 2160 s
   __designbook:
     section: bb_ticket
 - id: '3'
@@ -69,9 +95,20 @@
   harness: claude-code
   model: opus
   model_version: claude-opus-4-5-20251101
+  ticket_identifier: BB-142
+  ticket_identifier_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-142</a>
+  state_label: Running
+  state_tone: running
+  conductor_label: cw · framework
+  conductor_mine: false
+  started_at_formatted: 12 minutes ago
   __designbook:
     section: bb_ticket
-# Northwind's run, so that selecting workspace 2 yields a non-empty Runs list.
 - id: '4'
   created: '2026-06-29T15:10:00+00:00'
   changed: '2026-06-29T16:20:00+00:00'
@@ -94,10 +131,21 @@
   tool_calls: 118
   user_prompts: 2
   user_prompt_words: 54
+  ticket_identifier: NWS-80
+  ticket_identifier_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">NWS-80</a>
+  state_label: Done
+  state_tone: idle
+  conductor_label: mvd · shop
+  conductor_mine: false
+  started_at_formatted: 1 day ago
+  duration_s_formatted: 4200 s
   __designbook:
     section: bb_ticket
-# The two states the sample data lacked. C2 needs all five rendered side by side,
-# and the ticket detail is where they are read together.
 - id: '5'
   created: '2026-07-02T09:14:00+00:00'
   changed: '2026-07-02T09:14:00+00:00'
@@ -114,6 +162,17 @@
   owner_user_id: '1'
   agent: claude
   error_log: null
+  ticket_identifier: BB-142
+  ticket_identifier_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-142</a>
+  state_label: Claimed
+  state_tone: attention
+  conductor_label: cw · framework
+  conductor_mine: false
   __designbook:
     section: bb_ticket
 - id: '6'
@@ -133,5 +192,17 @@
   agent: claude
   error_log: null
   duration_s: 1800
+  ticket_identifier: BB-142
+  ticket_identifier_formatted: >-
+    <a class="font-mono text-data text-text no-underline max-md:inline-flex
+    max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline
+    focus-visible:outline-2 focus-visible:outline-offset-2
+    focus-visible:outline-focus-ring"
+    href="/?path=/story/designbook-sections-my-work-scenes--ticket-detail">BB-142</a>
+  state_label: Expired
+  state_tone: stale
+  conductor_label: cw · framework
+  conductor_mine: false
+  duration_s_formatted: 1800 s
   __designbook:
     section: bb_ticket

@@ -1,0 +1,21 @@
+(
+  $fields := $;
+  [
+    {
+      "component": "bb_theme:list_item",
+      "slots": {
+        "headline": [
+          { "component": "bb_theme:list_cell", "props": {"key":"identifier","primary":true}, "slots": { "value": $fields.ticket_identifier } },
+          { "component": "bb_theme:list_cell", "props": {"key":"state"}, "slots": { "value": { "component": "bb_theme:badge", "props": { "tone": $fields.state_tone, "label": $fields.state_label } } } },
+          { "component": "bb_theme:list_cell", "props": {"key":"state_at_start","caption":"From"}, "slots": { "value": $fields.state_at_start } }
+        ],
+        "meta": [
+          { "component": "bb_theme:list_cell", "props": {"key":"conductor_id"}, "slots": { "value": { "component": "bb_theme:badge", "props": { "tone": "lease", "mono": true, "icon": "lock", "mine": $fields.conductor_mine, "label": $fields.conductor_label } } } },
+          { "component": "bb_theme:list_cell", "props": {"key":"agent"}, "slots": { "value": $fields.agent } },
+          { "component": "bb_theme:list_cell", "props": {"key":"started_at","caption":"Started"}, "slots": { "value": $fields.started_at } }
+        ],
+        "right": { "component": "bb_theme:list_cell", "props": {"key":"duration_s","caption":"Took","fallback":"—","align":"end"}, "slots": { "value": $fields.duration_s } }
+      }
+    }
+  ]
+)

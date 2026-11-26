@@ -1484,6 +1484,9 @@ content:
           template: field-map
         teaser:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -1647,6 +1650,58 @@ content:
           type: string
           title: Duration
           description: Humanised closed_date − started_at, e.g. "1m 12s".
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        ticket_identifier:
+          type: string
+          title: Ticket identifier
+          description: >-
+            Design-only. Not a Drupal field: the row reaches the ticket's
+            identifier through ticket_id, rendered by bb_ticket_identifier_cell as
+            a mono link to the ticket. Present so the headline cell has a value.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        state_label:
+          type: string
+          title: State label
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_state_cell labels the run
+            state from the bb_run workflow. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        state_tone:
+          type: string
+          title: State tone
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_state_cell keys the tone on
+            the state (BbRun::STATE_MARKS). Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_label:
+          type: string
+          title: Conductor label
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_conductor_cell prints the
+            conductor's label as a mono lease badge. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_mine:
+          type: boolean
+          title: Conductor is the reader's
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_conductor_cell marks the
+            badge when the conductor belongs to the reader. Present so the badge has
+            a prop.
           required: false
           multiple: false
           computed: true
@@ -2851,8 +2906,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_run records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_run records the View lists; Drupal renders each row as the run in its
+            `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2860,7 +2915,7 @@ config:
             settings:
               entity_type: bb_run
               bundle: bb_run
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
