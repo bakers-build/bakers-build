@@ -240,7 +240,7 @@ class BbContentEntityFormBase extends ContentEntityForm {
   /**
    * Adds the ordinary "saved" status message for the edited entity.
    */
-  private function addSavedMessage(): void {
+  protected function addSavedMessage(): void {
     $entity = $this->getEntity();
     $this->messenger()->addStatus($this->t('@type %label saved.', [
       '@type' => $entity->getEntityType()->getLabel(),
