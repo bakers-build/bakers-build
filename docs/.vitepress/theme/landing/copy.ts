@@ -42,18 +42,17 @@ const en = {
     text: 'Follow tickets, understand your team’s activity and see where each project stands. A look inside bakers.build, with demo and live data.',
     screenshots: [
       { image: 'ticket-list', title: 'Tickets', text: 'Find your next task and follow work from plan to review.', alt: 'Ticket list with status indicators, priorities and filters in the Northside Bakery demo workspace.' },
-      { image: 'insights', title: 'Insights', text: 'See throughput, AI usage and how your backlog changes.', alt: 'Insights dashboard with throughput, runs per ticket, ratings, token usage and a new-versus-done chart.' },
+      { image: 'insights', title: 'Insights', text: 'See throughput, AI usage and how your backlog changes, here on a real workspace.', alt: 'Insights dashboard of a live workspace with throughput, runs per ticket, rating, AI usage and a new-versus-done chart.' },
       { image: 'project-overview', title: 'Project overview', text: 'See what needs attention, what is in progress and the latest activity.', alt: 'Project overview showing a ticket needing attention, work in progress, project properties and recent activity.' },
-      { image: 'insights-live', title: 'Live insights', text: 'The same dashboard on a real workspace: 290 closed tickets and 26.4 B tokens in a month.', alt: 'Insights dashboard of a live workspace with throughput, runs per ticket, rating, AI usage and a new-versus-done chart.' },
-      { image: 'herdr', title: 'Terminal', text: 'Review a ticket’s outcome, problems and next action without leaving the terminal.', alt: 'The bakers terminal UI in herdr showing a ticket overview with summary, success, problems and manual review.' },
-      { image: 'orca', title: 'Orca', text: 'Follow a ticket’s plan next to your worktrees and files in the Orca app.', alt: 'The bakers terminal UI inside the Orca app showing a plan summary beside the worktree list and file tree.' },
     ],
   },
   run: {
     title: 'This is what a run looks like.',
     text: 'The agent works and tests. If something is missing, you send the ticket back with one sentence. If it fits, you authorize the merge.',
-    sendBack: 'The redirect works, but keep the return URL after login. Sending it back.',
-    merge: 'Review is OK. Merge it.',
+    clients: [
+      { image: 'herdr', title: 'herdr', text: 'Review a ticket’s outcome, problems and next action without leaving the terminal.', alt: 'The bakers terminal UI in herdr showing a ticket overview with summary, success, problems and manual review.' },
+      { image: 'orca', title: 'Orca', text: 'Follow a ticket’s plan next to your worktrees and files in the Orca app.', alt: 'The bakers terminal UI inside the Orca app showing a plan summary beside the worktree list and file tree.' },
+    ],
   },
   pains: {
     eyebrow: 'Why bakers.build',
@@ -65,15 +64,6 @@ const en = {
       ['“I can’t see what’s happening, or what it costs.”', 'Every run is recorded: who or what worked on it, when, with which result and how many tokens, tool calls and agent turns it used.'],
       ['“Another tool that forces a process on us.”', 'Your process lives in WORKFLOW.md in your repo. One text edit, and the line works differently.'],
       ['“Our code must not end up in someone else’s cloud.”', 'Agents run on your machines, with your own agent subscription.'],
-    ],
-  },
-  recipe: {
-    title: 'Change the recipe, and the line changes.',
-    text: 'How your line works lives in WORKFLOW.md next to your code. No migration, no support ticket.',
-    points: [
-      'Set which checks must pass before the merge.',
-      'Add your own skills for your stack’s builds, tests and deployments.',
-      'The recipe goes through code review like everything else.',
     ],
   },
   oven: {
@@ -137,18 +127,17 @@ const de: Copy = {
     text: 'Verfolge Tickets, verstehe die Aktivitäten deines Teams und sieh, wo jedes Projekt steht. Ein Blick in bakers.build mit Demo- und Livedaten.',
     screenshots: [
       { image: 'ticket-list', title: 'Tickets', text: 'Finde deine nächste Aufgabe und verfolge die Arbeit vom Plan bis zum Review.', alt: 'Ticketliste mit Statusanzeigen, Prioritäten und Filtern im Demo-Arbeitsbereich Northside Bakery.' },
-      { image: 'insights', title: 'Insights', text: 'Sieh den Durchsatz, die KI-Nutzung und die Entwicklung deines Backlogs.', alt: 'Insights-Dashboard mit Durchsatz, Läufen pro Ticket, Bewertungen, Token-Verbrauch und einem Diagramm neuer und abgeschlossener Tickets.' },
+      { image: 'insights', title: 'Insights', text: 'Sieh den Durchsatz, die KI-Nutzung und die Entwicklung deines Backlogs, hier in einem echten Arbeitsbereich.', alt: 'Insights-Dashboard eines Live-Arbeitsbereichs mit Durchsatz, Läufen pro Ticket, Bewertung, KI-Nutzung und einem Diagramm neuer und abgeschlossener Tickets.' },
       { image: 'project-overview', title: 'Projektübersicht', text: 'Sieh, was Aufmerksamkeit braucht, was in Arbeit ist und was zuletzt passiert ist.', alt: 'Projektübersicht mit einem Ticket, das Aufmerksamkeit braucht, laufender Arbeit, Projekteigenschaften und den letzten Aktivitäten.' },
-      { image: 'insights-live', title: 'Live-Insights', text: 'Dasselbe Dashboard in einem echten Arbeitsbereich: 290 abgeschlossene Tickets und 26,4 B Tokens in einem Monat.', alt: 'Insights-Dashboard eines Live-Arbeitsbereichs mit Durchsatz, Läufen pro Ticket, Bewertung, KI-Nutzung und einem Diagramm neuer und abgeschlossener Tickets.' },
-      { image: 'herdr', title: 'Terminal', text: 'Prüfe Ergebnis, Probleme und nächste Aktion eines Tickets, ohne das Terminal zu verlassen.', alt: 'Die bakers-Terminal-Oberfläche in herdr mit einer Ticketübersicht aus Zusammenfassung, Erfolg, Problemen und manueller Prüfung.' },
-      { image: 'orca', title: 'Orca', text: 'Verfolge den Plan eines Tickets neben deinen Worktrees und Dateien in der Orca-App.', alt: 'Die bakers-Terminal-Oberfläche in der Orca-App mit einer Plan-Zusammenfassung neben Worktree-Liste und Dateibaum.' },
     ],
   },
   run: {
     title: 'So sieht ein Lauf aus.',
     text: 'Der Agent arbeitet und testet. Fehlt etwas, schickst du das Ticket mit einem Satz zurück. Passt es, gibst du den Merge frei.',
-    sendBack: 'Klappt, aber die Rücksprung-URL nach dem Login soll bleiben.',
-    merge: 'Review passt. Merge.',
+    clients: [
+      { image: 'herdr', title: 'herdr', text: 'Prüfe Ergebnis, Probleme und nächste Aktion eines Tickets, ohne das Terminal zu verlassen.', alt: 'Die bakers-Terminal-Oberfläche in herdr mit einer Ticketübersicht aus Zusammenfassung, Erfolg, Problemen und manueller Prüfung.' },
+      { image: 'orca', title: 'Orca', text: 'Verfolge den Plan eines Tickets neben deinen Worktrees und Dateien in der Orca-App.', alt: 'Die bakers-Terminal-Oberfläche in der Orca-App mit einer Plan-Zusammenfassung neben Worktree-Liste und Dateibaum.' },
+    ],
   },
   pains: {
     eyebrow: 'Warum bakers.build',
@@ -160,15 +149,6 @@ const de: Copy = {
       ['„Ich sehe nicht, was gerade passiert und was es kostet.“', 'Jeder Lauf ist protokolliert: wer oder was daran gearbeitet hat, wann, mit welchem Ergebnis und wie vielen Tokens, Tool-Aufrufen und Agenten-Turns.'],
       ['„Noch ein Tool, das uns einen Prozess aufzwingt.“', 'Dein Ablauf steht in WORKFLOW.md im Repo. Eine Textänderung, und die Backstraße arbeitet anders.'],
       ['„Unser Code soll nicht in fremden Clouds landen.“', 'Die Agenten laufen auf deinen Rechnern, mit deinem eigenen Agenten-Abo.'],
-    ],
-  },
-  recipe: {
-    title: 'Ändere das Rezept, und die Backstraße arbeitet anders.',
-    text: 'Wie deine Backstraße arbeitet, steht in WORKFLOW.md neben deinem Code. Keine Migration, kein Support-Ticket.',
-    points: [
-      'Lege fest, welche Prüfungen vor dem Merge bestehen müssen.',
-      'Ergänze eigene Skills für Builds, Tests und Deployments deines Stacks.',
-      'Das Rezept geht durchs Code-Review wie alles andere.',
     ],
   },
   oven: {
