@@ -145,6 +145,11 @@ Then('the My work tabs are {string}', async ({ page }, labels: string) => {
   await expect(primaryTabLinks(page)).toHaveText(wanted);
 });
 
+Then('the tabs are {string}', async ({ page }, labels: string) => {
+  const wanted = labels.split(',').map((label) => label.trim());
+  await expect(primaryTabLinks(page)).toHaveText(wanted);
+});
+
 // The primary tab row only: a secondary row is its own `<nav>` with its own
 // current entry, and counting across both would hide a doubled marker.
 function primaryTabLinks(page: Page) {
@@ -315,6 +320,15 @@ Then('the tab change made no full document request', async () => {
 Then('the rail marks {string} as current', async ({ page }, label: string) => {
   const current = page.locator(`${RAIL_ISLAND} [aria-current]`).filter({ hasText: label });
   await expect(current.first()).toBeAttached();
+});
+
+// The named rail entries, in their rail order; other entries are ignored.
+Then('the rail lists {string} in this order', async ({ page }, labels: string) => {
+  const wanted = labels.split(',').map((label) => label.trim());
+  const links = page.locator(RAIL_ISLAND).getByRole('link');
+  await expect(links.first()).toBeVisible();
+  const names = (await links.allInnerTexts()).map((text) => text.trim()).filter((text) => wanted.includes(text));
+  expect(names).toEqual(wanted);
 });
 
 When('I click the rail entry {string}', async ({ page }, label: string) => {

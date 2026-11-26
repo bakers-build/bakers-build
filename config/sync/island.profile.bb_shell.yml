@@ -209,6 +209,9 @@ placements:
                 source_id: bb_term_create_action
                 source: {  }
               -
+                source_id: bb_environment_create_action
+                source: {  }
+              -
                 source_id: bb_ticket_trigger_create_action
                 source: {  }
               -

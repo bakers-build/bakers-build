@@ -125,3 +125,12 @@ export async function waitForPickerBehaviour(trigger: Locator): Promise<void> {
     'the option picker never initialised — did the swapped dialog lose its JavaScript?',
   ).toHaveAttribute('data-option-picker-ready');
 }
+
+/** Picks one option of a form property pill, as a pointer user does. */
+export async function pickOption(page: Page, scope: string, field: string, label: string): Promise<void> {
+  const trigger = pickerTrigger(page, scope, field);
+  await waitForPickerBehaviour(trigger);
+  await trigger.click();
+  await optionRow(page, pickerPanel(trigger), label).click();
+  await expect(trigger).toContainText(label);
+}
