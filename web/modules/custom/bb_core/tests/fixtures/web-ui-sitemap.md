@@ -144,10 +144,12 @@ profiles) keep their admin pages, reachable by URL and never from the rail.
   (`entity.bb_invite.canonical`, `/{ws}/invite/{id}`) and a billing account
   (`entity.bb_track_account.canonical`, `/{ws}/project/{id}/accounts/{id}`)
   are opened from their Members or Billing row, under the list's own gate.
-- A term (`entity.bb_term.canonical`, `/{ws}/term/{id}`) and a ticket trigger
-  (`entity.bb_ticket_trigger.canonical`,
-  `/{ws}/ticket-template/{id}/trigger/{id}`) are opened from their Terms or
-  Triggers row, under the entity's own view access.
+- A ticket trigger (`entity.bb_ticket_trigger.canonical`,
+  `/{ws}/ticket-template/{id}/trigger/{id}`) is opened from its Triggers row,
+  under the entity's own view access.
+- A term and an environment have no page: their Catalog row opens the edit
+  form (`entity.bb_term.edit_form`, `entity.bb_environment.edit_form`), under
+  the entity's own update access.
 
 ## User area
 

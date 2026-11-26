@@ -23,6 +23,22 @@ display:
     display_options:
       title: Environments
       fields:
+        id:
+          id: id
+          table: bb_environment
+          field: id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_environment
+          entity_field: id
+          plugin_id: field
+          label: ''
+          exclude: true
+          type: number_integer
+          settings:
+            thousand_separator: ''
+            prefix_suffix: false
         name:
           id: name
           table: bb_environment
@@ -35,12 +51,15 @@ display:
           plugin_id: field
           label: ''
           exclude: false
+          alter:
+            make_link: true
+            path: '/{{ raw_arguments.workspace_id }}/environment/{{ id }}/edit'
           element_label_colon: false
           hide_empty: true
           click_sort_column: value
           type: string
           settings:
-            link_to_entity: true
+            link_to_entity: false
         project_id:
           id: project_id
           table: bb_environment

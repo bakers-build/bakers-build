@@ -61,7 +61,6 @@ use Drupal\user\EntityOwnerInterface;
     'route_provider' => ['html' => BbTermRouteProvider::class],
   ],
   links: [
-    'canonical' => '/_workspace/{bb_workspace}/term/{bb_term}',
     'add-form' => '/_workspace/{bb_workspace}/term/{bb_vocabulary}/add',
     'edit-form' => '/_workspace/{bb_workspace}/term/{bb_term}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/term/{bb_term}/delete',

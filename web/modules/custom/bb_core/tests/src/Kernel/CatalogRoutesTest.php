@@ -87,6 +87,19 @@ final class CatalogRoutesTest extends KernelTestBase {
   }
 
   /**
+   * Terms and environments have no page of their own.
+   */
+  public function testNoCanonical(): void {
+    $provider = $this->container->get('router.route_provider');
+    $manager = $this->container->get('entity_type.manager');
+    foreach (['bb_term', 'bb_environment'] as $type) {
+      self::assertFalse($manager->getDefinition($type)->hasLinkTemplate('canonical'), $type);
+      self::assertSame([], $provider->getRoutesByNames(["entity.$type.canonical"]), $type);
+      self::assertNotNull($provider->getRouteByName("entity.$type.edit_form"));
+    }
+  }
+
+  /**
    * A guest lists terms in its own workspace and nowhere else.
    */
   public function testGuestListsTermsOnlyInItsWorkspace(): void {
