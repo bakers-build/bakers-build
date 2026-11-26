@@ -1,0 +1,256 @@
+{
+  "id": "get-started-existing",
+  "sources": [
+    ".claude/skills/bakers-build/skills/bb-get-started/SKILL.md",
+    ".claude/skills/bakers-build/skills/bb-workflow/references/tools.md",
+    ".claude/skills/bakers-build/skills/bb-workflow/references/people.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/WORKFLOW.template.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/project-setup.md",
+    "docs/get-started/index.md"
+  ],
+  "max_turns": 70,
+  "request": "/bakers:bb-get-started",
+  "answers": {
+    "project": "Use my existing Git project at `project` (that path, relative to the environment root).",
+    "else": "No other preferences; take the defaults."
+  },
+  "files": {
+    "machine/machine.config.js": "export default {\"schema_version\":1,\"machine_id\":\"11111111-1111-4111-8111-111111111111\",\"label\":\"quick-worker\"};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
+    "project/README.md": "# Shop\n"
+  },
+  "commands": {
+    "[\"bakers\",\"--version\"]": {
+      "exit_code": 0,
+      "stdout": "0.14.0\n"
+    },
+    "[\"bakers\",\"auth\",\"status\"]": [
+      {
+        "exit_code": 1,
+        "stderr": "bakers (default): not signed in at https://setup.example.test (synthetic)\n"
+      },
+      {
+        "exit_code": 0,
+        "stdout": "bakers (default): signed in as quick@example.test at https://setup.example.test — session valid (synthetic)\n"
+      }
+    ],
+    "[\"hc\",\"--version\"]": {
+      "exit_code": 0,
+      "stdout": "hc 0.1.18\n"
+    },
+    "[\"bakers\",\"config\",\"check\",\"--scope\",\"project\",\"--online\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic: project configuration valid; signed in; workspace Quick Workspace reachable.\n"
+    },
+    "[\"bakers\",\"conductor\",\"start\"]": {
+      "exit_code": 0,
+      "stdout": "Conductor started in the background (synthetic; nothing was started).\n"
+    },
+    "[\"bakers\",\"conductor\",\"status\"]": {
+      "exit_code": 0,
+      "stdout": "Conductor cccccccc-cccc-4ccc-8ccc-000000000001 (quick-worker): online (synthetic)\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"rev-parse\",\"--show-toplevel\"]": {
+      "exit_code": 0,
+      "stdout": "project\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"remote\",\"get-url\",\"origin\"]": {
+      "exit_code": 0,
+      "stdout": "https://git.example.test/acme/project.git\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"config\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": "https://git.example.test/acme/project.git\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"symbolic-ref\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": "refs/remotes/origin/main\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"rev-parse\",\"--abbrev-ref\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": "origin/main\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"branch\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": "main\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"fetch\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": ""
+    },
+    "[\"git\",\"-C\",\"project\",\"status\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": "On branch main\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"ls-tree\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": ""
+    },
+    "[\"git\",\"-C\",\"project\",\"cat-file\",\"*\"]": {
+      "exit_code": 128,
+      "stderr": "fatal: path 'WORKFLOW.md' does not exist in 'origin/main'\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"show\",\"*\"]": {
+      "exit_code": 128,
+      "stderr": "fatal: path 'WORKFLOW.md' does not exist in 'origin/main'\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"add\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": ""
+    },
+    "[\"git\",\"-C\",\"project\",\"commit\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": "[main 1a2b3c4] chore: set up bakers.build\n 3 files changed\n"
+    },
+    "[\"git\",\"-C\",\"project\",\"push\",\"*\"]": {
+      "exit_code": 0,
+      "stdout": "To https://git.example.test/acme/project.git\n   0000000..1a2b3c4  main -> main\n"
+    },
+    "[\"bakers\",\"init\",\"--yes\",\"--base-url\",\"https://app.bakers.build\",\"--client-id\",\"bakers-cli\"]": {
+      "exit_code": 0,
+      "stdout": "Machine and connection kept (synthetic). Next: bakers auth login\n"
+    },
+    "[\"bakers\",\"auth\",\"login\"]": {
+      "exit_code": 0,
+      "stdout": "Open https://setup.example.test/device and enter the code WXYZ-1234\nWaiting for confirmation… (synthetic: running in the background; the person confirms within a minute)\n"
+    }
+  },
+  "server": {
+    "input": {
+      "workspace_uuid": "66666666-6666-4666-8666-666666666666"
+    },
+    "simulation": {
+      "workspaces": [
+        {
+          "uuid": "66666666-6666-4666-8666-666666666666",
+          "name": "Quick Workspace",
+          "slug": "quick"
+        }
+      ],
+      "teams": [
+        {
+          "uuid": "77777777-7777-4777-8777-000000000001",
+          "name": "Core"
+        }
+      ],
+      "groups": [],
+      "projects": [],
+      "user": {
+        "uuid": "88888888-8888-4888-8888-000000000001",
+        "name": "quick",
+        "position": "",
+        "background": "",
+        "machines": [
+          {
+            "name": "quick-worker",
+            "conductors": [
+              {
+                "uuid": "cccccccc-cccc-4ccc-8ccc-000000000001",
+                "label": "quick-worker",
+                "project": "66666666-6666-4666-8666-000000000001",
+                "status": "online"
+              }
+            ]
+          }
+        ]
+      },
+      "conductors": [
+        {
+          "uuid": "cccccccc-cccc-4ccc-8ccc-000000000001",
+          "label": "quick-worker",
+          "project": "66666666-6666-4666-8666-000000000001",
+          "status": "online"
+        }
+      ]
+    }
+  },
+  "observations": {
+    "tools": "Git, Node 24, npm, the bakers CLI 0.14.0, hc 0.1.18 and Claude Code are installed; Claude Code runs this skill.",
+    "skills": "The bakers skills are installed; the supplied sources are loaded.",
+    "authentication": "The person is signed out; the supplied synthetic observations answer sign-in, and the person confirms the code. No real login.",
+    "api": "Call control-plane tools as `bakers tools <tool> --data '<json>'`; they answer from a synthetic server.",
+    "file_paths": "machine/ is BAKERS_HOME (~/.bakers); a path starting with ~ is a folder named ~ in the case directory. Git commands answer with case-relative paths.",
+    "repository": "project/ is the person's existing checkout: origin https://git.example.test/acme/project.git, default branch main, no WORKFLOW.md on origin/main; the person may push to main."
+  },
+  "expected_files": {
+    "machine/machine.config.js": [
+      "@bakers-build/addon-claude"
+    ],
+    "project/.bakers/project.config.js": [
+      "@bakers-build/addon-herdr-core"
+    ],
+    "project/WORKFLOW.md": [
+      "Invoke `bakers:bb-workflow`"
+    ],
+    "project/.gitignore": [
+      "/assets-ai/",
+      "/.bakers/log.txt",
+      "/.bakers/connection.config.js"
+    ]
+  },
+  "expected_config": {
+    "machine/machine.config.js": {
+      "permissions.mode": "system",
+      "machine_id": "11111111-1111-4111-8111-111111111111",
+      "label": "quick-worker"
+    }
+  },
+  "preserved_files": {
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
+    "project/README.md": "# Shop\n"
+  },
+  "max_questions": 1,
+  "forbidden_commands": [
+    "sudo",
+    "bwrap",
+    "bubblewrap",
+    "socat",
+    "git init"
+  ],
+  "tool_sequence": [
+    {
+      "tool": "bakers_ticket_create",
+      "fragments": []
+    },
+    {
+      "tool": "bakers_ticket_update",
+      "fragments": [
+        "human-review"
+      ]
+    },
+    {
+      "tool": "bakers_ticket_update",
+      "fragments": [
+        "cccccccc-cccc-4ccc-8ccc-000000000001"
+      ]
+    }
+  ],
+  "final_fragments": [
+    "✔",
+    "EVAL-101",
+    "https://bakers.build/get-started/#advanced-setup",
+    "bb-create-ticket"
+  ],
+  "rubric": [
+    {
+      "id": "one-question",
+      "criterion": "The setup asks the person only the one question of step 3 (Git project path or demo), plus a repeat of it after a rejected path; every other value takes the skill's default."
+    },
+    {
+      "id": "overview",
+      "criterion": "The final report is one screen: one line per step with ✔ or ✖ and its result (sign-in, CLI, hc, machine permissions, server project, files, conductor, test ticket), then the three ways to go on."
+    },
+    {
+      "id": "defaults",
+      "criterion": "The server project is created in a group named Quick start, named after the repository folder (project), with the origin URL and default branch main; the setup commit is pushed to main."
+    }
+  ],
+  "required_commands": [
+    "bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli",
+    "bakers auth login"
+  ],
+  "shown_before_answer": [
+    "https://setup.example.test/device",
+    "WXYZ-1234"
+  ]
+}

@@ -21,9 +21,9 @@ A project declares the agent plugins every run installs in `marketplaces`; see
 [Agent plugins](../docs/configuration/project.md#agent-plugins).
 
 Conductor lifecycle hooks, including `on_freeze` and `on_resume`, are in
-[Hooks](../docs/provision/hooks.md).
+[Hooks](../docs/provision/add-lifecycle-hooks.md).
 
-[Command reference](../docs/configuration/clients/cli.md) · [Addon contracts](../docs/addons/build/contracts.md)
+[Command reference](../docs/configuration/clients/cli.md) · [Addon contracts](../docs/addons/build/addon-api-reference.md)
 
 Grok uses the Grok CLI's default model unless explicitly pinned. Configure the pin in
-`machine.config.js`; see [Harnesses](../docs/agents/reference.md#harnesses).
+`machine.config.js`; see [Harnesses](../docs/agents/agent-policy-reference.md#harnesses).

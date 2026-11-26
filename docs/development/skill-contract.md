@@ -2,11 +2,11 @@
 
 A ticket state is run by one frame skill, `bb-workflow`, which routes the state to its state file and binds the recipe, the runtime guide and the project's hints; this page states how those pieces fit together.
 
-bakers.build ships no workflow engine and no loader. It ships skills, which are Markdown instructions an agent reads, and the agent's native skill mechanism loads them. No CLI command reads or validates them. For the practical path, see [How it works](../skills-and-workflows/states.md#how-a-run-works) and [Configure your workflow](../skills-and-workflows/workflow-file.md). The authoring reference is `.claude/skills/bakers-build/skills/bb-workflow/references/authoring.md`.
+bakers.build ships no workflow engine and no loader. It ships skills, which are Markdown instructions an agent reads, and the agent's native skill mechanism loads them. No CLI command reads or validates them. For the practical path, see [How it works](../skills-and-workflows/workflow-reference.md#how-a-run-works) and [Configure your workflow](../skills-and-workflows/workflow-file.md). The authoring reference is `.claude/skills/bakers-build/skills/bb-workflow/references/authoring.md`.
 
 ## Skills and references
 
-A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships sixteen:
+A skill is something that is *chosen*: by a person, by the ticket's `recipe` field, by a provision hint, or as a subagent's start. bakers.build ships eighteen:
 
 | Skill | Chosen by |
 |---|---|
@@ -21,6 +21,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-label-human-accept` | the `bb-workflow` frame, for a ticket labelled `human-accept`, in any state |
 | `bb-label-ticket-question` | the `bb-workflow` frame, for a ticket labelled `ticket-question`, in any state |
 | `bb-init`, `bb-init-project`, `bb-create-project` | a person, for setup |
+| `bb-get-started`, its alias `bb-quick-start` | a person, for the quick start |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person or a host, for a ticket or time proposals |
 
 Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, read-ticket (including the run frame), ticket-writes (including comment publication), provisioning, verification, the browser surface, outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.

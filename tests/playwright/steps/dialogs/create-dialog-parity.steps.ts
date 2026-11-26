@@ -89,6 +89,16 @@ function anyProjectId(): string {
   return id;
 }
 
+/** The Environments tab of a seeded project of the workspace, by its name. */
+function projectEnvironmentsPath(name: string): string {
+  return (
+    php(
+      `$p = current(\\Drupal::entityTypeManager()->getStorage("bb_project")->loadByProperties(["name" => ${JSON.stringify(name)}]));` +
+        ' print $p ? $p->toUrl()->toString() : "";',
+    ).trim() + '/environments'
+  );
+}
+
 const SURFACES: Record<string, Surface> = {
   ticket: {
     screen: () => `/${workspaceSlug()}/tickets/all?project=${anyProjectId()}`,
@@ -111,14 +121,19 @@ const SURFACES: Record<string, Surface> = {
     form: 'form#bb-team-create-form',
   },
   label: {
-    screen: () => `/${workspaceSlug()}/settings/labels`,
+    screen: () => `/${workspaceSlug()}/settings/catalog/labels`,
     trigger: 'Add label',
     form: 'form#bb-term-label-add-form',
   },
   recipe: {
-    screen: () => `/${workspaceSlug()}/settings/recipes`,
+    screen: () => `/${workspaceSlug()}/settings/catalog/recipes`,
     trigger: 'Add recipe',
     form: 'form#bb-term-recipe-add-form',
+  },
+  environment: {
+    screen: () => projectEnvironmentsPath('bakers.build Platform'),
+    trigger: 'Add environment',
+    form: 'form#bb-environment-add-form',
   },
 };
 

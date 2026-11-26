@@ -74,7 +74,7 @@ use Drupal\tool\TypedData\OutputDefinition;
           ),
           'key' => new OutputDefinition(
             data_type: 'string',
-            label: new TranslatableMarkup('Key'),
+            label: new TranslatableMarkup('Identifier prefix'),
             description: new TranslatableMarkup('The ticket identifier prefix, e.g. BAKERS.'),
           ),
           'name' => new OutputDefinition(

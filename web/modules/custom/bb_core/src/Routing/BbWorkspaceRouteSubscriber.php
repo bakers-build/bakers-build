@@ -127,22 +127,28 @@ final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
   }
 
   /**
-   * Settings tabs that keep their own Views access instead of the lead gate.
+   * Views routes gated on a right in the route's workspace.
    *
-   * Contributors use workspace templates, so their tab stays open to every
-   * reader of templates in that workspace.
+   * Contributors use workspace templates, so their settings tab stays open to
+   * every reader of templates in that workspace. The Catalog tabs open to
+   * whoever reads that kind in the workspace.
    *
    * @var array<string, string>
-   *   The permission each tab requires in the route's workspace, by route.
+   *   The permission each route requires in the route's workspace, by route.
    */
-  private const OPEN_SETTINGS_VIEWS = ['view.bb_ticket_templates.workspace_list' => 'view bb_ticket_template'];
+  private const PERMISSION_VIEWS = [
+    'view.bb_ticket_templates.workspace_list' => 'view bb_ticket_template',
+    'view.bb_terms.types' => 'view bb_term',
+    'view.bb_terms.recipes' => 'view bb_term',
+    'view.bb_terms.labels' => 'view bb_term',
+  ];
 
   /**
    * Gives a Views-owned route the access and context of its place.
    *
    * A detail listing keeps the detail entity's view access and context; a
-   * tab under workspace settings carries the settings gate, except the ones
-   * in OPEN_SETTINGS_VIEWS.
+   * route in PERMISSION_VIEWS needs its right in the route's workspace; any
+   * other tab under workspace settings carries the settings gate.
    *
    * @param string $name
    *   The route name.
@@ -161,8 +167,8 @@ final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
         $route->setRequirement('_entity_access', $entity_type . '.view');
       }
     }
-    if (isset(self::OPEN_SETTINGS_VIEWS[$name])) {
-      $route->setRequirement('_bb_workspace_permission', self::OPEN_SETTINGS_VIEWS[$name]);
+    if (isset(self::PERMISSION_VIEWS[$name])) {
+      $route->setRequirement('_bb_workspace_permission', self::PERMISSION_VIEWS[$name]);
     }
     elseif (str_starts_with($route->getPath(), self::WORKSPACE_PREFIX . '/settings/')) {
       $route->setRequirement('_entity_access', 'bb_workspace.update');

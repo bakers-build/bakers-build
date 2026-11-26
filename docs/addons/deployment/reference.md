@@ -52,7 +52,7 @@ A shipment is a ticket of type `ship` with the recipe `ship`; it runs the one wo
 
 This command identifies a release batch; it does not choose a version, merge a branch, publish packages or deploy images. Those steps belong to your project's release workflow. Use the actual deployed ref and intended target ref rather than assuming a branch name.
 
-For choosing and checking an installed bakers.build version, see [Updates](/configuration/guides/updates).
+For choosing and checking an installed bakers.build version, see [Updates](/configuration/guides/update-bakers-build).
 
 ## Roll back
 

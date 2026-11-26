@@ -12,7 +12,7 @@ skills; the agent environment's native skill mechanism loads them.
 **Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
 field, a hint or a subagent start selects. The `recipe` field is written at qualification: the agent
 loads every installed `bb-recipe-*` skill completely and picks the method that fits the ask
-(`skills/bb-workflow/references/classify.md`). Exactly sixteen ship:
+(`skills/bb-workflow/references/classify.md`). Exactly eighteen ship:
 
 | Skill | Job |
 |---|---|
@@ -26,6 +26,7 @@ loads every installed `bb-recipe-*` skill completely and picks the method that f
 | `@bakers-build/bb-label-human-accept` | Loaded by the frame for a ticket labelled `human-accept`, in any state: it passes every gate on its own except the user's acceptance of the result, and the assignee's or a reviewer's verdict on a planned risky change, then merges. |
 | `@bakers-build/bb-label-ticket-question` | Loaded by the frame for a ticket labelled `ticket-question`, in any state: it reaches a human only through the ticket — a question or a technical problem — then freezes it. |
 | `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project` | Machine, project and workflow setup and upgrades. |
+| `@bakers-build/bb-get-started`, alias `@bakers-build/bb-quick-start` | The quick start: one question, an unsandboxed setup of this computer and a project, and a running test ticket. |
 | `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, specified with its requester when asked; change its scope; prepare time proposals. |
 
 **The grid.** A run is state × phase. `qualification`, `plan`, `working` and `review` each have a

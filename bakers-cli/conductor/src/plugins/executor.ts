@@ -183,4 +183,19 @@ export interface BbExecutor {
    * non-persistent executors.
    */
   cleanupRun(branch: string, runId: number): Promise<void>;
+  /**
+   * Close the branch's hosted workspace once the reaper has torn its worktree
+   * down (`removed` or `already_absent`), whichever workspace addon did it.
+   * Optional; called only for a persistent executor. `false` = not safe yet
+   * (e.g. focused with nowhere to move focus): the ticket stays on the reap
+   * list and the next reap retries. A workspace that holds anything besides
+   * bakers terminals is kept, reported, and counts as `true`.
+   */
+  closeWorkspace?(branch: string, worktreePath?: string): Promise<boolean>;
+  /**
+   * Close workspaces left over by earlier versions, whose tickets are already
+   * cleaned up. Optional; the reaper runs it once per process for a persistent
+   * executor and again on later passes while it returns `false`.
+   */
+  sweepWorkspaces?(): Promise<boolean>;
 }

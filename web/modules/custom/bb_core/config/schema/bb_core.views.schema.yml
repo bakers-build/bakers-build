@@ -85,6 +85,10 @@ views.filter.bb_ticket_state:
   type: views.filter.in_operator
   label: 'bakers.build ticket state filter'
 
+views.filter.bb_workspace_project:
+  type: views.filter.in_operator
+  label: 'bakers.build project of the workspace filter'
+
 views.area.bb_contextual_empty:
   type: views.area.text_custom
   label: 'Contextual ticket empty state'
@@ -92,6 +96,10 @@ views.area.bb_contextual_empty:
 views.area.bb_empty:
   type: views.area.text_custom
   label: 'Empty state with configured text'
+
+views.field.bb_entity_edit_dialog:
+  type: views.field.entity_link_edit
+  label: 'Entity label opening its edit form in the dialog'
 
 # The `bb_list` Views style: ordered field IDs per row region.
 views.style.bb_list:

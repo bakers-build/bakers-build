@@ -1,0 +1,5 @@
+services:
+  bb_webhook.no_store_subscriber:
+    class: Drupal\bb_webhook\EventSubscriber\WebhookNoStoreSubscriber
+    tags:
+      - { name: event_subscriber }

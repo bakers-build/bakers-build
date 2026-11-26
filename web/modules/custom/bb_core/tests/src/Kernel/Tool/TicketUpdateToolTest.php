@@ -183,6 +183,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
       'conductor' => NULL,
       'labels' => [],
       'frozen' => FALSE,
+      'priority' => NULL,
       'environments' => [],
       'referenced_tickets' => [],
       'blocked_by' => [],
@@ -236,13 +237,54 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A priority is set, returned and cleared with 0.
+   */
+  public function testSetsAndClearsPriority(): void {
+    $ticket = $this->ticket('TU-prio');
+    $out = $this->outputs($this->runTool('bakers_ticket_update', ['ticket' => $ticket->getIdentifier(), 'priority' => 3]));
+    self::assertSame(3, $out['priority']);
+    self::assertSame('3', (string) $this->reload($ticket)->get('priority')->value);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', ['ticket' => $ticket->getIdentifier(), 'priority' => 0]));
+    self::assertNull($out['priority']);
+    self::assertTrue($this->reload($ticket)->get('priority')->isEmpty());
+  }
+
+  /**
+   * An update without priority keeps it.
+   */
+  public function testAbsentPriorityIsKept(): void {
+    $ticket = $this->ticket('TU-prio-kept', ['priority' => 2]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Renamed',
+    ]));
+    self::assertSame(2, $out['priority']);
+    self::assertSame('2', (string) $this->reload($ticket)->get('priority')->value);
+  }
+
+  /**
+   * Any priority but 0 to 3 is refused with the values; nothing is saved.
+   */
+  public function testInvalidPriorityIsRefused(): void {
+    $ticket = $this->ticket('TU-prio-bad', ['priority' => 2]);
+    $this->assertFailure($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->getIdentifier(),
+      'title' => 'Never saved',
+      'priority' => 5,
+    ]), 'Priority must be 1 (High), 2 (Medium) or 3 (Low); 0 clears it.');
+    $stored = $this->reload($ticket);
+    self::assertSame('2', (string) $stored->get('priority')->value);
+    self::assertSame('TU-prio-bad', $stored->label());
+  }
+
+  /**
    * A call without any changeable field is refused.
    */
   public function testNothingToChangeFails(): void {
     $ticket = $this->ticket('TU-3');
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
-    ]), 'Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, environments to add, referenced tickets to add or blockers to add or remove.');
+    ]), 'Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, a priority, environments to add, referenced tickets to add or blockers to add or remove.');
     self::assertSame('TU-3', $this->reload($ticket)->label());
   }
 
@@ -442,7 +484,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
   public function testInputsAreLimitedToEditableFields(): void {
     $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_ticket_update');
     self::assertSame([
-      'ticket', 'title', 'description', 'conductor', 'assignee', 'labels_add', 'labels_remove', 'frozen',
+      'ticket', 'title', 'description', 'conductor', 'assignee', 'labels_add', 'labels_remove', 'frozen', 'priority',
       'environments_add', 'referenced_tickets_add', 'reviewers_add', 'reviewers_remove', 'links_add', 'links_remove',
       'blocked_by_add', 'blocked_by_remove',
     ], array_keys($definition->getInputDefinitions()));

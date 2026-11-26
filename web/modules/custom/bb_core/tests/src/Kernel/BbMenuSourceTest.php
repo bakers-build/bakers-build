@@ -460,6 +460,51 @@ final class BbMenuSourceTest extends KernelTestBase {
   }
 
   /**
+   * The Catalog has no rail entry; its pages mark Settings for the lead.
+   */
+  public function testCatalogPagesMarkTheSettingsRailEntry(): void {
+    $this->installOgScopeFixture();
+    $this->installCatalogTermDisplays();
+    $this->container->get('router.builder')->rebuild();
+    $lead = $this->createUser([], 'acme-lead');
+    self::assertNotFalse($lead);
+    // Before the account is current: rank permissions are memoised per account.
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+
+    self::assertNotContains('Catalog', array_column($this->emitted(), 'title'));
+    foreach (['types', 'recipes', 'labels'] as $tab) {
+      $this->visit('view.bb_terms.' . $tab, ['bb_workspace' => 'acme']);
+      self::assertTrue(array_column($this->emitted(), NULL, 'title')['Settings']['in_active_trail'], $tab);
+    }
+  }
+
+  /**
+   * Stubs the term tab displays at their Catalog paths.
+   */
+  private function installCatalogTermDisplays(): void {
+    $displays = [
+      'default' => [
+        'id' => 'default',
+        'display_title' => 'Default',
+        'display_plugin' => 'default',
+        'position' => 0,
+        'display_options' => ['access' => ['type' => 'perm', 'options' => ['perm' => 'view bb_term']]],
+      ],
+    ];
+    foreach (['types', 'recipes', 'labels'] as $position => $display_id) {
+      $displays[$display_id] = [
+        'id' => $display_id,
+        'display_title' => ucfirst($display_id),
+        'display_plugin' => 'page',
+        'position' => $position + 1,
+        'display_options' => ['path' => '_workspace/%bb_workspace/settings/catalog/' . $display_id],
+      ];
+    }
+    View::create(['id' => 'bb_terms', 'label' => 'bb_terms', 'base_table' => 'users_field_data', 'display' => $displays])->save();
+  }
+
+  /**
    * An account without membership sees no team and no empty Teams heading.
    */
   public function testTeamIsDeniedToAnAccountWithNoMembership(): void {

@@ -105,8 +105,8 @@ content:
           reference: bb_team
         key:
           type: string
-          title: Key
-          description: Ticket identifier prefix, e.g. "bakers.build" in BB-328.
+          title: Identifier prefix
+          description: Ticket identifier prefix, e.g. BB in BB-328. A change applies only to tickets created afterwards.
           required: false
           multiple: false
         next_number:

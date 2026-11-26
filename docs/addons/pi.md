@@ -6,7 +6,7 @@ For anyone whose machine should run tickets with pi.
 
 ## AI first
 
-Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/skills).
+Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/install-the-bakers-skills).
 
 ## Setup
 
@@ -30,15 +30,16 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
-[Isolation models](/agents/isolation): platform support.
+[Isolation models](/agents/isolation-models): platform support.
 
-pi has no OS sandbox and no tool-permission gate: its tools run with the conductor user's own permissions. bakers.build therefore offers no `sandbox` or `yolo` for pi; both fail loading before pi starts.
+pi has no OS sandbox and no tool-permission gate: its tools run with the conductor user's own permissions. bakers.build therefore offers no `sandbox` and no [bypass mode](/provision/security/execution#modes) for pi; both fail loading before pi starts.
 
 | `permissions` | Launch flags |
 |---|---|
 | `system` (default) | none |
 | `custom` | `--no-extensions`, then `-e '<extension>'` for each entry of `config.extensions` |
-| `sandbox`, `yolo` | fails loading |
+| `sandbox` | fails loading |
+| other modes | fail loading; see [Agent permissions › Modes](/provision/security/execution#modes) |
 
 `custom` takes `config: { extensions: ['<path or builtin:name>', ...] }`, at least one entry and no other key. Only these extensions load, for example one that sandboxes pi's tools; whether they protect anything is up to the extension, not bakers.build.
 
@@ -64,5 +65,5 @@ bakers agents
 - Listed in a project config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
-More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
+More: [Choose agents and models](/agents/configure-and-select-agents), [Machines](/agents/agent-policy-reference#harnesses).
 

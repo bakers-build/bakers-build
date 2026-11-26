@@ -90,7 +90,7 @@ marketplaces: [
 ```
 
 - `url` is a remote Git URL (`https://`, `ssh://` or `git@`); a local path or `file://` URL is rejected. `ref` is a tag (the fixed version) or a branch. `plugins` names the plugins to install from that marketplace.
-- Claude in `system` or `yolo` without an isolating runtime uses your own `~/.claude`: it installs missing plugins there and warns, changing nothing, about a marketplace at another ref or a disabled plugin. `home: 'individual'` ([options](/addons/claude#options)) chooses the agent home.
+- Claude in `system` or [the bypass mode](/provision/security/execution#modes) without an isolating runtime uses your own `~/.claude`: it installs missing plugins there and warns, changing nothing, about a marketplace at another ref or a disabled plugin. `home: 'individual'` ([options](/addons/claude#options)) chooses the agent home.
 - Otherwise, before each launch, the agent addon installs the list with the harness's own commands into an agent home at `~/.cache/bakers/agent-homes/<harness>/<hash>/` (`$XDG_CACHE_HOME` when set), keyed by a hash of the list. The run uses only that home: the addon sets `CLAUDE_CONFIG_DIR` or `CODEX_HOME`, links only the credential file (`~/.claude/.credentials.json`, `~/.codex/auth.json`; a Claude refresh inside the home stays yours), trusts the run's worktree and leaves your own agent home untouched. Codex then starts with `--dangerously-bypass-hook-trust`, so plugin hooks run without a trust prompt. For a macOS keychain login, set `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY` in the [secrets file](/configuration/machine#secrets-file); without any login the run start fails.
 - The conductor checks no skills before the launch: the install is the only gate. A skill a recipe or `WORKFLOW.md` requires but the run cannot load stops the run inside the agent, under the `bb-workflow` stop rule, which names the missing skill.
 - Each run writes one `plugins` entry to the conductor log: harness, alias, mode, on or off with the reason, hash, home, `built`, `reused` or `host`, the marketplaces, trust bypass and warnings. A failed install fails the run with the reason in its error log.
@@ -105,11 +105,11 @@ states: ['working', 'review'],
 poll_interval_ms: 10000,
 ```
 
-Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). Add `qualification` when it should qualify hand-written tickets.
+Use real workflow state names ([Workflows and states](/skills-and-workflows/workflow-reference)). Add `qualification` when it should qualify hand-written tickets.
 
 ## Named variants
 
-A variant is a second, complete project file `.bakers/project.<name>.config.js`, for example `project.review.config.js` with `states: ['review']`. It is not an overlay: it repeats `project` and every slot it needs. Its variant is `review`, so it registers as a separate conductor. Select it with `--conductor review` or `BAKERS_CONDUCTOR=review`; without a selector `project.config.js` is used, or the only file when there is just one. See [Conductors](/configuration/project/conductors).
+A variant is a second, complete project file `.bakers/project.<name>.config.js`, for example `project.review.config.js` with `states: ['review']`. It is not an overlay: it repeats `project` and every slot it needs. Its variant is `review`, so it registers as a separate conductor. Select it with `--conductor review` or `BAKERS_CONDUCTOR=review`; without a selector `project.config.js` is used, or the only file when there is just one. See [Conductors](/configuration/project/conductors-and-variants).
 
 Shared values can live in a module both files import; `bakers config check` reports a value it cannot read statically as not checked. Keep `project` literal.
 

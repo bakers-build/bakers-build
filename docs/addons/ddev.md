@@ -2,7 +2,7 @@
 
 **Runs a project on DDEV: finds a worktree's DDEV services for Ports and gives agents tools for its DDEV project.**
 
-DDEV is optional. The addon discovers services and serves tools; repository [lifecycle hooks](/provision/hooks) handle provisioning. See [Set up DDEV](/addons/ddev/setup).
+DDEV is optional. The addon discovers services and serves tools; repository [lifecycle hooks](/provision/add-lifecycle-hooks) handle provisioning. See [Set up DDEV](/addons/ddev/setup).
 
 ## Enable it
 
@@ -21,20 +21,20 @@ addons: [
 ],
 ```
 
-For isolated runs, list `.ddev` in the project's `runtime.read_only` and protect it in DDEV's own containers too. See [host-executed files](/provision/hooks#protect-host-executed-files).
+For isolated runs, list `.ddev` in the project's `runtime.read_only` and protect it in DDEV's own containers too. See [host-executed files](/provision/add-lifecycle-hooks#protect-host-executed-files).
 
 Existing Ports installations also need this claimer entry.
 
 ## Agent tools
 
-The addon provides these tools for the run's worktree, the DDEV approot. Claude and Codex receive them through MCP; other harnesses can call them through `bakers tools` inside a run. See [Tools and integrations](/provision/tools).
+The addon provides these tools for the run's worktree, the DDEV approot. Claude and Codex receive them through MCP; other harnesses can call them through `bakers tools` inside a run. See [Tools and integrations](/provision/tools-and-integrations).
 
 | Tool | Does |
 |---|---|
 | `ddev_status()` | `ddev describe` as a summary: name, status, primary URL, services. |
 | `ddev_start()` | `ddev start`, up to 10 minutes. |
 
-Answers carry the exit code and the last 64 KB of output; a non-zero exit is a tool error. The conductor's [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) tool runs the DDEV script in [Set up DDEV](/addons/ddev/setup#provision-on-an-agent-s-request).
+Answers carry the exit code and the last 64 KB of output; a non-zero exit is a tool error. The conductor's [`provision_up`](/provision/add-lifecycle-hooks#provision-on-an-agent-s-request) tool runs the DDEV script in [Set up DDEV](/addons/ddev/setup#provision-on-an-agent-s-request).
 
 Commands in the web container go through the conductor's [`provision_exec`](/configuration/project/hooks#run-a-configured-command) tool, with one fixed key per command your project configures:
 

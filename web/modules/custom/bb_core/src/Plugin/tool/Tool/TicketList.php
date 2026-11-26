@@ -8,6 +8,7 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\tool\Attribute\Tool;
 use Drupal\tool\ExecutableResult;
@@ -24,7 +25,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_list',
   label: new TranslatableMarkup('List tickets'),
-  description: new TranslatableMarkup('Lists every ticket of a project you can read, closed ones included, oldest first, page by page. Each row has its UUID, identifier, title, state, links, label names, freeze state, parent UUID and whether it is closed.'),
+  description: new TranslatableMarkup('Lists every ticket of a project you can read, closed ones included, oldest first, page by page; optionally only open or closed ones, most recently changed first. Each row has its UUID, identifier, title, state, links, label names, freeze state, parent UUID, whether it is closed, its type, when it changed and its active run.'),
   operation: ToolOperation::Read,
   permission: 'view bb_ticket',
   input_definitions: [
@@ -44,6 +45,18 @@ use Drupal\tool\TypedData\OutputDefinition;
       data_type: 'integer',
       label: new TranslatableMarkup('Offset'),
       description: new TranslatableMarkup('Rows to skip; default 0.'),
+      required: FALSE,
+    ),
+    'closed' => new InputDefinition(
+      data_type: 'boolean',
+      label: new TranslatableMarkup('Closed'),
+      description: new TranslatableMarkup('Only closed (true) or only open (false) tickets; default both.'),
+      required: FALSE,
+    ),
+    'sort' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Sort'),
+      description: new TranslatableMarkup('id (default, oldest first) or -changed (most recently changed first).'),
       required: FALSE,
     ),
   ],
@@ -137,6 +150,34 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('Closed'),
             description: new TranslatableMarkup('Whether the ticket is closed.'),
           ),
+          'ticket_type' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Ticket type'),
+            description: new TranslatableMarkup('The ticket type name, e.g. bug; null when unset.'),
+            nullable: TRUE,
+          ),
+          'changed' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Changed'),
+            description: new TranslatableMarkup('When the ticket last changed, ISO 8601.'),
+          ),
+          'active_run' => new MapOutputDefinition(
+            label: new TranslatableMarkup('Active run'),
+            description: new TranslatableMarkup('The claimed or running run you can read, null when none.'),
+            nullable: TRUE,
+            property_definitions: [
+              'id' => new OutputDefinition(
+                data_type: 'string',
+                label: new TranslatableMarkup('UUID'),
+                description: new TranslatableMarkup('The run UUID.'),
+              ),
+              'state' => new OutputDefinition(
+                data_type: 'string',
+                label: new TranslatableMarkup('State'),
+                description: new TranslatableMarkup('claimed or running.'),
+              ),
+            ],
+          ),
         ],
       ),
     ),
@@ -160,14 +201,29 @@ final class TicketList extends ToolBase {
   protected function doExecute(array $values): ExecutableResult {
     $project = $this->readableId('bb_project', (string) $values['project'], 'Project');
     $storage = $this->entities()->getStorage('bb_ticket');
-    $query = $storage->getQuery()->accessCheck(TRUE)->condition('project_id', $project)->sort('id');
-    [$ids, $next] = $this->page($query, $values);
+    $sort = $values['sort'] ?? 'id';
+    if (!in_array($sort, ['id', '-changed'], TRUE)) {
+      throw new \InvalidArgumentException('sort must be id or -changed.');
+    }
+    $query = $storage->getQuery()->accessCheck(TRUE)->condition('project_id', $project);
+    if (isset($values['closed'])) {
+      $query->condition('closed', (int) (bool) $values['closed']);
+    }
+    if ($sort === '-changed') {
+      $query->sort('changed', 'DESC');
+    }
+    [$ids, $next] = $this->page($query->sort('id'), $values);
     $page = $storage->loadMultiple($ids);
     $readableParents = $this->readableParents($page);
+    $activeRuns = $this->activeRuns($ids);
     $tickets = [];
     foreach ($page as $ticket) {
       assert($ticket instanceof BbTicketInterface);
-      $tickets[] = $this->row($ticket, $readableParents);
+      $tickets[] = $this->row($ticket, $readableParents) + [
+        'ticket_type' => $ticket->get('ticket_type')->entity?->label(),
+        'changed' => date('c', (int) $ticket->get('changed')->value),
+        'active_run' => $activeRuns[(int) $ticket->id()] ?? NULL,
+      ];
     }
     return ExecutableResult::success(new TranslatableMarkup('@count tickets found.', ['@count' => count($tickets)]), [
       'tickets' => $tickets,
@@ -202,6 +258,34 @@ final class TicketList extends ToolBase {
     $readable = $this->entities()->getStorage('bb_ticket')->getQuery()->accessCheck(TRUE)
       ->condition('id', array_unique($parents), 'IN')->execute();
     return array_map('intval', array_values($readable));
+  }
+
+  /**
+   * The readable claimed or running run of each ticket, from one query.
+   *
+   * @param array<int|string> $ticketIds
+   *   The ticket ids of the page.
+   *
+   * @return array<int, array{id: string, state: string}>
+   *   The active run, keyed by ticket id.
+   */
+  private function activeRuns(array $ticketIds): array {
+    if (!$ticketIds) {
+      return [];
+    }
+    $storage = $this->entities()->getStorage('bb_run');
+    $ids = $storage->getQuery()->accessCheck(TRUE)
+      ->condition('ticket_id', $ticketIds, 'IN')
+      ->condition('state', ['claimed', 'running'], 'IN')
+      ->sort('id')
+      ->execute();
+    $runs = [];
+    foreach ($storage->loadMultiple($ids) as $run) {
+      assert($run instanceof BbRunInterface);
+      // The newest wins should a ticket ever hold two.
+      $runs[(int) $run->getTicketId()] = ['id' => (string) $run->uuid(), 'state' => $run->getRunState()];
+    }
+    return $runs;
   }
 
   /**

@@ -18,6 +18,7 @@ import {
   transferIsolatedCommit,
 } from '../src/core/isolated-git.js';
 import { createRunClone } from '../src/core/run-clone.js';
+import { commitLargeTree } from './fixtures/large-tree.js';
 
 const roots: string[] = [];
 afterEach(() =>
@@ -246,6 +247,30 @@ it('rejects a gitlink before changing the parent', () => {
     record.expected,
     '-m',
     'submodule',
+  );
+  expect(() => transferIsolatedCommit(record, tip)).toThrow(/submodules/);
+  expect(git(parent, 'show-ref')).toBe(refs);
+});
+
+it('transfers a commit whose tree listing exceeds 1 MiB', () => {
+  const { parent, record } = fixture();
+  const tip = commitLargeTree(
+    record.workspace,
+    [`--git-dir=${record.gitDir}`],
+    'HEAD',
+  );
+  transferIsolatedCommit(record, tip);
+  expect(git(parent, 'rev-parse', 'ticket')).toBe(tip);
+});
+
+it('rejects a gitlink in a tree whose listing exceeds 1 MiB', () => {
+  const { parent, record } = fixture();
+  const refs = git(parent, 'show-ref');
+  const tip = commitLargeTree(
+    record.workspace,
+    [`--git-dir=${record.gitDir}`],
+    'HEAD',
+    true,
   );
   expect(() => transferIsolatedCommit(record, tip)).toThrow(/submodules/);
   expect(git(parent, 'show-ref')).toBe(refs);

@@ -10,7 +10,7 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers agents
 
 ## Command
 
-Run inside a configured project, or pass `--config <path>` for its project config. The command loads that config together with the machine [agent policy](/agents/reference#the-agents-object).
+Run inside a configured project, or pass `--config <path>` for its project config. The command loads that config together with the machine [agent policy](/agents/agent-policy-reference#the-agents-object).
 
 ## Check it works
 
@@ -26,6 +26,6 @@ bakers agents
 
 - It neither installs a harness nor checks its sign-in.
 
-More: [Choose agents and models](/agents/guide).
+More: [Choose agents and models](/agents/configure-and-select-agents).
 
 Package source in a checkout: `bakers-cli/addons/agents`.

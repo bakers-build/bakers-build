@@ -71,7 +71,7 @@ bakers-cli/
   templates/   config and path-shim templates
 ```
 
-`bakers-cli/` is a private workspace root and is never published. Its pnpm workspace covers `core`, `host`, `conductor`, `ui` and `addons/*`. How the packages may depend on each other is described in [architecture](architecture.md), and how to add an addon in [addon contracts](../addons/build/contracts.md).
+`bakers-cli/` is a private workspace root and is never published. Its pnpm workspace covers `core`, `host`, `conductor`, `ui` and `addons/*`. How the packages may depend on each other is described in [architecture](architecture.md), and how to add an addon in [addon contracts](../addons/build/addon-api-reference.md).
 
 ## Which `bakers` runs
 

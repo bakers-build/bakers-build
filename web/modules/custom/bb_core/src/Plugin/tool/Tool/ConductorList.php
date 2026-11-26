@@ -32,7 +32,7 @@ use Drupal\user\UserInterface;
     'project' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('Project key (e.g. BAKERS) or UUID.'),
+      description: new TranslatableMarkup('Project identifier prefix (e.g. BAKERS) or UUID.'),
       constraints: ['NotBlank' => []],
     ),
     'limit' => new InputDefinition(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
+use Drupal\bb_core\Access\BbRankEntityFence;
 use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
@@ -23,6 +24,13 @@ trait TicketInputTrait {
    */
   protected function entities(): EntityTypeManagerInterface {
     return \Drupal::entityTypeManager();
+  }
+
+  /**
+   * The fence that decides where the caller may create.
+   */
+  protected function fence(): BbRankEntityFence {
+    return \Drupal::service('bb_core.rank_entity_fence');
   }
 
   /**
@@ -146,6 +154,43 @@ trait TicketInputTrait {
       $violation = $violations->get(0);
       throw new \InvalidArgumentException(sprintf('%s: %s', $violation->getPropertyPath(), strip_tags((string) $violation->getMessage())));
     }
+  }
+
+  /**
+   * A priority input checked against the field's allowed values.
+   *
+   * The field's own violation names no values, so the error lists them.
+   *
+   * @param int|null $value
+   *   The given priority, NULL when left out.
+   * @param bool $clearable
+   *   Whether 0 clears the priority, as on update.
+   *
+   * @return int|null
+   *   The priority to store, NULL for none or a cleared one.
+   *
+   * @throws \InvalidArgumentException
+   */
+  protected function priority(?int $value, bool $clearable): ?int {
+    if ($value === NULL || ($clearable && $value === 0)) {
+      return NULL;
+    }
+    // ToolBase's final constructor injects no field manager.
+    $allowed = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('bb_ticket')['priority']->getSetting('allowed_values');
+    if (isset($allowed[$value])) {
+      return $value;
+    }
+    $labels = array_map(static fn ($key, $label): string => sprintf('%d (%s)', $key, $label), array_keys($allowed), $allowed);
+    $last = array_pop($labels);
+    throw new \InvalidArgumentException(sprintf('Priority must be %s or %s%s.', implode(', ', $labels), $last, $clearable ? '; 0 clears it' : ''));
+  }
+
+  /**
+   * The stored priority as the read and update tools return it.
+   */
+  protected function priorityOf(BbTicketInterface $ticket): ?int {
+    $value = $ticket->get('priority')->value;
+    return $value === NULL ? NULL : (int) $value;
   }
 
   /**
