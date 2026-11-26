@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Form\FormState;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -175,6 +176,36 @@ final class CreateActionSourceTest extends KernelTestBase {
   }
 
   /**
+   * A route titled only by a callback, with no label set, offers nothing.
+   *
+   * The callback would run without the dialog's own request; an unlabelled
+   * icon button would have no accessible name.
+   */
+  public function testRouteWithoutStaticTitleNeedsLabel(): void {
+    self::assertArrayNotHasKey('#component', $this->build(['route' => 'entity.bb_workspace.delete_form']));
+    self::assertSame('Remove', $this->build(['route' => 'entity.bb_workspace.delete_form', 'label' => 'Remove'])['#props']['label']);
+  }
+
+  /**
+   * The settings form keeps the settings it shows no widget for.
+   */
+  public function testTheSettingsFormKeepsConfigOnlySettings(): void {
+    $settings = [
+      'route' => 'entity.bb_ticket.create_form',
+      'screens' => ['view.tickets.*'],
+      'route_parameters' => ['a' => 'b'],
+      'query' => ['*'],
+      'route_query' => ['project' => 'bb_project'],
+    ];
+    $form = $this->source($settings)->settingsForm([], new FormState());
+    foreach (['screens', 'route_parameters', 'query', 'route_query'] as $key) {
+      self::assertSame('value', $form[$key]['#type']);
+      self::assertSame($settings[$key], $form[$key]['#value']);
+    }
+    self::assertSame('textfield', $form['route']['#type']);
+  }
+
+  /**
    * An empty or unknown route offers nothing and throws nothing.
    */
   public function testMissingRouteOffersNothing(): void {
@@ -192,10 +223,20 @@ final class CreateActionSourceTest extends KernelTestBase {
    *   The prop value.
    */
   private function build(array $settings): array {
+    return $this->source($settings)->getPropValue();
+  }
+
+  /**
+   * The source with the given settings.
+   *
+   * @param array<string, mixed> $settings
+   *   The source settings.
+   */
+  private function source(array $settings): SourcePluginBase {
     $schema = $this->container->get('plugin.manager.ui_patterns_prop_type')->getDefinition('slot')['schema'];
     $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_create_action', SourcePluginBase::buildConfiguration('items', $schema, ['source' => $settings], []));
     self::assertInstanceOf(SourcePluginBase::class, $source);
-    return $source->getPropValue();
+    return $source;
   }
 
   /**

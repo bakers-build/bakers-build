@@ -171,7 +171,9 @@ class CreateActionSource extends SourcePluginBase {
    * {@inheritdoc}
    *
    * The sequences and mappings are edited in the profile's config only: they
-   * name route parameters and query keys, which no widget can offer.
+   * name route parameters and query keys, which no widget can offer. They
+   * ride along as values, so a save keeps them: an emptied `screens` would
+   * put the trigger on every screen.
    *
    * @param array<string, mixed> $form
    *   The form.
@@ -188,6 +190,9 @@ class CreateActionSource extends SourcePluginBase {
         '#title' => $title,
         '#default_value' => $this->getSetting($key),
       ];
+    }
+    foreach (['screens', 'route_parameters', 'query', 'route_query'] as $key) {
+      $form[$key] = ['#type' => 'value', '#value' => $this->getSetting($key)];
     }
     return $form;
   }
@@ -241,13 +246,17 @@ class CreateActionSource extends SourcePluginBase {
    *
    * `icon_only => TRUE` moves it into `aria-label` (`button.twig`), so this is
    * what a screen reader announces and what `getByRole('link', …)` matches.
+   * Only a static `_title` is read: a title callback expects the dialog's own
+   * request, which this screen does not have.
    */
   private function triggerLabel(Route $route): string {
     $label = (string) $this->getSetting('label');
-    if ($label !== '') {
+    if ($label !== '' || !$route->hasDefault('_title')) {
       return $label;
     }
-    $title = $this->titleResolver->getTitle(new Request(), $route);
+    $static = clone $route;
+    $static->setDefaults(array_diff_key($route->getDefaults(), ['_title_callback' => TRUE]));
+    $title = $this->titleResolver->getTitle(new Request(), $static);
     return is_array($title) ? (string) ($title['#markup'] ?? '') : (string) $title;
   }
 
@@ -292,7 +301,9 @@ class CreateActionSource extends SourcePluginBase {
     $build = ['#cache' => ['contexts' => ['user.permissions', 'url', 'route']]];
     $route = $this->dialogRouteObject();
     $parameters = $this->dialogRouteParameters();
-    if (!$route instanceof Route || $parameters === NULL || !$this->appliesToCurrentRoute()) {
+    $label = $route instanceof Route ? $this->triggerLabel($route) : '';
+    // An unlabelled icon button would have no accessible name.
+    if ($label === '' || $parameters === NULL || !$this->appliesToCurrentRoute()) {
       return $build;
     }
     $access = $this->createAccess();
@@ -314,7 +325,7 @@ class CreateActionSource extends SourcePluginBase {
         ],
       ],
       '#props' => [
-        'label' => $this->triggerLabel($route),
+        'label' => $label,
         'href' => $this->dialogUrl($parameters, FALSE)->toString(),
         'variant' => 'primary',
         'icon_only' => TRUE,
