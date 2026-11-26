@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_webhook\Webhook;
 
 use Drupal\bb_activity\Entity\BbActivity;
-use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\bb_core\Entity\BbTicketInterface;
 
 /**
  * The JSON body of one activity and the signature a receiver recomputes.
@@ -17,8 +17,8 @@ final class WebhookPayload {
    */
   public static function build(BbActivity $activity): string {
     $ticket = $activity->get('ticket_id')->entity;
-    $project = $ticket?->get('project_id')->entity;
-    $workspace = $project?->get('group_id')->entity?->get('workspace_id')->entity;
+    $project = $ticket instanceof BbTicketInterface ? $ticket->getProject() : NULL;
+    $workspace = $project?->getGroup()?->getWorkspace();
     $actor = $activity->get('actor')->entity;
     return (string) json_encode([
       'event' => (string) $activity->get('kind')->value,
@@ -26,7 +26,7 @@ final class WebhookPayload {
       'occurred' => gmdate('c', $activity->getCreatedTime()),
       'workspace' => $workspace?->uuid(),
       'project' => $project?->uuid(),
-      'ticket' => $ticket instanceof ContentEntityInterface ? [
+      'ticket' => $ticket instanceof BbTicketInterface ? [
         'uuid' => $ticket->uuid(),
         'identifier' => (string) $ticket->get('identifier')->value,
         'title' => (string) $ticket->get('title')->value,

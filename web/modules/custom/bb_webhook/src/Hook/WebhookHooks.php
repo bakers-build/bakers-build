@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_webhook\Hook;
 
 use Drupal\bb_activity\Entity\BbActivity;
+use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_webhook\Webhook\WebhookPayload;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
@@ -27,10 +28,11 @@ final class WebhookHooks {
    */
   #[Hook('bb_activity_insert')]
   public function activityInsert(BbActivity $activity): void {
-    $project = $activity->get('ticket_id')->entity?->get('project_id')->entity;
-    $group = $project?->get('group_id')->entity;
+    $ticket = $activity->get('ticket_id')->entity;
+    $project = $ticket instanceof BbTicketInterface ? $ticket->getProject() : NULL;
+    $group = $project?->getGroup();
     $workspace_id = $group?->get('workspace_id')->target_id;
-    if ($workspace_id === NULL) {
+    if ($project === NULL || $group === NULL || $workspace_id === NULL) {
       return;
     }
     $query = $this->entityTypeManager->getStorage('bb_webhook')->getQuery()->accessCheck(FALSE);

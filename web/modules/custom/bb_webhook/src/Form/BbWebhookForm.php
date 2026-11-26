@@ -80,6 +80,10 @@ final class BbWebhookForm extends BbContentEntityFormBase {
     if ($this->isDialogRequest() || $this->getRequest()->query->has(static::RETURN_PARAMETER)) {
       $this->respondAtReturnUrl($form_state);
     }
+    elseif (!$new) {
+      // The Settings tab stays where it is and shows its save confirmation.
+      $form_state->setRedirectUrl(HtmxTransport::currentUrl($this->getRequest()));
+    }
     return $result;
   }
 

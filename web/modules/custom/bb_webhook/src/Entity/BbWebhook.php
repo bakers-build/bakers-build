@@ -11,10 +11,12 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbBaseFieldsTrait;
 use Drupal\bb_core\Entity\BbContentEntityBase;
-use Drupal\bb_core\Form\BbContentEntityDeleteForm;
+use Drupal\bb_core\Entity\BbGroupInterface;
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Routing\BbTicketTemplateRouteProvider;
 use Drupal\bb_webhook\Access\BbWebhookAccessControlHandler;
 use Drupal\bb_webhook\Access\BbWebhookQueryAccessHandler;
+use Drupal\bb_webhook\Form\BbWebhookDeleteForm;
 use Drupal\bb_webhook\Form\BbWebhookForm;
 use Drupal\Core\Entity\EntityViewBuilder;
 use Drupal\entity\EntityPermissionProvider;
@@ -41,7 +43,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
       'default' => BbWebhookForm::class,
       'add' => BbWebhookForm::class,
       'edit' => BbWebhookForm::class,
-      'delete' => BbContentEntityDeleteForm::class,
+      'delete' => BbWebhookDeleteForm::class,
     ],
     // Its only job is titling the edit route "Settings", which fits here too.
     'route_provider' => ['html' => BbTicketTemplateRouteProvider::class],
@@ -78,28 +80,33 @@ final class BbWebhook extends BbContentEntityBase implements BbWebhookInterface 
     if (!$webhook instanceof self) {
       return;
     }
-    $project = $webhook->get('project_id')->entity;
-    $group = $webhook->get('group_id')->entity;
-    if ($project !== NULL && $group !== NULL) {
+    if (!$webhook->get('project_id')->isEmpty() && !$webhook->get('group_id')->isEmpty()) {
       $context->buildViolation('A webhook belongs to exactly one project, group or workspace.')
         ->atPath('group_id')
         ->addViolation();
     }
-    $workspace_id = (int) $webhook->get('workspace_id')->target_id;
+    $project = $webhook->get('project_id')->entity;
+    $group = $webhook->get('group_id')->entity;
     $owners = [
-      'project_id' => (int) $project?->get('group_id')->entity?->get('workspace_id')->target_id,
-      'group_id' => (int) $group?->get('workspace_id')->target_id,
+      'project_id' => $project instanceof BbProjectInterface ? $project->getGroup()?->getWorkspace()?->id() : NULL,
+      'group_id' => $group instanceof BbGroupInterface ? $group->getWorkspace()?->id() : NULL,
     ];
     foreach ($owners as $field => $owner) {
-      if (!$webhook->get($field)->isEmpty() && $owner !== $workspace_id) {
+      if (!$webhook->get($field)->isEmpty() && (int) $owner !== (int) $webhook->get('workspace_id')->target_id) {
         $context->buildViolation("The project or group must belong to the webhook's workspace.")
           ->atPath($field)
           ->addViolation();
       }
     }
-    if ($webhook->isNew()) {
-      return;
+    if (!$webhook->isNew()) {
+      self::validateImmutable($webhook, $context);
     }
+  }
+
+  /**
+   * Rejects any change to the scope fields of a saved webhook.
+   */
+  private static function validateImmutable(self $webhook, ExecutionContextInterface $context): void {
     $stored = \Drupal::entityTypeManager()->getStorage('bb_webhook')->loadUnchanged($webhook->id());
     if (!$stored instanceof self) {
       return;
@@ -128,7 +135,9 @@ final class BbWebhook extends BbContentEntityBase implements BbWebhookInterface 
       ->setDescription(new TranslatableMarkup('The HTTPS endpoint that receives the signed POST.'))
       ->setRequired(TRUE)
       ->setSetting('max_length', 2048)
-      ->addPropertyConstraints('value', ['Regex' => ['pattern' => '#^https://#', 'message' => 'The URL must start with https://.']])
+      ->addPropertyConstraints('value', [
+        'Regex' => ['pattern' => '#^https://#', 'message' => 'The URL must start with https://.'],
+      ])
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
     // Plain text: HMAC needs the raw key. Field access hides it everywhere.

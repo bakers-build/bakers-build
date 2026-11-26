@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_webhook\Kernel;
 
 use Drupal\bb_webhook\Entity\BbWebhookInterface;
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Queue\DelayedRequeueException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
@@ -40,7 +39,7 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
   /**
    * The clock the hook and the worker read, advanced by the tests.
    */
-  private object $clock;
+  private FrozenTime $clock;
 
   /**
    * {@inheritdoc}
@@ -49,32 +48,11 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
     parent::setUp();
     $this->responses = new MockHandler();
     $stack = HandlerStack::create($this->responses);
-    $stack->push(Middleware::history($this->history));
+    $stack->push(Middleware::tap(function (RequestInterface $request): void {
+      $this->history[] = ['request' => $request];
+    }));
     $this->container->set('http_client', new Client(['handler' => $stack]));
-    $this->clock = new class implements TimeInterface {
-
-      /**
-       * The current Unix time.
-       */
-      public int $now = 1800000000;
-
-      public function getRequestTime(): int {
-        return $this->now;
-      }
-
-      public function getRequestMicroTime(): float {
-        return $this->now;
-      }
-
-      public function getCurrentTime(): int {
-        return $this->now;
-      }
-
-      public function getCurrentMicroTime(): float {
-        return $this->now;
-      }
-
-    };
+    $this->clock = new FrozenTime();
     $this->container->set('datetime.time', $this->clock);
   }
 
@@ -119,7 +97,7 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
   private function queuedWebhookIds(): array {
     $queue = $this->container->get('queue')->get('bb_webhook_delivery');
     $ids = [];
-    while ($item = $queue->claimItem()) {
+    while (is_object($item = $queue->claimItem()) && property_exists($item, 'data')) {
       $ids[] = (int) $item->data['webhook'];
       $queue->deleteItem($item);
     }
@@ -133,7 +111,7 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
   private function drain(): void {
     $queue = $this->container->get('queue')->get('bb_webhook_delivery');
     $worker = $this->container->get('plugin.manager.queue_worker')->createInstance('bb_webhook_delivery');
-    for ($i = 0; $i < 50 && ($item = $queue->claimItem()); $i++) {
+    for ($i = 0; $i < 50 && is_object($item = $queue->claimItem()) && property_exists($item, 'data'); $i++) {
       try {
         $worker->processItem($item->data);
       }
@@ -156,7 +134,7 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
   }
 
   /**
-   * Project, its group and the workspace fire; another project and side b don't.
+   * Project, group and workspace fire; a sibling project and side b don't.
    */
   public function testActivityEnqueuesMatchingScopesOnly(): void {
     $other_project = $this->createEntity('bb_project', [

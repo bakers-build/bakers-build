@@ -13,7 +13,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 
 /**
- * Authorizes group, team, template, environment and webhook creation in a workspace.
+ * Authorizes creating groups, teams, templates, environments and webhooks.
  *
  * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
  */

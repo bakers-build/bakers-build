@@ -115,7 +115,7 @@ final class WebhookAccessTest extends WebhookKernelTestBase {
     $foreign->save();
     $ids = array_map(static fn (BbWebhookInterface $webhook): int => (int) $webhook->id(), $own);
     sort($ids);
-    $this->assertSame(array_values($ids), $this->queryIdsAs('bb_webhook', $this->leads['a']));
+    $this->assertSame($ids, $this->queryIdsAs('bb_webhook', $this->leads['a']));
     $this->assertSame([], $this->queryIdsAs('bb_webhook', new AnonymousUserSession()));
 
     $source = new FileStorage(DRUPAL_ROOT . '/../config/sync');

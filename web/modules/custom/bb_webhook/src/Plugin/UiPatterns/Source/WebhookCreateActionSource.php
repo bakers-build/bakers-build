@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\bb_webhook\Plugin\UiPatterns\Source;
 
-use Drupal\bb_core\Entity\BbGroupInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -69,8 +68,9 @@ final class WebhookCreateActionSource extends CreateActionSourceBase {
     if ($project instanceof BbProjectInterface) {
       return ['bb_project' => $project->toUrl()->getRouteParameters()['bb_project']];
     }
-    $group = $this->routeMatch->getParameter('bb_group');
-    return $group instanceof BbGroupInterface ? ['bb_group' => (string) $group->id()] : [];
+    // The group tab's View route leaves its group id raw.
+    $group = $this->routeMatch->getRawParameter('bb_group');
+    return is_scalar($group) ? ['bb_group' => (string) $group] : [];
   }
 
 }
