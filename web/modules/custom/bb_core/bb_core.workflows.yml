@@ -11,7 +11,7 @@
 bb_work:
   id: bb_work
   group: bb_ticket
-  label: 'bakers.build work'
+  label: 'Plan/Work/Review'
   states:
     qualification: { label: Qualification, claimable: true, phase: prepare }
     plan: { label: Plan, claimable: true, phase: prepare }
