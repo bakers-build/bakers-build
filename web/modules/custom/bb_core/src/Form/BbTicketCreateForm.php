@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityInterface;
-use Drupal\Core\Entity\Display\EntityFormDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Htmx\Htmx;
@@ -23,9 +22,14 @@ class BbTicketCreateForm extends BbCreateDialogFormBase {
   /**
    * The form mode whose display owns the configured fields and widgets.
    *
-   * {@see alterFormDisplay()} adjusts it when no project is bound.
+   * Its `project_id` picker names PROJECT_HANDLER.
    */
   private const FORM_MODE = 'create';
+
+  /**
+   * The selection handler of the Project picker: creatable projects only.
+   */
+  private const PROJECT_HANDLER = 'bb_project_ticket_creatable';
 
   /**
    * Access-checked project and relation candidates.
@@ -58,106 +62,108 @@ class BbTicketCreateForm extends BbCreateDialogFormBase {
   }
 
   /**
-   * Binds the opening project before Drupal builds dependent widgets.
+   * Preselects the project before Drupal builds dependent widgets.
    *
-   * Only the dialog's own `?project=` query binds, and only when it is among
-   * the reader's access-checked choices. A posted `project_id` never binds:
-   * the project-scoped conductor widget computes its candidates from the
-   * entity before submitted input is applied, so binding must come from the
-   * request that opened the dialog. Whether the dialog is bound is recorded
-   * once per request, so a rebuild after a validation error keeps the picker
-   * a project-less dialog opened with.
+   * The dialog's own `?project=` is preselected when the reader may create
+   * there, else nothing. Without one: the only creatable project; else the
+   * creatable project of the reader's newest own ticket; else none, and the
+   * required picker asks.
    */
   protected function init(FormStateInterface $form_state): void {
     parent::init($form_state);
-    $project = $this->getRequest()->query->get('project');
-    $bound = is_scalar($project)
-      && array_key_exists((string) $project, $this->referenceOptions->for($this->entity, 'project_id'));
-    if ($bound && $this->entity->get('project_id')->isEmpty()) {
-      $this->entity->set('project_id', $project);
-    }
-    if ($form_state->get('project_bound') === NULL) {
-      $form_state->set('project_bound', $bound);
-    }
-  }
-
-  /**
-   * Swaps the conductor for a project picker when no project is bound.
-   *
-   * A screen without project context (a global ticket list, `my_work`, a
-   * team's ticket list) lets the reader choose the project. Conductor
-   * candidates depend on the project, so that dialog creates the ticket
-   * unassigned; the conductor is assigned afterwards on the ticket.
-   */
-  protected function alterFormDisplay(EntityFormDisplayInterface $display, FormStateInterface $form_state): void {
-    if ($form_state->get('project_bound')) {
+    if (!$this->entity->get('project_id')->isEmpty()) {
       return;
     }
-    $display->removeComponent('conductor_id');
-    // `pills`, not `lead`: grammar 3a allows at most one emphasised
-    // property per surface, and `workflow` already holds that slot.
-    $display->setComponent('project_id', [
-      'type' => 'bb_picker',
-      'weight' => 0,
-      'region' => 'content',
-      'settings' => [
-        'picker_region' => 'pills',
-        'label' => 'Project',
-        'icon' => 'folder',
-        'searchable' => TRUE,
-        'clear_label' => '',
-        'create_label' => '',
-        'context_parameter' => '',
-        'default_value' => '',
-        'note_lead' => '',
-        'note_prefix' => '',
-        'note_suffix' => '',
-      ],
-    ]);
+    $candidates = array_map('strval', array_keys($this->projectCandidates()));
+    $project = $this->getRequest()->query->get('project');
+    // A named project the reader may not create in preselects nothing rather
+    // than silently another project.
+    $project = is_scalar($project)
+      ? (in_array((string) $project, $candidates, TRUE) ? (string) $project : NULL)
+      : $this->defaultProject($candidates);
+    if ($project !== NULL) {
+      $this->entity->set('project_id', $project);
+    }
   }
 
   /**
-   * Scopes the unbound dialog's relation pickers to the posted project.
+   * The project a dialog without `?project=` starts with.
    *
-   * Also wires their refresh on a project change.
+   * @param list<string> $candidates
+   *   The creatable project ids.
+   */
+  private function defaultProject(array $candidates): ?string {
+    if (count($candidates) <= 1) {
+      return $candidates[0] ?? NULL;
+    }
+    $storage = $this->entityTypeManager->getStorage('bb_ticket');
+    // Unchecked: owner and candidates already bound the result to the reader.
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('owner_user_id', $this->currentUser()->id())
+      ->condition('project_id', $candidates, 'IN')
+      ->sort('created', 'DESC')
+      ->sort('id', 'DESC')
+      ->range(0, 1)
+      ->execute();
+    $ticket = $ids === [] ? NULL : $storage->load(reset($ids));
+    return $ticket instanceof ContentEntityInterface ? (string) $ticket->get('project_id')->target_id : NULL;
+  }
+
+  /**
+   * The projects the reader may create tickets in, as the picker offers them.
+   *
+   * @return array<int|string, string>
+   *   Labels keyed by project id.
+   */
+  private function projectCandidates(): array {
+    return $this->referenceOptions->for($this->entity, 'project_id', NULL, 0, self::PROJECT_HANDLER);
+  }
+
+  /**
+   * Applies the posted project, then wires the dependent pickers' refresh.
    *
    * ContentEntityForm copies submitted values onto the entity only when it
    * validates, which a project refresh (a non-button trigger) never does.
-   * The relation pickers read their candidates from the entity, so the
-   * posted project is applied here, and only when the reader may choose it.
+   * Parent, Blocked by and Conductor read their candidates from the entity,
+   * so the posted project is applied here, and only when the reader may
+   * create there.
    */
   public function form(array $form, FormStateInterface $form_state): array {
     $posted = $form_state->getUserInput()['project_id'] ?? NULL;
-    if (!$form_state->get('project_bound') && is_scalar($posted)
-      && array_key_exists((string) $posted, $this->referenceOptions->for($this->entity, 'project_id'))) {
+    if (is_scalar($posted) && array_key_exists((string) $posted, $this->projectCandidates())) {
       $this->entity->set('project_id', $posted);
     }
     $form = parent::form($form, $form_state);
-    $this->attachRelationRefresh($form, $form_state);
+    $this->attachRelationRefresh($form);
     return $form;
   }
 
   /**
-   * Refreshes the relation pickers when the unbound dialog's project changes.
+   * Refreshes the project-dependent pickers when the project changes.
    *
    * The pickers read their candidates from the submitted project and drop a
    * value the new project does not offer. Without JavaScript nothing
-   * refreshes; validateForm() rejects the stale value instead.
+   * refreshes; validation rejects the stale value instead.
    *
    * @param array $form
    *   The form, mutated in place; ungenerified for `Htmx::applyTo()`.
-   * @param \Drupal\Core\Form\FormStateInterface $form_state
-   *   The form state.
    */
-  private function attachRelationRefresh(array &$form, FormStateInterface $form_state): void {
-    if ($form_state->get('project_bound') || !isset($form['project_id'], $form['parent_id'], $form['blocked_by'])) {
+  private function attachRelationRefresh(array &$form): void {
+    if (!isset($form['project_id'], $form['parent_id'], $form['blocked_by'])) {
       return;
     }
     foreach (['parent_id', 'blocked_by'] as $name) {
       $form[$name]['#attributes']['data-ticket-project-scoped'] = $name;
     }
-    // `hx-select-oob` takes element ids only, so Blocked by gets a fixed one.
+    // `hx-select-oob` takes element ids only, so the out-of-band pickers get
+    // fixed ones.
+    $oob = ['#bakers-ticket-create-blocked-by'];
     $form['blocked_by']['#id'] = 'bakers-ticket-create-blocked-by';
+    if (isset($form['conductor_id'])) {
+      $form['conductor_id']['#id'] = 'bakers-ticket-create-conductor';
+      $oob[] = '#bakers-ticket-create-conductor';
+    }
     // As in BbTicketTemplateForm: the picker root fires `change` and has no
     // name, so the trigger name is posted; a non-button trigger runs no
     // submit handlers and reports no errors.
@@ -168,7 +174,7 @@ class BbTicketCreateForm extends BbCreateDialogFormBase {
       ->select('[data-ticket-project-scoped="parent_id"]')
       ->target('[data-ticket-project-scoped="parent_id"]')
       ->swap('outerHTML')
-      ->selectOob('#bakers-ticket-create-blocked-by');
+      ->selectOob($oob);
     if (!$this->isDialogRequest()) {
       $htmx->onlyMainContent();
     }
@@ -178,9 +184,8 @@ class BbTicketCreateForm extends BbCreateDialogFormBase {
   /**
    * Rejects relations outside the new ticket's project or the reader's view.
    *
-   * Checked against the entity's effective project, so a bound dialog ignores
-   * a posted one. The error never names the rejected ticket: its label may be
-   * private.
+   * Checked against the entity's effective project. The error never names the
+   * rejected ticket: its label may be private.
    */
   public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
     $entity = parent::validateForm($form, $form_state);

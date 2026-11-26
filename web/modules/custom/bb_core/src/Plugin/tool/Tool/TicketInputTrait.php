@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
+use Drupal\bb_core\Access\BbRankEntityFence;
 use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
@@ -23,6 +24,13 @@ trait TicketInputTrait {
    */
   protected function entities(): EntityTypeManagerInterface {
     return \Drupal::entityTypeManager();
+  }
+
+  /**
+   * The fence that decides where the caller may create.
+   */
+  protected function fence(): BbRankEntityFence {
+    return \Drupal::service('bb_core.rank_entity_fence');
   }
 
   /**

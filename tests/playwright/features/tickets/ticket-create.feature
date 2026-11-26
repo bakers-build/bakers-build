@@ -96,7 +96,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     # bridge attach the dialog's behaviours to the subtree that actually
     # arrived. Two settled elements is the shape it gets wrong.
     And the dialog is inside the shell overlay
-    And the dialog carries the list's project with no editable picker
+    And the dialog offers an editable project picker
     # THE SECOND CLICK. The trigger is no longer part of the swap it causes —
     # it targets the overlay and declares no peer — so this click is made on
     # the page's original trigger, and what it must prove is that a second
@@ -164,8 +164,8 @@ Feature: The create-ticket dialog's pickers write the values the form submits
   # WHY THE STEPS ARE IN THIS ORDER. The claim is not "the dialog is present"
   # (that is the scenario above) but "the dialog is OPERABLE", so the first
   # thing asserted after the click is that the submit is already enabled with
-  # no pick required — BB-664 bound the project server-side, so there is no
-  # "Project" picker left to open at all; opening the "Conductor" picker below
+  # no pick required — the list's project is preselected in the "Project"
+  # picker, so nothing has to be picked first; opening the "Conductor" picker below
   # is now the earliest, cheapest observation of the defect this scenario
   # exists to catch.
   #
@@ -181,7 +181,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     And I click the "New ticket" action
     Then the create-ticket dialog is present
     And the submit is enabled
-    And the dialog carries the list's project with no editable picker
+    And the dialog offers an editable project picker
     And the dialog shows no text-format help
     When I type "A ticket filed through the list add action" into the title line
     And I open the "Conductor" picker
@@ -208,7 +208,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     And the dialog has exactly one submit and one cancel
     And the dialog has no assignee control
     And "workflow" has a labelled group alongside the text lines
-    And the peer pills are exactly "parent_id, blocked_by, conductor_id, labels, recipe, ticket_type"
+    And the peer pills are exactly "project_id, parent_id, blocked_by, conductor_id, labels, recipe, ticket_type"
     And no pill renders a bare dash
     And the dialog shows no text-format help
     And every picker menu in the dialog opens inside the dialog
@@ -382,20 +382,29 @@ Feature: The create-ticket dialog's pickers write the values the form submits
     And no dialog hull is rendered around it
 
   # A screen without project context (`/tickets/all` carries no
-  # `bb_project` route parameter and no `?project=`) binds nothing, so the
-  # dialog offers the project picker instead of the conductor: conductor
-  # candidates depend on the project, and the ticket is created unassigned.
-  Scenario: A project-less screen's dialog offers the project picker back
+  # `bb_project` route parameter and no `?project=`) still offers the same
+  # dialog: the project picker and the conductor beside it.
+  Scenario: A project-less screen's dialog offers the project picker
     Given I am logged in as "Administrator"
     When I visit the ticket list
     And I click the "New ticket" action
     Then the create-ticket dialog is present
     And the dialog offers an editable project picker
-    And the peer pills are exactly "project_id, parent_id, blocked_by, labels, recipe, ticket_type"
-    When I type "Filed from a project-less screen" into the title line
-    And I open the "Project" picker
-    And I pick a project option
-    And I submit the dialog
+    And the peer pills are exactly "project_id, parent_id, blocked_by, conductor_id, labels, recipe, ticket_type"
+
+  # A dialog opened on one project files the ticket in another the reader may
+  # create in; the conductor follows the picked project.
+  Scenario: A dialog opened on one project files the ticket in another
+    Given I am logged in as the account "north-lead"
+    And the conductor "platform-node" works on project "bakers.build Platform"
+    And the conductor "e2e-node" works on project "bakers-e2e-project"
+    When I visit the ticket list of project "bakers.build Platform"
+    And I click the "New ticket" action
+    Then the "Project" pill reads "bakers.build Platform"
+    And the "Conductor" picker lists "platform-node" but not "e2e-node"
+    When I type "Filed in another project" into the title line
+    And I choose the dialog project "bakers-e2e-project"
+    Then the "Conductor" picker lists "e2e-node" but not "platform-node"
+    When I submit the dialog
     Then the dialog closed
-    And the stored ticket belongs to the picked project
-    And the stored ticket has no conductor
+    And the stored ticket belongs to project "bakers-e2e-project"
