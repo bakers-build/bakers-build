@@ -6,7 +6,7 @@ import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { CONTENT_ISLAND, PAGE_HEADER_ISLAND, RAIL_ISLAND, documentWasKept, markDocument, pageErrors as errors } from '../shell';
+import { CONTENT_ISLAND, PAGE_HEADER_ISLAND, RAIL_ISLAND, documentWasKept, markDocument, pageErrors as errors, tabPathSegment } from '../shell';
 import { php } from '../drush';
 import { active } from '../listing';
 
@@ -64,7 +64,7 @@ Given('I visit the team {string}', async ({ page }, label: string) => {
 });
 
 When('I visit the team {string} tab {string}', async ({ page }, label: string, tab: string) => {
-  await page.goto(`${teamUrl(label)}/${tab.toLowerCase()}`);
+  await page.goto(`${teamUrl(label)}/${tabPathSegment(tab)}`);
   await markDocument(page);
 });
 

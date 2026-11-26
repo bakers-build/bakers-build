@@ -1,6 +1,6 @@
 import { expect, type Locator } from '@playwright/test';
 import { Given, Then, When } from '../../bdd.fixtures';
-import { CONTENT_ISLAND, markDocument } from '../../support/shell';
+import { CONTENT_ISLAND, markDocument, tabPathSegment } from '../../support/shell';
 
 // BB-481 — the three steps My work needs that the team suite does not
 // already export. Everything else this feature uses — the tab-click request
@@ -22,7 +22,7 @@ const PERIOD_FIXTURE_PROJECT = 'Period filter fixture';
  * the page it always opened on.
  */
 function myWorkUrl(tab: string): string {
-  return tab === 'Tickets' ? MY_WORK : `${MY_WORK.replace(/\/tickets$/, '')}/${tab.toLowerCase()}`;
+  return tab === 'Tickets' ? MY_WORK : `${MY_WORK.replace(/\/tickets$/, '')}/${tabPathSegment(tab)}`;
 }
 
 Given('I visit My work', async ({ page }) => {
@@ -69,7 +69,7 @@ When('I open the Stats period from {int} days ago until today', async ({ page },
     ['filter[start]', day(days)],
     ['filter[end]', day(0)],
   ]);
-  await page.goto(`${myWorkUrl('Stats')}?${query.toString()}`);
+  await page.goto(`${myWorkUrl('Insights')}?${query.toString()}`);
   await markDocument(page);
 });
 

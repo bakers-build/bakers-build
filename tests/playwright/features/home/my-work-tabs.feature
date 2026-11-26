@@ -23,12 +23,12 @@ Feature: My work carries Tickets and Stats as tabs
     When I open the site root
     Then the address is "/bakers/tickets"
     And the tab "Tickets" is current
-    And the My work tabs are "Tickets, My time, Stats"
+    And the My work tabs are "Tickets, My time, Insights"
     And the application shell is present
 
   Scenario: Stats is reachable by its own URL
-    When I visit My work tab "Stats"
-    Then the tab "Stats" is current
+    When I visit My work tab "Insights"
+    Then the tab "Insights" is current
     And the address ends with "/stats"
     And the application shell is present
     And the shell rail is present
@@ -36,7 +36,7 @@ Feature: My work carries Tickets and Stats as tabs
   # The real assertion is the SECOND click of each pair.
   Scenario: Switching between Tickets and Stats keeps the document
     Given I visit My work
-    When I click the tab "Stats" and count the requests
+    When I click the tab "Insights" and count the requests
     Then the tab change made exactly one navigation request
     And the tab change made no full document request
     And the document was not reloaded
@@ -49,7 +49,7 @@ Feature: My work carries Tickets and Stats as tabs
   # Asserting a heading rather than a number: the counts depend on the seeded
   # world, the SHAPE does not.
   Scenario: The Stats tab renders the signed-in user's own figures
-    When I visit My work tab "Stats"
+    When I visit My work tab "Insights"
     Then the Stats tab shows a figure
 
   # Counts depend on the day of the run under Week or Month, so they are read
@@ -63,5 +63,5 @@ Feature: My work carries Tickets and Stats as tabs
 
   @period-filter
   Scenario: An old period bookmark falls back to Month
-    Given I visit My work tab "Stats" with query parameter "filter[period]" set to "30"
+    Given I visit My work tab "Insights" with query parameter "filter[period]" set to "30"
     Then the selected Stats period is "Month"

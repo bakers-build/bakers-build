@@ -16,15 +16,15 @@ use Drupal\ui_patterns\SourcePluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Compact project or group mark for the shell page header leading slot.
+ * Compact project, group or team mark for the shell page header leading slot.
  *
- * Empty on every screen that is not a project or group place, so the title
- * row stays unchanged there.
+ * Empty on every screen that is not a project, group or team place, so the
+ * title row stays unchanged there.
  */
 #[Source(
   id: 'bb_entity_page_header_mark',
   label: new TranslatableMarkup('[bakers.build] Entity page header mark'),
-  description: new TranslatableMarkup('The project or group image beside the page title.'),
+  description: new TranslatableMarkup('The project, group or team image beside the page title.'),
   prop_types: ['slot'],
 )]
 final class BbEntityPageHeaderMarkSource extends SourcePluginBase implements ContainerFactoryPluginInterface {
@@ -50,7 +50,7 @@ final class BbEntityPageHeaderMarkSource extends SourcePluginBase implements Con
    * {@inheritdoc}
    */
   public function getPropValue(): mixed {
-    $entity = $this->routeMatch->getParameter('bb_project') ?? $this->routeMatch->getParameter('bb_group');
+    $entity = $this->routeMatch->getParameter('bb_project') ?? $this->routeMatch->getParameter('bb_group') ?? $this->routeMatch->getParameter('bb_team');
     if (!$entity instanceof ContentEntityInterface || $entity->isNew()) {
       return [];
     }
