@@ -452,7 +452,7 @@ final class TicketListCanvasTest extends KernelTestBase {
   public function testTheGateDeclaresThePermissionContextEvenWhenItOffersNothing(): void {
     $this->asWorkspaceGuest();
 
-    $value = $this->createActionSource()->getPropValue();
+    $value = $this->createTrigger('bb_core.create.ticket');
 
     self::assertIsArray($value);
     self::assertArrayNotHasKey('trigger', $value, 'This account may not create; nothing is offered.');
@@ -478,7 +478,7 @@ final class TicketListCanvasTest extends KernelTestBase {
     $request->attributes->add($this->container->get('router')->matchRequest($request));
     $this->container->get('request_stack')->push($request);
     try {
-      $build = $this->createActionSource()->getPropValue();
+      $build = $this->createTrigger('bb_core.create.ticket');
       self::assertIsArray($build);
       return (string) $this->container->get('renderer')->renderInIsolation($build);
     }
@@ -563,15 +563,6 @@ final class TicketListCanvasTest extends KernelTestBase {
       'The fixture must not grant the gated permission by a side door.',
     );
     $this->setCurrentUser($account);
-  }
-
-  /**
-   * A fresh add-action source, reading the request and the account as they are.
-   *
-   * Configured with the shipped shell profile's settings for its route.
-   */
-  private function createActionSource(): CreateActionSource {
-    return $this->shippedCreateAction('entity.bb_ticket.create_form');
   }
 
   /**

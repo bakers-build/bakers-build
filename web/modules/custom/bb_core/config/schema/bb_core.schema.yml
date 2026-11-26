@@ -396,50 +396,11 @@ ui_patterns_source.entity_form:
 
 ui_patterns_source.bb_create_action:
   type: mapping
-  label: 'Source: bakers.build create action'
+  label: 'Source: bakers.build create actions'
   mapping:
-    route:
+    action:
       type: string
-      label: 'Dialog route'
-    screens:
-      type: sequence
-      label: 'Screen routes; a trailing * matches a prefix; empty is every route'
-      sequence:
-        type: string
-        label: 'Route name'
-    route_parameters:
-      type: sequence
-      label: 'Fixed dialog route parameters'
-      sequence:
-        type: string
-        label: 'Value'
-    query:
-      type: sequence
-      label: 'Screen query keys forwarded to the dialog; * forwards all'
-      sequence:
-        type: string
-        label: 'Query key'
-    route_query:
-      type: sequence
-      label: 'Dialog query keys bound to a screen route parameter'
-      sequence:
-        type: string
-        label: 'Route parameter name'
-    trigger_id:
-      type: string
-      label: 'Trigger element id'
-    label:
-      type: label
-      label: 'Label; empty uses the dialog route title'
-
-# The two create actions whose access or route is a class, not a setting.
-ui_patterns_source.bb_api_key_create_action:
-  type: ui_patterns_source.bb_create_action
-  label: 'Source: bakers.build create API key action'
-
-ui_patterns_source.bb_worklog_create_action:
-  type: ui_patterns_source.bb_create_action
-  label: 'Source: bakers.build record time action'
+      label: 'Local action rendered on every screen; empty renders the screen dialog actions'
 
 ui_patterns_source.bb_menu:
   type: mapping

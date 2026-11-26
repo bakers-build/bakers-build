@@ -104,7 +104,7 @@ final class EnvironmentCreateActionTest extends KernelTestBase {
    *   The render array.
    */
   private function action(): array {
-    return $this->shippedCreateAction('entity.bb_environment.add_for_project')->getPropValue();
+    return $this->createTrigger('bb_core.create.environment');
   }
 
 }

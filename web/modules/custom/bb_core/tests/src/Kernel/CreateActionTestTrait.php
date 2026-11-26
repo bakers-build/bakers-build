@@ -4,58 +4,33 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\ui_patterns\SourcePluginBase;
-use Symfony\Component\Yaml\Yaml;
 
 /**
- * Builds a create action from the settings the shipped shell profile gives it.
+ * Renders the shipped create-action source on the current screen.
  */
 trait CreateActionTestTrait {
 
   /**
-   * The shipped page-header settings of the create action on one screen.
+   * One dialog local action's trigger on the current screen.
    *
-   * @param string $route
-   *   The dialog route.
-   * @param string|null $screen
-   *   The screen route, for a dialog route several entries share.
-   * @param string $profile
-   *   The island profile.
+   * Built as the shell page header builds it: `bb_create_action` with no
+   * settings, so the action's `appears_on` decides whether it is there.
+   *
+   * @param string $action
+   *   The local action id, e.g. `bb_core.create.project`.
    *
    * @return array<string, mixed>
-   *   The entry's settings.
+   *   The trigger with the source's cache metadata, or the metadata alone
+   *   when the screen does not offer it.
    */
-  protected function shippedCreateActionSettings(string $route, ?string $screen = NULL, string $profile = 'bb_shell'): array {
-    $config = Yaml::parseFile(dirname(__DIR__, 7) . '/config/sync/island.profile.' . $profile . '.yml');
-    foreach ($config['placements']['shell_page_header']['configuration']['component']['slots']['actions']['sources'] as $entry) {
-      $settings = $entry['source'] ?? [];
-      if (($settings['route'] ?? NULL) === $route && ($screen === NULL || in_array($screen, $settings['screens'] ?? [], TRUE))) {
-        return $settings;
-      }
-    }
-    self::fail("The $profile page header has no create action for $route.");
-  }
-
-  /**
-   * A fresh create action with the shipped settings for its dialog route.
-   *
-   * @param string $route
-   *   The dialog route.
-   * @param string|null $screen
-   *   The screen route, for a dialog route several entries share.
-   * @param string $source_id
-   *   The source plugin id.
-   * @param string $profile
-   *   The island profile the settings are read from.
-   */
-  protected function shippedCreateAction(string $route, ?string $screen = NULL, string $source_id = 'bb_create_action', string $profile = 'bb_shell'): CreateActionSource {
+  protected function createTrigger(string $action): array {
     $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')->getDefinition('slot')['schema'];
-    $settings = $this->shippedCreateActionSettings($route, $screen, $profile);
     $source = $this->container->get('plugin.manager.ui_patterns_source')
-      ->createInstance($source_id, SourcePluginBase::buildConfiguration('actions', $definition, ['source' => $settings], []));
-    self::assertInstanceOf(CreateActionSource::class, $source);
-    return $source;
+      ->createInstance('bb_create_action', SourcePluginBase::buildConfiguration('actions', $definition, ['source' => []], []));
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $build = $source->getPropValue();
+    return ($build[$action] ?? []) + ['#cache' => $build['#cache']];
   }
 
 }

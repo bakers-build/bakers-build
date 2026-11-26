@@ -536,8 +536,7 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
    *   The trigger, or cache metadata alone when it is withheld.
    */
   private function headerTrigger(): array {
-    $source = $this->shippedCreateAction('bb_core.bb_team.member_add');
-    $value = $source->getPropValue();
+    $value = $this->createTrigger('bb_core.create.team_member');
     self::assertIsArray($value);
     return $value;
   }

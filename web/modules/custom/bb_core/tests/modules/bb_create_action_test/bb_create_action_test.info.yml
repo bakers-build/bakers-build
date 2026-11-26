@@ -1,0 +1,7 @@
+name: bakers.build create action test
+type: module
+description: Local actions that exercise each part of the bb_create_action source.
+package: Testing
+core_version_requirement: ^11
+dependencies:
+  - bb_core:bb_core

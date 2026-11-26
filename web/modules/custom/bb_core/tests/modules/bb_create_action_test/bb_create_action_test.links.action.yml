@@ -1,0 +1,64 @@
+# Every action appears on the workspace Members screen unless stated.
+bb_create_action_test.plain:
+  route_name: entity.bb_team.create_form
+  title: 'New team'
+  appears_on: [bb_core.bb_workspace.members]
+  dialog: {}
+bb_create_action_test.not_a_dialog:
+  route_name: entity.bb_team.create_form
+  title: 'Not a dialog'
+  appears_on: [bb_core.bb_workspace.members]
+bb_create_action_test.overlaid:
+  route_name: entity.bb_team.create_form
+  title: 'Overlaid'
+  route_parameters:
+    bb_workspace: workspace-b
+  appears_on: [bb_core.bb_workspace.members]
+  dialog: {}
+bb_create_action_test.listed_query:
+  route_name: entity.bb_team.create_form
+  title: 'Listed query'
+  appears_on: [bb_core.bb_workspace.members]
+  dialog:
+    query: [a]
+bb_create_action_test.all_query:
+  route_name: entity.bb_team.create_form
+  title: 'All query'
+  appears_on: [bb_core.bb_workspace.members]
+  dialog:
+    query: ['*']
+bb_create_action_test.bound:
+  route_name: entity.bb_team.create_form
+  title: 'Bound'
+  appears_on: [bb_core.bb_workspace.members]
+  dialog:
+    query: ['*']
+    route_query:
+      workspace: bb_workspace
+bb_create_action_test.with_id:
+  route_name: entity.bb_team.create_form
+  title: 'With id'
+  appears_on: [bb_core.bb_workspace.members]
+  dialog:
+    trigger_id: team-add
+bb_create_action_test.unfilled:
+  route_name: bb_core.bb_team.member_add
+  title: 'Unfilled'
+  appears_on: [bb_core.bb_workspace.members]
+  dialog: {}
+bb_create_action_test.unknown:
+  route_name: no.such.route
+  title: 'Unknown'
+  appears_on: [bb_core.bb_workspace.members]
+  dialog: {}
+bb_create_action_test.denied_by_class:
+  route_name: entity.bb_team.create_form
+  title: 'Denied by class'
+  class: Drupal\bb_create_action_test\Menu\DeniedCreateAction
+  appears_on: [bb_core.bb_workspace.members]
+  dialog: {}
+bb_create_action_test.elsewhere:
+  route_name: entity.bb_team.create_form
+  title: 'Elsewhere'
+  appears_on: [bb_core.bb_team.members]
+  dialog: {}

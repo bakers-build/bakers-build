@@ -509,10 +509,7 @@ display:
                       sources:
                         -
                           source_id: bb_create_action
-                          source:
-                            route: entity.bb_group.create_form
-                            screens:
-                              - view.groups.workspace_list
+                          source: {  }
                           node_id: groups_new_group
                     content:
                       sources:

@@ -14,13 +14,12 @@ use Drupal\bb_core\Form\BbGroupTeamCreateForm;
 use Drupal\bb_core\Form\BbCreateDialogFormBase;
 use Drupal\island\Render\WrappedRouteRenderer;
 use Drupal\bb_core\Form\BbTicketCreateForm;
-use Drupal\bb_api_key\Plugin\UiPatterns\Source\ApiKeyCreateActionSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
-use Drupal\bb_track\Plugin\UiPatterns\Source\WorklogCreateActionSource;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Route;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
@@ -152,30 +151,23 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
   }
 
   /**
-   * The TRIGGER is one configured source; only two subjects extend it.
+   * The TRIGGER is one source; its subjects are local actions, not classes.
    *
-   * A subject expressed as a class instead of settings fails here. The two
-   * exceptions declare only the seams they need: the API key's service-account
-   * route and the worklog's workspace-scoped access.
+   * Every dialog action names a route that exists, so a renamed route fails
+   * here instead of silently dropping a plus.
    */
-  public function testOnlyTheTwoExceptionsExtendTheCreateTrigger(): void {
-    $exceptions = [
-      ApiKeyCreateActionSource::class => ['dialogRoute', 'dialogRouteParameters', 'serviceWorkspace'],
-      WorklogCreateActionSource::class => ['createAccess'],
-    ];
-    $subclasses = [];
-    foreach (glob(dirname(__DIR__, 4) . '/{*,*/modules/*}/src/Plugin/UiPatterns/Source/*.php', GLOB_BRACE) ?: [] as $file) {
-      if (preg_match('/^namespace (.+);$/m', (string) file_get_contents($file), $namespace) === 1) {
-        $class = $namespace[1] . '\\' . basename($file, '.php');
-        if (is_subclass_of($class, CreateActionSource::class)) {
-          $subclasses[] = $class;
-        }
-      }
-    }
-    sort($subclasses);
-    self::assertSame(array_keys($exceptions), $subclasses);
-    foreach ($exceptions as $class => $allowed) {
-      self::assertSame([], $this->declaredBeyond($class, $allowed), $class . ' declares more than its exception.');
+  public function testCreateTriggersAreLocalActionsOfOneSource(): void {
+    self::assertTrue((new \ReflectionClass(CreateActionSource::class))->isFinal());
+    $this->container->get('router.builder')->rebuild();
+    $routes = $this->container->get('router.route_provider');
+    $dialogs = array_filter(
+      $this->container->get('plugin.manager.menu.local_action')->getDefinitions(),
+      static fn (array $definition): bool => is_array($definition['dialog'] ?? NULL),
+    );
+    self::assertNotEmpty($dialogs);
+    foreach ($dialogs as $id => $definition) {
+      // An unknown route throws RouteNotFoundException here.
+      self::assertInstanceOf(Route::class, $routes->getRouteByName($definition['route_name']), $id);
     }
   }
 

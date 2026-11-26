@@ -103,8 +103,9 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
         $this->enterRoute('view.groups.workspace_list');
       }
       // The team trigger is the rail's, configured as BbMenuSource does.
-      $source = $type === 'group' ? $this->shippedCreateAction('entity.bb_group.create_form') : $this->source('bb_create_action', 'slot', ['route' => 'entity.bb_team.create_form']);
-      $build = $source->getPropValue();
+      $build = $type === 'group'
+        ? $this->createTrigger('bb_core.create.group')
+        : $this->source('bb_create_action', 'slot', ['action' => 'bb_core.create.team'])->getPropValue()['bb_core.create.team'];
       self::assertSame('bb_theme:button', $build['#component']);
       self::assertSame($label, $build['#props']['label']);
       self::assertStringContainsString('/workspace-a/' . $type . '/create', $build['#props']['href']);
@@ -165,30 +166,13 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
 
       $header = Yaml::parseFile($root . '/island.profile.bb_shell.yml')['placements']['shell_page_header']['configuration']['component'];
       self::assertSame('bb_theme:page_header', $header['component_id']);
+      // One create source renders every screen's dialog local actions; the
+      // project favorite follows it.
       self::assertSame(
-        [
-          'bb_create_action entity.bb_ticket.create_form',
-          'bb_create_action entity.bb_project.create_form',
-          'island_placement ',
-          'bb_create_action entity.bb_ticket_template.add_for_project',
-          'bb_create_action entity.bb_ticket_template.add_for_workspace',
-          'bb_create_action entity.bb_term.add_form',
-          'bb_create_action entity.bb_term.add_form',
-          'bb_create_action entity.bb_term.add_form',
-          'bb_create_action entity.bb_environment.add_for_project',
-          'bb_create_action entity.bb_ticket_trigger.add_form',
-          'bb_create_action entity.bb_webhook.add_for_project',
-          'bb_create_action entity.bb_webhook.add_for_group',
-          'bb_create_action entity.bb_webhook.add_for_workspace',
-          'bb_create_action entity.bb_group.create_form',
-          'bb_create_action bb_core.workspace_invite',
-          'bb_create_action bb_core.bb_team.member_add',
-          'bb_worklog_create_action bb_track.worklog.add',
-          'bb_create_action bb_track.account_add',
-          'bb_create_action bb_api_key.service_account.add',
-        ],
-        array_map(static fn (array $entry): string => $entry['source_id'] . ' ' . ($entry['source']['route'] ?? ''), $header['slots']['actions']['sources']),
+        ['bb_create_action', 'island_placement'],
+        array_column($header['slots']['actions']['sources'], 'source_id'),
       );
+      self::assertSame([], $header['slots']['actions']['sources'][0]['source']);
     }
   }
 
@@ -208,11 +192,11 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
    * The header trigger keeps itself off every screen but the Groups listing.
    */
   public function testTheGroupActionRendersNothingOnTheProjectsListing(): void {
-    $build = $this->shippedCreateAction('entity.bb_group.create_form')->getPropValue();
+    $build = $this->createTrigger('bb_core.create.group');
     self::assertArrayNotHasKey('#component', $build);
 
     $this->enterRoute('view.groups.workspace_list');
-    self::assertSame('bb_theme:button', $this->shippedCreateAction('entity.bb_group.create_form')->getPropValue()['#component']);
+    self::assertSame('bb_theme:button', $this->createTrigger('bb_core.create.group')['#component']);
   }
 
   /**

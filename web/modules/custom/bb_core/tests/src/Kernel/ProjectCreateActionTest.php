@@ -486,7 +486,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
   private function actionValue(string $query = ''): array {
     return $this->onTheScreen(
       $query,
-      fn (): mixed => $this->createActionSource()->getPropValue(),
+      fn (): mixed => $this->createTrigger('bb_core.create.project'),
     );
   }
 
@@ -501,7 +501,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
    */
   private function actionMarkup(string $query = ''): string {
     return $this->onTheScreen($query, function (): string {
-      $build = $this->createActionSource()->getPropValue();
+      $build = $this->createTrigger('bb_core.create.project');
       self::assertIsArray($build);
 
       return (string) $this->container->get('renderer')->renderInIsolation($build);
@@ -548,15 +548,6 @@ final class ProjectCreateActionTest extends KernelTestBase {
     finally {
       $this->container->get('request_stack')->pop();
     }
-  }
-
-  /**
-   * A fresh trigger source, reading the request and the account as they are.
-   *
-   * Configured with the shipped shell profile's settings for its route.
-   */
-  private function createActionSource(): CreateActionSource {
-    return $this->shippedCreateAction('entity.bb_project.create_form');
   }
 
   /**

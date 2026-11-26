@@ -5,9 +5,7 @@ dependencies:
     - island.app.bakers
     - system.menu.bakers-account
   module:
-    - bb_api_key
     - bb_core
-    - bb_track
     - island_ui_patterns
     - ui_patterns
   theme:
@@ -181,79 +179,7 @@ placements:
           actions:
             sources:
               - source_id: bb_create_action
-                source:
-                  route: entity.bb_ticket.create_form
-                  screens:
-                    - 'view.tickets.*'
-                  query:
-                    - '*'
-                  route_query:
-                    project: bb_project
-              - source_id: bb_create_action
-                source:
-                  route: entity.bb_project.create_form
-                  screens:
-                    - view.projects.workspace_list
-              - source_id: bb_create_action
-                source:
-                  route: entity.bb_ticket_template.add_for_project
-                  screens:
-                    - view.bb_ticket_templates.project_list
-              - source_id: bb_create_action
-                source:
-                  route: entity.bb_ticket_template.add_for_workspace
-                  screens:
-                    - view.bb_ticket_templates.workspace_list
-              - source_id: bb_create_action
-                source:
-                  route: entity.bb_ticket_trigger.add_form
-                  screens:
-                    - view.bb_ticket_triggers.template_list
-              - source_id: bb_create_action
-                source:
-                  route: entity.bb_webhook.add_for_project
-                  screens:
-                    - view.bb_webhooks.project_list
-              - source_id: bb_create_action
-                source:
-                  route: entity.bb_webhook.add_for_group
-                  screens:
-                    - view.bb_webhooks.group_list
-              - source_id: bb_create_action
-                source:
-                  route: entity.bb_webhook.add_for_workspace
-                  screens:
-                    - view.bb_webhooks.workspace_list
-              - source_id: bb_create_action
-                source:
-                  route: entity.bb_group.create_form
-                  screens:
-                    - view.groups.workspace_list
-              - source_id: bb_worklog_create_action
-                source:
-                  route: bb_track.worklog.add
-                  screens:
-                    - view.worklog.page
-                    - view.worklog.personal
-                    - view.worklog.team
-                    - view.worklog.project
-                  query:
-                    - date
-                    - project
-                    - ticket
-                    - submission
-                  route_query:
-                    project: bb_project
-              - source_id: bb_api_key_create_action
-                source:
-                  route: bb_api_key.add
-                  screens:
-                    - view.bb_api_keys.page
-              - source_id: bb_create_action
-                source:
-                  route: bb_api_key.service_account.add
-                  screens:
-                    - view.bb_service_accounts.settings
+                source: {  }
       boost: true
       target_placement: shell_content_island
     data: {  }

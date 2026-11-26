@@ -116,7 +116,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
   # looking for.
   #
   # The action is the SAME ui_patterns source on both displays
-  # (`bb_create_action` on `entity.bb_ticket.create_form`), so what is worth
+  # (the `bb_core.create.ticket` local action), so what is worth
   # observing here is not that
   # the source works — the scenarios above already prove that — but that this
   # display now carries it and that it behaves the same way when it does.

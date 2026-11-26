@@ -70,7 +70,7 @@ function workspaceSlug(): string {
  * The one project id the ticket surface's own head resolves to.
  *
  * THE TICKET DIALOG NEEDS IT AND THE PROJECT DIALOG DOES NOT, which is the
- * only asymmetry left in the opening step. The ticket trigger (`query: ['*']`) forwards
+ * only asymmetry left in the opening step. The ticket action (`dialog.query: ['*']`) forwards
  * the screen's own `?project=` into the dialog's query, and without it the
  * dialog opens with an unresolved context and a DISABLED submit
  * (`data-option-picker-requires="project_id"`). None of the parity assertions

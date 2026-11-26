@@ -643,8 +643,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       $refused = TRUE;
     }
     self::assertTrue($refused, 'a member is refused the workspace members face');
-    $source = $this->shippedCreateAction('bb_core.workspace_invite');
-    self::assertArrayNotHasKey('#type', $source->getPropValue(), 'a member is offered no invite button');
+    self::assertArrayNotHasKey('#type', $this->createTrigger('bb_core.create.member_invite'), 'a member is offered no invite button');
 
     $this->expectException(AccessDeniedHttpException::class);
     $this->submitInvite('member-cannot-invite@example.com');
@@ -976,8 +975,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       GroupMembersForm::class,
       ['island_id' => 'members', 'host_id' => 'workspace'],
     );
-    $source = $this->shippedCreateAction('bb_core.workspace_invite');
-    $trigger = $source->getPropValue();
+    $trigger = $this->createTrigger('bb_core.create.member_invite');
 
     self::assertArrayNotHasKey('invite', $built);
     self::assertArrayNotHasKey('#bb_zone_actions', $built['roster']);
