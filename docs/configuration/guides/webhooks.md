@@ -65,6 +65,6 @@ function verify(secret, timestamp, rawBody, signature) {
 
 - Deliveries go out on the server's cron run, never while the ticket change is being saved. A slow or failing endpoint does not slow down or break that change.
 - A 2xx answer is success. Anything else, a redirect, a connection error or no answer within 5 seconds counts as a failure.
-- A failed delivery is tried again on the next cron runs, up to 5 attempts in total, and then dropped. The server log records the dropped delivery.
+- A failed delivery is tried again on a later cron run, after 1, 2, 4 and 8 minutes at the earliest, up to 5 attempts in total, and then dropped. The server log records the dropped delivery.
 - A webhook that is disabled or deleted before its delivery runs gets nothing.
-- The secret is stored as entered so the server can sign with it. Treat the endpoint as receiving ticket titles and states of its scope.
+- The server generates the secret and stores it as it is, because it needs the raw value to sign. Treat the endpoint as receiving ticket titles and states of its scope.

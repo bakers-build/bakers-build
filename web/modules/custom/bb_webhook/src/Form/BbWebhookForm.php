@@ -8,14 +8,21 @@ use Drupal\bb_core\Entity\BbGroupInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Form\BbContentEntityFormBase;
+use Drupal\bb_core\Form\HtmxTransport;
 use Drupal\bb_webhook\Entity\BbWebhookInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\island\Form\WrappedDialogFormTrait;
 
 /**
  * Webhook add/edit form; the scope comes from the add route, never a field.
+ *
+ * Opened from the tab's Create webhook action it answers in the shell dialog
+ * and lands back on the tab, as the environment form does.
  */
 final class BbWebhookForm extends BbContentEntityFormBase {
+
+  use WrappedDialogFormTrait;
 
   /**
    * {@inheritdoc}
@@ -43,6 +50,22 @@ final class BbWebhookForm extends BbContentEntityFormBase {
 
   /**
    * {@inheritdoc}
+   */
+  public function form(array $form, FormStateInterface $form_state): array {
+    $form = parent::form($form, $form_state);
+    if (!$this->isDialogRequest()) {
+      // A boosted page submit is an htmx request, for which core drops the
+      // redirect: the save would land nowhere and show no message.
+      $form['#attributes']['data-hx-boost'] = 'false';
+      $form['#action'] = HtmxTransport::currentUrl($this->getRequest())->toString();
+      $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
+    }
+    $this->attachDialogHtmx($form);
+    return $form;
+  }
+
+  /**
+   * {@inheritdoc}
    *
    * The secret is shown once, right after the first save.
    */
@@ -53,6 +76,9 @@ final class BbWebhookForm extends BbContentEntityFormBase {
     assert($webhook instanceof BbWebhookInterface);
     if ($new) {
       $this->messenger()->addWarning($this->t('Signing secret: %secret. Copy it now; it is not shown again.', ['%secret' => $webhook->getSecret()]));
+    }
+    if ($this->isDialogRequest() || $this->getRequest()->query->has(static::RETURN_PARAMETER)) {
+      $this->respondAtReturnUrl($form_state);
     }
     return $result;
   }

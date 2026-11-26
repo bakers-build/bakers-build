@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_webhook\Kernel;
 
 use Drupal\bb_webhook\Entity\BbWebhookInterface;
+use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Queue\DelayedRequeueException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Handler\MockHandler;
@@ -36,6 +38,11 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
   private MockHandler $responses;
 
   /**
+   * The clock the hook and the worker read, advanced by the tests.
+   */
+  private object $clock;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -44,6 +51,38 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
     $stack = HandlerStack::create($this->responses);
     $stack->push(Middleware::history($this->history));
     $this->container->set('http_client', new Client(['handler' => $stack]));
+    $this->clock = new class implements TimeInterface {
+
+      /**
+       * The current Unix time.
+       */
+      public int $now = 1800000000;
+
+      public function getRequestTime(): int {
+        return $this->now;
+      }
+
+      public function getRequestMicroTime(): float {
+        return $this->now;
+      }
+
+      public function getCurrentTime(): int {
+        return $this->now;
+      }
+
+      public function getCurrentMicroTime(): float {
+        return $this->now;
+      }
+
+    };
+    $this->container->set('datetime.time', $this->clock);
+  }
+
+  /**
+   * Moves the clock past every retry delay.
+   */
+  private function laterOn(): void {
+    $this->clock->now += 3600;
   }
 
   /**
@@ -89,13 +128,19 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
   }
 
   /**
-   * Runs the delivery worker until the queue is empty.
+   * Runs the delivery worker like cron, until it is empty or must wait.
    */
   private function drain(): void {
     $queue = $this->container->get('queue')->get('bb_webhook_delivery');
     $worker = $this->container->get('plugin.manager.queue_worker')->createInstance('bb_webhook_delivery');
     for ($i = 0; $i < 50 && ($item = $queue->claimItem()); $i++) {
-      $worker->processItem($item->data);
+      try {
+        $worker->processItem($item->data);
+      }
+      catch (DelayedRequeueException) {
+        $queue->releaseItem($item);
+        return;
+      }
       $queue->deleteItem($item);
     }
   }
@@ -179,6 +224,13 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
       $this->responses->append(new Response(500));
     }
     $this->drain();
+    $this->assertCount(1, $this->history, 'the retry waits for a later cron run');
+    $this->drain();
+    $this->assertCount(1, $this->history, 'the retry is not sent before its delay');
+    for ($i = 0; $i < 6; $i++) {
+      $this->laterOn();
+      $this->drain();
+    }
     $this->assertCount(5, $this->history);
     $this->assertSame([], $this->queuedWebhookIds());
   }
@@ -190,6 +242,8 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
     $this->saved();
     $this->recordActivity();
     $this->responses->append(new ConnectException('timed out', new Request('POST', 'https://hooks.example.com/a')), new Response(200));
+    $this->drain();
+    $this->laterOn();
     $this->drain();
     $this->assertCount(2, $this->history);
     $this->assertSame([], $this->queuedWebhookIds());

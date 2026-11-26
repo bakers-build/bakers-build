@@ -8,3 +8,4 @@ dependencies:
   - entity:entity
   - bb_core:bb_core
   - bb_activity:bb_activity
+  - ui_patterns:ui_patterns
