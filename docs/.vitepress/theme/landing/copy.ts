@@ -43,7 +43,7 @@ const en = {
     screenshots: [
       { image: 'ticket-list', title: 'Tickets', text: 'Find your next task and follow work from plan to review.', alt: 'Ticket list with status indicators, priorities and filters in the Northside Bakery demo workspace.' },
       { image: 'insights', title: 'Insights', text: 'See throughput, AI usage and how your backlog changes, here on a real workspace.', alt: 'Insights dashboard of a live workspace with throughput, runs per ticket, rating, AI usage and a new-versus-done chart.' },
-      { image: 'project-overview', title: 'Project overview', text: 'See what needs attention, what is in progress and the latest activity.', alt: 'Project overview showing a ticket needing attention, work in progress, project properties and recent activity.' },
+      { image: 'project-overview', title: 'Project overview', text: 'See what needs attention and what is in progress, here on a real project.', alt: 'Project overview of a live project with counts of unhealthy, intake and in-progress tickets, a list of tickets that need attention and the project properties.' },
     ],
   },
   run: {
@@ -128,7 +128,7 @@ const de: Copy = {
     screenshots: [
       { image: 'ticket-list', title: 'Tickets', text: 'Finde deine nächste Aufgabe und verfolge die Arbeit vom Plan bis zum Review.', alt: 'Ticketliste mit Statusanzeigen, Prioritäten und Filtern im Demo-Arbeitsbereich Northside Bakery.' },
       { image: 'insights', title: 'Insights', text: 'Sieh den Durchsatz, die KI-Nutzung und die Entwicklung deines Backlogs, hier in einem echten Arbeitsbereich.', alt: 'Insights-Dashboard eines Live-Arbeitsbereichs mit Durchsatz, Läufen pro Ticket, Bewertung, KI-Nutzung und einem Diagramm neuer und abgeschlossener Tickets.' },
-      { image: 'project-overview', title: 'Projektübersicht', text: 'Sieh, was Aufmerksamkeit braucht, was in Arbeit ist und was zuletzt passiert ist.', alt: 'Projektübersicht mit einem Ticket, das Aufmerksamkeit braucht, laufender Arbeit, Projekteigenschaften und den letzten Aktivitäten.' },
+      { image: 'project-overview', title: 'Projektübersicht', text: 'Sieh, was Aufmerksamkeit braucht und was in Arbeit ist, hier in einem echten Projekt.', alt: 'Projektübersicht eines Live-Projekts mit der Zahl problematischer, neuer und laufender Tickets, einer Liste der Tickets, die Aufmerksamkeit brauchen, und den Projekteigenschaften.' },
     ],
   },
   run: {
