@@ -23,7 +23,7 @@ final class TimeRouteSubscriber extends RouteSubscriberBase {
    */
   private const DESCRIPTIONS = [
     'view.worklog.page' => 'Your recorded hours in this workspace.',
-    'view.worklog.personal' => 'Your recorded hours.',
+    'view.worklog.personal' => 'Your recorded hours in all workspaces.',
     'view.worklog.project' => 'The hours recorded on this project.',
     'view.worklog.team' => 'The hours recorded in this team.',
   ];

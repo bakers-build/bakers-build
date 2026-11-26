@@ -47,6 +47,8 @@ final class PageDescriptionContractTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    *
+   * A module that adds shell routes must be listed here.
+   *
    * @var array<string>
    */
   protected static $modules = [

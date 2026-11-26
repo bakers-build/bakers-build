@@ -162,7 +162,7 @@ bb_core.my_work.stats:
   defaults:
     _controller: '\Drupal\bb_core\Controller\BbStatsController::myWork'
     _title: 'Stats'
-    _description: 'Your own figures in this workspace, always visible to you.'
+    _description: 'Your own figures in every workspace, always visible to you.'
   requirements:
     _user_is_logged_in: 'TRUE'
 
