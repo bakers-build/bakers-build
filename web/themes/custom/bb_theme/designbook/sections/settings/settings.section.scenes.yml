@@ -968,7 +968,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team-detail-overview
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: false
@@ -1203,7 +1203,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team-detail-overview
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: false
@@ -1397,7 +1397,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team-detail-overview
                               active: true
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: false
@@ -1461,7 +1461,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team-detail-overview
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: false
@@ -1703,7 +1703,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team-detail-overview
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: false

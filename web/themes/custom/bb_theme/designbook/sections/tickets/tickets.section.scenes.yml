@@ -886,7 +886,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--my-time
                               active: true
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--stats
                               active: false
@@ -1102,7 +1102,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--my-time
                               active: true
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--stats
                               active: false
@@ -1315,7 +1315,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--my-time
                               active: true
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--stats
                               active: false
@@ -5707,7 +5707,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
@@ -7135,7 +7135,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--my-time
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--stats
                               active: true

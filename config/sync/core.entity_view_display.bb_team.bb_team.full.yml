@@ -121,6 +121,7 @@ bundle: bb_team
 mode: full
 content: {  }
 hidden:
+  image: true
   og_group: true
   projects: true
   search_api_excerpt: true
