@@ -259,7 +259,7 @@ final class TicketCreateRelationsTest extends KernelTestBase {
       self::assertSame('parent_id', $form['parent_id']['#attributes']['data-ticket-project-scoped'] ?? NULL);
       self::assertSame('blocked_by', $form['blocked_by']['#attributes']['data-ticket-project-scoped'] ?? NULL);
       // The htmx swap resolves `hx-select-oob` as element ids only.
-      self::assertSame('#' . $form['blocked_by']['#id'] . ',#' . $form['conductor_id']['#id'], $refresh['data-hx-select-oob'] ?? NULL);
+      self::assertSame('#' . $form['blocked_by']['#id'] . ',#' . $form['conductor_id']['#id'] . ',#' . $form['reviewers']['#id'], $refresh['data-hx-select-oob'] ?? NULL);
     }
   }
 

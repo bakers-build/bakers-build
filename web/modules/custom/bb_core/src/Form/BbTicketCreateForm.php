@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -164,6 +165,11 @@ class BbTicketCreateForm extends BbCreateDialogFormBase {
       $form['conductor_id']['#id'] = 'bakers-ticket-create-conductor';
       $oob[] = '#bakers-ticket-create-conductor';
     }
+    // Reviewer candidates come from the project's workspace.
+    if (isset($form['reviewers'])) {
+      $form['reviewers']['#id'] = 'bakers-ticket-create-reviewers';
+      $oob[] = '#bakers-ticket-create-reviewers';
+    }
     // As in BbTicketTemplateForm: the picker root fires `change` and has no
     // name, so the trigger name is posted; a non-button trigger runs no
     // submit handlers and reports no errors.
@@ -188,9 +194,28 @@ class BbTicketCreateForm extends BbCreateDialogFormBase {
    * rejected ticket: its label may be private.
    */
   public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
+    $this->validateOrigin($form_state);
     $entity = parent::validateForm($form, $form_state);
     $this->rejectProjectScopedRelations($this->getFormDisplay($form_state), $entity, $form_state);
     return $entity;
+  }
+
+  /**
+   * Trims the origin and refuses anything but an absolute http(s) URL.
+   *
+   * Only this dialog checks it; other writers keep storing what they send.
+   */
+  private function validateOrigin(FormStateInterface $form_state): void {
+    $origin = $form_state->getValue(['origin', 0, 'value']);
+    if (!is_string($origin)) {
+      return;
+    }
+    $origin = trim($origin);
+    $form_state->setValue(['origin', 0, 'value'], $origin);
+    $scheme = strtolower((string) parse_url($origin, PHP_URL_SCHEME));
+    if ($origin !== '' && (!UrlHelper::isValid($origin, TRUE) || !in_array($scheme, ['http', 'https'], TRUE))) {
+      $form_state->setErrorByName('origin][0][value', $this->t('Enter a full http or https URL.'));
+    }
   }
 
   /**
