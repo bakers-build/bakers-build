@@ -9,7 +9,7 @@ const props = defineProps<{
 }>()
 const active = ref(0)
 // Intrinsic pixel sizes so each image reserves its own aspect ratio; unlisted captures are 1440x900.
-const sizes: Record<string, [number, number]> = { insights: [1920, 899], 'project-overview': [1920, 904], herdr: [1384, 1002], orca: [1920, 1148] }
+const sizes: Record<string, [number, number]> = { insights: [1920, 899], 'project-overview': [1920, 904], herdr: [1920, 1204], orca: [1920, 1148] }
 
 function navigate(event: KeyboardEvent, index: number) {
   const count = props.items.length

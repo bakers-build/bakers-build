@@ -50,7 +50,7 @@ const en = {
     title: 'This is what a run looks like.',
     text: 'The agent works and tests. If something is missing, you send the ticket back with one sentence. If it fits, you authorize the merge.',
     clients: [
-      { image: 'herdr', title: 'herdr', text: 'Review a ticket’s outcome, problems and next action without leaving the terminal.', alt: 'The bakers terminal UI in herdr showing a ticket overview with summary, success, problems and manual review.' },
+      { image: 'herdr', title: 'herdr', text: 'Review a ticket’s outcome, problems and next action without leaving the terminal.', alt: 'herdr with its sidebar of projects, branches and agents next to the bakers terminal UI, which shows a ticket overview with summary, success, problems and manual review.' },
       { image: 'orca', title: 'Orca', text: 'Follow a ticket’s plan next to your worktrees and files in the Orca app.', alt: 'The bakers terminal UI inside the Orca app showing a plan summary beside the worktree list and file tree.' },
     ],
   },
@@ -135,7 +135,7 @@ const de: Copy = {
     title: 'So sieht ein Lauf aus.',
     text: 'Der Agent arbeitet und testet. Fehlt etwas, schickst du das Ticket mit einem Satz zurück. Passt es, gibst du den Merge frei.',
     clients: [
-      { image: 'herdr', title: 'herdr', text: 'Prüfe Ergebnis, Probleme und nächste Aktion eines Tickets, ohne das Terminal zu verlassen.', alt: 'Die bakers-Terminal-Oberfläche in herdr mit einer Ticketübersicht aus Zusammenfassung, Erfolg, Problemen und manueller Prüfung.' },
+      { image: 'herdr', title: 'herdr', text: 'Prüfe Ergebnis, Probleme und nächste Aktion eines Tickets, ohne das Terminal zu verlassen.', alt: 'herdr mit seiner Seitenleiste aus Projekten, Branches und Agenten neben der bakers-Terminal-Oberfläche, die eine Ticketübersicht aus Zusammenfassung, Erfolg, Problemen und manueller Prüfung zeigt.' },
       { image: 'orca', title: 'Orca', text: 'Verfolge den Plan eines Tickets neben deinen Worktrees und Dateien in der Orca-App.', alt: 'Die bakers-Terminal-Oberfläche in der Orca-App mit einer Plan-Zusammenfassung neben Worktree-Liste und Dateibaum.' },
     ],
   },
