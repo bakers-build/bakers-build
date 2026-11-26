@@ -22,6 +22,9 @@ content:
         epics:
           template: field-map
           label: Epics
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -130,6 +133,68 @@ content:
           required: false
           multiple: true
           reference: bb_environment
+          computed: true
+          readonly: true
+        open_tickets:
+          type: integer
+          title: Open tickets
+          description: >-
+            Computed, internal: the project's tickets not yet closed. The listing
+            row shows it as a ticket badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_tickets:
+          type: integer
+          title: Conductor tickets
+          description: >-
+            Computed, internal: the project's tickets a conductor currently
+            holds. The listing row shows it as a conductor badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        closed_tickets:
+          type: integer
+          title: Closed tickets
+          description: >-
+            Computed, internal: the project's closed tickets. The listing row
+            shows it as a check badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        initials:
+          type: string
+          title: Initials
+          description: >-
+            Design-only. Not a Drupal field: the bb_entity_avatar formatter
+            draws the initials from the name. Present so the avatar component
+            has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_color:
+          type: string
+          title: Avatar colour
+          description: >-
+            Design-only. Not a Drupal field: Drupal keys the avatar colour on
+            the project id. Present so the avatar component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_picture:
+          type: string
+          title: Avatar picture
+          description: >-
+            Design-only. Not a Drupal field: the URL Drupal derives from
+            `image` in the avatar image style; empty for initials. Present so
+            the avatar component has a prop.
+          required: false
+          multiple: false
           computed: true
           readonly: true
       omitted:
@@ -2663,8 +2728,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_project records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_project records the View lists; Drupal renders each row as the
+            project in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2672,7 +2737,7 @@ config:
             settings:
               entity_type: bb_project
               bundle: bb_project
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page

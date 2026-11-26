@@ -1,0 +1,19 @@
+(
+  $fields := $;
+  [
+    {
+      "component": "bb_theme:list_item",
+      "slots": {
+        "avatar": { "component": "bb_theme:list_cell", "props": { "key": "name_avatar" }, "slots": { "value": { "component": "bb_theme:person", "props": { "variant": "compact", "size": "md", "image_fit": "contain", "color": $fields.avatar_color, "picture": $fields.avatar_picture, "initials": $fields.initials } } } },
+        "headline": { "component": "bb_theme:list_cell", "props": { "key": "name", "primary": true }, "slots": { "value": $fields.name } },
+        "description": { "component": "bb_theme:list_cell", "props": { "key": "description" }, "slots": { "value": $fields.description } },
+        "right": [
+          { "component": "bb_theme:list_cell", "props": { "key": "open_tickets", "align": "end", "fallback": "—" }, "slots": { "value": { "component": "bb_theme:badge", "props": { "icon": "ticket", "tone": "neutral", "label": $fields.open_tickets } } } },
+          { "component": "bb_theme:list_cell", "props": { "key": "conductor_tickets", "align": "end", "fallback": "—" }, "slots": { "value": { "component": "bb_theme:badge", "props": { "icon": "conductor", "tone": "lease", "label": $fields.conductor_tickets } } } },
+          { "component": "bb_theme:list_cell", "props": { "key": "closed_tickets", "align": "end", "fallback": "—" }, "slots": { "value": { "component": "bb_theme:badge", "props": { "icon": "check", "tone": "neutral", "label": $fields.closed_tickets } } } }
+        ],
+        "right_meta": { "component": "bb_theme:list_cell", "props": { "key": "created", "caption": "Created" }, "slots": { "value": $fields.created } }
+      }
+    }
+  ]
+)
