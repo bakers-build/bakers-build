@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * The shipped term tabs live under Catalog and open to term readers.
+ * The Catalog lives under workspace settings and its tabs open to readers.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -43,19 +43,46 @@ final class CatalogRoutesTest extends KernelTestBase {
     }
     $this->installConfig(['views']);
     $this->installShippedView('views.view.bb_terms');
+    $this->installShippedView('views.view.bb_environments');
     $this->container->get('router.builder')->rebuild();
   }
 
   /**
-   * Each term tab has its Catalog path and the term read gate.
+   * Each Catalog page sits under workspace settings; terms keep their gate.
    */
-  public function testTermTabsLiveUnderCatalog(): void {
+  public function testCatalogPagesLiveUnderSettings(): void {
     $provider = $this->container->get('router.route_provider');
+    $paths = [
+      'view.bb_environments.catalog' => 'environments',
+      'entity.bb_environment.add_for_workspace' => 'environments/add',
+    ];
+    foreach ($paths as $name => $tail) {
+      self::assertSame('/_workspace/{bb_workspace}/settings/catalog/' . $tail, $provider->getRouteByName($name)->getPath());
+    }
     foreach (['types', 'recipes', 'labels'] as $tab) {
       $route = $provider->getRouteByName('view.bb_terms.' . $tab);
-      self::assertSame('/_workspace/{bb_workspace}/catalog/' . $tab, $route->getPath());
+      self::assertSame('/_workspace/{bb_workspace}/settings/catalog/' . $tab, $route->getPath());
       self::assertSame('view bb_term', $route->getRequirement('_bb_workspace_permission'));
       self::assertNull($route->getRequirement('_entity_access'), 'The settings lead gate is gone.');
+    }
+  }
+
+  /**
+   * Catalog is a settings tab; its four pages are its second tab row.
+   */
+  public function testCatalogIsASettingsTabWithFourChildren(): void {
+    $tasks = $this->container->get('plugin.manager.menu.local_task')->getDefinitions();
+    $catalog = $tasks['bb_core.bb_workspace.catalog'];
+    self::assertSame('bb_core.bb_workspace.settings', $catalog['base_route']);
+    self::assertSame('view.bb_terms.types', $catalog['route_name']);
+    self::assertGreaterThan($tasks['bb_core.bb_workspace.templates']['weight'], $catalog['weight'], 'Catalog follows Templates.');
+    $weight = -1;
+    foreach (['types' => 'Types', 'recipes' => 'Recipes', 'labels' => 'Labels', 'environments' => 'Environments'] as $id => $title) {
+      $task = $tasks['bb_core.catalog.' . $id];
+      self::assertSame('bb_core.bb_workspace.catalog', $task['parent_id']);
+      self::assertSame($title, (string) $task['title']);
+      self::assertGreaterThan($weight, $task['weight']);
+      $weight = $task['weight'];
     }
   }
 

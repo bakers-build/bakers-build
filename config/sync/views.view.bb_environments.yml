@@ -396,7 +396,7 @@ display:
                           source: {  }
                           node_id: bb_environments_catalog_pager
               node_id: bb_environments_catalog_canvas
-      path: _workspace/%bb_workspace/catalog/environments
+      path: _workspace/%bb_workspace/settings/catalog/environments
     cache_metadata:
       max-age: -1
       contexts:

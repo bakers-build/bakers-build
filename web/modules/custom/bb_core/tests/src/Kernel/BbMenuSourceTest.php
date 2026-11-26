@@ -460,12 +460,9 @@ final class BbMenuSourceTest extends KernelTestBase {
   }
 
   /**
-   * Catalog sits between Insights and Settings and opens on Types.
-   *
-   * Every rank that reads terms sees it, so a guest does; it is current on
-   * each of its tabs.
+   * The Catalog has no rail entry; its pages mark Settings for the lead.
    */
-  public function testCatalogRailEntrySitsBetweenInsightsAndSettings(): void {
+  public function testCatalogPagesMarkTheSettingsRailEntry(): void {
     $this->installOgScopeFixture();
     $this->installCatalogTermDisplays();
     $this->container->get('router.builder')->rebuild();
@@ -475,24 +472,11 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->addMembership($this->workspace, $lead, ['lead']);
     $this->setCurrentUser($lead);
 
-    $titles = array_column($this->emitted(), 'title');
-    $order = ['Insights', 'Catalog', 'Settings'];
-    self::assertSame($order, array_values(array_intersect($titles, $order)));
-    $catalog = array_column($this->emitted(), NULL, 'title')['Catalog'];
-    self::assertSame('/acme/catalog/types', $catalog['url']);
-    self::assertSame('tag', $catalog['icon']);
-
-    $this->visit('view.bb_terms.labels', ['bb_workspace' => 'acme']);
-    self::assertTrue(array_column($this->emitted(), NULL, 'title')['Catalog']['in_active_trail']);
-
-    $guest = $this->createUser([], 'acme-guest');
-    self::assertNotFalse($guest);
-    $this->addMembership($this->workspace, $guest, ['guest']);
-    $this->setCurrentUser($guest);
-    self::assertContains('Catalog', array_column($this->emitted(), 'title'));
-
-    $this->setUpCurrentUser(['name' => 'acme-outsider']);
     self::assertNotContains('Catalog', array_column($this->emitted(), 'title'));
+    foreach (['types', 'recipes', 'labels'] as $tab) {
+      $this->visit('view.bb_terms.' . $tab, ['bb_workspace' => 'acme']);
+      self::assertTrue(array_column($this->emitted(), NULL, 'title')['Settings']['in_active_trail'], $tab);
+    }
   }
 
   /**
@@ -514,7 +498,7 @@ final class BbMenuSourceTest extends KernelTestBase {
         'display_title' => ucfirst($display_id),
         'display_plugin' => 'page',
         'position' => $position + 1,
-        'display_options' => ['path' => '_workspace/%bb_workspace/catalog/' . $display_id],
+        'display_options' => ['path' => '_workspace/%bb_workspace/settings/catalog/' . $display_id],
       ];
     }
     View::create(['id' => 'bb_terms', 'label' => 'bb_terms', 'base_table' => 'users_field_data', 'display' => $displays])->save();

@@ -38,11 +38,10 @@ with real content is a named follow-up, created after this ticket merges.
 | Groups | `view.groups.workspace_list` | `/{ws}/groups` | View (page display) | `view bb_group` | `_permission` (the display's own access) |
 | Projects | `view.projects.workspace_list` | `/{ws}/projects` | View (page display) | `view bb_project` | `_permission` (the display's own access) |
 | Insights | `bb_core.workspace.insights` | `/{ws}/insights` | Controller | `view bakers figure workspace_overview` in this workspace (workspace lead) | `_bb_workspace_permission` (the workspace figures, all projects of the workspace; contributors, members and guests are refused, an outsider meets the workspace boundary's 404) |
-| Catalog | `view.bb_terms.types` | `/{ws}/catalog/types` | View (page display) | `view bb_term` in this workspace | `_bb_workspace_permission`; opens on its Types tab, so every rank that reads terms sees the entry |
 | Settings | `bb_core.bb_workspace.settings` | `/{ws}/settings` | Controller | `bb_workspace.update` (→ `update any bb_workspace`) | `_entity_access` |
 | Teams | `entity.bb_team.canonical` (one row per team) | `/{ws}/team/{id}` | — (rows added by `BbMenuSource` under the Teams heading) | `bb_team.view` | An `accessCheck(TRUE)` team query, scoped to the ambient workspace |
 
-## Workspace settings — four tabs, Settings default
+## Workspace settings — five tabs, Settings default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
@@ -50,22 +49,23 @@ with real content is a named follow-up, created after this ticket merges.
 | Members | `bb_core.bb_workspace.members` | `/{ws}/settings/members` | Controller (island) | `bb_workspace.update` | `_entity_access` |
 | Addons | `view.addons.settings` | `/{ws}/settings/addons` | View (page display) | `bb_workspace.update` | `_entity_access`, set on the Views route by `BbWorkspaceRouteSubscriber` (the display's own access is `none`) |
 | Templates | `view.bb_ticket_templates.workspace_list` | `/{ws}/settings/templates` | View (page display) | `view bb_ticket_template` in this workspace | `_bb_workspace_permission` instead of its sibling tabs' lead gate, so contributors may list and use workspace templates and a guest may not, whatever rank it holds elsewhere; they see no Settings entry and reach the tab by its address. Lists the workspace templates of this workspace only. Its *Add template* header action opens `entity.bb_ticket_template.add_for_workspace`, gated by `_bb_workspace_create` (the create right in this workspace); its optional project makes a project template. |
+| Catalog | `view.bb_terms.types` | `/{ws}/settings/catalog/types` | View (page display) | `view bb_term` in this workspace | `_bb_workspace_permission`; opens on the Catalog's Types tab, whose second tab row is the Catalog table below. Every rank that reads terms reaches it by its address; the Settings rail entry is the lead's only. |
 
 The `bb_api_key` submodule adds a further tab, **Service accounts**
 (`view.bb_service_accounts.settings`, `/{ws}/settings/service-accounts`), when
 it is enabled; see service accounts.
 
-## Catalog — four tabs, Types default
+## Catalog — four tabs under Workspace settings › Catalog, Types default
 
 The categories tickets pick from. Each tab needs its kind's view right in the
 route's workspace, set on the Views route by `BbWorkspaceRouteSubscriber`.
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
-| Types (default) | `view.bb_terms.types` | `/{ws}/catalog/types` | View (page display) | `view bb_term` in this workspace | `_bb_workspace_permission`. Lists the `type` terms of this workspace. |
-| Recipes | `view.bb_terms.recipes` | `/{ws}/catalog/recipes` | View (page display) | `view bb_term` in this workspace | As Types, for the `recipe` terms. |
-| Labels | `view.bb_terms.labels` | `/{ws}/catalog/labels` | View (page display) | `view bb_term` in this workspace | As Types, for the `label` terms. |
-| Environments | `view.bb_environments.catalog` | `/{ws}/catalog/environments` | View (page display) | `view bb_environment` in this workspace | `_bb_workspace_permission`, so a guest has no such tab. Lists the environments of every project of this workspace, filtered by an exposed **Project** select offering only this workspace's projects. Its *Add environment* header action opens `entity.bb_environment.add_for_workspace`, gated by `_bb_workspace_create`. |
+| Types (default) | `view.bb_terms.types` | `/{ws}/settings/catalog/types` | View (page display) | `view bb_term` in this workspace | `_bb_workspace_permission`. Lists the `type` terms of this workspace. |
+| Recipes | `view.bb_terms.recipes` | `/{ws}/settings/catalog/recipes` | View (page display) | `view bb_term` in this workspace | As Types, for the `recipe` terms. |
+| Labels | `view.bb_terms.labels` | `/{ws}/settings/catalog/labels` | View (page display) | `view bb_term` in this workspace | As Types, for the `label` terms. |
+| Environments | `view.bb_environments.catalog` | `/{ws}/settings/catalog/environments` | View (page display) | `view bb_environment` in this workspace | `_bb_workspace_permission`, so a guest has no such tab. Lists the environments of every project of this workspace, filtered by an exposed **Project** select offering only this workspace's projects. Its *Add environment* header action opens `entity.bb_environment.add_for_workspace`, gated by `_bb_workspace_create`. |
 
 ## Workspace invitation — a dialog, not a tab
 

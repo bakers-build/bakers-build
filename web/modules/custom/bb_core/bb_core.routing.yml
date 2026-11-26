@@ -217,7 +217,7 @@ entity.bb_environment.add_for_project:
 # The Catalog Environments tab adds an environment for a project picked
 # from the workspace; the create right is read in that workspace only.
 entity.bb_environment.add_for_workspace:
-  path: '/_workspace/{bb_workspace}/catalog/environments/add'
+  path: '/_workspace/{bb_workspace}/settings/catalog/environments/add'
   defaults:
     _entity_form: 'bb_environment.add'
     _title: 'Add environment'

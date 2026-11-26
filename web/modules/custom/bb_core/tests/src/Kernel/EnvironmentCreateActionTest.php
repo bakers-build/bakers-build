@@ -61,7 +61,7 @@ final class EnvironmentCreateActionTest extends KernelTestBase {
 
     self::assertSame('bb_theme:button', $build['#component'] ?? NULL);
     self::assertSame('Add environment', $build['#props']['label']);
-    self::assertStringContainsString('/space-a/catalog/environments/add', $build['#props']['href']);
+    self::assertStringContainsString('/space-a/settings/catalog/environments/add', $build['#props']['href']);
   }
 
   /**
@@ -80,7 +80,7 @@ final class EnvironmentCreateActionTest extends KernelTestBase {
     $account = $this->createAccount("north-$rank");
     $this->addMembership($this->fixture('a', 'bb_workspace'), $account, [$rank]);
     $this->container->get('current_user')->setAccount($account);
-    $request = Request::create('/space-a/catalog/environments');
+    $request = Request::create('/space-a/settings/catalog/environments');
     $request->setSession(new Session(new MockArraySessionStorage()));
     $request->attributes->add([
       '_route' => 'view.bb_environments.catalog',

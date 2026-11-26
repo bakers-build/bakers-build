@@ -39,7 +39,7 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
    */
   private const DIALOG_QUERY = [
     '_wrapper_format' => 'island_dialog',
-    'destination' => '/space-a/catalog/environments',
+    'destination' => '/space-a/settings/catalog/environments',
   ];
 
   /**
@@ -81,7 +81,7 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
    */
   public function testAddNeedsTheCreateRightInThatWorkspace(): void {
     $route = $this->container->get('router.route_provider')->getRouteByName(self::ADD_ROUTE);
-    self::assertSame('/_workspace/{bb_workspace}/catalog/environments/add', $route->getPath());
+    self::assertSame('/_workspace/{bb_workspace}/settings/catalog/environments/add', $route->getPath());
 
     $contributor = $this->createAccount('north-contributor');
     $this->addMembership($this->fixture('a', 'bb_workspace'), $contributor, ['contributor']);
@@ -134,7 +134,7 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
     self::assertStringContainsString('_wrapper_format=island_dialog', (string) ($form['#attributes']['data-hx-post'] ?? ''));
     $actions = $form[WrappedRouteRenderer::ACTIONS_SLOT_PROPERTY] ?? [];
     self::assertArrayHasKey('cancel', $actions, 'The action row in the hull offers Cancel.');
-    self::assertSame('/space-a/catalog/environments', $actions['cancel']['#props']['href']);
+    self::assertSame('/space-a/settings/catalog/environments', $actions['cancel']['#props']['href']);
   }
 
   /**
@@ -147,7 +147,7 @@ final class EnvironmentCatalogFormTest extends KernelTestBase {
     self::assertCount(1, $this->environments('dialog'));
     $response = $state->getResponse();
     self::assertNotNull($response, 'The dialog answers with a header, not a redirect.');
-    self::assertStringContainsString('/space-a/catalog/environments', (string) $response->headers->get('HX-Location'));
+    self::assertStringContainsString('/space-a/settings/catalog/environments', (string) $response->headers->get('HX-Location'));
   }
 
   /**

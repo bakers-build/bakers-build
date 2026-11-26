@@ -244,7 +244,7 @@ display:
                           source: {  }
                           node_id: bb_terms_labels_pager
               node_id: bb_terms_labels_canvas
-      path: _workspace/%bb_workspace/catalog/labels
+      path: _workspace/%bb_workspace/settings/catalog/labels
     cache_metadata:
       max-age: -1
       contexts:
@@ -330,7 +330,7 @@ display:
                           source: {  }
                           node_id: bb_terms_recipes_pager
               node_id: bb_terms_recipes_canvas
-      path: _workspace/%bb_workspace/catalog/recipes
+      path: _workspace/%bb_workspace/settings/catalog/recipes
     cache_metadata:
       max-age: -1
       contexts:
@@ -416,7 +416,7 @@ display:
                           source: {  }
                           node_id: bb_terms_types_pager
               node_id: bb_terms_types_canvas
-      path: _workspace/%bb_workspace/catalog/types
+      path: _workspace/%bb_workspace/settings/catalog/types
     cache_metadata:
       max-age: -1
       contexts:

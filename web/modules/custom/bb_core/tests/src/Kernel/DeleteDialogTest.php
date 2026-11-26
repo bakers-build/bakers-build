@@ -87,7 +87,7 @@ final class DeleteDialogTest extends KernelTestBase {
           'display_title' => 'Environments',
           'display_plugin' => 'page',
           'position' => 1,
-          'display_options' => ['path' => '_workspace/%bb_workspace/catalog/environments'],
+          'display_options' => ['path' => '_workspace/%bb_workspace/settings/catalog/environments'],
         ],
       ],
     ])->save();
@@ -239,7 +239,7 @@ final class DeleteDialogTest extends KernelTestBase {
     self::assertNull($this->reload($environment), 'the environment is deleted');
     self::assertSame(200, $response->getStatusCode());
     $location = (string) $response->headers->get('HX-Location');
-    self::assertSame('/bakers/catalog/environments', $location, 'the Environments tab, not the destination');
+    self::assertSame('/bakers/settings/catalog/environments', $location, 'the Environments tab, not the destination');
     self::assertSame(
       ['Deleted <em class="placeholder">env-a</em>.'],
       array_map('strval', $this->container->get('messenger')->messagesByType('status')),
