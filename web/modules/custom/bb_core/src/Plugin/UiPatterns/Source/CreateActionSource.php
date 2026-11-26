@@ -175,6 +175,8 @@ class CreateActionSource extends SourcePluginBase {
    *
    * @param array<string, mixed> $form
    *   The form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
    *
    * @return array<string, mixed>
    *   The form.

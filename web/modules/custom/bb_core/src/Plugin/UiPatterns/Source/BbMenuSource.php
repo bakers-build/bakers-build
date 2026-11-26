@@ -338,7 +338,7 @@ final class BbMenuSource extends MenuSource {
    *   The create action, or cache metadata alone when forbidden.
    */
   private function teamCreateAction(): array {
-    $source = $this->sourceManager->createInstance('bb_team_create_action', SourcePluginBase::buildConfiguration('actions', ['type' => 'object'], ['source' => []], []));
+    $source = $this->sourceManager->createInstance('bb_create_action', SourcePluginBase::buildConfiguration('actions', ['type' => 'object'], ['source' => ['route' => 'entity.bb_team.create_form']], []));
     assert($source instanceof SourcePluginBase);
     return $source->getPropValue();
   }

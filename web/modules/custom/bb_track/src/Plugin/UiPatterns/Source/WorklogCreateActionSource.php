@@ -7,7 +7,6 @@ namespace Drupal\bb_track\Plugin\UiPatterns\Source;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\bb_track\Access\WorklogFormAccess;
@@ -16,8 +15,9 @@ use Drupal\ui_patterns\Attribute\Source;
 /**
  * The Record time affordance on the time calendars, as a dialog.
  *
- * It always records the viewer's own time and opens on the calendar's
- * selected date, project and ticket.
+ * A `bb_create_action` whose access is narrower than its route's: the add
+ * route is not workspace-prefixed and allows recording in any workspace, while
+ * a workspace calendar offers the plus only to who may record in THAT one.
  */
 #[Source(
   id: 'bb_worklog_create_action',
@@ -29,76 +29,15 @@ final class WorklogCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}
-   */
-  protected function dialogRoute(): string {
-    return 'bb_track.worklog.add';
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function triggerLabel(): string {
-    return (string) $this->t('Record time');
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function forwardsScreenQuery(): bool {
-    return FALSE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function appliesToCurrentRoute(): bool {
-    return in_array($this->routeMatch->getRouteName(), [
-      'view.worklog.page',
-      'view.worklog.personal',
-      'view.worklog.team',
-      'view.worklog.project',
-    ], TRUE);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function prefill(): array {
-    $query = $this->requestStack->getCurrentRequest()?->query->all() ?? [];
-    $prefill = [];
-    $date = $query['date'] ?? NULL;
-    if (is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) === 1) {
-      $prefill['date'] = $date;
-    }
-    $project = $this->routeMatch->getParameter('bb_project');
-    if ($project instanceof BbProjectInterface) {
-      $prefill['project'] = (string) $project->id();
-    }
-    foreach (['project', 'ticket'] as $key) {
-      $value = $query[$key] ?? NULL;
-      if (!isset($prefill[$key]) && is_string($value) && preg_match('/^[1-9]\d*$/', $value) === 1) {
-        $prefill[$key] = $value;
-      }
-    }
-    $submission = $query['submission'] ?? NULL;
-    if (is_string($submission) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $submission) === 1) {
-      $prefill['submission'] = $submission;
-    }
-    return $prefill;
-  }
-
-  /**
-   * {@inheritdoc}
    *
-   * The add route is not workspace-prefixed, so the shared helper cannot
-   * pass `bb_workspace` into it. Offer the plus when My time has a
-   * workspace and the add route itself would allow recording.
+   * My time records in any workspace; a workspace calendar needs the right to
+   * record in its workspace.
    */
   protected function createAccess(): AccessResultInterface {
-    $workspace = $this->routeMatch->getParameter('bb_workspace');
     if ($this->routeMatch->getRouteName() === 'view.worklog.personal') {
       return WorklogFormAccess::add($this->currentUser);
     }
+    $workspace = $this->routeMatch->getParameter('bb_workspace');
     if (!$workspace instanceof BbWorkspaceInterface) {
       return AccessResult::forbidden()->addCacheContexts(['route']);
     }

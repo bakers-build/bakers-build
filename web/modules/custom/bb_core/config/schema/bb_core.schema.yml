@@ -432,6 +432,15 @@ ui_patterns_source.bb_create_action:
       type: label
       label: 'Label; empty uses the dialog route title'
 
+# The two create actions whose access or route is a class, not a setting.
+ui_patterns_source.bb_api_key_create_action:
+  type: ui_patterns_source.bb_create_action
+  label: 'Source: bakers.build create API key action'
+
+ui_patterns_source.bb_worklog_create_action:
+  type: ui_patterns_source.bb_create_action
+  label: 'Source: bakers.build record time action'
+
 ui_patterns_source.bb_menu:
   type: mapping
   label: 'Source: bakers.build ambient menu'

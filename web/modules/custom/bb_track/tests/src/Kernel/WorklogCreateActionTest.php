@@ -10,6 +10,8 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbPageHeaderDescriptionSource;
+use Drupal\Tests\bb_core\Kernel\CreateActionTestTrait;
+use Drupal\bb_track\Form\WorklogFormValidator;
 use Drupal\bb_track\Plugin\UiPatterns\Source\WorklogCreateActionSource;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
@@ -25,6 +27,7 @@ use Symfony\Component\Yaml\Yaml;
 #[Group('bb_track')]
 final class WorklogCreateActionTest extends KernelTestBase {
 
+  use CreateActionTestTrait;
   use OgScopeFixtureTrait;
   use UserCreationTrait;
 
@@ -162,9 +165,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
     [, $query_string] = explode('?', $href, 2);
     parse_str($query_string, $query);
     self::assertSame($uuid, $query['submission'] ?? NULL);
-    [, $forged_string] = explode('?', $this->hrefOf($this->actionMarkup('mode=week&submission=not-a-uuid')), 2);
-    parse_str($forged_string, $forged);
-    self::assertArrayNotHasKey('submission', $forged);
+    self::assertNull($this->dialogOpensWith('mode=week&submission=not-a-uuid')['submission']);
   }
 
   /**
@@ -184,11 +185,9 @@ final class WorklogCreateActionTest extends KernelTestBase {
     self::assertIsString($destination);
     self::assertStringContainsString('person=3', $destination);
 
-    $forged = $this->hrefOf($this->actionMarkup('date=06-10-2026&project=x'));
-    [, $forged_string] = explode('?', $forged, 2);
-    parse_str($forged_string, $forged_query);
-    self::assertArrayNotHasKey('date', $forged_query);
-    self::assertArrayNotHasKey('project', $forged_query);
+    $forged = $this->dialogOpensWith('date=06-10-2026&project=x');
+    self::assertNull($forged['date']);
+    self::assertNull($forged['project']);
   }
 
   /**
@@ -397,15 +396,24 @@ final class WorklogCreateActionTest extends KernelTestBase {
    * A fresh Record time source, reading the request and account as they are.
    */
   private function source(): WorklogCreateActionSource {
-    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
-      ->getDefinition('slot')['schema'];
-    $source = $this->container->get('plugin.manager.ui_patterns_source')
-      ->createInstance(
-        'bb_worklog_create_action',
-        SourcePluginBase::buildConfiguration('actions', $definition, ['source' => []], []),
-      );
+    $source = $this->shippedCreateAction('bb_track.worklog.add', NULL, 'bb_worklog_create_action');
     self::assertInstanceOf(WorklogCreateActionSource::class, $source);
     return $source;
+  }
+
+  /**
+   * What the record-time dialog opens with from the trigger on this screen.
+   *
+   * The trigger forwards the screen's values as they are; the dialog's
+   * validator decides which of them it keeps.
+   *
+   * @return array<string, mixed>
+   *   The dialog's prefill context.
+   */
+  private function dialogOpensWith(string $screen_query): array {
+    $query = Request::create($this->hrefOf($this->actionMarkup($screen_query)))->query->all();
+    $validator = new WorklogFormValidator($this->container->get('entity_type.manager'), $this->container->get('bb_core.workspace_read_scope'));
+    return $validator->prefill($query, $this->container->get('current_user'));
   }
 
   /**

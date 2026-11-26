@@ -19,8 +19,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * Each row is one link to its account's detail, which hosts Edit, Make
  * default and Archive (AccountActionsForm); the page header's New opens
- * AccountEditForm (BillingAccountCreateActionSource). Tickets are linked on
- * the ticket, so a row only names them.
+ * AccountEditForm (a `bb_create_action` on `bb_track.account_add`). Tickets
+ * are linked on the ticket, so a row only names them.
  *
  * @SuppressWarnings("PHPMD.UnusedFormalParameter")
  */

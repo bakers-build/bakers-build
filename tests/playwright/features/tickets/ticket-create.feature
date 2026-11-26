@@ -56,7 +56,7 @@ Feature: The create-ticket dialog's pickers write the values the form submits
   # requires — the SECOND click lands on markup that arrived through a
   # swap, not on the page's first paint — proved by clicking the
   # same trigger twice in a row: the trigger's own container targets
-  # ITSELF (`TicketCreateActionSource` — nesting it under `#island-content`
+  # ITSELF (`CreateActionSource` — nesting it under `#island-content`
   # would have detached it from the very swap it caused, see that class's
   # docblock), so the FIRST click already replaces the small container the
   # trigger itself lives in, and the second click is made on that
@@ -116,7 +116,8 @@ Feature: The create-ticket dialog's pickers write the values the form submits
   # looking for.
   #
   # The action is the SAME ui_patterns source on both displays
-  # (`bb_ticket_create_action`), so what is worth observing here is not that
+  # (`bb_create_action` on `entity.bb_ticket.create_form`), so what is worth
+  # observing here is not that
   # the source works — the scenarios above already prove that — but that this
   # display now carries it and that it behaves the same way when it does.
   #

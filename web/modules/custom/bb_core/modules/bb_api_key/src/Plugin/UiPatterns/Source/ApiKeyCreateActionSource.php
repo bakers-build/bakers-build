@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_api_key\Plugin\UiPatterns\Source;
 
-use Drupal\Core\Access\AccessResult;
-use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\Core\Url;
 use Drupal\bb_api_key\ServiceAccountManager;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
@@ -17,8 +14,9 @@ use Drupal\user\UserInterface;
 /**
  * The `Create API key` plus in the page header, opening the create dialog.
  *
- * Placed by the shell `page_header` island beside the other create actions
- * and kept off every route but the owner's API-key list.
+ * A `bb_create_action` whose dialog depends on whose key list it is on: a
+ * service account's keys are issued through its workspace's own route, whose
+ * workspace comes from the account rather than from the `/user/{user}` screen.
  */
 #[Source(
   id: 'bb_api_key_create_action',
@@ -30,76 +28,33 @@ final class ApiKeyCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}
+   *
+   * A service account's keys go through its workspace's route (lock, binding
+   * and admin checks), never the owner-only form.
    */
   protected function dialogRoute(): string {
-    // A service account's keys are issued through its workspace's own
-    // route (lock, binding and admin checks), never the owner-only form.
-    return $this->serviceWorkspace() !== NULL ? 'bb_api_key.service_account.key_add' : 'bb_api_key.add';
+    return $this->serviceWorkspace() !== NULL ? 'bb_api_key.service_account.key_add' : parent::dialogRoute();
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function dialogRouteParameters(): array {
-    $user = $this->pathUser();
-    if ($user === NULL) {
-      return [];
-    }
+  protected function dialogRouteParameters(): ?array {
     $workspace = $this->serviceWorkspace();
-    return ($workspace === NULL ? [] : ['bb_workspace' => $workspace->getSlug()]) + ['user' => (int) $user->id()];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function triggerLabel(): string {
-    return (string) $this->t('Create API key');
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function forwardsScreenQuery(): bool {
-    return FALSE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function appliesToCurrentRoute(): bool {
-    return $this->routeMatch->getRouteName() === 'view.bb_api_keys.page';
-  }
-
-  /**
-   * {@inheritdoc}
-   *
-   * The add route is user-scoped, not workspace-prefixed: offer the plus
-   * exactly when that route's own owner-only check allows it.
-   */
-  protected function createAccess(): AccessResultInterface {
-    $user = $this->pathUser();
-    if ($user === NULL) {
-      return AccessResult::forbidden()->addCacheContexts(['route']);
+    $user = $this->routeMatch->getRawParameter('user');
+    if ($workspace === NULL || !is_scalar($user)) {
+      return parent::dialogRouteParameters();
     }
-    $route_access = Url::fromRoute($this->dialogRoute(), $this->dialogRouteParameters())
-      ->access($this->currentUser, TRUE);
-    return AccessResult::allowed()->addCacheContexts(['route', 'user'])->andIf($route_access);
+    return ['bb_workspace' => $workspace->getSlug(), 'user' => (string) $user];
   }
 
   /**
-   * The path account's workspace when it is a service account, else NULL.
+   * The workspace of the service account whose key list this is, if any.
    */
   private function serviceWorkspace(): ?BbWorkspaceInterface {
-    $workspace = $this->pathUser()?->get(ServiceAccountManager::MARKER_FIELD)->entity;
-    return $workspace instanceof BbWorkspaceInterface ? $workspace : NULL;
-  }
-
-  /**
-   * The account in the path, upcast or raw.
-   */
-  private function pathUser(): ?UserInterface {
     $user = $this->routeMatch->getParameter('user');
-    return $user instanceof UserInterface ? $user : NULL;
+    $workspace = $user instanceof UserInterface ? $user->get(ServiceAccountManager::MARKER_FIELD)->entity : NULL;
+    return $workspace instanceof BbWorkspaceInterface ? $workspace : NULL;
   }
 
 }

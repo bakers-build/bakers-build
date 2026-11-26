@@ -21,10 +21,10 @@ use Drupal\og\Entity\OgMembership;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\Og;
 use Drupal\og\OgMembershipInterface;
-use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Yaml\Yaml;
@@ -75,6 +75,7 @@ use Symfony\Component\Yaml\Yaml;
 #[RunTestsInSeparateProcesses]
 final class TeamMemberAddAccessTest extends KernelTestBase {
 
+  use CreateActionTestTrait;
   use UserCreationTrait;
 
   /**
@@ -535,8 +536,7 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
    *   The trigger, or cache metadata alone when it is withheld.
    */
   private function headerTrigger(): array {
-    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_team_member_add_action', []);
-    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $source = $this->shippedCreateAction('bb_core.bb_team.member_add');
     $value = $source->getPropValue();
     self::assertIsArray($value);
     return $value;
@@ -670,6 +670,10 @@ final class TeamMemberAddAccessTest extends KernelTestBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
     $request->attributes->set('bb_workspace', $this->workspace);
     $request->attributes->set('bb_team', $this->team);
+    $request->attributes->set('_raw_variables', new ParameterBag([
+      'bb_workspace' => $this->workspace->getSlug(),
+      'bb_team' => (string) $this->team->id(),
+    ]));
     $this->container->get('request_stack')->push($request);
   }
 

@@ -21,7 +21,7 @@ Feature: Creating a project from the projects screen
 
   WHAT IT FOUND ON ITS FIRST RUN, which is the case for a browser gate made
   rather than argued. All three scenarios were RED against the trigger exactly
-  as delivered: `ProjectCreateActionSource` declared
+  as delivered: the project trigger (then `ProjectCreateActionSource`) declared
   `hx-select="form#bakers-project-create"` — reasoning copied from the ticket
   trigger, where the hull genuinely IS inside the form — so the swap discarded
   the generic hull that WRAPS this form. Measured in Chromium: the shell overlay

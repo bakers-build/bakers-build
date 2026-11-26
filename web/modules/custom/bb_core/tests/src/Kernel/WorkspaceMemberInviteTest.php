@@ -24,7 +24,6 @@ use Drupal\bb_core\Members\WorkspaceInvite;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\island\IslandViewAccessInterface;
 use Drupal\og\Og;
-use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
@@ -33,6 +32,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -43,6 +43,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 #[RunTestsInSeparateProcesses]
 final class WorkspaceMemberInviteTest extends KernelTestBase {
 
+  use CreateActionTestTrait;
   use UserCreationTrait;
 
   /**
@@ -642,8 +643,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       $refused = TRUE;
     }
     self::assertTrue($refused, 'a member is refused the workspace members face');
-    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_member_invite_action', []);
-    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $source = $this->shippedCreateAction('bb_core.workspace_invite');
     self::assertArrayNotHasKey('#type', $source->getPropValue(), 'a member is offered no invite button');
 
     $this->expectException(AccessDeniedHttpException::class);
@@ -976,8 +976,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       GroupMembersForm::class,
       ['island_id' => 'members', 'host_id' => 'workspace'],
     );
-    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_member_invite_action', []);
-    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $source = $this->shippedCreateAction('bb_core.workspace_invite');
     $trigger = $source->getPropValue();
 
     self::assertArrayNotHasKey('invite', $built);
@@ -1784,6 +1783,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, $route_name);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
     $request->attributes->set('bb_workspace', $this->workspace);
+    $request->attributes->set('_raw_variables', new ParameterBag(['bb_workspace' => $this->workspace->getSlug()]));
     $this->container->get('request_stack')->push($request);
   }
 

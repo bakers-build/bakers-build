@@ -1007,8 +1007,8 @@ When('I visit the My work list', async ({ page }) => {
  * BB-664 review finding 2: the two scenarios below used to visit the
  * route-less `/tickets/all` table and then assert the route-bound dialog
  * behaviour (no picker, a scoped conductor) — a claim that table can never
- * make, since nothing on it binds a project at all. `TicketCreateActionSource
- * ::routeBoundQuery()` reads the `bb_project` route parameter specifically,
+ * make, since nothing on it binds a project at all. The ticket trigger's
+ * `route_query: {project: bb_project}` reads the `bb_project` route parameter,
  * so this is the one navigation that exercises the actual AC-1 path: a
  * screen whose OWN route names a project.
  */

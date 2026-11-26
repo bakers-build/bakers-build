@@ -12,6 +12,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\ui_patterns\SourcePluginBase;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Yaml\Yaml;
 
@@ -22,6 +23,7 @@ use Symfony\Component\Yaml\Yaml;
 final class GroupTeamCreateActionTest extends KernelTestBase {
 
   use ProjectsViewTestTrait;
+  use CreateActionTestTrait;
   use UserCreationTrait;
 
   /**
@@ -87,6 +89,7 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
       '_route' => $route,
       '_route_object' => $this->container->get('router.route_provider')->getRouteByName($route),
       'bb_workspace' => $this->workspace,
+      '_raw_variables' => new ParameterBag(['bb_workspace' => 'workspace-a']),
     ]);
     $this->container->get('request_stack')->push($request);
   }
@@ -99,7 +102,9 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
       if ($type === 'group') {
         $this->enterRoute('view.groups.workspace_list');
       }
-      $build = $this->source('bb_' . $type . '_create_action', 'slot')->getPropValue();
+      // The team trigger is the rail's, configured as BbMenuSource does.
+      $source = $type === 'group' ? $this->shippedCreateAction('entity.bb_group.create_form') : $this->source('bb_create_action', 'slot', ['route' => 'entity.bb_team.create_form']);
+      $build = $source->getPropValue();
       self::assertSame('bb_theme:button', $build['#component']);
       self::assertSame($label, $build['#props']['label']);
       self::assertStringContainsString('/workspace-a/' . $type . '/create', $build['#props']['href']);
@@ -162,22 +167,27 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
       self::assertSame('bb_theme:page_header', $header['component_id']);
       self::assertSame(
         [
-          'bb_ticket_create_action',
-          'bb_project_create_action',
-          'island_placement',
-          'bb_ticket_template_create_action',
-          'bb_term_create_action',
-          'bb_environment_create_action',
-          'bb_ticket_trigger_create_action',
-          'bb_webhook_create_action',
-          'bb_group_create_action',
-          'bb_member_invite_action',
-          'bb_team_member_add_action',
-          'bb_worklog_create_action',
-          'bb_track_billing_account_create_action',
-          'bb_service_account_create_action',
+          'bb_create_action entity.bb_ticket.create_form',
+          'bb_create_action entity.bb_project.create_form',
+          'island_placement ',
+          'bb_create_action entity.bb_ticket_template.add_for_project',
+          'bb_create_action entity.bb_ticket_template.add_for_workspace',
+          'bb_create_action entity.bb_term.add_form',
+          'bb_create_action entity.bb_term.add_form',
+          'bb_create_action entity.bb_term.add_form',
+          'bb_create_action entity.bb_environment.add_for_project',
+          'bb_create_action entity.bb_ticket_trigger.add_form',
+          'bb_create_action entity.bb_webhook.add_for_project',
+          'bb_create_action entity.bb_webhook.add_for_group',
+          'bb_create_action entity.bb_webhook.add_for_workspace',
+          'bb_create_action entity.bb_group.create_form',
+          'bb_create_action bb_core.workspace_invite',
+          'bb_create_action bb_core.bb_team.member_add',
+          'bb_worklog_create_action bb_track.worklog.add',
+          'bb_create_action bb_track.account_add',
+          'bb_create_action bb_api_key.service_account.add',
         ],
-        array_column($header['slots']['actions']['sources'], 'source_id'),
+        array_map(static fn (array $entry): string => $entry['source_id'] . ' ' . ($entry['source']['route'] ?? ''), $header['slots']['actions']['sources']),
       );
     }
   }
@@ -198,11 +208,11 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
    * The header trigger keeps itself off every screen but the Groups listing.
    */
   public function testTheGroupActionRendersNothingOnTheProjectsListing(): void {
-    $build = $this->source('bb_group_create_action', 'slot')->getPropValue();
+    $build = $this->shippedCreateAction('entity.bb_group.create_form')->getPropValue();
     self::assertArrayNotHasKey('#component', $build);
 
     $this->enterRoute('view.groups.workspace_list');
-    self::assertSame('bb_theme:button', $this->source('bb_group_create_action', 'slot')->getPropValue()['#component']);
+    self::assertSame('bb_theme:button', $this->shippedCreateAction('entity.bb_group.create_form')->getPropValue()['#component']);
   }
 
   /**

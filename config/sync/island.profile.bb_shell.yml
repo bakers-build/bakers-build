@@ -194,48 +194,142 @@ placements:
           actions:
             sources:
               -
-                source_id: bb_ticket_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_ticket.create_form
+                  screens:
+                    - 'view.tickets.*'
+                  query:
+                    - '*'
+                  route_query:
+                    project: bb_project
               -
-                source_id: bb_project_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_project.create_form
+                  screens:
+                    - view.projects.workspace_list
               -
                 source_id: island_placement
                 source:
                   placement: shell_project_favorite
               -
-                source_id: bb_ticket_template_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_ticket_template.add_for_project
+                  screens:
+                    - view.bb_ticket_templates.project_list
               -
-                source_id: bb_term_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_ticket_template.add_for_workspace
+                  screens:
+                    - view.bb_ticket_templates.workspace_list
               -
-                source_id: bb_environment_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_term.add_form
+                  screens:
+                    - view.bb_terms.types
+                  route_parameters:
+                    bb_vocabulary: type
+                  label: 'Add type'
               -
-                source_id: bb_ticket_trigger_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_term.add_form
+                  screens:
+                    - view.bb_terms.recipes
+                  route_parameters:
+                    bb_vocabulary: recipe
+                  label: 'Add recipe'
               -
-                source_id: bb_webhook_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_term.add_form
+                  screens:
+                    - view.bb_terms.labels
+                  route_parameters:
+                    bb_vocabulary: label
+                  label: 'Add label'
               -
-                source_id: bb_group_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_environment.add_for_project
+                  screens:
+                    - view.bb_environments.project_list
               -
-                source_id: bb_member_invite_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_ticket_trigger.add_form
+                  screens:
+                    - view.bb_ticket_triggers.template_list
               -
-                source_id: bb_team_member_add_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_webhook.add_for_project
+                  screens:
+                    - view.bb_webhooks.project_list
+              -
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_webhook.add_for_group
+                  screens:
+                    - view.bb_webhooks.group_list
+              -
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_webhook.add_for_workspace
+                  screens:
+                    - view.bb_webhooks.workspace_list
+              -
+                source_id: bb_create_action
+                source:
+                  route: entity.bb_group.create_form
+                  screens:
+                    - view.groups.workspace_list
+              -
+                source_id: bb_create_action
+                source:
+                  route: bb_core.workspace_invite
+                  screens:
+                    - bb_core.bb_workspace.members
+                  trigger_id: members-invite
+              -
+                source_id: bb_create_action
+                source:
+                  route: bb_core.bb_team.member_add
+                  screens:
+                    - bb_core.bb_team.members
+                  trigger_id: members-add
               -
                 source_id: bb_worklog_create_action
-                source: {  }
+                source:
+                  route: bb_track.worklog.add
+                  screens:
+                    - view.worklog.page
+                    - view.worklog.personal
+                    - view.worklog.team
+                    - view.worklog.project
+                  query:
+                    - date
+                    - project
+                    - ticket
+                    - submission
+                  route_query:
+                    project: bb_project
               -
-                source_id: bb_track_billing_account_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: bb_track.account_add
+                  screens:
+                    - bb_track.account
               -
-                source_id: bb_service_account_create_action
-                source: {  }
+                source_id: bb_create_action
+                source:
+                  route: bb_api_key.service_account.add
+                  screens:
+                    - view.bb_service_accounts.settings
       boost: true
       target_placement: shell_content_island
     data: {  }

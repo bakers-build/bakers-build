@@ -14,8 +14,9 @@ use Drupal\bb_core\Form\BbGroupTeamCreateForm;
 use Drupal\bb_core\Form\BbCreateDialogFormBase;
 use Drupal\island\Render\WrappedRouteRenderer;
 use Drupal\bb_core\Form\BbTicketCreateForm;
-use Drupal\bb_core\Plugin\UiPatterns\Source\ProjectCreateActionSource;
-use Drupal\bb_core\Plugin\UiPatterns\Source\TicketCreateActionSource;
+use Drupal\bb_api_key\Plugin\UiPatterns\Source\ApiKeyCreateActionSource;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
+use Drupal\bb_track\Plugin\UiPatterns\Source\WorklogCreateActionSource;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -151,25 +152,30 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
   }
 
   /**
-   * The TRIGGER that opens each dialog declares only its subject either.
+   * The TRIGGER is one configured source; only two subjects extend it.
+   *
+   * A subject expressed as a class instead of settings fails here. The two
+   * exceptions declare only the seams they need: the API key's service-account
+   * route and the worklog's workspace-scoped access.
    */
-  public function testEachCreateTriggerDeclaresOnlyItsSubject(): void {
-    foreach ([TicketCreateActionSource::class, ProjectCreateActionSource::class] as $class) {
-      $allowed = [
-        'dialogRoute', 'triggerLabel', 'forwardsScreenQuery',
-        'appliesToCurrentRoute',
-      ];
-      // BB-664: only the ticket trigger overrides this, to force its
-      // per-project screen's ROUTE context onto the dialog, which the
-      // forwarded screen query alone cannot carry.
-      if ($class === TicketCreateActionSource::class) {
-        $allowed[] = 'routeBoundQuery';
+  public function testOnlyTheTwoExceptionsExtendTheCreateTrigger(): void {
+    $exceptions = [
+      ApiKeyCreateActionSource::class => ['dialogRoute', 'dialogRouteParameters', 'serviceWorkspace'],
+      WorklogCreateActionSource::class => ['createAccess'],
+    ];
+    $subclasses = [];
+    foreach (glob(dirname(__DIR__, 4) . '/{*,*/modules/*}/src/Plugin/UiPatterns/Source/*.php', GLOB_BRACE) ?: [] as $file) {
+      if (preg_match('/^namespace (.+);$/m', (string) file_get_contents($file), $namespace) === 1) {
+        $class = $namespace[1] . '\\' . basename($file, '.php');
+        if (is_subclass_of($class, CreateActionSource::class)) {
+          $subclasses[] = $class;
+        }
       }
-      self::assertSame(
-        [],
-        $this->declaredBeyond($class, $allowed),
-        $class . ' declares more than its subject — the plumbing belongs to CreateActionSource.',
-      );
+    }
+    sort($subclasses);
+    self::assertSame(array_keys($exceptions), $subclasses);
+    foreach ($exceptions as $class => $allowed) {
+      self::assertSame([], $this->declaredBeyond($class, $allowed), $class . ' declares more than its exception.');
     }
   }
 

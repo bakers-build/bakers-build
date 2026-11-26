@@ -80,7 +80,7 @@ final class CreateActionSourceTest extends KernelTestBase {
   }
 
   /**
-   * `screens` lists route names, a trailing `*` matches a prefix, empty is all.
+   * Screens list route names; a trailing `*` matches a prefix, empty is all.
    */
   public function testScreensKeepTheTriggerOffOtherRoutes(): void {
     $route = ['route' => 'entity.bb_team.create_form'];
@@ -101,19 +101,22 @@ final class CreateActionSourceTest extends KernelTestBase {
   }
 
   /**
-   * `route_parameters` overlay the screen's own raw parameters.
+   * Fixed route parameters overlay the screen's own raw parameters.
    */
   public function testRouteParametersOverlayTheScreen(): void {
     $this->container->get('entity_type.manager')->getStorage('bb_workspace')->create([
       'name' => 'B',
       'slug' => 'workspace-b',
     ])->save();
-    $build = $this->build(['route' => 'entity.bb_team.create_form', 'route_parameters' => ['bb_workspace' => 'workspace-b']]);
+    $build = $this->build([
+      'route' => 'entity.bb_team.create_form',
+      'route_parameters' => ['bb_workspace' => 'workspace-b'],
+    ]);
     self::assertStringContainsString('/workspace-b/team/create', $build['#props']['href']);
   }
 
   /**
-   * `query` forwards listed keys, or every key for `*`, never transport keys.
+   * The query setting forwards listed keys, or all for `*`, never transport.
    */
   public function testQueryForwardsTheAllowedScreenKeys(): void {
     $this->enterScreen('bb_core.bb_workspace.members', [
@@ -138,7 +141,7 @@ final class CreateActionSourceTest extends KernelTestBase {
   }
 
   /**
-   * `route_query` sends a converted route parameter's id over a forwarded key.
+   * A route-bound query key sends the converted id over a forwarded key.
    */
   public function testRouteQueryWinsWithTheConvertedId(): void {
     $this->enterScreen('bb_core.bb_workspace.members', ['workspace' => '999']);
@@ -151,7 +154,7 @@ final class CreateActionSourceTest extends KernelTestBase {
   }
 
   /**
-   * `trigger_id` becomes the trigger's element id.
+   * The trigger id setting becomes the trigger's element id.
    */
   public function testTriggerIdSetsTheElementId(): void {
     $build = $this->build(['route' => 'entity.bb_team.create_form', 'trigger_id' => 'team-add']);
@@ -162,7 +165,9 @@ final class CreateActionSourceTest extends KernelTestBase {
    * A denied dialog route offers nothing and varies by permissions and route.
    */
   public function testDeniedRouteAccessOffersNothing(): void {
-    $this->setCurrentUser($this->createUser([]));
+    $denied = $this->createUser([]);
+    self::assertNotFalse($denied);
+    $this->setCurrentUser($denied);
     $build = $this->build(['route' => 'entity.bb_team.create_form']);
     self::assertArrayNotHasKey('#component', $build);
     self::assertContains('user.permissions', $build['#cache']['contexts']);
@@ -203,8 +208,7 @@ final class CreateActionSourceTest extends KernelTestBase {
    *   The parsed query.
    */
   private function dialogQuery(array $build): array {
-    parse_str((string) parse_url($build['#props']['href'], PHP_URL_QUERY), $query);
-    return $query;
+    return Request::create($build['#props']['href'])->query->all();
   }
 
   /**
