@@ -156,6 +156,16 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
   }
 
   /**
+   * A ticket title with invalid UTF-8 still queues, so the save succeeds.
+   */
+  public function testInvalidUtf8TitleQueues(): void {
+    $webhook = $this->saved();
+    $this->fixture('a', 'bb_ticket')->set('title', "Bad \xB1 title")->save();
+    $this->recordActivity();
+    $this->assertSame([(int) $webhook->id()], $this->queuedWebhookIds());
+  }
+
+  /**
    * Recording an activity sends nothing.
    */
   public function testNoHttpOnInsert(): void {
