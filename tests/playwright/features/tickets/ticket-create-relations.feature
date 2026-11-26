@@ -22,11 +22,8 @@ Feature: The create-ticket dialog relates a new ticket only within its project
     Then the "Parent" picker does not offer "GL-E2E-WFI"
 
   Scenario: Changing the project refreshes both pickers
-    When I visit the My work list
+    When I visit the ticket list of project "bakers.build Platform"
     And I click the "New ticket" action
-    Then the "Parent" picker offers no tickets
-    And the "Blocked by" picker offers no tickets
-    When I choose the dialog project "bakers.build Platform"
     And I open the "Parent" picker
     And I pick the related ticket "BB-100"
     Then the "Parent" picker offers "BB-100"

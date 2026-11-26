@@ -194,11 +194,13 @@ final class TicketCreateRelationsTest extends KernelTestBase {
   }
 
   /**
-   * A bound dialog checks against its bound project, not a posted one.
+   * A dialog opened on A checks relations against the project picked in it.
    */
-  public function testBoundDialogIgnoresPostedProjectForRelations(): void {
-    $state = $this->submitForm(['project_id' => $this->projects['B'], 'parent_id' => $this->tickets['b1']], 'A');
+  public function testDialogChecksRelationsAgainstPickedProject(): void {
+    $ticket = $this->submitExpectingSave(['project_id' => $this->projects['B'], 'parent_id' => $this->tickets['b1']], 'A');
+    self::assertSame($this->tickets['b1'], (string) $ticket->get('parent_id')->target_id);
 
+    $state = $this->submitForm(['project_id' => $this->projects['B'], 'parent_id' => $this->tickets['a1']], 'A');
     self::assertSame(self::PARENT_PROJECT_ERROR, (string) ($state->getErrors()['parent_id'] ?? ''));
   }
 
@@ -244,30 +246,21 @@ final class TicketCreateRelationsTest extends KernelTestBase {
   }
 
   /**
-   * AC-2: the unbound dialog refreshes both pickers on a project change.
+   * Every dialog refreshes its project-dependent pickers on a project change.
    */
-  public function testUnboundDialogWiresRelationRefresh(): void {
-    $form = $this->buildForm(NULL);
+  public function testDialogWiresRelationRefresh(): void {
+    foreach (['A', NULL] as $project) {
+      $form = $this->buildForm($project);
 
-    $refresh = $form['project_id']['#attributes'];
-    self::assertArrayHasKey('data-hx-post', $refresh);
-    self::assertSame('change', $refresh['data-hx-trigger'] ?? NULL);
-    self::assertStringContainsString('"_triggering_element_name":"project_id"', (string) ($refresh['data-hx-vals'] ?? ''));
-    self::assertSame('parent_id', $form['parent_id']['#attributes']['data-ticket-project-scoped'] ?? NULL);
-    self::assertSame('blocked_by', $form['blocked_by']['#attributes']['data-ticket-project-scoped'] ?? NULL);
-    // The htmx swap resolves `hx-select-oob` as element ids only.
-    self::assertSame('#' . $form['blocked_by']['#id'], $refresh['data-hx-select-oob'] ?? NULL);
-  }
-
-  /**
-   * A bound dialog has no project picker and needs no refresh.
-   */
-  public function testBoundDialogHasNoRelationRefresh(): void {
-    $form = $this->buildForm('A');
-
-    self::assertArrayNotHasKey('data-hx-post', $form['project_id']['#attributes'] ?? []);
-    self::assertArrayNotHasKey('data-ticket-project-scoped', $form['parent_id']['#attributes'] ?? []);
-    self::assertArrayNotHasKey('data-ticket-project-scoped', $form['blocked_by']['#attributes'] ?? []);
+      $refresh = $form['project_id']['#attributes'];
+      self::assertArrayHasKey('data-hx-post', $refresh);
+      self::assertSame('change', $refresh['data-hx-trigger'] ?? NULL);
+      self::assertStringContainsString('"_triggering_element_name":"project_id"', (string) ($refresh['data-hx-vals'] ?? ''));
+      self::assertSame('parent_id', $form['parent_id']['#attributes']['data-ticket-project-scoped'] ?? NULL);
+      self::assertSame('blocked_by', $form['blocked_by']['#attributes']['data-ticket-project-scoped'] ?? NULL);
+      // The htmx swap resolves `hx-select-oob` as element ids only.
+      self::assertSame('#' . $form['blocked_by']['#id'] . ',#' . $form['conductor_id']['#id'], $refresh['data-hx-select-oob'] ?? NULL);
+    }
   }
 
   /**

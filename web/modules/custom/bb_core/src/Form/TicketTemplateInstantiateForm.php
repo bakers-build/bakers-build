@@ -88,11 +88,15 @@ class TicketTemplateInstantiateForm extends BbTicketCreateForm {
 
   /**
    * Leaves out parent and blockers: they are no template fields.
+   *
+   * A project template offers the conductor and no project picker; a
+   * workspace template the project picker and no conductor.
    */
   protected function alterFormDisplay(EntityFormDisplayInterface $display, FormStateInterface $form_state): void {
     parent::alterFormDisplay($display, $form_state);
     $display->removeComponent('parent_id');
     $display->removeComponent('blocked_by');
+    $display->removeComponent($form_state->get('project_bound') ? 'project_id' : 'conductor_id');
   }
 
   /**
