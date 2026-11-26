@@ -1,0 +1,6 @@
+# A create dialog rendered by bb_create_action (see bb_core.links.action.yml).
+bb_ticket_trigger.create:
+  route_name: entity.bb_ticket_trigger.add_form
+  title: 'Add trigger'
+  appears_on: [view.bb_ticket_triggers.template_list]
+  dialog: {}

@@ -12,6 +12,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\ui_patterns\SourcePluginBase;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Yaml\Yaml;
 
@@ -22,6 +23,7 @@ use Symfony\Component\Yaml\Yaml;
 final class GroupTeamCreateActionTest extends KernelTestBase {
 
   use ProjectsViewTestTrait;
+  use CreateActionTestTrait;
   use UserCreationTrait;
 
   /**
@@ -87,6 +89,7 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
       '_route' => $route,
       '_route_object' => $this->container->get('router.route_provider')->getRouteByName($route),
       'bb_workspace' => $this->workspace,
+      '_raw_variables' => new ParameterBag(['bb_workspace' => 'workspace-a']),
     ]);
     $this->container->get('request_stack')->push($request);
   }
@@ -99,7 +102,10 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
       if ($type === 'group') {
         $this->enterRoute('view.groups.workspace_list');
       }
-      $build = $this->source('bb_' . $type . '_create_action', 'slot')->getPropValue();
+      // The team trigger is the rail's, configured as BbMenuSource does.
+      $build = $type === 'group'
+        ? $this->createTrigger('bb_core.create.group')
+        : $this->source('bb_create_action', 'slot', ['action' => 'bb_core.create.team'])->getPropValue()['bb_core.create.team'];
       self::assertSame('bb_theme:button', $build['#component']);
       self::assertSame($label, $build['#props']['label']);
       self::assertStringContainsString('/workspace-a/' . $type . '/create', $build['#props']['href']);
@@ -160,25 +166,13 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
 
       $header = Yaml::parseFile($root . '/island.profile.bb_shell.yml')['placements']['shell_page_header']['configuration']['component'];
       self::assertSame('bb_theme:page_header', $header['component_id']);
+      // One create source renders every screen's dialog local actions; the
+      // project favorite follows it.
       self::assertSame(
-        [
-          'bb_ticket_create_action',
-          'bb_project_create_action',
-          'island_placement',
-          'bb_ticket_template_create_action',
-          'bb_term_create_action',
-          'bb_environment_create_action',
-          'bb_ticket_trigger_create_action',
-          'bb_webhook_create_action',
-          'bb_group_create_action',
-          'bb_member_invite_action',
-          'bb_team_member_add_action',
-          'bb_worklog_create_action',
-          'bb_track_billing_account_create_action',
-          'bb_service_account_create_action',
-        ],
+        ['bb_create_action', 'island_placement'],
         array_column($header['slots']['actions']['sources'], 'source_id'),
       );
+      self::assertSame([], $header['slots']['actions']['sources'][0]['source']);
     }
   }
 
@@ -198,11 +192,11 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
    * The header trigger keeps itself off every screen but the Groups listing.
    */
   public function testTheGroupActionRendersNothingOnTheProjectsListing(): void {
-    $build = $this->source('bb_group_create_action', 'slot')->getPropValue();
+    $build = $this->createTrigger('bb_core.create.group');
     self::assertArrayNotHasKey('#component', $build);
 
     $this->enterRoute('view.groups.workspace_list');
-    self::assertSame('bb_theme:button', $this->source('bb_group_create_action', 'slot')->getPropValue()['#component']);
+    self::assertSame('bb_theme:button', $this->createTrigger('bb_core.create.group')['#component']);
   }
 
   /**

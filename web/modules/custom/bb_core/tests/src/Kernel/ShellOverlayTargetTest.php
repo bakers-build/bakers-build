@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
-use Drupal\bb_core\Plugin\UiPatterns\Source\TicketCreateActionSource;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\KernelTests\KernelTestBase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -21,7 +21,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * renders — the source, its class and the page layout's `bb_overlay` entry are
  * gone.
  *
- * THE ONE REAL COST, PAID HERE. `TicketCreateActionSource::TARGET_ID` (BB-420
+ * THE ONE REAL COST, PAID HERE. `CreateActionSource::TARGET_ID` (BB-420
  * Task 36 moved it there when `BbDialogPlacement` was deleted — the action is
  * the only place in PHP that may name the target) is now spelled twice with
  * nothing between the two spellings — once in this class, once as a literal in
@@ -79,7 +79,7 @@ final class ShellOverlayTargetTest extends KernelTestBase {
     $html = $this->renderShell();
 
     self::assertStringContainsString(
-      'id="' . TicketCreateActionSource::TARGET_ID . '"',
+      'id="' . CreateActionSource::TARGET_ID . '"',
       $html,
       'shell.twig must paint the swap target unconditionally — BbOverlaySource is gone, so the template is now the only thing that can.',
     );
@@ -95,7 +95,7 @@ final class ShellOverlayTargetTest extends KernelTestBase {
     $html = $this->renderShell();
 
     self::assertStringContainsString(
-      '<div id="' . TicketCreateActionSource::TARGET_ID . '" hx-target="this"></div>',
+      '<div id="' . CreateActionSource::TARGET_ID . '" hx-target="this"></div>',
       $html,
     );
   }
@@ -109,13 +109,13 @@ final class ShellOverlayTargetTest extends KernelTestBase {
    * resolves to somewhere real because THIS attribute is here. Asserted
    * separately from the emptiness case above so a reader sees which fact this
    * class is actually pinning against the two-file drift
-   * `TicketCreateActionSource::TARGET_ID`'s own docblock warns about.
+   * `CreateActionSource::TARGET_ID`'s own docblock warns about.
    */
   public function testTheOverlayTargetCarriesHxTargetThis(): void {
     $html = $this->renderShell();
 
     self::assertStringContainsString(
-      'id="' . TicketCreateActionSource::TARGET_ID . '" hx-target="this"',
+      'id="' . CreateActionSource::TARGET_ID . '" hx-target="this"',
       $html,
       'A form swapped in with no target of its own must inherit one here, or it nests inside itself.',
     );
@@ -134,7 +134,7 @@ final class ShellOverlayTargetTest extends KernelTestBase {
     $html = $this->renderShell();
 
     $content_pos = strpos($html, '<main');
-    $overlay_pos = strpos($html, TicketCreateActionSource::TARGET_ID);
+    $overlay_pos = strpos($html, CreateActionSource::TARGET_ID);
     self::assertIsInt($content_pos, 'The shell must render its content region.');
     self::assertIsInt($overlay_pos, 'The shell must render its overlay target.');
     self::assertGreaterThan(

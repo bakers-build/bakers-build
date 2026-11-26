@@ -20,7 +20,8 @@
 // `form#bb-project-create-form` names the surface under test.
 //
 // THIS FILE'S FIRST RUN FOUND A DEFECT IN THAT ARRANGEMENT rather than in
-// itself, and the fix is in the trigger. `ProjectCreateActionSource` selected
+// itself, and the fix is in the trigger. The project trigger (then
+// `ProjectCreateActionSource`) selected
 // `form#bakers-project-create` out of the dialog response — reasoning copied from
 // the ticket trigger, where the hull IS inside the form — so the overlay
 // received a bare `<form>` and the document held zero `<dialog>` elements. It
@@ -56,7 +57,7 @@ import {
  * `Html::getId('bb_project_create_form')`. Used here to NAME the surface — the
  * generic hull carries no id of its own worth binding to — and deliberately not
  * as the trigger's `hx-select`, which must select the hull instead; see
- * `ProjectCreateActionSource::getPropValue()` for the measured reason.
+ * `CreateActionSource::getPropValue()` for the measured reason.
  */
 const PROJECT_FORM = 'form#bb-project-create-form';
 
@@ -94,7 +95,7 @@ const PROJECTS_WRAPPER = '.views-element-container:has(#views-exposed-form-proje
 /**
  * The accessible name of the trigger, which is an `aria-label` and not text.
  *
- * `ProjectCreateActionSource` renders `bb_theme:button` with
+ * `CreateActionSource` renders `bb_theme:button` with
  * `icon_only => TRUE`, and `button.twig` moves the label into `aria-label` for
  * exactly that case — so the control keeps an accessible name while showing
  * only a plus icon. `getByRole('link', …)` reads that name; a text selector
@@ -148,7 +149,7 @@ async function openDialog(page: Page): Promise<void> {
   const trigger = page.getByRole('link', { name: TRIGGER_NAME, exact: true });
   await expect(
     trigger,
-    `No "${TRIGGER_NAME}" action is on the projects screen — is the view's page_header composing bb_project_create_action?`,
+    `No "${TRIGGER_NAME}" action is on the projects screen — is the page_header composing a bb_create_action on entity.bb_project.create_form?`,
   ).toBeAttached();
   // WAIT FOR htmx TO OWN THE TRIGGER BEFORE CLICKING IT, and this is a
   // precondition rather than a softened assertion. The trigger is an ordinary

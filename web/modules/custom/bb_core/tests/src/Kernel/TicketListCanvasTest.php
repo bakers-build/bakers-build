@@ -9,9 +9,8 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbVocabulary;
-use Drupal\bb_core\Plugin\UiPatterns\Source\TicketCreateActionSource;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\search_api\Entity\Index;
-use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use Drupal\views\Views;
 use Symfony\Component\HttpFoundation\Request;
@@ -77,6 +76,7 @@ use PHPUnit\Framework\Attributes\Group;
 final class TicketListCanvasTest extends KernelTestBase {
 
   use OgScopeFixtureTrait;
+  use CreateActionTestTrait;
   use UserCreationTrait;
   use ProjectsViewTestTrait;
 
@@ -398,7 +398,7 @@ final class TicketListCanvasTest extends KernelTestBase {
     // prefix would pass on the prefixed one and hide a change of author.
     self::assertStringContainsString('data-hx-get="', $container);
     self::assertStringContainsString('_wrapper_format=island_dialog', $container);
-    self::assertStringContainsString('data-hx-target="#' . TicketCreateActionSource::TARGET_ID . '"', $container);
+    self::assertStringContainsString('data-hx-target="#' . CreateActionSource::TARGET_ID . '"', $container);
     self::assertStringContainsString('data-hx-swap="innerHTML', $container);
     // `dialog` AND NOT `form#…` since the operator ruling of 2026-09-08. The
     // hull is the form's ANCESTOR now — `island`'s wrapper format wraps this
@@ -452,7 +452,7 @@ final class TicketListCanvasTest extends KernelTestBase {
   public function testTheGateDeclaresThePermissionContextEvenWhenItOffersNothing(): void {
     $this->asWorkspaceGuest();
 
-    $value = $this->createActionSource()->getPropValue();
+    $value = $this->createTrigger('bb_core.create.ticket');
 
     self::assertIsArray($value);
     self::assertArrayNotHasKey('trigger', $value, 'This account may not create; nothing is offered.');
@@ -478,7 +478,7 @@ final class TicketListCanvasTest extends KernelTestBase {
     $request->attributes->add($this->container->get('router')->matchRequest($request));
     $this->container->get('request_stack')->push($request);
     try {
-      $build = $this->createActionSource()->getPropValue();
+      $build = $this->createTrigger('bb_core.create.ticket');
       self::assertIsArray($build);
       return (string) $this->container->get('renderer')->renderInIsolation($build);
     }
@@ -563,27 +563,6 @@ final class TicketListCanvasTest extends KernelTestBase {
       'The fixture must not grant the gated permission by a side door.',
     );
     $this->setCurrentUser($account);
-  }
-
-  /**
-   * A fresh add-action source, reading the request and the account as they are.
-   *
-   * Configured through `SourcePluginBase::buildConfiguration()` — the factory
-   * `ComponentElementBuilder` itself calls — rather than by hand-assembling
-   * the array, and the prop definition is READ from the `slot` PropType so
-   * this test cannot pass against a shape the product no longer has.
-   */
-  private function createActionSource(): TicketCreateActionSource {
-    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
-      ->getDefinition('slot')['schema'];
-    $source = $this->container->get('plugin.manager.ui_patterns_source')
-      ->createInstance(
-        'bb_ticket_create_action',
-        SourcePluginBase::buildConfiguration('actions', $definition, ['source' => []], []),
-      );
-    self::assertInstanceOf(TicketCreateActionSource::class, $source);
-
-    return $source;
   }
 
   /**
