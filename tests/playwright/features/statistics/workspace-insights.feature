@@ -10,7 +10,7 @@ Feature: Workspace leads read the Insights of their workspace
   Scenario: A workspace lead opens Insights from the rail
     Given I am logged in as the account "north-lead"
     When I open My work in workspace "bakers"
-    Then the rail lists "Insights" directly before "Catalog"
+    Then the rail lists "Insights" directly before "Settings"
     When I click the rail entry "Insights"
     Then the page heading is "Insights"
     And the page header describes the screen as "Northside Bakery · all projects, all teams"

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * The shipped term tabs live under Catalog and open to term readers.
+ * The Catalog lives under workspace settings and its tabs open to readers.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -43,19 +43,70 @@ final class CatalogRoutesTest extends KernelTestBase {
     }
     $this->installConfig(['views']);
     $this->installShippedView('views.view.bb_terms');
+    $this->installShippedView('views.view.bb_environments');
     $this->container->get('router.builder')->rebuild();
   }
 
   /**
-   * Each term tab has its Catalog path and the term read gate.
+   * Each Catalog page sits under workspace settings; terms keep their gate.
    */
-  public function testTermTabsLiveUnderCatalog(): void {
+  public function testCatalogPagesLiveUnderSettings(): void {
     $provider = $this->container->get('router.route_provider');
     foreach (['types', 'recipes', 'labels'] as $tab) {
       $route = $provider->getRouteByName('view.bb_terms.' . $tab);
-      self::assertSame('/_workspace/{bb_workspace}/catalog/' . $tab, $route->getPath());
+      self::assertSame('/_workspace/{bb_workspace}/settings/catalog/' . $tab, $route->getPath());
       self::assertSame('view bb_term', $route->getRequirement('_bb_workspace_permission'));
       self::assertNull($route->getRequirement('_entity_access'), 'The settings lead gate is gone.');
+    }
+  }
+
+  /**
+   * Environments are a project tab, not Catalog pages.
+   */
+  public function testEnvironmentsAreProjectTab(): void {
+    $provider = $this->container->get('router.route_provider');
+    self::assertSame('/_workspace/{bb_workspace}/project/{bb_project}/environments', $provider->getRouteByName('view.bb_environments.project_list')->getPath());
+    $gone = ['view.bb_environments.catalog', 'entity.bb_environment.add_for_workspace'];
+    self::assertSame([], $provider->getRoutesByNames($gone));
+
+    $tasks = $this->container->get('plugin.manager.menu.local_task')->getDefinitions();
+    $tab = $tasks['view.bb_environments.project_list'];
+    self::assertSame('entity.bb_project.canonical', $tab['base_route']);
+    self::assertSame('Environments', (string) $tab['title']);
+    self::assertGreaterThan($tasks['view.bb_ticket_templates.project_list']['weight'], $tab['weight']);
+    self::assertLessThan($tasks['bb_core.bb_project.settings']['weight'], $tab['weight']);
+    self::assertArrayNotHasKey('bb_core.catalog.environments', $tasks);
+  }
+
+  /**
+   * Catalog is a settings tab; its three term pages are its second tab row.
+   */
+  public function testCatalogIsSettingsTabWithThreeChildren(): void {
+    $tasks = $this->container->get('plugin.manager.menu.local_task')->getDefinitions();
+    $catalog = $tasks['bb_core.bb_workspace.catalog'];
+    self::assertSame('bb_core.bb_workspace.settings', $catalog['base_route']);
+    self::assertSame('view.bb_terms.types', $catalog['route_name']);
+    self::assertGreaterThan($tasks['bb_core.bb_workspace.templates']['weight'], $catalog['weight'], 'Catalog follows Templates.');
+    $weight = -1;
+    foreach (['types' => 'Types', 'recipes' => 'Recipes', 'labels' => 'Labels'] as $id => $title) {
+      $task = $tasks['bb_core.catalog.' . $id];
+      self::assertSame('bb_core.bb_workspace.catalog', $task['parent_id']);
+      self::assertSame($title, (string) $task['title']);
+      self::assertGreaterThan($weight, $task['weight']);
+      $weight = $task['weight'];
+    }
+  }
+
+  /**
+   * Terms and environments have no page of their own.
+   */
+  public function testNoCanonical(): void {
+    $provider = $this->container->get('router.route_provider');
+    $manager = $this->container->get('entity_type.manager');
+    foreach (['bb_term', 'bb_environment'] as $type) {
+      self::assertFalse($manager->getDefinition($type)->hasLinkTemplate('canonical'), $type);
+      self::assertSame([], $provider->getRoutesByNames(["entity.$type.canonical"]), $type);
+      self::assertNotNull($provider->getRouteByName("entity.$type.edit_form"));
     }
   }
 

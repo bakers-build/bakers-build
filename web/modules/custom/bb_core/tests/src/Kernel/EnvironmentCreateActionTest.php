@@ -9,12 +9,13 @@ use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
- * The "Add environment" header action of the Catalog Environments tab.
+ * The "Add environment" header action of a project's Environments tab.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -52,7 +53,7 @@ final class EnvironmentCreateActionTest extends KernelTestBase {
   }
 
   /**
-   * A lead gets the action, opening the workspace add form.
+   * A lead gets the action, opening the project's add form.
    */
   public function testLeadGetsTheAddAction(): void {
     $this->actAs('lead');
@@ -61,7 +62,7 @@ final class EnvironmentCreateActionTest extends KernelTestBase {
 
     self::assertSame('bb_theme:button', $build['#component'] ?? NULL);
     self::assertSame('Add environment', $build['#props']['label']);
-    self::assertStringContainsString('/space-a/catalog/environments/add', $build['#props']['href']);
+    self::assertStringContainsString($this->fixture('a', 'bb_project')->toUrl()->toString() . '/environment/add', $build['#props']['href']);
   }
 
   /**
@@ -80,12 +81,15 @@ final class EnvironmentCreateActionTest extends KernelTestBase {
     $account = $this->createAccount("north-$rank");
     $this->addMembership($this->fixture('a', 'bb_workspace'), $account, [$rank]);
     $this->container->get('current_user')->setAccount($account);
-    $request = Request::create('/space-a/catalog/environments');
+    $project = $this->fixture('a', 'bb_project');
+    $request = Request::create('/space-a/project/' . $project->id() . '/environments');
     $request->setSession(new Session(new MockArraySessionStorage()));
     $request->attributes->add([
-      '_route' => 'view.bb_environments.catalog',
-      '_route_object' => $this->container->get('router.route_provider')->getRouteByName('view.bb_environments.catalog'),
+      '_route' => 'view.bb_environments.project_list',
+      '_route_object' => $this->container->get('router.route_provider')->getRouteByName('view.bb_environments.project_list'),
       'bb_workspace' => $this->fixture('a', 'bb_workspace'),
+      'bb_project' => $project,
+      '_raw_variables' => new InputBag(['bb_workspace' => 'space-a', 'bb_project' => (string) $project->id()]),
     ]);
     $this->container->get('request_stack')->push($request);
     return $account;

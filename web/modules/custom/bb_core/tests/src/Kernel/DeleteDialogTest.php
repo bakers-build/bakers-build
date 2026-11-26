@@ -75,19 +75,19 @@ final class DeleteDialogTest extends KernelTestBase {
     // Outbound links without a route context carry the default slug.
     $this->fixture('a', 'bb_workspace')->set('slug', 'bakers')->save();
     $this->setCurrentUser($this->createAccount('site-admin', ['administer bakers']));
-    // An environment delete lands on the Catalog Environments tab.
+    // An environment delete lands on its project's Environments tab.
     View::create([
       'id' => 'bb_environments',
       'label' => 'bb_environments',
       'base_table' => 'users_field_data',
       'display' => [
         'default' => ['id' => 'default', 'display_title' => 'Default', 'display_plugin' => 'default', 'position' => 0],
-        'catalog' => [
-          'id' => 'catalog',
+        'project_list' => [
+          'id' => 'project_list',
           'display_title' => 'Environments',
           'display_plugin' => 'page',
           'position' => 1,
-          'display_options' => ['path' => '_workspace/%bb_workspace/catalog/environments'],
+          'display_options' => ['path' => '_workspace/%bb_workspace/project/%bb_project/environments'],
         ],
       ],
     ])->save();
@@ -239,7 +239,7 @@ final class DeleteDialogTest extends KernelTestBase {
     self::assertNull($this->reload($environment), 'the environment is deleted');
     self::assertSame(200, $response->getStatusCode());
     $location = (string) $response->headers->get('HX-Location');
-    self::assertSame('/bakers/catalog/environments', $location, 'the Environments tab, not the destination');
+    self::assertSame($environment->get('project_id')->entity->toUrl()->toString() . '/environments', $location, 'the project Environments tab, not the destination');
     self::assertSame(
       ['Deleted <em class="placeholder">env-a</em>.'],
       array_map('strval', $this->container->get('messenger')->messagesByType('status')),

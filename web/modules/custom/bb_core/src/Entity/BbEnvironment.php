@@ -11,7 +11,6 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\DefaultEntityLocalTaskProvider;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Drupal\bb_core\Form\BbEnvironmentForm;
 use Drupal\bb_core\ViewsData\BbEnvironmentViewsData;
@@ -51,13 +50,11 @@ use Drupal\user\EntityOwnerInterface;
       'delete' => BbContentEntityDeleteForm::class,
     ],
     'route_provider' => ['html' => AdminHtmlRouteProvider::class],
-    'local_task_provider' => ['default' => DefaultEntityLocalTaskProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
   // BbWorkspacePathProcessor bridges the two forms in both directions.
   links: [
-    'canonical' => '/_workspace/{bb_workspace}/environment/{bb_environment}',
     'edit-form' => '/_workspace/{bb_workspace}/environment/{bb_environment}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/environment/{bb_environment}/delete',
   ],

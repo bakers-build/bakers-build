@@ -271,7 +271,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
         'display_title' => ucfirst($display_id),
         'display_plugin' => 'page',
         'position' => $position + 1,
-        'display_options' => ['path' => '_workspace/%bb_workspace/catalog/' . $display_id],
+        'display_options' => ['path' => '_workspace/%bb_workspace/settings/catalog/' . $display_id],
       ];
     }
     View::create([
@@ -281,7 +281,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
       'display' => $term_displays,
     ])->save();
 
-    // The Catalog Environments tab, with the shipped display access.
+    // The project Environments tab, with the shipped display access.
     View::create([
       'id' => 'bb_environments',
       'label' => 'bb_environments',
@@ -294,12 +294,12 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
           'position' => 0,
           'display_options' => ['access' => ['type' => 'perm', 'options' => ['perm' => 'view bb_environment']]],
         ],
-        'catalog' => [
-          'id' => 'catalog',
+        'project_list' => [
+          'id' => 'project_list',
           'display_title' => 'Environments',
           'display_plugin' => 'page',
           'position' => 1,
-          'display_options' => ['path' => '_workspace/%bb_workspace/catalog/environments'],
+          'display_options' => ['path' => '_workspace/%bb_workspace/project/%bb_project/environments'],
         ],
       ],
     ])->save();
@@ -566,7 +566,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
    * criterion says is "exactly", so that is what is asserted.
    */
   public function testProjectTabRowMatchesTheAgreedOrder(): void {
-    // Asserted BEFORE the `assertSame` below, and against a literal 8 rather
+    // Asserted BEFORE the `assertSame` below, and against a literal 9 rather
     // than `count($this->tabOrder['Project detail'])`: `parseSitemap()`'s
     // `count($cells) < 6` guard (around line 482) can silently drop a
     // malformed sitemap row from BOTH sides of the comparison at once — the
@@ -574,14 +574,14 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // `assertSame` on two equally-shrunk arrays would still pass. A literal
     // count is the only side of this assertion the parser cannot also move.
     self::assertCount(
-      8,
+      9,
       $this->tabOrder['Project detail'],
-      'The sitemap file must parse exactly eight Project detail tab rows.',
+      'The sitemap file must parse exactly nine Project detail tab rows.',
     );
     self::assertSame(
       $this->tabOrder['Project detail'],
       $this->tabRoutesOn('entity.bb_project.canonical', $this->accounts['lead']),
-      'The project tab row is exactly the agreed eight, in order.',
+      'The project tab row is exactly the agreed nine, in order.',
     );
   }
 
@@ -723,30 +723,30 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   }
 
   /**
-   * Workspace settings tabs: Settings, Members, Addons, Templates.
+   * Workspace settings tabs: Settings, Members, Addons, Templates, Catalog.
    */
   public function testWorkspaceSettingsTabRowMatchesTheAgreedOrder(): void {
     self::assertCount(
-      4,
+      5,
       $this->tabOrder['Workspace settings'],
-      'The sitemap file must parse exactly four Workspace settings tab rows.',
+      'The sitemap file must parse exactly five Workspace settings tab rows.',
     );
     self::assertSame(
       $this->tabOrder['Workspace settings'],
       $this->tabRoutesOn('bb_core.bb_workspace.settings', $this->accounts['lead']),
-      'The workspace settings tab row is Settings, Members, Addons, Templates.',
+      'The workspace settings tab row is Settings, Members, Addons, Templates, Catalog.',
     );
   }
 
   /**
-   * Catalog tabs: Types, Recipes, Labels, Environments, on every tab.
+   * Catalog's second tab row: Types, Recipes, Labels, everywhere.
    */
   public function testCatalogTabRowMatchesTheAgreedOrder(): void {
     foreach ($this->tabOrder['Catalog'] as $route_name) {
       self::assertSame(
         $this->tabOrder['Catalog'],
-        $this->tabRoutesOn($route_name, $this->accounts['lead']),
-        sprintf('The Catalog tab row on %s is Types, Recipes, Labels, Environments.', $route_name),
+        $this->tabRoutesOn($route_name, $this->accounts['lead'], 1),
+        sprintf('The Catalog tab row on %s is Types, Recipes, Labels.', $route_name),
       );
     }
   }
@@ -920,10 +920,10 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
       }
       $rows[$route_name] = ['place' => $place, 'table' => $table];
       $tab_tables = [
-        'Project detail — eight tabs, Overview default' => 'Project detail',
+        'Project detail — nine tabs, Overview default' => 'Project detail',
         'Team detail — five tabs, Overview default' => 'Team detail',
-        'Workspace settings — four tabs, Settings default' => 'Workspace settings',
-        'Catalog — four tabs, Types default' => 'Catalog',
+        'Workspace settings — five tabs, Settings default' => 'Workspace settings',
+        'Catalog — three tabs under Workspace settings › Catalog, Types default' => 'Catalog',
         'Group detail — two tabs, Overview default' => 'Group detail',
         'Conductor detail — two tabs, Overview default' => 'Conductor detail',
         'Machine detail — two tabs, View default' => 'Machine detail',
@@ -939,10 +939,10 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // malformed table row, which would otherwise shrink `$order` with nothing
     // downstream able to tell the difference from a genuinely six/five-row
     // table.
-    self::assertCount(8, $order['Project detail'] ?? [], 'The sitemap file must declare exactly eight Project detail tabs.');
+    self::assertCount(9, $order['Project detail'] ?? [], 'The sitemap file must declare exactly nine Project detail tabs.');
     self::assertCount(6, $order['Team detail'] ?? [], 'The sitemap file must declare exactly six Team detail tabs.');
-    self::assertCount(4, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly four Workspace settings tabs.');
-    self::assertCount(4, $order['Catalog'] ?? [], 'The sitemap file must declare exactly four Catalog tabs.');
+    self::assertCount(5, $order['Workspace settings'] ?? [], 'The sitemap file must declare exactly five Workspace settings tabs.');
+    self::assertCount(3, $order['Catalog'] ?? [], 'The sitemap file must declare exactly three Catalog tabs.');
     self::assertCount(2, $order['Group detail'] ?? [], 'The sitemap file must declare exactly two Group detail tabs.');
     self::assertCount(2, $order['Conductor detail'] ?? [], 'The sitemap file must declare exactly two Conductor detail tabs.');
     self::assertCount(2, $order['Machine detail'] ?? [], 'The sitemap file must declare exactly two Machine detail tabs.');
@@ -1006,7 +1006,6 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'view.bb_terms.types' => 404,
     'view.bb_terms.recipes' => 404,
     'view.bb_terms.labels' => 404,
-    'view.bb_environments.catalog' => 404,
     // Gated on `_entity_access` — 403, and each one admits the entity exists.
     'bb_core.bb_workspace.settings' => 403,
     'bb_core.bb_workspace.members' => 403,
@@ -1020,6 +1019,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'view.runs.project_runs' => 403,
     'view.conductors.project_list' => 403,
     'view.bb_ticket_templates.project_list' => 403,
+    'view.bb_environments.project_list' => 403,
     'view.conductors.user_list' => 403,
     'view.machines.user_list' => 403,
     'entity.bb_team.canonical' => 403,
@@ -1079,7 +1079,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'view.bb_terms.recipes' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.bb_terms.labels' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     // Guests see no environments; contributors read them.
-    'view.bb_environments.catalog' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
+    'view.bb_environments.project_list' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
     'bb_core.workspace_invite' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
     // Overview is a VIEW surface as of finding 3 (`bb_project.view`), so
     // every ranked account here — lead, contributor and guest all carry
@@ -1202,10 +1202,17 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
    * evidence about a tab's visibility for an account; assert on rendered HTML
    * for that.
    *
+   * @param string $route_name
+   *   The route whose tabs are built.
+   * @param \Drupal\user\UserInterface $account
+   *   The account the request runs as.
+   * @param int $level
+   *   The tab row: 0 primary, 1 secondary.
+   *
    * @return array<string>
    *   The tab route names the manager built, in its order.
    */
-  private function tabRoutesOn(string $route_name, UserInterface $account): array {
+  private function tabRoutesOn(string $route_name, UserInterface $account, int $level = 0): array {
     $this->actAs($account);
     $route = $this->container->get('router.route_provider')->getRouteByName($route_name);
     $path = $this->pathFor($route_name);
@@ -1245,7 +1252,7 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     $tabs = [];
     // Sorted by weight as the renderer sorts them: tabs from several modules
     // (the Board tab is bb_board's) arrive in discovery order.
-    $local = $manager->getLocalTasks($route_name, 0)['tabs'];
+    $local = $manager->getLocalTasks($route_name, $level)['tabs'];
     uasort($local, static fn (array $a, array $b): int => ($a['#weight'] ?? 0) <=> ($b['#weight'] ?? 0));
     foreach ($local as $tab) {
       $tabs[] = $tab['#link']['url']->getRouteName();

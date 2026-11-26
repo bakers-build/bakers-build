@@ -141,7 +141,6 @@ final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
     'view.bb_terms.types' => 'view bb_term',
     'view.bb_terms.recipes' => 'view bb_term',
     'view.bb_terms.labels' => 'view bb_term',
-    'view.bb_environments.catalog' => 'view bb_environment',
   ];
 
   /**
