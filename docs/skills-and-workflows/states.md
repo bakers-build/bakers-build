@@ -55,7 +55,7 @@ The server owns the states and allowed transitions. The `bb-workflow` frame owns
 
 `recipe` selects the method; `ticket_type` selects a variant supported by that method; `labels` select collaboration behavior, an agent, or ordinary tags. An epic groups child tickets and is a type, not a separate workflow. [Choose a method](/skills-and-workflows/recipes) owns recipe selection; [Agents](/agents/guide) owns agent selection.
 
-Workspace contributors and leads manage the Types, Recipes and Labels vocabularies in workspace settings; guests may view them. Each ticket has one type, one recipe and multiple labels. The API calls the field `ticket_type` because JSON:API reserves `type`.
+Workspace contributors and leads manage the Types, Recipes and Labels vocabularies in the Catalog; guests may view them. Leads also manage the workspace's environments there. Each ticket has one type, one recipe and multiple labels. The API calls the field `ticket_type` because JSON:API reserves `type`.
 
 ## Blockers, parents and branches
 

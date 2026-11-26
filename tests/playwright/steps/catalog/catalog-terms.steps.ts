@@ -1,4 +1,4 @@
-// Workspace term tabs (Types, Recipes, Labels): add through the page header's
+// Catalog term tabs (Types, Recipes, Labels): add through the page header's
 // create action; a row opens the term's page, whose Edit renames it. Tab,
 // header-action and visit steps are shared (support/steps/shell.steps.ts).
 import { createBdd } from 'playwright-bdd';
@@ -28,7 +28,7 @@ async function remember(page: Page, name: string): Promise<void> {
   await deleteTerms([name]);
 }
 
-After({ tags: '@feature:workspace-terms' }, async ({ page }) => {
+After({ tags: '@feature:catalog-terms' }, async ({ page }) => {
   const names = written.get(page) ?? [];
   if (names.length > 0) await deleteTerms(names);
 });
@@ -44,7 +44,7 @@ async function saveTermForm(page: Page, name: string): Promise<void> {
   const dialog = page.locator('dialog[open]');
   const form = (await dialog.count()) > 0 ? dialog : page.locator('main');
   await form.getByLabel('Name', { exact: true }).fill(name);
-  await form.getByLabel('Description', { exact: true }).fill(`${name} from the Settings tab.`);
+  await form.getByLabel('Description', { exact: true }).fill(`${name} from the Catalog tab.`);
   await form.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(dialog).toHaveCount(0);
 }
@@ -124,4 +124,16 @@ Then('the term {string} is listed', async ({ page }, name: string) => {
 Then('the term {string} is not listed', async ({ page }, name: string) => {
   await expect(page.locator('li[data-list-item]').first()).toBeVisible();
   await expect(termRow(page, name)).toHaveCount(0);
+});
+
+Then('the term page offers no Delete', async ({ page }) => {
+  await expect(termPage(page).getByRole('link', { name: 'Edit', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Delete', exact: true })).toHaveCount(0);
+});
+
+Then('the delete page of this term answers {int}', async ({ page }, status: number) => {
+  const term = new URL(page.url()).pathname;
+  expect(term).toMatch(/\/term\/\d+$/);
+  const response = await page.goto(`${term}/delete`);
+  expect(response?.status()).toBe(status);
 });

@@ -371,6 +371,16 @@ final class TicketReadToolTest extends BakersToolTestBase {
   }
 
   /**
+   * Returns the priority, 1 High to 3 Low, or null without one.
+   */
+  public function testReturnsPriority(): void {
+    $medium = $this->ticket('TR-medium', ['priority' => 2]);
+    $none = $this->ticket('TR-none');
+    self::assertSame(2, $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $medium->uuid()]))['priority']);
+    self::assertNull($this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $none->uuid()]))['priority']);
+  }
+
+  /**
    * An unknown or unreadable ticket is an input error naming it.
    */
   public function testUnreadableTicketFails(): void {

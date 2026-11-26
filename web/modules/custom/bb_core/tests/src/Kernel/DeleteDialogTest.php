@@ -10,6 +10,7 @@ use Drupal\Core\Form\EnforcedResponseException;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Template\Attribute;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\views\Entity\View;
 use Drupal\bb_core\Entity\BbInvite;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbInviteActionsSource;
 use Drupal\bb_core\Form\BbContentEntityFormBase;
@@ -74,6 +75,22 @@ final class DeleteDialogTest extends KernelTestBase {
     // Outbound links without a route context carry the default slug.
     $this->fixture('a', 'bb_workspace')->set('slug', 'bakers')->save();
     $this->setCurrentUser($this->createAccount('site-admin', ['administer bakers']));
+    // An environment delete lands on the Catalog Environments tab.
+    View::create([
+      'id' => 'bb_environments',
+      'label' => 'bb_environments',
+      'base_table' => 'users_field_data',
+      'display' => [
+        'default' => ['id' => 'default', 'display_title' => 'Default', 'display_plugin' => 'default', 'position' => 0],
+        'catalog' => [
+          'id' => 'catalog',
+          'display_title' => 'Environments',
+          'display_plugin' => 'page',
+          'position' => 1,
+          'display_options' => ['path' => '_workspace/%bb_workspace/catalog/environments'],
+        ],
+      ],
+    ])->save();
     $this->container->get('router.builder')->rebuild();
   }
 
@@ -216,14 +233,13 @@ final class DeleteDialogTest extends KernelTestBase {
    */
   public function testDialogConfirmLandsOnTheFormsRedirect(): void {
     $environment = $this->fixture('a', 'bb_environment');
-    $project = $this->fixture('a', 'bb_project');
 
     $response = $this->confirmInDialog($environment);
 
     self::assertNull($this->reload($environment), 'the environment is deleted');
     self::assertSame(200, $response->getStatusCode());
     $location = (string) $response->headers->get('HX-Location');
-    self::assertSame('/bakers/project/' . $project->id() . '/settings', $location, 'the project settings, not the destination');
+    self::assertSame('/bakers/catalog/environments', $location, 'the Environments tab, not the destination');
     self::assertSame(
       ['Deleted <em class="placeholder">env-a</em>.'],
       array_map('strval', $this->container->get('messenger')->messagesByType('status')),

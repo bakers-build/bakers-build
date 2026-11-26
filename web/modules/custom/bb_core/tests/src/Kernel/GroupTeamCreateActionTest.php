@@ -167,6 +167,7 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
           'island_placement',
           'bb_ticket_template_create_action',
           'bb_term_create_action',
+          'bb_environment_create_action',
           'bb_ticket_trigger_create_action',
           'bb_group_create_action',
           'bb_member_invite_action',
