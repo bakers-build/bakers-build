@@ -173,8 +173,9 @@ final class BbEnvironmentForm extends BbContentEntityFormBase {
    * {@inheritdoc}
    *
    * The parent redirects to the entity collection, which this entity has no
-   * link for. A dialog returns to the screen it was opened over, the Catalog
-   * add page to its tab, any other save to the owning project.
+   * link for. A dialog returns to the screen it was opened over; on a page,
+   * core follows a `destination`, else the Catalog add returns to its tab and
+   * any other save to the owning project.
    */
   public function save(array $form, FormStateInterface $form_state): int {
     $entity = $this->getEntity();

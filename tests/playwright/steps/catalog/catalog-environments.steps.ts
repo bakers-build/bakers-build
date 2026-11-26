@@ -127,13 +127,17 @@ When('I save the new environment {string} without a project', async ({ page }, n
   await clickHeaderAction(page, 'Add environment');
   const { form } = await openForm(page);
   await form.getByLabel('Name', { exact: true }).fill(name);
+  // The save must go back through the dialog format, not as a plain page post.
+  const posted = page.waitForResponse(
+    (r) => r.request().method() === 'POST' && r.url().includes('_wrapper_format=island_dialog'),
+    { timeout: 15000 },
+  );
   await form.getByRole('button', { name: 'Save', exact: true }).click();
+  expect((await posted).headers()['hx-location'], 'A refused save must not navigate').toBeUndefined();
 });
 
-/** A refused save keeps the form, in the dialog with JavaScript, on its page without. */
+/** A refused dialog save keeps the dialog open over the tab, with the error inside. */
 Then('the environment form stays open with the error {string}', async ({ page }, error: string) => {
-  const withJs = await page.evaluate(() => 'htmx' in window);
-  const form = page.locator(withJs ? 'dialog[open]:has(form#bb-environment-add-form)' : 'main');
-  await expect(form.getByText(error)).toBeVisible();
-  await expect(page).toHaveURL(withJs ? /\/catalog\/environments(\?|$)/ : /\/catalog\/environments\/add(\?|$)/);
+  await expect(page.locator('dialog[open]:has(form#bb-environment-add-form)').getByText(error)).toBeVisible();
+  await expect(page).toHaveURL(/\/catalog\/environments(\?|$)/);
 });
