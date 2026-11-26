@@ -21,6 +21,9 @@ const STORAGE: Record<Scope, string> = { project: 'bb_project', group: 'bb_group
 /** The property a scope is named by in a scenario: a workspace by its slug. */
 const KEY: Record<Scope, string> = { project: 'name', group: 'name', workspace: 'slug' };
 
+/** The shell dialog a row's edit form and its Delete open in. */
+const dialog = (page: Page) => page.locator('#bakers-overlay dialog');
+
 /** The address of a scope's Webhooks tab, resolved from its name or slug. */
 function tabPath(scope: Scope, label: string): string {
   const path = php(
@@ -70,18 +73,19 @@ Then('the signing secret is shown once in a copy field', async ({ page }) => {
   secrets.set(page, secret);
 });
 
-When('I open the webhook {string}', async ({ page }, name: string) => {
+When('I open the webhook {string} in the dialog', async ({ page }, name: string) => {
   await page.locator(CONTENT_ISLAND).getByRole('link', { name, exact: true }).click();
-  // No detail page: the row opens the edit form, titled with the name.
-  await expect(page.locator('h1').filter({ hasText: name })).toBeVisible();
-  await expect(page.getByLabel('URL', { exact: true })).toBeVisible();
+  // No detail page: the row opens the edit form over the list.
+  await expect(dialog(page).getByLabel('URL', { exact: true })).toBeVisible();
+  await expect(dialog(page).getByLabel('Name', { exact: true })).toHaveValue(name);
 });
 
 When('I save the webhook with the URL {string} and Enabled unticked', async ({ page }, url: string) => {
-  await page.getByLabel('URL', { exact: true }).fill(url);
-  await page.getByLabel('Enabled', { exact: true }).uncheck();
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.getByText(/saved\./).first()).toBeVisible();
+  await dialog(page).getByLabel('URL', { exact: true }).fill(url);
+  await dialog(page).getByLabel('Enabled', { exact: true }).uncheck();
+  await dialog(page).getByRole('button', { name: 'Save', exact: true }).click();
+  // Save closes the dialog and reloads the list.
+  await expect(dialog(page)).toHaveCount(0);
 });
 
 Then('the signing secret is not shown', async ({ page }) => {
@@ -91,7 +95,9 @@ Then('the signing secret is not shown', async ({ page }) => {
 });
 
 When('I delete the webhook', async ({ page }) => {
-  await page.getByRole('link', { name: 'Delete', exact: true }).first().click();
-  await page.getByRole('button', { name: /^(Delete|Confirm)$/ }).click();
+  await dialog(page).getByRole('link', { name: 'Delete', exact: true }).click();
+  await dialog(page).getByRole('button', { name: /^(Delete|Confirm)$/ }).click();
+  // Delete closes the dialog and reloads the list, which shows the message.
+  await expect(dialog(page)).toHaveCount(0);
   await expect(page.getByText(/^Deleted .+\.$/).first()).toBeVisible();
 });

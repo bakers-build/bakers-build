@@ -18,9 +18,9 @@ use Drupal\bb_webhook\Access\BbWebhookAccessControlHandler;
 use Drupal\bb_webhook\Access\BbWebhookQueryAccessHandler;
 use Drupal\bb_webhook\Form\BbWebhookDeleteForm;
 use Drupal\bb_webhook\Form\BbWebhookForm;
+use Drupal\bb_webhook\ViewsData\BbWebhookViewsData;
 use Drupal\Core\Entity\EntityViewBuilder;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\views\EntityViewsData;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
@@ -38,7 +38,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
     'query_access' => BbWebhookQueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
     'view_builder' => EntityViewBuilder::class,
-    'views_data' => EntityViewsData::class,
+    'views_data' => BbWebhookViewsData::class,
     'form' => [
       'default' => BbWebhookForm::class,
       'add' => BbWebhookForm::class,
