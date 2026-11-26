@@ -80,6 +80,18 @@ When('I open the webhook {string} in the dialog', async ({ page }, name: string)
   await expect(dialog(page).getByLabel('Name', { exact: true })).toHaveValue(name);
 });
 
+When('I cancel the webhook dialog', async ({ page }) => {
+  await dialog(page).getByRole('link', { name: 'Cancel', exact: true }).click();
+});
+
+When('I close the webhook dialog by its close control', async ({ page }) => {
+  await dialog(page).locator('[data-dialog-close]').click();
+});
+
+Then('the webhook dialog is closed', async ({ page }) => {
+  await expect(dialog(page)).toHaveCount(0);
+});
+
 When('I save the webhook with the URL {string} and Enabled unticked', async ({ page }, url: string) => {
   await dialog(page).getByLabel('URL', { exact: true }).fill(url);
   await dialog(page).getByLabel('Enabled', { exact: true }).uncheck();

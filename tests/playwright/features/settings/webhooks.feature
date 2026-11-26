@@ -18,7 +18,13 @@ Feature: Admins manage webhooks of a project, a group and the workspace
     Then the page shows "<name>"
     When I open the webhook "<name>" in the dialog
     Then the signing secret is not shown
-    When I save the webhook with the URL "https://hooks.example.com/<name>-moved" and Enabled unticked
+    When I cancel the webhook dialog
+    Then the webhook dialog is closed
+    When I open the webhook "<name>" in the dialog
+    And I close the webhook dialog by its close control
+    Then the webhook dialog is closed
+    When I open the webhook "<name>" in the dialog
+    And I save the webhook with the URL "https://hooks.example.com/<name>-moved" and Enabled unticked
     Then the page shows "https://hooks.example.com/<name>-moved"
     And the page shows "Disabled"
     And the signing secret is not shown

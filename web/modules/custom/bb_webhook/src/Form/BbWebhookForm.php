@@ -69,6 +69,30 @@ final class BbWebhookForm extends BbContentEntityFormBase {
   /**
    * {@inheritdoc}
    *
+   * Opened over a screen, Cancel returns there without saving; the dialog's
+   * close control closes towards the same target.
+   */
+  protected function actions(array $form, FormStateInterface $form_state): array {
+    $actions = parent::actions($form, $form_state);
+    if ($this->getRequest()->query->has(static::RETURN_PARAMETER)) {
+      $actions['cancel'] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:button',
+        '#props' => [
+          'variant' => 'ghost',
+          'label' => (string) $this->t('Cancel'),
+          'href' => $this->returnUrl()->toString(),
+          'attributes' => new Attribute(['data-dialog-cancel' => 'data-dialog-cancel']),
+        ],
+        '#weight' => -10,
+      ];
+    }
+    return $actions;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
    * After the first save the form is rebuilt into the one-time secret.
    */
   public function buildForm(array $form, FormStateInterface $form_state): array {
