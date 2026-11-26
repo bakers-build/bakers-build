@@ -21,7 +21,11 @@ third_party_settings:
           component:
             component_id: bb_theme:list_item
             variant_id: null
-            props: {  }
+            props:
+              accent:
+                source_id: bb_field
+                source:
+                  field: row_accent
             slots:
               avatar:
                 sources:
@@ -291,17 +295,11 @@ third_party_settings:
                         slots:
                           value:
                             sources:
-                              - source_id: entity_field
+                              - source_id: bb_field
                                 source:
-                                  derivable_context: field:bb_ticket:bb_ticket:assignee_user_id
-                                  field:bb_ticket:bb_ticket:assignee_user_id:
-                                    value:
-                                      sources:
-                                        - source_id: field_formatter:bb_ticket:bb_ticket:assignee_user_id
-                                          source:
-                                            type: bb_ticket_assignee_avatar_cell
-                                            settings: {  }
-                                            third_party_settings: {  }
+                                  field: assignee_user_id
+                                  type: bb_ticket_assignee_avatar_cell
+                                  settings: {  }
                     node_id: list_item_assignee
         node_id: bb_ticket_list_item
 id: bb_ticket.bb_ticket.list_item

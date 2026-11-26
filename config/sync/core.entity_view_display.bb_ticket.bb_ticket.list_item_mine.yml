@@ -21,7 +21,11 @@ third_party_settings:
           component:
             component_id: bb_theme:list_item
             variant_id: null
-            props: {  }
+            props:
+              accent:
+                source_id: bb_field
+                source:
+                  field: row_accent
             slots:
               avatar:
                 sources:

@@ -416,6 +416,20 @@ ui_patterns_source.bb_menu:
       type: integer
       label: 'Number of levels to display'
 
+ui_patterns_source.bb_field:
+  type: mapping
+  label: 'Source: bakers.build field'
+  mapping:
+    field:
+      type: string
+      label: 'Field name'
+    type:
+      type: string
+      label: 'Formatter'
+    settings:
+      type: field.formatter.settings.[%parent.type]
+      label: 'Formatter settings'
+
 ui_patterns_source.bb_workspace_switcher:
   type: ignore
   label: 'Source: bakers.build workspace switcher props'

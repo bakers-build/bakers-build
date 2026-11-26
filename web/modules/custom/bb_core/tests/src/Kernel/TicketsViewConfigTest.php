@@ -554,9 +554,10 @@ final class TicketsViewConfigTest extends KernelTestBase {
       foreach ($slot['sources'] as $cell) {
         $props = $cell['source']['component']['props'];
         $field = $cell['source']['component']['slots']['value']['sources'][0]['source'];
-        $formatter = $field[$field['derivable_context']]['value']['sources'][0]['source'];
+        // A `bb_field` cell names its field and formatter directly.
+        $formatter = isset($field['derivable_context']) ? $field[$field['derivable_context']]['value']['sources'][0]['source'] : $field;
         $regions[$region][$props['key']['source']['value']] = [
-          'field' => substr($field['derivable_context'], strrpos($field['derivable_context'], ':') + 1),
+          'field' => $field['field'] ?? substr($field['derivable_context'], strrpos($field['derivable_context'], ':') + 1),
           'formatter' => $formatter['type'],
           'caption' => $props['caption']['source']['value'] ?? NULL,
           'fallback' => $props['fallback']['source']['value'] ?? NULL,
