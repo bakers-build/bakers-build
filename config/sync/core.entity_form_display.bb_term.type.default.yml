@@ -4,8 +4,6 @@ status: true
 dependencies:
   config:
     - bb_core.bb_vocabulary.type
-  module:
-    - bb_core
 id: bb_term.type.default
 targetEntityType: bb_term
 bundle: type

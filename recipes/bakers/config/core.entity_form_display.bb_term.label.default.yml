@@ -3,8 +3,6 @@ status: true
 dependencies:
   config:
     - bb_core.bb_vocabulary.label
-  module:
-    - bb_core
 id: bb_term.label.default
 targetEntityType: bb_term
 bundle: label

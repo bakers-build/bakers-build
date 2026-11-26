@@ -4,7 +4,6 @@ status: true
 dependencies:
   module:
     - bb_core
-    - options
 id: bb_environment.bb_environment.default
 targetEntityType: bb_environment
 bundle: bb_environment

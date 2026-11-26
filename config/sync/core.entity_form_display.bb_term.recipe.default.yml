@@ -4,8 +4,6 @@ status: true
 dependencies:
   config:
     - bb_core.bb_vocabulary.recipe
-  module:
-    - bb_core
 id: bb_term.recipe.default
 targetEntityType: bb_term
 bundle: recipe

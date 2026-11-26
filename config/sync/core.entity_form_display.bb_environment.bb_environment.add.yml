@@ -6,7 +6,6 @@ dependencies:
     - core.entity_form_mode.bb_environment.add
   module:
     - bb_core
-    - options
 id: bb_environment.bb_environment.add
 targetEntityType: bb_environment
 bundle: bb_environment
