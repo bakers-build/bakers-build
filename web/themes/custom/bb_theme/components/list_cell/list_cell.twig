@@ -11,10 +11,11 @@
 {%- if bb_present or fallback -%}
   {%- set bb_end = align == 'end' -%}
   {%- set bb_classes = bb_end
-    ? ['flex', 'min-w-0', 'max-w-full', 'flex-wrap', 'items-center', 'justify-end', 'gap-inline-xs', 'wrap-anywhere', '*:min-w-0']
-    : ['min-w-0', 'wrap-anywhere', '*:min-w-0'] -%}
+    ? ['flex', 'min-w-0', 'max-w-full', 'flex-wrap', 'items-center', 'justify-end', 'gap-inline-xs', 'wrap-anywhere', 'text-text', '*:min-w-0']
+    : ['min-w-0', 'wrap-anywhere', 'text-text', '*:min-w-0'] -%}
+  {#- A formatter's bare link reads as the row's title, like the `link` cell kind. -#}
   {%- if primary -%}
-    {%- set bb_classes = bb_classes|merge(['max-md:[&>a]:inline-flex', 'max-md:[&>a]:items-center', 'max-md:[&>a]:min-h-touch']) -%}
+    {%- set bb_classes = bb_classes|merge(['[&>a]:text-body', '[&>a]:no-underline', 'hover:[&>a]:underline', 'focus-visible:[&>a]:outline-2', 'focus-visible:[&>a]:outline-offset-2', 'focus-visible:[&>a]:outline-focus-ring', 'max-md:[&>a]:inline-flex', 'max-md:[&>a]:items-center', 'max-md:[&>a]:min-h-touch']) -%}
   {%- endif -%}
   <span{{ (attributes ?: create_attribute()).addClass(bb_classes).setAttribute('data-cell', key|default('')) }}>
     {%- if caption -%}<span data-cell-label class="{{ bb_end ? 'text-meta text-text-faint' : 'mr-inline-xs text-meta text-text-faint' }}">{{ caption }}</span>{{ bb_end ? ' ' }}{%- endif -%}

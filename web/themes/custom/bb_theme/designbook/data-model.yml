@@ -715,6 +715,9 @@ content:
           template: field-map
         full:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -773,6 +776,48 @@ content:
           required: false
           multiple: false
           reference: bb_workspace
+        projects:
+          type: integer
+          title: Projects
+          description: >-
+            Computed, internal: the number of the group's projects the reader
+            may view. The listing row shows it as a project badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        initials:
+          type: string
+          title: Initials
+          description: >-
+            Design-only. Not a Drupal field: the bb_entity_avatar formatter
+            draws the initials from the name. Present so the avatar component
+            has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_color:
+          type: string
+          title: Avatar colour
+          description: >-
+            Design-only. Not a Drupal field: Drupal keys the avatar colour on
+            the group id. Present so the avatar component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_picture:
+          type: string
+          title: Avatar picture
+          description: >-
+            Design-only. Not a Drupal field: the URL Drupal derives from
+            `image` in the avatar image style; empty for initials. Present so
+            the avatar component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
       omitted:
         id: Entity key, not a modelled field.
         uuid: Entity key.
@@ -2295,8 +2340,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_group records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_group records the View lists; Drupal renders each row as the group
+            in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2304,7 +2349,7 @@ config:
             settings:
               entity_type: bb_group
               bundle: bb_group
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
