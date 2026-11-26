@@ -20,7 +20,7 @@ bakers tools [<global options>] [<wire name>] [--schema] [--data <json|@file>] [
 | `bakers tools <wire name> --data '<json>'` | Call it with inline JSON arguments |
 | `bakers tools <wire name> --param key=value` | Set one argument; repeatable, and wins over the same key in `--data` |
 
-Prefer `--data @file`, written by an editor or a JSON encoder, for anything but a one-word value, so Markdown bodies survive byte for byte without shell quoting.
+Prefer `--data @file` for anything beyond a one-word value, so Markdown bodies survive without shell quoting.
 
 ## Global options
 
@@ -35,7 +35,7 @@ Global options follow the subcommand: `bakers tools --connection staging`. The c
 
 ## Results and exit codes
 
-The tool's structured result is printed to stdout as JSON. Errors go to stderr as structured JSON.
+Results print to stdout as JSON, errors to stderr as structured JSON.
 
 | Exit | Meaning | Next |
 |---|---|---|
@@ -47,7 +47,7 @@ The tool's structured result is printed to stdout as JSON. Errors go to stderr a
 | `5` | HTTP or protocol error (`E_HTTP`); `details.status` `0` means the response was lost | See the rule below |
 | `6` | Plugin error | Check the connection's `plugins` |
 
-**An uncertain write is not a failure.** A write that timed out or ended with exit `5` may have been applied on the server. The CLI sends each call once; never resend it. Read the ticket back (`bakers_ticket_read`) or search for the object first, and act only on what the read shows. Likewise, a failed read or search proves no absence.
+**An uncertain write is not a failure.** A write that timed out or ended with exit `5` may have been applied. The CLI sends each call once; never resend it. Read the ticket back (`bakers_ticket_read`) or search for the object first, and act only on what the read shows. Likewise, a failed read or search proves no absence.
 
 ## Tools
 
@@ -56,10 +56,12 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | Tool | Arguments | What it does |
 |---|---|---|
 | `bakers_user_read` | optional `user` (e-mail or username) | You or a teammate: profile, team roles, machines and conductors with `conductor_id` and `assignment` |
+| `bakers_user_search` | `query` | Users whose full name or username contains `query`, any case |
 | `bakers_workspace_list` | `limit`, `offset` | The workspaces you can reach |
 | `bakers_group_list` | `workspace`; optional `group` | A workspace's groups, or one group's subgroups |
 | `bakers_group_create` | `workspace`, `name`; optional `description` | Create a group |
 | `bakers_team_list` | `workspace` | A workspace's teams |
+| `bakers_team_members` | `team` | A team's members and roles |
 | `bakers_project_list` | optional `workspace`, `group`, `query` | Projects you can reach, with `key` and `uuid` |
 | `bakers_project_read` | `project` (prefix or UUID) | One project: group, teams, repository, coder configuration, environments |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
@@ -71,7 +73,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_ticket_read` | `ticket` (identifier or UUID); optional `newest` (default 2), `types` | A ticket with canonical absolute `url`, stored `origin`, `priority`, `reviewers` and `assignee` (see below), its `newest` comments per `types`, oldest first; `comment_facets`: per comment `type` and `author`, the `count` and `newest` time of all readable comments; and `deployments`: each ship ticket that carries it, with its `identifier` and `environments` |
 | `bakers_comment_read` | `ticket`; optional `ids`, `type`, `author` (lists), `newest` (per type when `type` is given) | A ticket's readable comments matching every given filter, oldest first; no filter returns all |
 | `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |
-| `bakers_ticket_list` | `project` (UUID); `limit`, `offset` | Every ticket of the project you can read, closed ones included, oldest first. Each row has `id` (UUID), `identifier`, `title`, canonical absolute `url`, stored `origin`, `state`, `links` (`uri`, `title`), `labels` (names), `frozen`, `frozen_at` (ISO 8601 or `null`), `parent` (the parent's UUID, `null` when absent or unreadable) and `closed` |
+| `bakers_ticket_list` | `project` (UUID); `limit`, `offset`; optional `closed` (bool), `sort` (`id` or `-changed`) | Readable tickets, closed ones too, oldest first: `id` (UUID), `identifier`, `title`, `url`, `origin`, `state`, `links` (`uri`, `title`), `labels` (names), `frozen`, `frozen_at` (ISO 8601 or `null`), `parent` (UUID, `null` when unreadable), `closed`, `ticket_type`, `changed` and `active_run` (`id`, `state` or `null`) |
 | `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee`, `reviewers` (user UUIDs), `blocked_by`, `priority` | Create a ticket; returns `title`, `url` and stored `origin` too. Ineligible people are skipped |
 | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `assignee`, `labels_add`, `labels_remove`, `frozen`, `priority`, `environments_add`, `referenced_tickets_add`, `reviewers_add`, `reviewers_remove`, `links_add`, `links_remove`, `blocked_by_add`, `blocked_by_remove` | Edit a ticket; omitted values are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; `assignee` takes a user UUID or `""`; `priority: 0` clears it; a [forbidden](/configuration/project/conductors-and-variants#who-may-assign-this-conductor) `conductor` is refused; a closed ticket refuses every edit |
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |

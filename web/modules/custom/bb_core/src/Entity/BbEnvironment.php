@@ -14,6 +14,7 @@ use Drupal\entity\EntityPermissionProvider;
 use Drupal\entity\Menu\DefaultEntityLocalTaskProvider;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Drupal\bb_core\Form\BbEnvironmentForm;
+use Drupal\bb_core\ViewsData\BbEnvironmentViewsData;
 use Drupal\user\EntityOwnerTrait;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\user\EntityOwnerInterface;
@@ -22,9 +23,9 @@ use Drupal\user\EntityOwnerInterface;
  * Represents a bakers.build managed deployment environment (dev2, prod, …).
  *
  * Each environment belongs to exactly one project and is unique per project.
- * There is deliberately no global collection or add form: environments are
- * created only from within their project (the project-scoped add route
- * pre-fills the project) and are surfaced on the project via its computed
+ * The workspace lists them on its Catalog Environments tab, and adds one there
+ * for a chosen project of the workspace; the project-scoped add route
+ * pre-fills the project, which surfaces them via its computed
  * `environments` field. Live up/down status is intentionally NOT stored
  * here — this entity holds only the environment's stable descriptor (URL +
  * tier).
@@ -42,6 +43,7 @@ use Drupal\user\EntityOwnerInterface;
     // WorkspaceReadScopeSubscriber.
     'query_access' => QueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
+    'views_data' => BbEnvironmentViewsData::class,
     'form' => [
       'default' => BbEnvironmentForm::class,
       'add' => BbEnvironmentForm::class,

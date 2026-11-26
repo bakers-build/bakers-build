@@ -214,6 +214,16 @@ entity.bb_environment.add_for_project:
       bb_project:
         type: 'entity:bb_project'
 
+# The Catalog Environments tab adds an environment for a project picked
+# from the workspace; the create right is read in that workspace only.
+entity.bb_environment.add_for_workspace:
+  path: '/_workspace/{bb_workspace}/catalog/environments/add'
+  defaults:
+    _entity_form: 'bb_environment.add'
+    _title: 'Add environment'
+  requirements:
+    _bb_workspace_create: 'bb_environment'
+
 # Ticket templates are added from their project's Templates tab, so the add
 # form addresses one project and carries that project's workspace.
 entity.bb_ticket_template.add_for_project:
