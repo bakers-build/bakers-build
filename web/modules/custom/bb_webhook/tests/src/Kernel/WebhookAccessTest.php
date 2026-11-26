@@ -12,6 +12,11 @@ use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
  * Only a workspace Admin manages that workspace's webhooks.
@@ -130,6 +135,19 @@ final class WebhookAccessTest extends WebhookKernelTestBase {
    */
   public function testNotExposedToJsonApi(): void {
     $this->assertTrue($this->container->get('entity_type.manager')->getDefinition('bb_webhook')->isInternal());
+  }
+
+  /**
+   * The add routes, whose response shows the secret once, are never stored.
+   */
+  public function testAddResponsesAreNotStored(): void {
+    foreach (['project', 'group', 'workspace'] as $scope) {
+      $request = Request::create('/');
+      $request->attributes->set('_route', "entity.bb_webhook.add_for_$scope");
+      $event = new ResponseEvent($this->container->get('http_kernel'), $request, HttpKernelInterface::MAIN_REQUEST, new Response());
+      $this->container->get('event_dispatcher')->dispatch($event, KernelEvents::RESPONSE);
+      $this->assertStringContainsString('no-store', (string) $event->getResponse()->headers->get('Cache-Control'), "$scope add");
+    }
   }
 
   /**
