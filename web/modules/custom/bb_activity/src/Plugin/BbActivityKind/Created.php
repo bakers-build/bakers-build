@@ -11,6 +11,7 @@ use Drupal\bb_activity\Activity\ActivityKindBase;
 use Drupal\bb_activity\Activity\FeedMessage;
 use Drupal\bb_activity\Attribute\BbActivityKind;
 use Drupal\bb_activity\Entity\BbActivity;
+use Drupal\bb_core\Workflow\TypeWorkflows;
 
 /**
  * A ticket was created, with its workflow and first state.
@@ -42,8 +43,9 @@ final class Created extends ActivityKindBase {
    * @SuppressWarnings("PHPMD.UnusedFormalParameter")
    */
   public function messages(BbActivity $activity, AccountInterface $reader, string $langcode): array {
+    $workflow = (string) ($activity->get('workflow')->value ?? '');
     $about = implode(', ', array_filter([
-      (string) preg_replace('/^bb_/', '', (string) ($activity->get('workflow')->value ?? '')),
+      TypeWorkflows::ticketWorkflowOptions()[$workflow] ?? (string) preg_replace('/^bb_/', '', $workflow),
       (string) ($activity->get('new_state')->value ?? ''),
     ]));
     return [new FeedMessage('created', 'created' . ($about !== '' ? ' (' . $about . ')' : ''))];
