@@ -4,6 +4,7 @@ dependencies:
   module:
     - bb_core
     - bb_webhook
+    - user
 id: bb_webhooks
 label: Webhooks
 module: views
