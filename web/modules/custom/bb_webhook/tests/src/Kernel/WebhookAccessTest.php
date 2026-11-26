@@ -128,7 +128,6 @@ final class WebhookAccessTest extends WebhookKernelTestBase {
     $this->container->get('entity_type.manager')->getStorage('view')->create($data)->save();
     $workspace = $this->fixture('a', 'bb_workspace');
     self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
-    $workspace->set('slug', 'ws-a')->save();
     $slug = $workspace->getSlug();
     $tabs = [
       'project_list' => [$slug, $this->fixture('a', 'bb_project')->id()],

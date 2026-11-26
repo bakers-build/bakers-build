@@ -45,6 +45,10 @@ abstract class WebhookKernelTestBase extends KernelTestBase {
     $this->installEntitySchema('bb_webhook');
     FilterFormat::create(['format' => 'bb_rich', 'name' => 'bakers.build rich'])->save();
     $this->buildTwoWorkspaceWorld();
+    // Ticket URLs in payloads carry the workspace slug.
+    foreach (['a', 'b'] as $side) {
+      $this->fixture($side, 'bb_workspace')->set('slug', "ws-$side")->save();
+    }
     foreach (['a', 'b'] as $side) {
       $lead = $this->createAccount("lead-$side");
       $this->addMembership($this->fixture($side, 'bb_workspace'), $lead, ['lead']);
