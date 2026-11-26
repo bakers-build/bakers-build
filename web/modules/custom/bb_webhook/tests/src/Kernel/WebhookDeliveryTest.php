@@ -27,7 +27,7 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
   /**
    * The requests the mocked client sent.
    *
-   * @var array<int, array{request: \Psr\Http\Message\RequestInterface}>
+   * @var array<int, array{request: \Psr\Http\Message\RequestInterface, options: array<string, mixed>}>
    */
   private array $history = [];
 
@@ -48,8 +48,8 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
     parent::setUp();
     $this->responses = new MockHandler();
     $stack = HandlerStack::create($this->responses);
-    $stack->push(Middleware::tap(function (RequestInterface $request): void {
-      $this->history[] = ['request' => $request];
+    $stack->push(Middleware::tap(function (RequestInterface $request, array $options): void {
+      $this->history[] = ['request' => $request, 'options' => $options];
     }));
     $this->container->set('http_client', new Client(['handler' => $stack]));
     $this->clock = new FrozenTime();
@@ -177,6 +177,8 @@ final class WebhookDeliveryTest extends WebhookKernelTestBase {
     $request = $this->history[0]['request'];
     assert($request instanceof RequestInterface);
     $this->assertSame('POST', $request->getMethod());
+    $this->assertSame(5, $this->history[0]['options']['timeout'] ?? NULL);
+    $this->assertFalse($this->history[0]['options']['allow_redirects'] ?? NULL, 'redirects are not followed');
     $this->assertSame($webhook->getUrl(), (string) $request->getUri());
     $this->assertSame('application/json', $request->getHeaderLine('Content-Type'));
     $this->assertSame('status_changed', $request->getHeaderLine('X-Bakers-Event'));
