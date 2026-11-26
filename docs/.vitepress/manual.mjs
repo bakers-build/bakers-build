@@ -182,6 +182,7 @@ export const SIDEBAR = {
       ["Update bakers.build", "/configuration/guides/updates"],
       ["Switch to the bakers CLI", "/configuration/guides/switch-to-bakers"],
       ["Get emails about ticket activity", "/configuration/guides/notifications"],
+      ["Send ticket activity to a webhook", "/configuration/guides/webhooks"],
       ["Claude.ai connector limits and errors", "/configuration/guides/connector-limits"],
       ["Claude Project instructions (connector bundle)", "/configuration/guides/project-instructions"],
     ]),

@@ -47,6 +47,7 @@ A team makes its projects visible to its members. You see **every ticket of ever
 | Manage billing accounts | Team Lead, Team Owner or Admin |
 | Change a conductor or machine | To be its owner |
 | Invite someone | Admin |
+| Manage [webhooks](/configuration/guides/webhooks) of a project, group or the workspace | Admin |
 
 Another workspace is invisible to you, even its name. An API key you create acts as you, with your current rights, for at most a year.
 
