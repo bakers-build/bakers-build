@@ -397,6 +397,38 @@ final class BbRankEntityFence {
   }
 
   /**
+   * Whether an account may create a row of a type anchored by a target.
+   *
+   * The one answer BbGroupScopeConstraint, the create dialog's project
+   * picker and the ticket create tool share: the type's admin permission, a
+   * site-wide `create <type>`, an unresolvable chain (the ordinary access
+   * checks govern an orphan), or `create <type>` in any group of the chain.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The acting account.
+   * @param string $entity_type_id
+   *   The type of the row to create, e.g. `bb_ticket`.
+   * @param \Drupal\Core\Entity\EntityInterface $anchor
+   *   The entity the row would reference, e.g. its project.
+   *
+   * @return bool
+   *   TRUE when the account may create the row there.
+   */
+  public function mayCreateIn(AccountInterface $account, string $entity_type_id, EntityInterface $anchor): bool {
+    // hasPermission() on purpose: it carries core's uid 1 short-circuit.
+    $admin_permission = (string) $this->entityTypeManager->getDefinition($entity_type_id)->getAdminPermission();
+    $permission = 'create ' . $entity_type_id;
+    if ($account->hasPermission($admin_permission) || $this->capability->hasSiteWidePermission($account, $permission)) {
+      return TRUE;
+    }
+    $groups = $this->chainOf($anchor);
+    return $groups === [] || array_any(
+      $groups,
+      fn (EntityInterface $group): bool => $this->capability->hasGroupPermission($account, $permission, $group),
+    );
+  }
+
+  /**
    * Resolves the OG groups an entity belongs to, innermost first.
    *
    * The chain is walked upward from the entity, so a permission granted at
