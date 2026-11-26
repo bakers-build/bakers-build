@@ -7,15 +7,16 @@
      A view mapping takes no record, so it names the listed records itself: projects 1, 3 and 4,
      the three in workspace 1 that every screen of this section is scoped to (record 2, Northwind
      Shop, belongs to workspace 2). Project 4 carries the long non-ASCII name and a description at
-     the 280-character limit; project 3 has no description. */
+     the 280-character limit; project 3 has no description. The rows follow the view's sort, name
+     ascending: Designbook, Platform, Øresund. */
   [
     {
       "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
       "props": { "layout": "lines" },
       "slots": {
         "rows": [
-          { "type": "entity", "entity_type": "bb_project", "bundle": "bb_project", "view_mode": "list_item", "record": 0 },
           { "type": "entity", "entity_type": "bb_project", "bundle": "bb_project", "view_mode": "list_item", "record": 2 },
+          { "type": "entity", "entity_type": "bb_project", "bundle": "bb_project", "view_mode": "list_item", "record": 0 },
           { "type": "entity", "entity_type": "bb_project", "bundle": "bb_project", "view_mode": "list_item", "record": 3 }
         ]
       }
