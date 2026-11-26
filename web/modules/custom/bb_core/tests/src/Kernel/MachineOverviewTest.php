@@ -300,9 +300,12 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The conductor overview names each conductor's project.
+   * The account's conductors render in the same row as every conductor list.
+   *
+   * The row carries no project cell: the label names the conductor, and a
+   * project's own listing would repeat one project in every row.
    */
-  public function testConductorOverviewNamesTheProject(): void {
+  public function testAccountConductorsRenderTheConductorRow(): void {
     $this->installShippedView('views.view.conductors');
     $group = $this->create('bb_group', ['name' => 'Core', 'workspace_id' => $this->home->id()]);
     $project = $this->create('bb_project', ['name' => 'Platform', 'group_id' => $group->id()]);
@@ -318,7 +321,7 @@ final class MachineOverviewTest extends KernelTestBase {
     $build = Views::getView('conductors')->executeDisplay('user_list', [(string) $this->accounts['lead']->id()]);
     $html = (string) $this->container->get('renderer')->renderInIsolation($build);
     self::assertStringContainsString('North conductor', $html);
-    self::assertStringContainsString('>Platform<', $html);
+    self::assertStringNotContainsString('data-cell="project_id"', $html);
   }
 
   /**

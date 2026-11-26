@@ -3,7 +3,7 @@
      `list_item` view mode, as Drupal's `bb_rows` style renders the default display of
      `views.view.conductors`. The row's look (linked label, status badge, load badge, Owner,
      "Last run") lives in `bb_conductor.bb_conductor.list_item.jsonata`, not here; the account
-     listing (`user_list`) renders `list_item_user`, which adds the Project cell.
+     listing (`user_list`) renders the same row.
 
      A view mapping takes no record, so it names the listed records itself: both conductors, in
      the view's sort, label ascending. */

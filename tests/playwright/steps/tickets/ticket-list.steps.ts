@@ -1638,20 +1638,9 @@ function ticketRow(page: Page, title: string) {
   return active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`, { hasText: title });
 }
 
-Then('every listed ticket has a conductor column and no assignee', async ({ page }) => {
-  const rows = active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`);
-  await expect(rows.first()).toBeVisible();
-  const count = await rows.count();
-  await expect(rows.locator('[data-list-region="right"] > [data-cell="conductor"]')).toHaveCount(count);
-  await expect(rows.locator('[data-cell="assignee"]')).toHaveCount(0);
+Then('the ticket {string} shows the conductor {string}', async ({ page }, title: string, conductor: string) => {
+  await expect(ticketRow(page, title).locator('[data-list-region="meta"] > [data-cell="conductor"]')).toHaveText(conductor);
 });
-
-Then(
-  'the ticket {string} shows {string} in its conductor column',
-  async ({ page }, title: string, conductor: string) => {
-    await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="conductor"]')).toHaveText(conductor);
-  },
-);
 
 Then('the ticket {string} shows its assignee', async ({ page }, title: string) => {
   await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="assignee"] [role="img"]')).toBeVisible();

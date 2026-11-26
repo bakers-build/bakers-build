@@ -21,7 +21,6 @@
   active: false
   reported_load: 1
   owner_label: Christian Wiedemann
-  project_label: bakers.build Platform
   status_label: Online
   status_tone: running
   last_seen_formatted: 1 minute ago
@@ -52,7 +51,6 @@
   active: true
   reported_load: 0
   owner_label: Marieke van Dijk
-  project_label: Northwind Shop
   status_label: Offline
   status_tone: offline
   last_seen_formatted: 17 hours ago

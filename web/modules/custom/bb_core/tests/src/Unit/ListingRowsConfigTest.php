@@ -30,7 +30,7 @@ final class ListingRowsConfigTest extends UnitTestCase {
     'conductors' => [
       'default' => ['bb_conductor', 'list_item', 'bb_rows'],
       'project_list' => ['bb_conductor', 'list_item', 'bb_rows'],
-      'user_list' => ['bb_conductor', 'list_item_user', 'bb_rows'],
+      'user_list' => ['bb_conductor', 'list_item', 'bb_rows'],
     ],
     'conductor_tickets' => ['default' => ['bb_ticket', 'list_item_compact', 'bb_rows']],
     'groups' => ['default' => ['bb_group', 'list_item', 'bb_rows']],
@@ -43,7 +43,7 @@ final class ListingRowsConfigTest extends UnitTestCase {
     ],
     'tickets' => [
       'default' => ['bb_ticket', 'list_item', 'bb_rows'],
-      'my_work' => ['bb_ticket', 'list_item_mine', 'bb_rows'],
+      'my_work' => ['bb_ticket', 'list_item', 'bb_rows'],
       'project_tickets' => ['bb_ticket', 'list_item', 'bb_rows'],
       'team_tickets' => ['bb_ticket', 'list_item', 'bb_rows'],
     ],

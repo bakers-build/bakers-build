@@ -518,25 +518,11 @@ final class TicketsViewConfigTest extends KernelTestBase {
   }
 
   /**
-   * My work's row is the default row, minus the assignee.
-   *
-   * Its own view mode copies the list item's cells, so a cell changed on one
-   * and not the other would drift silently. Only two differences are
-   * allowed: no assignee, and the conductor in the right-hand column.
+   * My work renders the same row as every other ticket list.
    */
-  public function testMyWorkCopiesTheDefaultRowWithoutTheAssignee(): void {
+  public function testMyWorkRendersTheListItem(): void {
     $my_work = View::load('tickets')->getDisplay('my_work')['display_options'];
-    self::assertFalse($my_work['defaults']['row'] ?? NULL, 'My work overrides the row.');
-    self::assertSame('list_item_mine', $my_work['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket']);
-
-    $expected = $this->rowCells('list_item');
-    unset($expected['right']['assignee']);
-    $expected['right']['conductor'] = $expected['meta']['conductor'];
-    unset($expected['meta']['conductor']);
-    $actual = $this->rowCells('list_item_mine');
-    // The right-hand column reads a dash when the value is empty.
-    unset($actual['right']['conductor']['fallback'], $expected['right']['conductor']['fallback']);
-    self::assertSame($expected, $actual);
+    self::assertSame('list_item', $my_work['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket']);
   }
 
   /**

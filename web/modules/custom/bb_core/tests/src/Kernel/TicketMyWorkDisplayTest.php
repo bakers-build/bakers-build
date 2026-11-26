@@ -360,48 +360,31 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
   }
 
   /**
-   * My work rows show the conductor in its own column and no assignee.
+   * My work rows read like every ticket row.
    *
-   * Every row on My work is the reader's own, so the assignee says nothing;
-   * the conductor takes the right-hand column instead of a place in the meta
-   * line, and a ticket without one keeps that column as an empty cell. The
-   * other ticket lists still show whose a ticket is.
+   * Every ticket list renders the list item: the conductor in the meta line
+   * and the assignee mark on the right, on My work too.
    */
-  public function testMyWorkShowsConductorInsteadOfAssignee(): void {
-    // My work renders its own row: the conductor where the assignee was.
-    $my_work = $this->options('my_work');
-    self::assertSame('list_item_mine', $my_work['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket']);
+  public function testMyWorkRendersTheListItem(): void {
+    foreach (['my_work', 'page_1', 'project_tickets', 'team_tickets'] as $display_id) {
+      $options = $this->options($display_id);
+      self::assertSame('list_item', $options['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket'], $display_id);
+    }
 
-    $html = $this->screen('my_work');
-    $row = (new Crawler($html))->filter('li[data-list-item]');
+    $row = (new Crawler($this->screen('my_work')))->filter('li[data-list-item]');
     self::assertCount(1, $row);
     self::assertSame(
-      ['conductor'],
+      ['assignee'],
       $row->filter('[data-list-region="right"] > [data-cell]')->each(
         static fn (Crawler $cell): string => (string) $cell->attr('data-cell'),
       ),
-      'The conductor column holds its place on a ticket without a conductor.',
-    );
-    self::assertCount(0, $row->filter('[data-cell="assignee"]'), 'My work shows no assignee.');
-    self::assertCount(0, $row->filter('[data-list-region="meta"] [data-cell="conductor"]'));
-
-    foreach (['page_1', 'project_tickets', 'team_tickets'] as $display_id) {
-      // The list item's row keeps the assignee column.
-      $options = $this->options($display_id);
-      self::assertSame('list_item', $options['row']['options']['view_modes']['entity:bb_ticket']['bb_ticket'], $display_id . ' keeps the assignee row.');
-    }
-    self::assertCount(
-      4,
-      (new Crawler($this->screen('page_1', ['closed' => 'all'])))
-        ->filter('[data-list-region="right"] > [data-cell="assignee"]'),
-      'All tickets still shows whose each ticket is.',
     );
   }
 
   /**
-   * A My work row names its conductor in the right-hand column.
+   * A My work row names its conductor in the meta line.
    */
-  public function testMyWorkNamesTheConductorInItsColumn(): void {
+  public function testMyWorkNamesTheConductor(): void {
     $conductor = $this->create('bb_conductor', [
       'label' => 'cw-framework',
       'owner_user_id' => $this->me->id(),
@@ -415,10 +398,9 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
 
     $row = (new Crawler($this->screen('my_work')))->filter('li[data-list-item]');
     self::assertCount(1, $row);
-    $cell = $row->filter('[data-list-region="right"] > [data-cell="conductor"]');
+    $cell = $row->filter('[data-list-region="meta"] > [data-cell="conductor"]');
     self::assertCount(1, $cell);
     self::assertSame('cw-framework', trim($cell->text()));
-    self::assertCount(0, $row->filter('[data-list-region="meta"] [data-cell="conductor"]'));
   }
 
   /**

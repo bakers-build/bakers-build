@@ -685,16 +685,13 @@ Feature: The ticket list is the nav home
   # BAKERS-56 AC-8/D16: every row on My work is the reader's own, so it shows no
   # assignee; the conductor has its own column on the right. Projects › Tickets
   # still shows whose each ticket is.
-  Scenario: My work shows the conductor and no assignee
+  Scenario: My work rows read like every ticket row
     Given I am signed in as a member of the "bakers" workspace
     And the ticket "Conductor column fixture" held by the conductor "srv01-bakers" is assigned to me
     When I visit the ticket list of the "bakers" workspace
-    Then every listed ticket has a conductor column and no assignee
-    When I search the ticket list for "Conductor column fixture"
-    Then the ticket "Conductor column fixture" shows "srv01-bakers" in its conductor column
-    When I visit the tickets tab of project "bakers.build Platform"
     And I search the ticket list for "Conductor column fixture"
-    Then the ticket "Conductor column fixture" shows its assignee
+    Then the ticket "Conductor column fixture" shows the conductor "srv01-bakers"
+    And the ticket "Conductor column fixture" shows its assignee
 
   Scenario: Has sub-tickets
     Given I am signed in as a member of the "bakers" workspace

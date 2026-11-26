@@ -567,9 +567,6 @@ content:
         list_item:
           template: field-map
           label: List item
-        list_item_user:
-          template: field-map
-          label: List item (user)
       fields:
         created:
           type: datetime
@@ -717,17 +714,6 @@ content:
             Design-only. Not a Drupal field: the entity_reference_label
             formatter prints the owner's display name. Present so the row has
             a value for the Owner cell.
-          required: false
-          multiple: false
-          computed: true
-          readonly: true
-        project_label:
-          type: string
-          title: Project
-          description: >-
-            Design-only. Not a Drupal field: the entity_reference_label
-            formatter prints the project's name. Present so the user listing's
-            row has a value for the Project cell.
           required: false
           multiple: false
           computed: true
@@ -970,9 +956,6 @@ content:
         list_item:
           template: field-map
           label: List item
-        list_item_mine:
-          template: field-map
-          label: List item (my work)
         list_item_compact:
           template: field-map
           label: List item (compact)

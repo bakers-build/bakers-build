@@ -4,7 +4,6 @@ status: true
 dependencies:
   config:
     - core.entity_view_mode.bb_conductor.list_item
-    - core.entity_view_mode.bb_conductor.list_item_user
   module:
     - bb_core
     - better_exposed_filters
@@ -1434,7 +1433,7 @@ display:
         type: entity:bb_conductor
         options:
           relationship: none
-          view_mode: list_item_user
+          view_mode: list_item
       defaults:
         style: false
         row: false

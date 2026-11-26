@@ -1,7 +1,7 @@
 (
   /* THE TICKETS LISTING: `bb_theme:list` whose `rows` slot holds each ticket in its `list_item`
      view mode, as Drupal's `bb_rows` style renders the default display of `views.view.tickets`
-     (My work renders `list_item_mine`). The row's look (state mark, linked title, priority,
+     (My work renders the same row). The row's look (state mark, linked title, priority,
      identifier, "Created", "by" owner, conductor lease, stall reason, run summary, assignee mark,
      accent rail) lives in `bb_ticket.bb_ticket.list_item.jsonata`, not here.
 
