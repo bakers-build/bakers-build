@@ -11,8 +11,14 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbBaseFieldsTrait;
 use Drupal\bb_core\Entity\BbContentEntityBase;
-use Drupal\entity\EntityAccessControlHandler;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
+use Drupal\bb_core\Routing\BbTicketTemplateRouteProvider;
+use Drupal\bb_webhook\Access\BbWebhookAccessControlHandler;
+use Drupal\bb_webhook\Access\BbWebhookQueryAccessHandler;
+use Drupal\bb_webhook\Form\BbWebhookForm;
+use Drupal\Core\Entity\EntityViewBuilder;
 use Drupal\entity\EntityPermissionProvider;
+use Drupal\views\EntityViewsData;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
@@ -26,8 +32,25 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
   label_plural: new TranslatableMarkup('bakers.build webhooks'),
   entity_keys: ['id' => 'id', 'uuid' => 'uuid', 'label' => 'name'],
   handlers: [
-    'access' => EntityAccessControlHandler::class,
+    'access' => BbWebhookAccessControlHandler::class,
+    'query_access' => BbWebhookQueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
+    'view_builder' => EntityViewBuilder::class,
+    'views_data' => EntityViewsData::class,
+    'form' => [
+      'default' => BbWebhookForm::class,
+      'add' => BbWebhookForm::class,
+      'edit' => BbWebhookForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
+    ],
+    // Its only job is titling the edit route "Settings", which fits here too.
+    'route_provider' => ['html' => BbTicketTemplateRouteProvider::class],
+  ],
+  links: [
+    // Added from the owning scope's Webhooks tab (bb_webhook.routing.yml).
+    'canonical' => '/_workspace/{bb_workspace}/webhook/{bb_webhook}',
+    'edit-form' => '/_workspace/{bb_workspace}/webhook/{bb_webhook}/settings',
+    'delete-form' => '/_workspace/{bb_workspace}/webhook/{bb_webhook}/delete',
   ],
   admin_permission: 'administer bakers',
   base_table: 'bb_webhook',

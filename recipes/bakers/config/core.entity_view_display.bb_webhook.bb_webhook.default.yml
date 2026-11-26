@@ -1,0 +1,51 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_webhook
+id: bb_webhook.bb_webhook.default
+targetEntityType: bb_webhook
+bundle: bb_webhook
+mode: default
+content:
+  enabled:
+    type: boolean
+    label: inline
+    settings:
+      format: enabled-disabled
+      format_custom_false: ''
+      format_custom_true: ''
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  group_id:
+    type: entity_reference_label
+    label: inline
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  project_id:
+    type: entity_reference_label
+    label: inline
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 2
+    region: content
+  url:
+    type: string
+    label: inline
+    settings:
+      link_to_entity: false
+    third_party_settings: {  }
+    weight: 0
+    region: content
+hidden:
+  created: true
+  name: true
+  owner_user_id: true
+  search_api_excerpt: true
+  secret: true
+  workspace_id: true
