@@ -4,6 +4,8 @@ import type { Copy } from './copy'
 
 const props = defineProps<{ t: Copy }>()
 const active = ref(0)
+// Intrinsic pixel sizes so each image reserves its own aspect ratio; unlisted captures are 1440x900.
+const sizes: Record<string, [number, number]> = { 'insights-live': [1920, 899], herdr: [1384, 1002], orca: [1920, 1148] }
 
 function navigate(event: KeyboardEvent, index: number) {
   const count = props.t.line.screenshots.length
@@ -62,8 +64,8 @@ function navigate(event: KeyboardEvent, index: number) {
           <img
             :src="`/landing/${s.image}.png`"
             :alt="s.alt"
-            width="1440"
-            height="900"
+            :width="sizes[s.image]?.[0] ?? 1440"
+            :height="sizes[s.image]?.[1] ?? 900"
             loading="lazy"
             class="block h-auto w-full rounded-[12px] border border-[color:var(--lp-rule)] shadow-[0_18px_40px_-18px_rgba(43,33,22,0.3)]"
           />

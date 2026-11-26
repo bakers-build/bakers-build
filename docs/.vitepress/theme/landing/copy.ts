@@ -39,11 +39,14 @@ const en = {
   line: {
     eyebrow: 'How it works',
     title: 'Your work, in view.',
-    text: 'Follow tickets, understand your team’s activity and see where each project stands. A look inside bakers.build, with demo data.',
+    text: 'Follow tickets, understand your team’s activity and see where each project stands. A look inside bakers.build, with demo and live data.',
     screenshots: [
       { image: 'ticket-list', title: 'Tickets', text: 'Find your next task and follow work from plan to review.', alt: 'Ticket list with status indicators, priorities and filters in the Northside Bakery demo workspace.' },
       { image: 'insights', title: 'Insights', text: 'See throughput, AI usage and how your backlog changes.', alt: 'Insights dashboard with throughput, runs per ticket, ratings, token usage and a new-versus-done chart.' },
       { image: 'project-overview', title: 'Project overview', text: 'See what needs attention, what is in progress and the latest activity.', alt: 'Project overview showing a ticket needing attention, work in progress, project properties and recent activity.' },
+      { image: 'insights-live', title: 'Live insights', text: 'The same dashboard on a real workspace: 290 closed tickets and 26.4 B tokens in a month.', alt: 'Insights dashboard of a live workspace with throughput, runs per ticket, rating, AI usage and a new-versus-done chart.' },
+      { image: 'herdr', title: 'Terminal', text: 'Review a ticket’s outcome, problems and next action without leaving the terminal.', alt: 'The bakers terminal UI in herdr showing a ticket overview with summary, success, problems and manual review.' },
+      { image: 'orca', title: 'Orca', text: 'Follow a ticket’s plan next to your worktrees and files in the Orca app.', alt: 'The bakers terminal UI inside the Orca app showing a plan summary beside the worktree list and file tree.' },
     ],
   },
   run: {
@@ -131,11 +134,14 @@ const de: Copy = {
   line: {
     eyebrow: 'So funktioniert’s',
     title: 'Deine Arbeit im Blick.',
-    text: 'Verfolge Tickets, verstehe die Aktivitäten deines Teams und sieh, wo jedes Projekt steht. Ein Blick in bakers.build mit Demodaten.',
+    text: 'Verfolge Tickets, verstehe die Aktivitäten deines Teams und sieh, wo jedes Projekt steht. Ein Blick in bakers.build mit Demo- und Livedaten.',
     screenshots: [
       { image: 'ticket-list', title: 'Tickets', text: 'Finde deine nächste Aufgabe und verfolge die Arbeit vom Plan bis zum Review.', alt: 'Ticketliste mit Statusanzeigen, Prioritäten und Filtern im Demo-Arbeitsbereich Northside Bakery.' },
       { image: 'insights', title: 'Insights', text: 'Sieh den Durchsatz, die KI-Nutzung und die Entwicklung deines Backlogs.', alt: 'Insights-Dashboard mit Durchsatz, Läufen pro Ticket, Bewertungen, Token-Verbrauch und einem Diagramm neuer und abgeschlossener Tickets.' },
       { image: 'project-overview', title: 'Projektübersicht', text: 'Sieh, was Aufmerksamkeit braucht, was in Arbeit ist und was zuletzt passiert ist.', alt: 'Projektübersicht mit einem Ticket, das Aufmerksamkeit braucht, laufender Arbeit, Projekteigenschaften und den letzten Aktivitäten.' },
+      { image: 'insights-live', title: 'Live-Insights', text: 'Dasselbe Dashboard in einem echten Arbeitsbereich: 290 abgeschlossene Tickets und 26,4 B Tokens in einem Monat.', alt: 'Insights-Dashboard eines Live-Arbeitsbereichs mit Durchsatz, Läufen pro Ticket, Bewertung, KI-Nutzung und einem Diagramm neuer und abgeschlossener Tickets.' },
+      { image: 'herdr', title: 'Terminal', text: 'Prüfe Ergebnis, Probleme und nächste Aktion eines Tickets, ohne das Terminal zu verlassen.', alt: 'Die bakers-Terminal-Oberfläche in herdr mit einer Ticketübersicht aus Zusammenfassung, Erfolg, Problemen und manueller Prüfung.' },
+      { image: 'orca', title: 'Orca', text: 'Verfolge den Plan eines Tickets neben deinen Worktrees und Dateien in der Orca-App.', alt: 'Die bakers-Terminal-Oberfläche in der Orca-App mit einer Plan-Zusammenfassung neben Worktree-Liste und Dateibaum.' },
     ],
   },
   run: {
