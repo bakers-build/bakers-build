@@ -187,9 +187,11 @@ To send through Gmail from an address on a second domain:
 - Turn on 2-step verification for the sending user and create an **app password** for it.
 - Set `MAIL_SMTP_DSN=smtp://user%40example.org:<app-password>@smtp.gmail.com:587`: the user's
   primary address with `@` encoded as `%40`, and the app password without spaces.
-- Set `MAIL_FROM_ADDRESS` to the alias address.
+- In the sending user's Gmail settings, add the alias under Accounts › Send mail as;
+  otherwise Gmail rewrites the sender to the primary address. Set `MAIL_FROM_ADDRESS` to it.
 - Publish SPF (`v=spf1 include:_spf.google.com ~all`) and the DKIM key from Admin console ›
-  Gmail › Authenticate email as TXT records of the sending domain; DMARC is recommended.
+  Gmail › Authenticate email as TXT records of the sending domain, then start authentication
+  for that domain there; DMARC is recommended.
 
 ## Install
 
