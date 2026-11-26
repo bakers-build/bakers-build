@@ -169,7 +169,7 @@ scenes:
                     props:
                       label: Ticket only
                       links:
-                        - url: https://bakers.build/docs/get-started/connector
+                        - url: https://bakers.build/docs/get-started/connect-your-chat
                           title: Set up a connector
                           kind: doc
                   - component: bb_theme:text

@@ -103,7 +103,7 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
    */
   public function testTheTicketDialogDeclaresOnlyItsSubject(): void {
     self::assertSame([], $this->declaredBeyond(BbTicketCreateForm::class, [
-      'create', 'getFormId', 'actionLabels', 'init', 'alterFormDisplay', 'copyFormValuesToEntity',
+      'create', 'getFormId', 'actionLabels', 'init', 'defaultProject', 'projectCandidates', 'copyFormValuesToEntity',
       // Parent and Blocked by are scoped to the new ticket's project: the
       // refresh on a project change and the server-side rule.
       'form', 'attachRelationRefresh', 'validateForm', 'rejectProjectScopedRelations',
@@ -139,11 +139,14 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
    * `9d718d2a`) — that requires overriding the element tree `form()` builds,
    * which no shared base method exposes. The ticket dialog has no such
    * override.
+   *
+   * `flagViolations()` is allowed because the dialog hides the derived
+   * identifier prefix, so a prefix violation is reported on the name instead.
    */
   public function testTheProjectDialogDeclaresOnlyItsSubject(): void {
     self::assertSame([], $this->declaredBeyond(BbProjectCreateForm::class, [
       'create', 'getFormId', 'actionLabels',
-      'copyFormValuesToEntity', 'formDisplayMode', 'form',
+      'copyFormValuesToEntity', 'formDisplayMode', 'form', 'flagViolations',
     ]));
   }
 

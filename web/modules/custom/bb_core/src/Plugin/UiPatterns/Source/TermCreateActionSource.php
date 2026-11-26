@@ -17,7 +17,7 @@ use Drupal\ui_patterns\Attribute\Source;
 #[Source(
   id: 'bb_term_create_action',
   label: new TranslatableMarkup('[bakers.build] Add term action'),
-  description: new TranslatableMarkup('Opens the term add form for the bundle of the current workspace settings tab.'),
+  description: new TranslatableMarkup('Opens the term add form for the bundle of the current Catalog tab.'),
   prop_types: ['slot'],
 )]
 final class TermCreateActionSource extends CreateActionSourceBase {

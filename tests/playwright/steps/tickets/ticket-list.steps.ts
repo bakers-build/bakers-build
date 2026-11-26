@@ -1420,6 +1420,7 @@ Given('a dedicated project {string} has {int} open tickets', ({}, name: string, 
 });
 
 let listedBefore: string[] = [];
+let notedAt = 0;
 
 async function listedIdentifiers(page: Page): Promise<string[]> {
   return (
@@ -1431,7 +1432,35 @@ async function listedIdentifiers(page: Page): Promise<string[]> {
     .sort();
 }
 
+/**
+ * The identifiers among `identifiers` whose ticket was saved at or after
+ * `since` (server time), or no longer exists.
+ */
+function touchedSince(identifiers: string[], since: number): string[] {
+  if (identifiers.length === 0) {
+    return [];
+  }
+  const list = identifiers.map((identifier) => `"${safe(identifier)}"`).join(', ');
+  const out = php(
+    [
+      `$ids = [${list}];`,
+      '$found = [];',
+      'foreach (\\Drupal::entityTypeManager()->getStorage("bb_ticket")->loadByProperties(["identifier" => $ids]) as $t) {',
+      `if ((int) $t->get("changed")->value < ${since}) { $found[] = $t->get("identifier")->value; }`,
+      '}',
+      'print implode("\\n", array_diff($ids, $found));',
+    ].join(' '),
+  );
+  return out.split('\n').map((line) => line.trim()).filter(Boolean);
+}
+
+/**
+ * Marks server time before the read, and reloads so that every row change
+ * after the previous render falls after the mark.
+ */
 When('I note the listed tickets', async ({ page }) => {
+  notedAt = Number(php('print \\Drupal::time()->getCurrentTime();'));
+  await active(page).reload();
   listedBefore = await listedIdentifiers(page);
   expect(listedBefore.length, 'There is no baseline to compare against.').toBeGreaterThan(0);
 });
@@ -1450,8 +1479,22 @@ When('I reopen the address with the removed keys {string}', async ({ page }, que
   expect(response?.status() ?? 0, 'The address with removed keys did not render').toBeLessThan(400);
 });
 
+/**
+ * Parallel workers create, reassign and close tickets for the same reader, so
+ * a row whose own ticket was saved or deleted since the note may come or go.
+ * Any other row that differs means a removed key still reached the query.
+ */
 Then('the listed tickets are unchanged', async ({ page }) => {
-  expect(await listedIdentifiers(page)).toEqual(listedBefore);
+  const listed = await listedIdentifiers(page);
+  const differing = [
+    ...listed.filter((identifier) => !listedBefore.includes(identifier)),
+    ...listedBefore.filter((identifier) => !listed.includes(identifier)),
+  ];
+  const touched = touchedSince(differing, notedAt);
+  expect(
+    differing.filter((identifier) => !touched.includes(identifier)),
+    'Listed tickets changed without a ticket change',
+  ).toEqual([]);
 });
 
 /**
@@ -1612,4 +1655,13 @@ Then(
 
 Then('the ticket {string} shows its assignee', async ({ page }, title: string) => {
   await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="assignee"] [role="img"]')).toBeVisible();
+});
+
+// A boosted click on a row's ticket link, as a reader leaves the list.
+When('I open the first listed ticket', async ({ page }) => {
+  const target = active(page);
+  const link = target.locator(`${CONTENT_ISLAND} a[href*="/ticket/"]:not([href*="/ticket/create"])`).first();
+  const href = await link.getAttribute('href');
+  await link.click();
+  await target.waitForURL((url) => url.pathname === href, { timeout: 20000 });
 });

@@ -192,6 +192,7 @@ const CODEX_KNOWN: readonly KnownOptionSpec[] = [
 
 export class CodexAgent implements BbAgent {
   readonly id = 'codex';
+  readonly herdrAgent = 'codex';
   readonly secretEnv = CODEX_SECRET_ENV;
   private readonly args: string[];
   private readonly model: string | undefined;

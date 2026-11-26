@@ -229,6 +229,12 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('The assigned conductor UUID.'),
       nullable: TRUE,
     ),
+    'priority' => new OutputDefinition(
+      data_type: 'integer',
+      label: new TranslatableMarkup('Priority'),
+      description: new TranslatableMarkup('1 High, 2 Medium, 3 Low; null for none.'),
+      nullable: TRUE,
+    ),
     'frozen' => new OutputDefinition(
       data_type: 'boolean',
       label: new TranslatableMarkup('Frozen'),
@@ -289,15 +295,15 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
     'deployments' => new ListOutputDefinition(
       label: new TranslatableMarkup('Deployments'),
-      description: new TranslatableMarkup('The viewable deployment tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
+      description: new TranslatableMarkup('The viewable ship tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
       item_definition: new MapOutputDefinition(
         label: new TranslatableMarkup('Deployment'),
-        description: new TranslatableMarkup('One deployment ticket.'),
+        description: new TranslatableMarkup('One ship ticket.'),
         property_definitions: [
           'identifier' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('Identifier'),
-            description: new TranslatableMarkup('The deployment ticket identifier.'),
+            description: new TranslatableMarkup('The ship ticket identifier.'),
           ),
           'environments' => new ListOutputDefinition(
             label: new TranslatableMarkup('Environments'),
@@ -445,6 +451,7 @@ final class TicketRead extends ToolBase {
       'base_branch' => $ticket->get('base_branch')->value,
       'target_branch' => $ticket->get('target_branch')->value,
       'conductor' => $ticket->get('conductor_id')->entity?->access('view', $this->currentUser) ? $ticket->get('conductor_id')->entity->uuid() : NULL,
+      'priority' => $this->priorityOf($ticket),
       'frozen' => $ticket->isFrozen(),
       'metrics' => $ticket->get('metrics')->access('view', $this->currentUser) ? array_map(static fn (array $row): array => [
         'name' => $row['name'],

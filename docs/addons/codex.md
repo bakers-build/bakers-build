@@ -4,7 +4,7 @@ Run tickets with the OpenAI Codex CLI.
 
 ## AI first
 
-Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/skills).
+Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/install-the-bakers-skills).
 
 ## Setup
 
@@ -28,7 +28,7 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
-[Isolation models](/agents/isolation): platform support.
+[Isolation models](/agents/isolation-models): platform support.
 
 Runs default to `system`; `permissions: 'sandbox'` starts the OS sandbox. [Execution security](/provision/security/execution) owns boundaries, environment filtering and isolation risks.
 
@@ -36,8 +36,8 @@ Runs default to `system`; `permissions: 'sandbox'` starts the OS sandbox. [Execu
 |---|---|
 | `sandbox` | `-a never` with a generated `bakers` permission profile extending `:workspace`; MCP servers not in `mcp_servers` are disabled |
 | `system` | none: your own `~/.codex/config.toml` applies unchanged |
-| `yolo` | `--sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust`, the launch before `permissions` existed |
 | `custom` | one `-c key=value` per `config` entry (non-string values as JSON), nothing else; an object value fails loading, so write one dotted key per value (`'a.b': 1`) |
+| other modes | see [Agent permissions › Modes](/provision/security/execution#modes) |
 
 `sandbox` keys and their defaults:
 
@@ -70,5 +70,5 @@ bakers agents
 - `--sandbox`, `-s`, `-a`, `--ask-for-approval`, `--dangerously-bypass-approvals-and-sandbox` and `--dangerously-bypass-hook-trust` are reserved; putting them in `args` fails loading.
 - Listed in a project config, an agent addon is ignored with a warning.
 
-More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
+More: [Choose agents and models](/agents/configure-and-select-agents), [Machines](/agents/agent-policy-reference#harnesses).
 

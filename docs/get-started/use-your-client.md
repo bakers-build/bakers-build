@@ -13,7 +13,7 @@ Clients can complement each other: discuss a request in Hermes while a developer
 
 ## herdr-cli
 
-Follow the [herdr addon setup](/addons/herdr), then [run a first ticket](/get-started/first-ticket). Open its worktree in herdr and select the run tab labelled with its ticket, state and run number. Read output and answer the agent there. Return to the overview tab for ticket progress; layouts are configurable. The default herdr session must remain available.
+Follow the [herdr addon setup](/addons/herdr), then [run a first ticket](/get-started/run-the-first-ticket). Open its worktree in herdr and select the run tab labelled with its ticket, state and run number. Read output and answer the agent there. Return to the overview tab for ticket progress; layouts are configurable. The default herdr session must remain available.
 
 ## herdr-app
 
@@ -27,4 +27,4 @@ Follow the [Orca addon setup](/addons/orca), then start a ticket. Open its adopt
 
 Hermes is an experimental Slack bot that uses bakers.build through MCP. Mention the bot in its main channel; follow the public request channel it opens and clarify your request. Later, ask for status or answer a relayed question there. It acts with a service account and offers no execution terminal or project-file editing. There is no Hermes addon.
 
-You can also [follow tickets on the website](/get-started/daily-work/follow-a-ticket), [connect another chat](/get-started/connector), or use the [bakers ui cockpit](/addons/bakers-ui/usage).
+You can also [follow tickets on the website](/get-started/daily-work/follow-a-ticket), [connect another chat](/get-started/connect-your-chat), or use the [bakers ui cockpit](/addons/bakers-ui/usage).

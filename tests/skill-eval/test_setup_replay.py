@@ -71,6 +71,38 @@ const page = n => n % 2 ? {action:{type:'read',path:`docs/page-${n}.md`}} : {act
 const others = [{action:{type:'read',path:'.claude/skills/bakers-build/skills/bb-init/SKILL.md'}}, {action:{type:'read',path:'project/WORKFLOW.md'}}];
 assert.equal(loads([...others, ...Array.from({length:limit}, (_, n) => page(n))]), true);
 assert.equal(loads([...others, ...Array.from({length:limit + 1}, (_, n) => page(n))]), false);
+// Quick start: no sudo or sandbox tools, a complete final overview, ticket calls in order, a repeated question.
+const run = argv => ({action:{type:'command',argv}});
+const quick = {input:{expected_files:{},preserved_files:{},forbidden_commands:['sudo','bwrap','git init'],
+  final_fragments:['✔','https://bakers.build/get-started/#advanced-setup'], min_questions:2,
+  tool_sequence:[{tool:'bakers_ticket_create',fragments:[]},{tool:'bakers_ticket_update',fragments:['human-review']},{tool:'bakers_ticket_update',fragments:['conductor']}]}};
+const final = text => ({role:'assistant',content:{type:'final',text}});
+const quickRow = (value, id) => checkOutput(quick, JSON.stringify({...saved,...value})).find(r=>r.id===id).met;
+assert.equal(quickRow({tools:[run(['git','-C','project','status'])]}, 'forbidden-git init'), true);
+assert.equal(quickRow({tools:[run(['git','init','-q'])]}, 'forbidden-git init'), false);
+assert.equal(quickRow({tools:[run(['sudo','apt','install','socat'])]}, 'forbidden-sudo'), false);
+assert.equal(quickRow({tools:[run(['echo','pseudo'])]}, 'forbidden-sudo'), true);
+assert.equal(quickRow({turns:[final('✔ CLI — 0.14.0\\nNext: https://bakers.build/get-started/#advanced-setup')]}, 'final-https://bakers.build/get-started/#advanced-setup'), true);
+assert.equal(quickRow({turns:[final('✔ CLI — 0.14.0')]}, 'final-https://bakers.build/get-started/#advanced-setup'), false);
+assert.equal(quickRow({turns:[ask('Path or demo?'), ask('Not a Git repository. Path or demo?')]}, 'min-questions'), true);
+assert.equal(quickRow({turns:[ask('Path or demo?')]}, 'min-questions'), false);
+const tool = (name, data) => run(['bakers','tools',name,'--data',JSON.stringify(data)]);
+const ordered = [tool('bakers_ticket_create',{title:'t'}), tool('bakers_ticket_update',{labels_add:['human-review']}), tool('bakers_ticket_update',{conductor:'c'})];
+assert.equal(quickRow({tools:ordered}, 'tool-sequence'), true);
+assert.equal(quickRow({tools:[ordered[0], ordered[2], ordered[1]]}, 'tool-sequence'), false);
+assert.equal(quickRow({tools:[ordered[0], tool('bakers_ticket_update',{labels_add:['human-review'],conductor:'c'})]}, 'tool-sequence'), false);
+// Signed out: the sign-in command runs as given, and its URL and code are shown before the person answers.
+const signedOut = {input:{...quick.input, required_commands:['bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli'],
+  shown_before_answer:['https://app.bakers.build/device','WXYZ-1234']}};
+const outRow = (value, id) => checkOutput(signedOut, JSON.stringify({...saved,...value})).find(r=>r.id===id).met;
+const say = text => ({role:'assistant',content:{type:'message',text}});
+const answer = {role:'user',content:'demo'};
+assert.equal(outRow({tools:[run(['bakers','init','--yes','--base-url','https://app.bakers.build','--client-id','bakers-cli'])]}, 'required-bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli'), true);
+assert.equal(outRow({tools:[run(['bakers','init','--yes'])]}, 'required-bakers init --yes --base-url https://app.bakers.build --client-id bakers-cli'), false);
+assert.equal(outRow({turns:[say('Open https://app.bakers.build/device, code WXYZ-1234'), ask('Path or demo?'), answer]}, 'shown-WXYZ-1234'), true);
+assert.equal(outRow({turns:[ask('Code WXYZ-1234. Path or demo?'), answer]}, 'shown-WXYZ-1234'), true);
+assert.equal(outRow({turns:[ask('Path or demo?'), answer, say('Code WXYZ-1234')]}, 'shown-WXYZ-1234'), false);
+assert.equal(outRow({turns:[final('Code WXYZ-1234')]}, 'shown-WXYZ-1234'), false);
 '''
         result = subprocess.run(['node', '--input-type=module', '-e', script],
                                 cwd=Path(__file__).resolve().parents[2], capture_output=True, text=True)

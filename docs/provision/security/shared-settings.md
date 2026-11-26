@@ -7,11 +7,11 @@ description: Set the permissions mode, read-denied paths, writable paths and tru
 
 <span id="shared-run-security"></span>
 
-Configure [agent permissions](/provision/security/execution) with a top-level `permissions` block for the mode and supported lists. Choose [isolation](/agents/isolation) separately; this block selects no runtime. The block may appear in `~/.bakers/machine.config.js` and in the project's `.bakers/project.config.js` (or the selected variant `.bakers/project.<name>.config.js`):
+Configure [agent permissions](/provision/security/execution) with a top-level `permissions` block for the mode and supported lists. Choose [isolation](/agents/isolation-models) separately; this block selects no runtime. The block may appear in `~/.bakers/machine.config.js` and in the project's `.bakers/project.config.js` (or the selected variant `.bakers/project.<name>.config.js`):
 
 ```js
 permissions: {
-  mode: 'sandbox',                 // sandbox | system | yolo
+  mode: 'sandbox',                 // sandbox | system | bypass mode
   sandbox: {
     deny_read: ['$inherit', '~/.aws'],
     allow_write: ['$inherit', '~/.designbook'],
@@ -26,7 +26,7 @@ permissions: {
 - Veto a project grant on your machine: `trusted_commands: []`, or a list without `'$inherit'`, in `machine.config.js`.
 - A harness entry's list without `'$inherit'` replaces everything below it, so existing entries behave as before.
 
-Only `mode` and those three lists can be shared; `network`, `mcp_servers`, `config` and `env_deny` stay per entry, and any other key fails loading with the file named. The shared `mode` takes `sandbox`, `system` or `yolo`; `custom` needs a harness entry's `config`.
+Only `mode` and those three lists can be shared; `network`, `mcp_servers`, `config` and `env_deny` stay per entry, and any other key fails loading with the file named. The shared `mode` takes `sandbox`, `system` or the [bypass mode](/provision/security/execution#modes); `custom` needs a harness entry's `config`.
 
 Shared lists apply only while an agent's effective mode is `sandbox`. A shared value a harness cannot express is skipped with the warning `<harness>: <layer> permissions.sandbox.<key> is not applied` (see the table).
 
@@ -38,14 +38,14 @@ Shared lists apply only while an agent's effective mode is `sandbox`. A shared v
 | Codex | Applied; entry overrides | Applied in sandbox mode | `trusted_commands` applied; `deny_read` skipped with a warning | Nonempty `deny_read` rejected; network is empty/off or nonempty/all hosts |
 | Grok | Applied; entry overrides | Applied in sandbox mode through managed profiles | Skipped with a warning | Nonempty read-deny/trusted-command lists, restricted network, selective MCP grants and `custom` rejected |
 | OpenCode | Ignored; entry defaults to `system` | Ignored | Ignored | `sandbox` and `custom` rejected |
-| Pi | Ignored; entry defaults to `system` | Ignored | Ignored | `sandbox` and `yolo` rejected; `custom` accepts explicit extensions |
+| Pi | Ignored; entry defaults to `system` | Ignored | Ignored | `sandbox` and the bypass mode rejected; `custom` accepts explicit extensions |
 | Kimi | No permissions integration | Not applied | Not applied | No Bakers sandbox policy |
 
 Full mode and option details remain in [Run security](/provision/security/execution#modes).
 
 `bakers agents` prints each alias's effective `permissions`: the `mode` and its source, every list entry with its source (`default`, `project`, `machine`, `agent`), the `removed` defaults and the shared keys `not_applied` with the reason.
 
-**Risk.** Without any `mode`, runs use `system`. A committed project config that loosens the sandbox (a `mode` other than `sandbox`, an `allow_write` or `trusted_commands` entry, a `deny_read` without `'$inherit'`) gives **anyone who can push to the repository** more rights on every machine that runs the project and does not replace that key. With `mode: 'yolo'` that is everything the run's environment allows. Each such loosening prints a warning whenever the conductor loads, including at `bakers conductor start`, naming the file and the grant. Replace the key in `machine.config.js` to refuse it. See [Risk of loosening](/provision/security/execution#risk-of-loosening).
+**Risk.** Without any `mode`, runs use `system`. A committed project config that loosens the sandbox (a `mode` other than `sandbox`, an `allow_write` or `trusted_commands` entry, a `deny_read` without `'$inherit'`) gives **anyone who can push to the repository** more rights on every machine that runs the project and does not replace that key. With [the bypass mode](/provision/security/execution#modes) that is everything the run's environment allows. Each such loosening prints a warning whenever the conductor loads, including at `bakers conductor start`, naming the file and the grant. Replace the key in `machine.config.js` to refuse it. See [Risk of loosening](/provision/security/execution#risk-of-loosening).
 
 ## No global tools
 
@@ -84,7 +84,7 @@ bakers.build mounts these paths read-only in the run's container.
 
 Every project hook and every `hooks.provision_up` or `hooks.provision_exec` command must begin with
 a script in a protected path; otherwise the config fails to load. See
-[the entry-point rule](/provision/hooks#protect-host-executed-files). The run installs dependencies
+[the entry-point rule](/provision/add-lifecycle-hooks#protect-host-executed-files). The run installs dependencies
 and builds in its own container, not on the host.
 
 A change to a protected path is made by a maintainer outside an isolated run. A run merges the

@@ -4,6 +4,7 @@ import {
   mkdtempSync,
   renameSync,
   rmSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -31,6 +32,7 @@ describe('self-restart watcher', () => {
   function watch(
     paths: { files: string[]; dirs: string[] },
     trigger: (paths: string[]) => Promise<void> = async () => {},
+    since?: number,
   ): string[][] {
     const fired: string[][] = [];
     const watcher = watchForRestart(
@@ -40,6 +42,7 @@ describe('self-restart watcher', () => {
         await trigger(changed);
       },
       DEBOUNCE,
+      since,
     );
     close = () => watcher.close();
     return fired;
@@ -178,6 +181,56 @@ else { console.log('before', process.pid);
     close = undefined;
 
     writeFileSync(file, '// changed');
+    await settle();
+    expect(fired).toEqual([]);
+  });
+  it('fires once for a watched file written after the config was loaded, before watching began', async () => {
+    const old = join(dir, 'project.config.js');
+    const machine = join(dir, 'machine.config.js');
+    writeFileSync(old, 'export default {};');
+    utimesSync(
+      old,
+      new Date(Date.now() - 60_000),
+      new Date(Date.now() - 60_000),
+    );
+    const loadedAt = Date.now() - 30_000;
+    writeFileSync(machine, 'export default { plugins: true };');
+
+    const fired = watch(
+      { files: [old, machine], dirs: [] },
+      undefined,
+      loadedAt,
+    );
+    await settle();
+    expect(fired).toEqual([[machine]]);
+  });
+  it('counts a write made right after the config was loaded, though the file clock trails Date.now()', async () => {
+    const machine = join(dir, 'machine.config.js');
+    const loadedAt = Date.now();
+    writeFileSync(machine, 'export default { plugins: true };');
+
+    const fired = watch({ files: [machine], dirs: [] }, undefined, loadedAt);
+    await settle();
+    expect(fired).toEqual([[machine]]);
+  });
+  it('counts a write whose mtime is a few milliseconds ahead of Date.now()', async () => {
+    const machine = join(dir, 'machine.config.js');
+    const loadedAt = Date.now();
+    writeFileSync(machine, 'export default { plugins: true };');
+    const ahead = new Date(Date.now() + 20);
+    utimesSync(machine, ahead, ahead);
+
+    const fired = watch({ files: [machine], dirs: [] }, undefined, loadedAt);
+    await settle();
+    expect(fired).toEqual([[machine]]);
+  });
+  it('ignores a watched file with a future mtime, so a clock step back cannot loop restarts', async () => {
+    const machine = join(dir, 'machine.config.js');
+    writeFileSync(machine, 'export default {};');
+    const ahead = new Date(Date.now() + 60_000);
+    utimesSync(machine, ahead, ahead);
+
+    const fired = watch({ files: [machine], dirs: [] }, undefined, Date.now());
     await settle();
     expect(fired).toEqual([]);
   });

@@ -1,6 +1,6 @@
 # Bubblewrap runtime
 
-**Experimental**, unreleased on `next` (13 November 2026). Review [limits](/agents/isolation#experimental-runtimes-known-limits).
+**Experimental**, unreleased on `next` (13 November 2026). Review [limits](/agents/isolation-models#experimental-runtimes-known-limits).
 
 `@bakers-build/addon-runtime-bwrap` isolates the complete agent process on Linux, including
 its file tools and subprocesses. It fills the [runtime slot](/addons/slots#runtime-where-a-run-starts)
@@ -13,11 +13,11 @@ the terminal. Machine scope only:
 
 ## Requirements
 
-Install `bwrap` on the conductor host and enable unprivileged user namespaces. Startup checks
-namespace support and refuses to run if unavailable. A Linux Coder workspace is supported;
-the outer container's security policy must allow nested namespaces. This external wrapper does
-not require `socat` itself. Agent permissions remain unchanged; native sandbox mode additionally
-needs its own tools and support for nested namespaces.
+Install `bwrap` on the conductor host and enable unprivileged user namespaces. Startup refuses
+to run without namespace support. A Linux Coder workspace is supported;
+the outer container's security policy must allow nested namespaces. It does not
+need `socat`. Agent permissions remain unchanged; native sandbox mode needs its own tools and
+nested namespaces.
 
 The workspace must provide a run clone: the [Git workspace](/addons/workspace-git#isolated-runs) or [herdr](/addons/herdr#isolated-runs). Programs come from the host's
 system directories and executable search paths. Tool resources and user-hook scripts, which are not copied and otherwise fail open, are granted
@@ -30,9 +30,10 @@ only through `readPaths`: each grant exposes that path to the agent.
 ## Files and credentials
 
 Each run has a private home and environment, private process, IPC and hostname namespaces,
-and its own `/proc`, `/dev` and temporary directory. The operator's home, SSH keys, `.bakers`
-and Docker socket are absent. Only explicitly selected environment variables reach the process;
-credential values are absent from the launcher command and plan file.
+and its own `/proc`, `/dev` and temporary directory, plus its own terminal session while the host
+allows `TIOCSTI` (`legacy_tiocsti` not `0`). The operator's home, SSH keys, `.bakers` and Docker
+socket are absent. Only selected environment variables reach the process; credentials stay
+out of the launcher command and plan file.
 
 The agent prepares its configuration and grants. Claude copies settings into the private home,
 mounts the host's login file (`~/.claude/.credentials.json`) read-write in place of a copy, so a

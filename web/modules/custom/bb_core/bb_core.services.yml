@@ -164,6 +164,10 @@ services:
     arguments: ['@bb_core.ticket_search_resolver', '@entity.repository']
     tags:
       - { name: event_subscriber }
+  bb_core.ticket_etag_subscriber:
+    class: Drupal\bb_core\EventSubscriber\TicketEtagSubscriber
+    tags:
+      - { name: event_subscriber }
   bb_core.run_log_compression_subscriber:
     class: Drupal\bb_core\EventSubscriber\RunLogCompressionSubscriber
     tags:

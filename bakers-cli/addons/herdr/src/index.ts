@@ -36,6 +36,12 @@ import {
 } from './pane-layout.js';
 import { AGENT_SHELL_ENV, envArgs } from './panes.js';
 import { deriveHerdrRoot } from './root-anchor.js';
+import {
+  closeBranchWorkspace,
+  parseTabList,
+  sweepLeftoverWorkspaces,
+  type WorkspaceCloseDeps,
+} from './workspace-close.js';
 import { parseWorkspaceList } from './workspace-list.js';
 import {
   listWorktrees,
@@ -104,28 +110,6 @@ function parseWorkspaceOpen(output: string): string | null {
     }
   }
   return null;
-}
-
-interface HerdrTab {
-  tabId: string;
-  label: string;
-}
-
-function parseTabList(output: string): HerdrTab[] {
-  const parsed = parseJson(output, 'tab list');
-  const tabs = isRecord(parsed)
-    ? (parsed.result as { tabs?: unknown } | undefined)?.tabs
-    : undefined;
-  if (!Array.isArray(tabs)) {
-    return [];
-  }
-  return tabs
-    .filter(isRecord)
-    .filter((t) => typeof t.tab_id === 'string' && typeof t.label === 'string')
-    .map((t) => ({
-      tabId: t.tab_id as string,
-      label: t.label as string,
-    }));
 }
 
 /**
@@ -389,7 +373,7 @@ export class HerdrExecutor implements BbExecutor {
       // caller does not (BB-64). commandFor / writeLaunchScript sit inside
       // the try so an invalid env key or a temp-dir write error still closes
       // the tab.
-      launch = writeLaunchScript(this.commandFor(input));
+      launch = writeLaunchScript(this.commandFor(input), input.agent);
       await applyPaneLayout(
         this.execHerdr,
         rootPaneId,
@@ -465,6 +449,29 @@ export class HerdrExecutor implements BbExecutor {
     } catch {
       // ignore — best-effort: a failing tab-close must not abort finalisation
     }
+  }
+
+  /**
+   * Close the branch workspace this executor opened, once the reaper removed
+   * its worktree (e.g. with workspace-git). See {@link closeBranchWorkspace}.
+   */
+  closeWorkspace(branch: string, worktreePath?: string): Promise<boolean> {
+    return closeBranchWorkspace(this.closeDeps(), branch, worktreePath);
+  }
+
+  /** Close leftovers of earlier versions. See {@link sweepLeftoverWorkspaces}. */
+  sweepWorkspaces(): Promise<boolean> {
+    return sweepLeftoverWorkspaces(this.closeDeps());
+  }
+
+  private closeDeps(): WorkspaceCloseDeps {
+    return {
+      ...(this.options.root !== undefined ? { root: this.options.root } : {}),
+      execHerdr: this.execHerdr,
+      logger: this.logger,
+      // `??`, as in openWorkspace: `open: {}` is the opt-out.
+      open: this.options.open ?? DEFAULT_OPEN_LAYOUT,
+    };
   }
 
   private commandFor(input: SpawnRunInput): string {

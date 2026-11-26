@@ -41,6 +41,7 @@ final class WorkspaceResolver implements WorkspaceResolverInterface {
     'bb_ticket' => ['project_id', 'group_id', 'workspace_id'],
     'bb_ticket_template' => ['project_id', 'group_id', 'workspace_id'],
     'bb_ticket_trigger' => ['workspace_id'],
+    'bb_webhook' => ['workspace_id'],
     'bb_environment' => ['project_id', 'group_id', 'workspace_id'],
     'bb_conductor' => ['project_id', 'group_id', 'workspace_id'],
     'bb_run' => ['ticket_id', 'project_id', 'group_id', 'workspace_id'],

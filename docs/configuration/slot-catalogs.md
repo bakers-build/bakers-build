@@ -19,9 +19,9 @@ The runtime catalog holds the built-in `system` entry (the host, a reserved alia
 
 ## Which entry runs a ticket
 
-The first match wins, for `runtime` and for `agent` through its [own chain](/agents/reference#which-agent-runs-a-state):
+The first match wins, for `runtime` and for `agent` through its [own chain](/agents/agent-policy-reference#which-agent-runs-a-state):
 
-1. A permitted ticket label `runtime:<alias>` (or `runtime:<route>`), also with `@<state>` ([labels](/skills-and-workflows/collaboration#runtime-labels)).
+1. A permitted ticket label `runtime:<alias>` (or `runtime:<route>`), also with `@<state>` ([labels](/skills-and-workflows/decide-when-people-approve#runtime-labels)).
 2. The route for the ticket's state, `routes.default[<state>]`.
 3. `routes.default['*']`.
 4. The project's `runtime.default`.
@@ -39,7 +39,7 @@ runtime: {
 
 ## Unsandboxed runs
 
-A label may put a run on an entry that does not isolate (`system`) only when `runtime.allow_unsandboxed` is `true` on the machine. Otherwise the label is ignored, the order continues and the conductor logs a warning naming the ticket and alias. The server decides who may add the label ([protected namespaces](/skills-and-workflows/collaboration#protected-label-namespaces)); this flag is the machine's own lock.
+A label may put a run on an entry that does not isolate (`system`) only when `runtime.allow_unsandboxed` is `true` on the machine. Otherwise the label is ignored, the order continues and the conductor logs a warning naming the ticket and alias. The server decides who may add the label ([protected namespaces](/skills-and-workflows/decide-when-people-approve#protected-label-namespaces)); this flag is the machine's own lock.
 
 Each run appends a run note with the agent and runtime alias, the reason (`label`, `function`, `route`, `default-route`, `project`, `preset`, `fallback`) and the conductor's owner. A run that a label put on a runtime that does not isolate also posts a ticket comment saying so; a host default posts none. Clone mode follows the run's runtime, so a catalog may mix isolating and host entries; the git and herdr workspaces switch between a run clone and a worktree at the same path per run, and uncommitted work in the workspace refuses the switch.
 

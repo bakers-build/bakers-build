@@ -65,16 +65,15 @@ function runOf(req: ToolRequest): Run {
 }
 
 /**
- * Where `branch` merges: a variant into the ticket branch, the ticket branch into
- * the ticket's current target as the server returns it now. A failed read refuses;
- * the run copy may predate an environment added during the run.
+ * Where `branch` merges, by `derivedBase` on the ticket's current target as the
+ * server returns it now. A failed read refuses; the run copy may predate an
+ * environment added during the run.
  */
 async function currentBase(
   req: ToolRequest,
   branch: string,
   run: Run,
 ): Promise<string> {
-  if (branch !== run.branchName) return derivedBase(branch, run);
   const refuse = (why: string) =>
     new Error(
       `forge: the ticket's current target_branch could not be read from the server (${why}); nothing was sent`,
@@ -85,7 +84,11 @@ async function currentBase(
   });
   const target = t.targetBranch ?? t.baseBranch;
   if (!target) throw refuse('no target_branch or base_branch returned');
-  return target;
+  return derivedBase(branch, {
+    ...run,
+    baseBranch: t.baseBranch ?? run.baseBranch,
+    targetBranch: target,
+  });
 }
 
 /** The ticket's origin as the server returns it now, else the run's copy. */
@@ -338,7 +341,6 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       // One server read serves the base and the reviewers.
       const read = req.currentTicket;
       if (read) {
-        // Lazy: a suffixed branch without the flag never reads the ticket.
         let once: ReturnType<typeof read> | undefined;
         req = { ...req, currentTicket: () => (once ??= read()) };
       }

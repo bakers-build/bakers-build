@@ -12,20 +12,21 @@ skills; the agent environment's native skill mechanism loads them.
 **Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
 field, a hint or a subagent start selects. The `recipe` field is written at qualification: the agent
 loads every installed `bb-recipe-*` skill completely and picks the method that fits the ask
-(`skills/bb-workflow/references/classify.md`). Exactly sixteen ship:
+(`skills/bb-workflow/references/classify.md`). Exactly eighteen ship:
 
 | Skill | Job |
 |---|---|
 | `@bakers-build/bb-workflow` | The frame of every state run: seven phases — `read, provision, work, validate, deliver, outtake, transition` — the state files, routing, binding, replacement and stop rules. |
 | `@bakers-build/bb-recipe-matt` | The Matt method for feature, bug and chore tickets. |
 | `@bakers-build/bb-recipe-superpowers` | The superpowers method for the same ticket types. |
-| `@bakers-build/bb-recipe-deploy-and-release`, `@bakers-build/bb-recipe-verify` | The recipes of `deployment` and `verification` tickets. |
+| `@bakers-build/bb-recipe-ship`, `@bakers-build/bb-recipe-verify` | The recipes of `ship` and `verification` tickets. |
 | `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
 | `@bakers-build/bb-label-auto` | Loaded by the `bb-workflow` frame for a ticket labelled `auto`, in any state, as every `bb-label-<label>` skill is: it carries the ticket to `done` on its own, asks the user only what is theirs to decide and for one acceptance only when they had something to decide, and refers technical problems to the developers. |
 | `@bakers-build/bb-label-human-review` | Loaded by the frame for a ticket labelled `human-review`, in any state: it passes every gate up to a published review verdict on its own; the assignee or a reviewer (not a service account) confirms the verdict and authorizes the merge. |
 | `@bakers-build/bb-label-human-accept` | Loaded by the frame for a ticket labelled `human-accept`, in any state: it passes every gate on its own except the user's acceptance of the result, and the assignee's or a reviewer's verdict on a planned risky change, then merges. |
 | `@bakers-build/bb-label-ticket-question` | Loaded by the frame for a ticket labelled `ticket-question`, in any state: it reaches a human only through the ticket — a question or a technical problem — then freezes it. |
 | `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project` | Machine, project and workflow setup and upgrades. |
+| `@bakers-build/bb-get-started`, alias `@bakers-build/bb-quick-start` | The quick start: one question, an unsandboxed setup of this computer and a project, and a running test ticket. |
 | `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, specified with its requester when asked; change its scope; prepare time proposals. |
 
 **The grid.** A run is state × phase. `qualification`, `plan`, `working` and `review` each have a

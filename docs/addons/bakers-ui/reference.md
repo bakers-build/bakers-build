@@ -49,7 +49,7 @@ Navigation has six tab scopes. Tabbed screens show the bar for their current sco
 
 **A list only opens.** `Enter` (or a click) opens the row's own detail; no key acts on a row. The ticket **Addons** tab is the exception.
 
-Run detail has no bar; `Esc` returns to the preceding screen. An addon places a tab with `weight` or `before`/`after` anchors: see [Adding a screen as a tab](/addons/bakers-ui/tabs) and [Addons](/addons/configure).
+Run detail has no bar; `Esc` returns to the preceding screen. An addon places a tab with `weight` or `before`/`after` anchors: see [Adding a screen as a tab](/addons/bakers-ui/tabs) and [Addons](/addons/configure-addons).
 
 **Every bar is drawn in the same row**, under the header box, and is clickable where it is drawn and only at its own level: on root **Projects** a click at the column where the project bar's `Runs` would sit is inert, because that bar is not there. On the ticket screen the same column may fall inside ` Runs `, opening that tab, but still reaches no project screen. Workspace Member **Overview** shows the person's username, position and About me.
 

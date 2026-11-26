@@ -17,7 +17,7 @@ final class ProjectInspectorRows extends InspectorRows {
    * Inspector fields in display order, keyed by field name.
    */
   public const array FIELDS = [
-    'key' => 'Key',
+    'key' => 'Identifier prefix',
     'repository' => 'Repository',
     'environments' => 'Environments',
   ];

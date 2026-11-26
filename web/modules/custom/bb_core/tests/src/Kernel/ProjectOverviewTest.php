@@ -62,11 +62,11 @@ final class ProjectOverviewTest extends KernelTestBase {
   private BbProjectInterface $project;
 
   /**
-   * Deployments list targets, created dates and a scoped ticket drill-down.
+   * Shipments list targets, created dates and a scoped ticket drill-down.
    */
   public function testDeploymentsSection(): void {
     BbVocabulary::create(['id' => 'type', 'label' => 'Type'])->save();
-    $type = BbTerm::create(['vid' => 'type', 'name' => 'deployment']);
+    $type = BbTerm::create(['vid' => 'type', 'name' => 'ship']);
     $type->save();
     $ticket = $this->workTicket('Carried work');
     $environments = $this->container->get('entity_type.manager')->getStorage('bb_environment')->loadByProperties(['name' => 'production']);
@@ -80,7 +80,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     ]);
     $newer = $this->workTicket('Newer release', ['ticket_type' => $type->id(), 'created' => 200]);
     $html = $this->renderMode('full');
-    self::assertStringContainsString('Deployments', $html);
+    self::assertStringContainsString('Shipments', $html);
     self::assertStringContainsString('production', $html);
     self::assertStringContainsString('1 ticket', $html);
     self::assertStringContainsString('?deployment=' . $older->getIdentifier(), $html);
@@ -90,10 +90,10 @@ final class ProjectOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The deployments section has its own empty state even without tickets.
+   * The shipments section has its own empty state even without tickets.
    */
   public function testDeploymentsEmptyState(): void {
-    self::assertStringContainsString('No deployments in this project.', $this->renderMode('full'));
+    self::assertStringContainsString('No shipments in this project.', $this->renderMode('full'));
   }
 
   /**
@@ -388,7 +388,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     $html = $this->renderMode('full');
     self::assertStringContainsString('About', $html);
     self::assertStringContainsString('The settings note on Overview.', $html);
-    foreach (['Key', 'Origin', 'Repository', 'Teams', 'Group', 'Environments'] as $label) {
+    foreach (['Identifier prefix', 'Origin', 'Repository', 'Teams', 'Group', 'Environments'] as $label) {
       self::assertStringContainsString('>' . $label . '<', $html);
     }
     self::assertMatchesRegularExpression('#<a[^>]*href="https://gitlab.example.com/keytec/bakers"[^>]*>GitLab - keytec/bakers</a>#', $html);
@@ -405,7 +405,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     $inspector = $this->container->get(ProjectInspectorRows::class);
     $rows = $inspector->build($this->project);
     self::assertSame(['key', 'repository', 'environments'], array_keys($rows));
-    self::assertSame('Key', $rows['key']['cells']['label']['value']);
+    self::assertSame('Identifier prefix', $rows['key']['cells']['label']['value']);
     self::assertSame('mono', $rows['key']['cells']['value']['kind']);
     self::assertSame('BB', $rows['key']['cells']['value']['value']);
     self::assertSame('badge', $rows['environments']['cells']['value']['kind']);

@@ -37,10 +37,10 @@ final class TargetBranchFieldTest extends BakersToolTestBase {
   }
 
   /**
-   * A deployment ticket merges into its one environment's branch.
+   * A ship ticket merges into its one environment's branch.
    */
   public function testDeploymentTargetsItsEnvironmentBranch(): void {
-    $deployment = $this->term('type', 'deployment')->id();
+    $deployment = $this->term('type', 'ship')->id();
     $ticket = $this->ticket('TB-1', [
       'ticket_type' => $deployment,
       'environments' => [$this->environment('production', 'stable')],
@@ -55,7 +55,7 @@ final class TargetBranchFieldTest extends BakersToolTestBase {
    * Every other ticket merges into its base branch.
    */
   public function testOtherwiseTargetIsBaseBranch(): void {
-    $deployment = $this->term('type', 'deployment')->id();
+    $deployment = $this->term('type', 'ship')->id();
     $feature = $this->term('type', 'feature')->id();
     $staging = $this->environment('staging', 'staging');
     $cases = [

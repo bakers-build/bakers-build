@@ -131,7 +131,7 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
   }
 
   /**
-   * Project header caption: key and group.
+   * Project header caption: identifier prefix and group.
    */
   private function projectSubline(BbProjectInterface $project): string {
     $key = trim((string) $project->get('key')->value);
@@ -139,7 +139,7 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
     $group_label = $group instanceof EntityInterface ? trim((string) $group->label()) : '';
     $parts = [];
     if ($key !== '') {
-      $parts[] = 'key ' . $key;
+      $parts[] = 'prefix ' . $key;
     }
     if ($group_label !== '') {
       $parts[] = 'group ' . $group_label;

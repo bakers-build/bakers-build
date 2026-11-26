@@ -892,3 +892,10 @@ describe('ClaudeAgent.sandboxPreflight', () => {
     ).toEqual({ ok: true });
   });
 });
+
+describe('herdr agent name', () => {
+  it('declares claude so herdr identifies an isolated run', async () => {
+    const agent = new ClaudeAgent({});
+    expect(agent.herdrAgent).toBe('claude');
+  });
+});

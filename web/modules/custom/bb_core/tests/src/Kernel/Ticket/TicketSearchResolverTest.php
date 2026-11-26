@@ -70,32 +70,46 @@ final class TicketSearchResolverTest extends KernelTestBase {
   }
 
   /**
-   * A bare number with a project is that project's exact identifier.
+   * A bare number with a project is that project's ticket of that number.
    */
   public function testBareNumberWithProjectIsExactIdentifier(): void {
-    $query = $this->resolveAs('7', $this->project('a'));
+    $query = $this->resolveAs('1', $this->project('a'));
     self::assertSame('identifier', $query->field);
-    self::assertSame($this->project('a')->getKey() . '-7', $query->value);
+    self::assertSame([$this->project('a')->getKey() . '-1'], $query->value);
     self::assertNull($query->fulltext);
+    self::assertSame([], $this->resolveAs('7', $this->project('a'))->value);
   }
 
   /**
-   * A bare number without a project names only readable projects' identifiers.
+   * A bare number without a project names only readable projects' tickets.
    */
   public function testBareNumberWithoutProjectUsesReadableProjectKeys(): void {
-    $query = $this->resolveAs('7');
+    $query = $this->resolveAs('1');
     self::assertSame('identifier', $query->field);
-    self::assertSame([$this->project('a')->getKey() . '-7'], $query->value);
-    self::assertNotContains($this->project('b')->getKey() . '-7', (array) $query->value);
+    self::assertSame([$this->project('a')->getKey() . '-1'], $query->value);
 
     $this->grantWorkspaceB();
-    $across = $this->resolveAs('7');
+    $across = $this->resolveAs('1');
     $expected = [
-      $this->project('a')->getKey() . '-7',
-      $this->project('b')->getKey() . '-7',
+      $this->project('a')->getKey() . '-1',
+      $this->project('b')->getKey() . '-1',
     ];
     sort($expected);
     self::assertSame($expected, $across->value);
+  }
+
+  /**
+   * After a prefix change a bare number still finds old and new tickets.
+   */
+  public function testBareNumberFindsOldPrefixAfterKeyChange(): void {
+    $project = $this->project('a');
+    $old = $project->getKey() . '-1';
+    $project->set('key', 'NEWA')->save();
+    $this->createEntity('bb_ticket', ['title' => 'Second', 'workflow' => 'bb_work', 'project_id' => $project->id()]);
+
+    self::assertSame([$old], $this->resolveAs('1', $project)->value);
+    self::assertSame([$old], $this->resolveAs('1')->value);
+    self::assertSame(['NEWA-2'], $this->resolveAs('2')->value);
   }
 
   /**

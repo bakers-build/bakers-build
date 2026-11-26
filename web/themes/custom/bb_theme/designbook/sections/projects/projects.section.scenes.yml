@@ -46,7 +46,7 @@ description: |
   - `project-detail` — entity chrome = header + **tabs** (IA D12). **No project-edit route.**
     Tab set (BB-454, seven tabs — `Delivery` retired in favour of the broader `Stats`, `Tickets`
     joins as its own tab which BB-428 had already delivered without this scene reflecting it):
-    1. **Overview** (default) — the project's `full` view mode is the tab body (`canvas` with page_header, main, inspector). Mark beside a plain title, key · group caption, tabs (no search, no team switcher). Description then **Activities** in `main` (`bb_activity` `event` rows; `empty-state` when none). Inspector: Properties, Epics. Count figures belong on the Board. Settings is the write surface.
+    1. **Overview** (default) — the project's `full` view mode is the tab body (`canvas` with page_header, main, inspector). Mark beside a plain title, prefix · group caption, tabs (no search, no team switcher). Description then **Activities** in `main` (`bb_activity` `event` rows; `empty-state` when none). Inspector: Properties, Epics. Count figures belong on the Board. Settings is the write surface.
     2. **Board** — operational board and active conductor capacity
     3. **Tickets** — this project's tickets (native Views listing; no Designbook body of its own)
     4. **Stats** — closed-work delivery lookback (Week|Month) **and** crew load, one tab
@@ -89,7 +89,7 @@ status: in-progress
 order: 2
 user_flows: |
   - Open Projects; open a row → project **Overview** (default).
-  - Project identity on Overview is the mark, the title and the key · group caption — **no** project-edit page. Reversible writes live on Settings.
+  - Project identity on Overview is the mark, the title and the prefix · group caption — **no** project-edit page. Reversible writes live on Settings.
   - **Board** tab for operational work; **Stats** for statistics, **Tickets** / **Runs** for
     native listings.
   - **Members** tab: the project's people as a list; add through the form on that face. A roster row
@@ -1073,7 +1073,7 @@ scenes:
       links the Unhealthy board), Needs attention (five list rows of six, each
       with a red or yellow reason badge, "Showing 5 of 6 unhealthy tickets",
       Open board), Epics (three progress rows) and Activities (compact event
-      rows, Refresh); inspector = About (the description) and Properties (Key,
+      rows, Refresh); inspector = About (the description) and Properties (Identifier prefix,
       Origin, Repository, Teams, Group, Environments) with Edit.
     items:
       - scene: "design-system:shell"
@@ -1086,7 +1086,7 @@ scenes:
                   - component: bb_theme:page_header
                     props:
                       title: bakers.build Platform
-                      description: key bakers.build · group keytec
+                      description: prefix bakers.build · group keytec
                     slots:
                       leading:
                         component: bb_theme:person
@@ -1145,7 +1145,7 @@ scenes:
                   - component: bb_theme:page_header
                     props:
                       title: bakers.build Platform
-                      description: key bakers.build · group keytec
+                      description: prefix bakers.build · group keytec
                     slots:
                       leading:
                         component: bb_theme:person
@@ -1207,7 +1207,7 @@ scenes:
                   - component: bb_theme:page_header
                     props:
                       title: bakers.build Designbook
-                      description: key GDB · group keytec
+                      description: prefix GDB · group keytec
                     slots:
                       leading:
                         component: bb_theme:person
@@ -1266,7 +1266,7 @@ scenes:
                   - component: bb_theme:page_header
                     props:
                       title: Øresund Ærø Straße Überführungsgesellschaft für Großprojekte
-                      description: key ORE · group keytec
+                      description: prefix ORE · group keytec
                     slots:
                       leading:
                         component: bb_theme:person

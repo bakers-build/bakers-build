@@ -37,7 +37,7 @@ export default {
 | `workspace_id` | Optional workspace UUID. Only `bakers ui` reads it, to focus its picker; `bakers ui --workspace <name|uuid>` overrides it for one run. It does not scope API calls and does not replace `project.workspace` in the [project file](/configuration/project). |
 | `plugins` | dropsh plugin descriptors `{ plugin, export?, with?, options? }` or constructed plugins. `@bakers-build/addon-essentials` supplies the Markdown renderer and the JSON:API schema, so keep it. The sign-in profile goes here. |
 | `plugins[].plugin`, `plugins[].export`, `plugins[].with`, `plugins[].options` | A descriptor's package name, the named export to load (default export when absent), and its options: `with`, or `options` when `with` is absent. Other keys in a descriptor fail. |
-| `addons` | Optional package entries: a name or `{ use, alias?, with? }`. Contributions are appended after `plugins`. UI addons add tabs to `bakers ui`; see [Addons](/addons/configure). An entry that cannot be resolved is an error here. |
+| `addons` | Optional package entries: a name or `{ use, alias?, with? }`. Contributions are appended after `plugins`. UI addons add tabs to `bakers ui`; see [Addons](/addons/configure-addons). An entry that cannot be resolved is an error here. |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
 | `server` | Optional conductor server slot for this connection: `{ use, export?, with? }`, or a constructed plugin with `kind: 'server'`. Default `@bakers-build/addon-remote-drupal`. A project `server` slot or a server addon in the project's `addons` wins over it. |
 | `server.use`, `server.export`, `server.with` | The server slot's package, its named factory and the factory's options, as in a project [slot descriptor](/configuration/project#slot-descriptors). |
@@ -189,9 +189,9 @@ A chat connector grants your MCP client access to bakers.build tools with your o
 | Server endpoint | Yes | `https://app.bakers.build/mcp` |
 | Account authorization | Yes, your own account with workspace access | Sign in when the client opens the server |
 | Client ID/secret | Leave empty for dynamic registration | No shared secret |
-| Project instructions | Optional, useful in claude.ai Projects | [Canonical instructions](/configuration/guides/project-instructions) |
+| Project instructions | Optional, useful in claude.ai Projects | [Canonical instructions](/configuration/guides/claude-project-instructions) |
 
-Follow [Set up a connector](/get-started/connector) for the one-time connection. To verify after a change, ask the connector to search for and read a known project ticket, then compare it with the web UI. An empty workspace or permission error needs a workspace lead's help; never substitute someone else's login. To renew authorization, disconnect and reconnect in the client. [Limits and errors](/configuration/guides/connector-limits) covers client-specific failures; [notifications](/configuration/guides/notifications) covers email preferences.
+Follow [Set up a connector](/get-started/connect-your-chat) for the one-time connection. To verify after a change, ask the connector to search for and read a known project ticket, then compare it with the web UI. An empty workspace or permission error needs a workspace lead's help; never substitute someone else's login. To renew authorization, disconnect and reconnect in the client. [Limits and errors](/configuration/guides/connector-limits-and-errors) covers client-specific failures; [notifications](/configuration/guides/get-emails-about-ticket-activity) covers email preferences.
 
 ## Verify
 
@@ -202,4 +202,4 @@ bakers auth status
 
 For one named connection, add its id: `bakers config check --scope connection --connection <id>` and `bakers auth status --connection <id>`. To see which named connections exist, list `~/.bakers/connections/`; each `<id>.js` there is one connection.
 
-The offline check proves the file's shape; `--online` proves the session and project access. A wrong server usually means the wrong selector: read the `Connection:` line before changing credentials. [Credentials](/provision/security/credentials) explains keys and service accounts.
+The offline check proves the file's shape; `--online` proves the session and project access. A wrong server usually means the wrong selector: read the `Connection:` line before changing credentials. [Credentials](/provision/security/api-keys-and-service-accounts) explains keys and service accounts.

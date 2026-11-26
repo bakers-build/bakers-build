@@ -77,11 +77,11 @@ final class EnvironmentCreateToolTest extends BakersToolTestBase {
   }
 
   /**
-   * A created environment stamps a deployment ticket with its branch.
+   * A created environment stamps a ship ticket with its branch.
    */
   public function testCreatedEnvironmentStampsDeploymentTicket(): void {
     $this->actAsLead();
-    $ticket = $this->ticket('TOOLPROJEC-9', ['ticket_type' => $this->term('type', 'deployment')->id()]);
+    $ticket = $this->ticket('TOOLPROJEC-9', ['ticket_type' => $this->term('type', 'ship')->id()]);
     $this->outputs($this->runTool('bakers_environment_create', [
       'project' => 'TOOLPROJEC',
       'name' => 'prod',

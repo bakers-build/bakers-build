@@ -46,13 +46,13 @@ Every identifier in the log whose key was admitted that way is then collected, i
 
 ## Where it is used
 
-A deployment is a ticket of type `deployment` with the recipe `deploy-and-release`; it runs the one workflow `bb_work` like every other ticket. Its `plan` step runs `bakers deployment tickets` from the environment's deployed ref to the frozen SHA and records `resolved[].uuid` in the ticket's `referenced_tickets`, listing any `unresolved` identifiers in the plan comment.
+A shipment is a ticket of type `ship` with the recipe `ship`; it runs the one workflow `bb_work` like every other ticket. Its `plan` step runs `bakers deployment tickets` from the environment's deployed ref to the frozen SHA and records `resolved[].uuid` in the ticket's `referenced_tickets`, listing any `unresolved` identifiers in the plan comment.
 
 ## Release
 
 This command identifies a release batch; it does not choose a version, merge a branch, publish packages or deploy images. Those steps belong to your project's release workflow. Use the actual deployed ref and intended target ref rather than assuming a branch name.
 
-For choosing and checking an installed bakers.build version, see [Updates](/configuration/guides/updates).
+For choosing and checking an installed bakers.build version, see [Updates](/configuration/guides/update-bakers-build).
 
 ## Roll back
 

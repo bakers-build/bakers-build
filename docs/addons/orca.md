@@ -49,6 +49,6 @@ Git creates the exact ticket branch; Orca adopts the worktree after the addon re
 
 ## Verify
 
-Run `bakers conductor check`, then [a small ticket](/get-started/first-ticket). The Git worktree should appear in Orca and the agent should run in its terminal. Adoption waits up to 35 seconds by default. An unreachable-runtime error requires starting Orca and retrying dispatch.
+Run `bakers conductor check`, then [a small ticket](/get-started/run-the-first-ticket). The Git worktree should appear in Orca and the agent should run in its terminal. Adoption waits up to 35 seconds by default. An unreachable-runtime error requires starting Orca and retrying dispatch.
 
 Package source in a checkout: `bakers-cli/addons/orca`.

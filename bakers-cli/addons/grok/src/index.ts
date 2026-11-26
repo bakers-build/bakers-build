@@ -182,6 +182,7 @@ async function readJson(path: string): Promise<Record<string, unknown> | null> {
 
 export class GrokAgent implements BbAgent {
   readonly id = 'grok';
+  readonly herdrAgent = 'grok';
   readonly secretEnv = GROK_SECRET_ENV;
   private readonly args: string[];
   private readonly model: string | undefined;

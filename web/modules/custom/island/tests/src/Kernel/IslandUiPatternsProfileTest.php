@@ -126,6 +126,53 @@ final class IslandUiPatternsProfileTest extends KernelTestBase {
   }
 
   /**
+   * Uninstalling a source's provider drops that source, not the profile.
+   */
+  public function testUninstallingSourceProviderKeepsProfile(): void {
+    $this->installEntitySchema('user');
+    $this->installSchema('user', ['users_data']);
+    App::create(['id' => 'source_app', 'label' => 'Sources'])->save();
+    IslandProfile::create([
+      'id' => 'source_profile',
+      'label' => 'Sources',
+      'app' => 'source_app',
+      'layout' => 'sdc_test:my-banner',
+      'placements' => [
+        'source' => [
+          'plugin_id' => 'ui_patterns_component',
+          'slot' => 'banner_body',
+          'configuration' => [
+            'component' => [
+              'component_id' => 'sdc_test:my-banner',
+              'props' => ['heading' => ['source_id' => 'profile_marker', 'source' => []]],
+              'slots' => [
+                'banner_body' => [
+                  'sources' => [
+                    ['source_id' => 'profile_marker', 'source' => []],
+                    ['source_id' => 'textfield', 'source' => ['value' => 'kept']],
+                  ],
+                ],
+              ],
+            ],
+          ],
+        ],
+      ],
+    ])->save();
+
+    $this->container->get('module_installer')->uninstall(['island_test']);
+
+    $profile = IslandProfile::load('source_profile');
+    self::assertInstanceOf(IslandProfile::class, $profile, 'the profile survives');
+    $component = $profile->get('placements')['source']['configuration']['component'];
+    self::assertSame([], $component['props']);
+    self::assertSame(
+      [['source_id' => 'textfield', 'source' => ['value' => 'kept']]],
+      $component['slots']['banner_body']['sources'],
+    );
+    self::assertNotContains('island_test', $profile->getDependencies()['module'] ?? []);
+  }
+
+  /**
    * Unknown source mappings cannot be saved as apparently valid profiles.
    */
   public function testUnavailableSourceMappingIsRejected(): void {

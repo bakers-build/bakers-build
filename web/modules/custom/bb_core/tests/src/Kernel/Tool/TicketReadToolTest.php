@@ -318,7 +318,7 @@ final class TicketReadToolTest extends BakersToolTestBase {
     $this->installEntitySchema('bb_environment');
     user_role_grant_permissions('skill_user', ['view bb_environment']);
     $production = $this->entity('bb_environment', ['name' => 'production', 'project_id' => $this->project->id()]);
-    $type = $this->term('type', 'deployment')->id();
+    $type = $this->term('type', 'ship')->id();
     $ticket = $this->ticket('TR-T');
     $unreferenced = $this->ticket('TR-U');
     $first = $this->ticket('TR-D1', [
@@ -368,6 +368,16 @@ final class TicketReadToolTest extends BakersToolTestBase {
       ['identifier' => $done->getIdentifier(), 'title' => 'Done blocker', 'state' => 'done'],
     ], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]))['blocked_by']);
     self::assertSame([], $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $open->getIdentifier()]))['blocked_by']);
+  }
+
+  /**
+   * Returns the priority, 1 High to 3 Low, or null without one.
+   */
+  public function testReturnsPriority(): void {
+    $medium = $this->ticket('TR-medium', ['priority' => 2]);
+    $none = $this->ticket('TR-none');
+    self::assertSame(2, $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $medium->uuid()]))['priority']);
+    self::assertNull($this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $none->uuid()]))['priority']);
   }
 
   /**

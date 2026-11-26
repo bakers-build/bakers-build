@@ -12,7 +12,7 @@ import type {
   ConductorFileConfig,
   ConductorStatus,
 } from '@bakers-build/conductor/contract';
-import type { ProcProbe } from '@bakers-build/core';
+import { defaultProcProbe, type ProcProbe } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type BbCliDeps,
@@ -77,6 +77,21 @@ describe('bakers conductor stop', () => {
     await run(['stop'], probe, [row({ lastPid: 4242 })]);
 
     expect(probe.sent).toEqual([[4242, 'SIGTERM']]);
+  });
+
+  it('verifies and stops the conductor on macOS by its ps line', async () => {
+    const ps = (_file: string, args: string[]) => {
+      if (args.at(-1) !== '4242') throw new Error('ps exit 1');
+      return `${process.getuid?.() ?? 0} ${CONDUCTOR_CMDLINE}\n`;
+    };
+    const probe = { ...fakeProbe({}), ...defaultProcProbe('darwin', ps) };
+    const sent: Array<[number, string]> = [];
+    probe.send = (pid, signal) => void sent.push([pid, signal]);
+
+    await run(['stop'], probe, [row({ lastPid: 4242 })]);
+
+    expect(sent).toEqual([[4242, 'SIGTERM']]);
+    expect(out.join('\n')).not.toContain('cannot verify on this platform');
   });
 
   it('does not write offline itself — the exiting process owns that', async () => {

@@ -11,7 +11,12 @@ gets `provision_exec('down')` first, which stops it and drops its reuse marker, 
 `existing-config` install at the same revision. Commands in the web container run through
 fixed `provision_exec` keys: `phpcs`, `phpmd`, `phpstan`, `phpunit` and `phpunit-mariadb` (test paths), `paratest`
 (one suite or path), `uli` (`[<persona>, <url>?]`), `playwright`
-(spec paths), `playwright-cli`, `designbook` (Storybook and captures) and `playground-ticket`; there is no free command. `ddev_status`/`ddev_start` replace
+(spec paths), `playwright-cli`, `designbook` (Storybook, checks, captures, the static build and the
+Designbook CLI) and `playground-ticket`; there is no free command. Designbook work runs entirely
+through `provision_exec('designbook', …)`; the host only edits files. A Designbook skill's
+`npx storybook-addon-designbook …`, `_debo …` or `storybook start` means that key, never a host
+process. Its plan, task-list and result files live under `web/themes/custom/bb_theme/designbook/`,
+paths relative to the theme, because the container does not see a host scratch directory. `ddev_status`/`ddev_start` replace
 project inspection and startup. Provisioning profiles use the fixed, protected `.bakers/provision.sh`
 entry point; their implementation is read from that file on each call.
 Under an isolating runtime (`BAKERS_RUNTIME_ISOLATES=1`) the run installs and builds itself:
@@ -42,10 +47,16 @@ Apply all matching rows.
 | Scenes under `web/themes/custom/bb_theme/` | `designbook:design-screen`, or `designbook:design-shell` for the application shell |
 | Entity mappings under `web/themes/custom/bb_theme/` | `designbook:design-entity` |
 | Design tokens under `web/themes/custom/bb_theme/` | `designbook:tokens`, then `designbook:css-generate` for the token CSS |
-| Storybook for Designbook work under `web/themes/custom/bb_theme/` | `designbook:sb` |
+| Storybook for Designbook work under `web/themes/custom/bb_theme/` | `designbook:sb`, run through `provision_exec('designbook', …)` |
 | Work from a design reference (Figma, Claude Design) under `web/themes/custom/bb_theme/` | `designbook:extract-reference` first |
 | Scenes or screens built from a design reference | `designbook:design-verify` last, `designbook:repair` for its findings |
 | Skills, frontmatter or plugin manifests | `mattpocock-skills:writing-for-agents`, `ponytail:ponytail` |
+
+*Ship*: version command `pnpm --dir bakers-cli run release:version <SHA> --notes -`; npm package
+`@bakers-build/bakers`. Block when a breaking (`!`) server commit is in the batch and none raises
+`min_client_version`. Its fix, made by the ship: set it to the planned release version in both
+`bb_core.settings` homes and in the client version the Playwright features send, title
+`fix(server): require bakers <version> or newer to claim work`.
 
 ## bb-phase-validate
 

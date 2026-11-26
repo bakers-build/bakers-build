@@ -37,16 +37,18 @@ export function ownershipRefusal(branch: string, branchName: string): string {
 }
 
 /**
- * The ticket branch merges into `target_branch` (a deployment's environment
- * branch), else `base_branch`; a variant into the ticket branch.
+ * The ticket branch merges into `target_branch` (a ship's environment branch),
+ * else `base_branch`; a variant into the ticket branch, or into `base_branch`
+ * for a ship, whose variant carries a fix the source needs before the freeze.
  */
 export function derivedBase(
   branch: string,
   run: { branchName: string; baseBranch: string; targetBranch?: string },
 ): string {
-  return branch === run.branchName
-    ? (run.targetBranch ?? run.baseBranch)
-    : run.branchName;
+  if (branch === run.branchName) return run.targetBranch ?? run.baseBranch;
+  const ship =
+    run.targetBranch !== undefined && run.targetBranch !== run.baseBranch;
+  return ship ? run.baseBranch : run.branchName;
 }
 
 /** Remove every secret and any Authorization header value. */

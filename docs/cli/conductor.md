@@ -2,7 +2,7 @@
 
 `bakers conductor` is the node agent: it registers this machine's conductor for a project checkout, claims tickets and runs agents on them, using the checkout's existing configuration. `bakers oven` is a hidden alias of it.
 
-This page is the command reference. What a cycle does and how to run several conductors is in [Conductors](/configuration/project/conductors); the config file is in [Project configuration](/configuration/project).
+This page is the command reference. What a cycle does and how to run several conductors is in [Conductors](/configuration/project/conductors-and-variants); the config file is in [Project configuration](/configuration/project).
 
 ## Synopsis
 
@@ -51,13 +51,13 @@ By default `start` launches the loop as a detached background process: it has it
 - When the control plane does not know this conductor's id yet but this machine, project and variant already have a conductor under another id (for example from before the upgrade), `start` asks once in a terminal whether to take it over, or which one when there are several; it keeps its tickets and runs. Without a terminal it stops and names `--adopt <uuid>` (take it over) and `--new` (register another conductor); the two cannot be combined.
 - `--force` turns "already running" into a restart: a verified `SIGTERM`, a grace period, then `SIGKILL`, then the normal start. It fails rather than starting a second conductor when the running one cannot be verified or stopped.
 
-An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. After the install and migration the start continues on the new release. The procedure, decline window and failure behaviour are in [Update bakers.build](/configuration/guides/updates).
+An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. After the install and migration the start continues on the new release. The procedure, decline window and failure behaviour are in [Update bakers.build](/configuration/guides/update-bakers-build).
 
 A start on a machine where an enabled agent cannot start its sandbox prints `warning: sandbox unavailable: <agent>: <cause> — <fix>` and still starts; the loop then claims nothing until the cause is fixed (see `check`).
 
 #### Restart on change
 
-A running conductor (the detached default and `--foreground`) restarts itself when a file it loaded changes: the project `project.config.js` (or its variant), `~/.bakers/machine.config.js`, `~/.bakers/.bakers.env`, and the build directory of each configured addon (`pnpm build` counts). After 2 quiet seconds, it checks the new config with `bakers conductor start --dry-run` in a child process. A `.bakers.env` change alone skips the check, or waits for a pending [upgrade](#restart-after-an-upgrade).
+A running conductor restarts itself when a file it loaded changes: `project.config.js` (or its variant), `~/.bakers/machine.config.js`, `~/.bakers/.bakers.env`, and the build directory of each configured addon (`pnpm build` counts). After 2 quiet seconds it checks the config with `bakers conductor start --dry-run`. A `.bakers.env` change alone skips the check, or waits for a pending [upgrade](#restart-after-an-upgrade). A file changed during start-up or restart counts, unless copied with an older time stamp; an addon build does not.
 
 - the check passes: the log shows `config check passed; restarting conductor`. The loop stops claiming, drains its queue and stops its tools as on `SIGTERM`, writes no `offline`, and replaces itself in place: same pid and log. Running agent sessions keep going and are adopted again.
 - the check fails: the log shows `config check failed; keeping the running conductor` with the error, and the next change checks again.
@@ -80,7 +80,7 @@ A failed step is logged as `config upgrade failed` or `config check failed` with
 
 ### stop
 
-`stop` sends `SIGTERM` to the pid recorded on the control plane, after checking that the pid belongs to a conductor process of this host; the exiting conductor writes its own `offline` status. `--now` sends `SIGKILL` instead; a killed process writes nothing, so the status follows when its lease expires. `stop` cannot stop a conductor that runs on another machine. If another record names the same checkout it is reported and left untouched.
+`stop` sends `SIGTERM` to the pid recorded on the control plane once verified as this host and user's conductor (Linux and macOS only); the exiting conductor writes its own `offline` status. `--now` sends `SIGKILL`; a killed process writes nothing, so the status follows at lease expiry. A conductor on another machine cannot be stopped. Another record naming the same checkout is reported and left untouched.
 
 ### status and ls
 

@@ -23,6 +23,7 @@ const KIMI_KNOWN: readonly KnownOptionSpec[] = [
 
 export class KimiAgent implements BbAgent {
   readonly id = 'kimi';
+  readonly herdrAgent = 'kimi';
   readonly launchWarnings?: readonly string[];
   private readonly args: string[];
   private readonly model: string | undefined;

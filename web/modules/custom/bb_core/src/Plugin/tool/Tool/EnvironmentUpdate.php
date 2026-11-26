@@ -30,7 +30,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'project' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('The project key, e.g. BAKERS, or UUID.'),
+      description: new TranslatableMarkup('The project identifier prefix, e.g. BAKERS, or UUID.'),
       constraints: ['NotBlank' => []],
     ),
     'environment' => new InputDefinition(
@@ -49,7 +49,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'branch' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Branch'),
-      description: new TranslatableMarkup('The new branch it deploys; a deployment ticket with this environment targets it.'),
+      description: new TranslatableMarkup('The new branch it deploys; a ship ticket with this environment targets it.'),
       required: FALSE,
       constraints: ['NotBlank' => []],
     ),
@@ -86,7 +86,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'project' => new OutputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('The project key.'),
+      description: new TranslatableMarkup('The project identifier prefix.'),
     ),
   ],
 )]

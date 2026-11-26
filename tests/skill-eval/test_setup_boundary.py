@@ -5,7 +5,7 @@ import unittest
 import json
 import subprocess
 
-from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, validate_config_write
+from setup_support import safe_path, config_args, declared_output, init_blocked, parse_action, relative_argv, take_output, validate_config_write
 
 
 class SetupBoundaryTest(unittest.TestCase):
@@ -28,6 +28,9 @@ class SetupBoundaryTest(unittest.TestCase):
         for text in ['{}', '{"type":"shell","command":"anything"}', '<invoke name="question"/><invoke name="question"/>']:
             with self.subTest(text=text), self.assertRaises(ValueError):
                 parse_action(text)
+
+    def test_a_message_shows_text_without_asking(self):
+        self.assertEqual(parse_action('{"type":"message","text":"Open the URL"}'), {'type': 'message', 'text': 'Open the URL'})
 
     def test_action_with_wrongly_typed_field_is_refused_not_a_crash(self):
         for text in ['{"type":"command","argv":5}', '{"type":"command","argv":["git",3]}', '{"type":"read","path":["a"]}']:
@@ -70,6 +73,27 @@ class SetupBoundaryTest(unittest.TestCase):
             with self.subTest(argv=argv):
                 self.assertIsNone(declared_output(commands, argv))
 
+    def test_declared_evidence_ending_in_a_wildcard_matches_its_prefix(self):
+        commands = {json.dumps(['git', '-C', 'project', 'rev-parse', '*'], separators=(',', ':')): 'top'}
+        self.assertEqual(declared_output(commands, ['git', '-C', 'project', 'rev-parse', '--show-toplevel']), 'top')
+        for argv in [['git', '-C', 'project'], ['git', '-C', 'plain', 'rev-parse', '--show-toplevel']]:
+            with self.subTest(argv=argv):
+                self.assertIsNone(declared_output(commands, argv))
+
+    def test_a_declared_list_answers_successive_calls_and_repeats_its_last(self):
+        calls = {}
+        argv = ['bakers', 'auth', 'status']
+        outputs = [take_output(['out', 'in'], calls, argv) for _ in range(3)]
+        self.assertEqual(outputs, ['out', 'in', 'in'])
+        self.assertEqual(take_output(['out', 'in'], calls, ['bakers', 'auth', 'login']), 'out')
+        self.assertEqual(take_output({'stdout': 'one'}, calls, argv), {'stdout': 'one'})
+
+    def test_absolute_case_paths_read_as_relative_for_declared_evidence(self):
+        root = Path('/tmp/case/environment')
+        self.assertEqual(relative_argv(root, ['git', '-C', '/tmp/case/environment/project', 'rev-parse', '/tmp/case/environment']),
+                         ['git', '-C', 'project', 'rev-parse', '.'])
+        self.assertEqual(relative_argv(root, ['git', '-C', '/tmp/case/environment-other']), ['git', '-C', '/tmp/case/environment-other'])
+
     def test_paths_cannot_escape_including_symlinks(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / 'case'
@@ -85,6 +109,7 @@ class SetupBoundaryTest(unittest.TestCase):
             root = Path(temporary)
             args = config_args(root, ['bakers', 'config', 'init', '--scope', 'machine', '--label', 'test-worker'])
             self.assertIn('test-worker', args)
+            self.assertIn('@bakers-build/addon-herdr-core', config_args(root, ['bakers', 'config', 'init', '--scope', 'project', '--executor', '@bakers-build/addon-herdr-core']))
             for argv in [
                 ['bakers', 'auth', 'login'],
                 ['bakers', 'conductor', 'start'],
