@@ -175,6 +175,7 @@ final class CatalogEntityFormTest extends KernelTestBase {
     $this->pushTermAddRequest('space-a', $query);
     $form = $this->container->get('form_builder')->getForm($this->termAddForm());
     self::assertStringContainsString('_wrapper_format=island_dialog', (string) ($form['#attributes']['data-hx-post'] ?? ''));
+    self::assertArrayNotHasKey('messages', $form, 'The dialog shows its messages once, in its own region.');
     $actions = $form[WrappedRouteRenderer::ACTIONS_SLOT_PROPERTY] ?? [];
     self::assertSame('/space-a/settings/catalog/labels', $actions['cancel']['#props']['href'] ?? NULL);
 

@@ -107,10 +107,10 @@ When('I open the environment {string}', async ({ page }, name: string) => {
   await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
 });
 
-Then('the environment edit form offers no {string}, {string} or {string} field', async ({ page }, ...labels: string[]) => {
+Then('the environment edit form offers no {string}, {string} or {string} field', async ({ page }, a: string, b: string, c: string) => {
   const form = page.locator('main form');
   await expect(form.getByLabel('Name', { exact: true })).toBeVisible();
-  for (const label of labels) {
+  for (const label of [a, b, c]) {
     await expect(form.getByText(label, { exact: true })).toHaveCount(0);
   }
 });

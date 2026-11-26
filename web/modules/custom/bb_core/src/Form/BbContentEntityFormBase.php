@@ -135,10 +135,11 @@ class BbContentEntityFormBase extends ContentEntityForm {
       // boosted submit would swap the response instead of reloading it.
       $form['#attributes']['data-hx-boost'] = 'false';
       $form['#action'] = $this->settingsUrl()->toString();
+      // The shell island profile places no messages region, so the Save
+      // confirmation and validation errors render inside the form. A dialog
+      // has its own message region.
+      $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
     }
-    // The shell island profile places no messages region, so the Save
-    // confirmation and validation errors render inside the form.
-    $form['messages'] = ['#type' => 'status_messages', '#weight' => -1000];
     unset($form['created'], $form['changed']);
     $text = $this->dangerZoneText();
     if ($text !== []) {
