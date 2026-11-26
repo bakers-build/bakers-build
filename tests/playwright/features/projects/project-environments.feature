@@ -24,11 +24,12 @@ Feature: A project manages its environments
     Then the tab "Environments" is current
     And the environment "Project env renamed" is not listed
 
-  Scenario: A lead adding an environment without a name keeps the form with its error
-    Given I am logged in as the account "north-lead"
+  Scenario: A lead adding an environment under a taken name keeps the form with its error
+    Given the project "bakers.build Platform" has the environment "Project env taken"
+    And I am logged in as the account "north-lead"
     When I visit the Environments tab of the project "bakers.build Platform"
-    And I save a new environment without a name
-    Then the environment form stays open with the error "Name field is required."
+    And I save the new environment "Project env taken"
+    Then the environment form stays open with the error "An environment named Project env taken already exists in this project."
 
   Scenario: A contributor reads environments but cannot change them
     Given the project "API home" has the environment "Project env read only"

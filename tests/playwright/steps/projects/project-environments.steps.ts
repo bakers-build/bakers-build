@@ -136,9 +136,9 @@ When('I delete the environment from its dialog', async ({ page }) => {
   await expect(page).toHaveURL(/\/project\/[^/]+\/environments(\?|$)/);
 });
 
-When('I save a new environment without a name', async ({ page }) => {
+When('I save the new environment {string}', async ({ page }, name: string) => {
   await clickHeaderAction(page, 'Add environment');
-  await expect(environmentDialog(page).getByLabel('Name', { exact: true })).toBeVisible();
+  await environmentDialog(page).getByLabel('Name', { exact: true }).fill(name);
   // The save must go back through the dialog format, not as a plain page post.
   const posted = page.waitForResponse(
     (r) => r.request().method() === 'POST' && r.url().includes('_wrapper_format=island_dialog'),
