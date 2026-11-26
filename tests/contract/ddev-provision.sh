@@ -263,7 +263,30 @@ dispatch exec designbook -- save 0123456789abcdef/fedcba9876543210 sec--scene de
 dispatch exec designbook -- capture-image 0123456789abcdef/fedcba9876543210 sec--scene desktop members default 1440 none 'body > div:nth-of-type(5) > div'
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 25 exec --raw -- env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c cd web/themes/custom/bb_theme && npx storybook-addon-designbook "$@" designbook reference capture-image --reference /var/www/html/web/themes/custom/bb_theme/designbook/references/0123456789abcdef/fedcba9876543210 --path desktop--members--default.png --url http://localhost:6006/iframe.html?id=sec--scene&viewMode=story --width 1440 --view desktop --state default --selector body > div:nth-of-type(5) > div' ] || fail "calls: $(cat "$TRACE")"
-for args in 'save ../../x/fedcba9876543210 s d none' 'save 0123456789abcdef/fedcba9876543210 s d ../x.mjs' 'save 0123456789abcdef/fedcba9876543210 s --state=x none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d wide none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none --selector=x' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none a;id' 'check' 'start x'; do
+# The browserless CLI passes through unchanged after the subcommand, with flags from a fixed list.
+designbook_cli='ddev-own-project.sh;ddev %s exec --raw -- env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c cd web/themes/custom/bb_theme && npx storybook-addon-designbook "$@" designbook %s'
+while IFS='|' read -r count args; do
+  # shellcheck disable=SC2086
+  dispatch exec designbook -- $args
+  [ "$rc" = 0 ] || fail "exit $rc: $args: $out"
+  # shellcheck disable=SC2059
+  [ "$(paste -sd ';' "$TRACE")" = "$(printf "$designbook_cli" "$count" "$args")" ] || fail "calls: $(cat "$TRACE")"
+done <<'EOF'
+12|intake design-entity --palette
+18|plan build design-entity --tasks designbook/workflows/t/tasks.json --name groups-row --format json
+16|plan done designbook/plans/x/plan.md --task map --data-file designbook/workflows/t/r.json
+12|validate entity-mapping group
+18|compare-images --reference a.png --actual b.png --diff designbook/verify-diffs/d.png --threshold 0.1
+EOF
+dispatch exec designbook -- build
+[ "$rc" = 0 ] || fail "build: exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 8 exec --raw -- env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c cd web/themes/custom/bb_theme && npx storybook build --output-dir storybook-static' ] || fail "calls: $(cat "$TRACE")"
+for args in 'nope' 'intake --config=x' 'intake x --config-dir y' 'plan build w --output /x' 'plan done ../../p --task t --data-file r' 'intake a;id' 'build x' 'compare-images --reference -x'; do
+  # shellcheck disable=SC2086
+  dispatch exec designbook -- $args
+  [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid designbook exec ran actions: $args: $out"
+done
+for args in 'save ../../x/fedcba9876543210 s d none''save 0123456789abcdef/fedcba9876543210 s d ../x.mjs' 'save 0123456789abcdef/fedcba9876543210 s --state=x none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d wide none' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none --selector=x' 'capture-image 0123456789abcdef/fedcba9876543210 s v x d 1440 none a;id' 'check' 'start x'; do
   # shellcheck disable=SC2086
   dispatch exec designbook -- $args
   [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid designbook exec ran actions: $args: $out"
