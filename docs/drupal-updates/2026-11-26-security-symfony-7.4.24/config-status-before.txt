@@ -1,0 +1,13 @@
+$ drush config:status
+ -------------------------- ----------- 
+  Name                       State      
+ -------------------------- ----------- 
+  views.view.conductors      Different  
+  views.view.groups          Different  
+  views.view.machines        Different  
+  views.view.project_board   Different  
+  views.view.projects        Different  
+  views.view.runs            Different  
+  views.view.tickets         Different  
+ -------------------------- ----------- 
+exit: 0

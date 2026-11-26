@@ -1,0 +1,198 @@
+$ drush cex -y && git diff -- config/   # discarded: formatting/key order only, nothing update-caused
+diff --git a/config/sync/island.profile.bb_shell.yml b/config/sync/island.profile.bb_shell.yml
+index a135db51..9691c072 100644
+--- a/config/sync/island.profile.bb_shell.yml
++++ b/config/sync/island.profile.bb_shell.yml
+@@ -235,8 +235,6 @@ placements:
+       boost: true
+       target_placement: shell_content_island
+     data: {  }
+-  # The project overview's favorite toggle, embedded in the page header's
+-  # actions; its toggle announces `bakers.favorites.changed` to the rail.
+   shell_project_favorite:
+     plugin_id: bb_project_favorite
+     slot: embedded
+diff --git a/config/sync/views.view.bb_environments.yml b/config/sync/views.view.bb_environments.yml
+index 3c9aaa06..4f555cc6 100644
+--- a/config/sync/views.view.bb_environments.yml
++++ b/config/sync/views.view.bb_environments.yml
+@@ -10,7 +10,7 @@ dependencies:
+ id: bb_environments
+ label: 'Workspace environments'
+ module: views
+-description: 'The Catalog Environments tab: the environments of every project of the workspace in the URL, with a project filter. Each row links to the environment''s page, which carries Edit and Delete.'
++description: "The Catalog Environments tab: the environments of every project of the workspace in the URL, with a project filter. Each row links to the environment's page, which carries Edit and Delete."
+ tag: ''
+ base_table: bb_environment
+ base_field: id
+diff --git a/config/sync/views.view.bb_terms.yml b/config/sync/views.view.bb_terms.yml
+index 1900776d..46457fe7 100644
+--- a/config/sync/views.view.bb_terms.yml
++++ b/config/sync/views.view.bb_terms.yml
+@@ -12,7 +12,7 @@ dependencies:
+ id: bb_terms
+ label: 'Workspace terms'
+ module: views
+-description: 'The Catalog tabs Types, Recipes and Labels: one display per term bundle, filtered to the workspace of the route. Each row links to the term''s page, which carries Edit and Delete.'
++description: "The Catalog tabs Types, Recipes and Labels: one display per term bundle, filtered to the workspace of the route. Each row links to the term's page, which carries Edit and Delete."
+ tag: ''
+ base_table: bb_term
+ base_field: id
+diff --git a/config/sync/views.view.conductors.yml b/config/sync/views.view.conductors.yml
+index 8a6d3ac3..95b018ec 100644
+--- a/config/sync/views.view.conductors.yml
++++ b/config/sync/views.view.conductors.yml
+@@ -1556,10 +1556,10 @@ display:
+                 combine_param: sort_bef_combine
+                 reset: false
+                 reset_label: ''
++                no_reset: false
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
+-                no_reset: false
+       empty:
+         area_text_custom:
+           id: area_text_custom
+@@ -1809,10 +1809,10 @@ display:
+                 combine_param: sort_bef_combine
+                 reset: false
+                 reset_label: ''
++                no_reset: false
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
+-                no_reset: false
+       empty:
+         area_text_custom:
+           id: area_text_custom
+@@ -1933,11 +1933,11 @@ display:
+           separator: ''
+           hide_empty: false
+       defaults:
+-        style: false
+-        row: false
+         empty: false
+         title: false
+         exposed_form: false
++        style: false
++        row: false
+         arguments: false
+         filters: false
+         filter_groups: false
+diff --git a/config/sync/views.view.groups.yml b/config/sync/views.view.groups.yml
+index 9ce49e59..673bd209 100644
+--- a/config/sync/views.view.groups.yml
++++ b/config/sync/views.view.groups.yml
+@@ -580,10 +580,10 @@ display:
+                 combine_param: sort_bef_combine
+                 reset: false
+                 reset_label: ''
++                no_reset: false
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
+-                no_reset: false
+       empty:
+         bb_empty:
+           id: bb_empty
+diff --git a/config/sync/views.view.machines.yml b/config/sync/views.view.machines.yml
+index af460a28..6024296a 100644
+--- a/config/sync/views.view.machines.yml
++++ b/config/sync/views.view.machines.yml
+@@ -504,10 +504,10 @@ display:
+                 combine_param: sort_bef_combine
+                 reset: false
+                 reset_label: ''
++                no_reset: false
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
+-                no_reset: false
+       empty:
+         area_text_custom:
+           id: area_text_custom
+diff --git a/config/sync/views.view.project_board.yml b/config/sync/views.view.project_board.yml
+index 1d6c3e9b..0e1bfaca 100644
+--- a/config/sync/views.view.project_board.yml
++++ b/config/sync/views.view.project_board.yml
+@@ -1592,10 +1592,10 @@ display:
+                 combine_param: sort_bef_combine
+                 reset: false
+                 reset_label: ''
++                no_reset: false
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
+-                no_reset: false
+             filter:
+               board_parent:
+                 plugin_id: bb_option_picker
+diff --git a/config/sync/views.view.projects.yml b/config/sync/views.view.projects.yml
+index d234aff2..e448fba1 100644
+--- a/config/sync/views.view.projects.yml
++++ b/config/sync/views.view.projects.yml
+@@ -518,7 +518,7 @@ display:
+           plugin_id: standard
+           order: ASC
+           expose:
+-            label: Identifier prefix
++            label: 'Identifier prefix'
+             field_identifier: key
+           exposed: true
+         name_1:
+@@ -757,10 +757,10 @@ display:
+                 combine_param: sort_bef_combine
+                 reset: false
+                 reset_label: ''
++                no_reset: false
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
+-                no_reset: false
+       empty:
+         bb_empty:
+           id: bb_empty
+diff --git a/config/sync/views.view.runs.yml b/config/sync/views.view.runs.yml
+index 0ee2b0db..95b65b89 100644
+--- a/config/sync/views.view.runs.yml
++++ b/config/sync/views.view.runs.yml
+@@ -607,10 +607,10 @@ display:
+                 combine_param: sort_bef_combine
+                 reset: false
+                 reset_label: ''
++                no_reset: false
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
+-                no_reset: false
+             filter:
+               facets_state:
+                 plugin_id: bb_option_picker
+diff --git a/config/sync/views.view.tickets.yml b/config/sync/views.view.tickets.yml
+index 8bb6e265..39e01d8a 100644
+--- a/config/sync/views.view.tickets.yml
++++ b/config/sync/views.view.tickets.yml
+@@ -719,10 +719,10 @@ display:
+                 combine_param: sort_bef_combine
+                 reset: false
+                 reset_label: ''
++                no_reset: false
+                 collapsible: false
+                 collapsible_label: 'Sort options'
+                 is_secondary: false
+-                no_reset: false
+             filter:
+               facets_assignee_user_id:
+                 plugin_id: bb_option_picker
+@@ -791,9 +791,9 @@ display:
+                   collapsible_disable_automatic_open: false
+                   open_by_default: false
+                   is_secondary: false
++                  no_reset: false
+                   hide_label: false
+                   field_classes: ''
+-                  no_reset: false
+                 treat_as_false: false
+               facets_workflow:
+                 plugin_id: bb_option_picker

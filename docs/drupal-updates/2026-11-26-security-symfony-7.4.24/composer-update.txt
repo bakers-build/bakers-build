@@ -1,0 +1,43 @@
+$ composer update symfony/http-kernel:7.4.24 symfony/mailer:7.4.24 symfony/routing:7.4.24 symfony/serializer:7.4.24 symfony/http-foundation:7.4.24 --minimal-changes --no-interaction
+Gathering patches for root package.
+Removing package drupal/ui_patterns so that it can be re-installed and re-patched.
+  - Removing drupal/ui_patterns (2.0.23)
+Deleting /var/www/html/web/modules/contrib/ui_patterns - deleted
+Loading composer repositories with package information
+Updating dependencies
+Lock file operations: 0 installs, 5 updates, 0 removals
+  - Upgrading symfony/http-foundation (v7.4.23 => v7.4.24)
+  - Upgrading symfony/http-kernel (v7.4.23 => v7.4.24)
+  - Upgrading symfony/mailer (v7.4.22 => v7.4.24)
+  - Upgrading symfony/routing (v7.4.23 => v7.4.24)
+  - Upgrading symfony/serializer (v7.4.23 => v7.4.24)
+Writing lock file
+Installing dependencies from lock file (including require-dev)
+Package operations: 1 install, 5 updates, 0 removals
+  - Downloading symfony/serializer (v7.4.24)
+  - Downloading symfony/routing (v7.4.24)
+  - Downloading symfony/http-foundation (v7.4.24)
+  - Downloading symfony/mailer (v7.4.24)
+  - Downloading symfony/http-kernel (v7.4.24)
+ 0/5 [>---------------------------]   0%
+ 4/5 [======================>-----]  80%
+ 5/5 [============================] 100%
+Gathering patches for root package.
+Gathering patches for dependencies. This might take a minute.
+  - Upgrading symfony/serializer (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/routing (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/http-foundation (v7.4.23 => v7.4.24): Extracting archive
+  - Upgrading symfony/mailer (v7.4.22 => v7.4.24): Extracting archive
+  - Upgrading symfony/http-kernel (v7.4.23 => v7.4.24): Extracting archive
+  - Installing drupal/ui_patterns (2.0.23): Extracting archive
+ 0/6 [>---------------------------]   0%
+ 6/6 [============================] 100%
+  - Applying patches for drupal/ui_patterns
+
+Package doctrine/common is abandoned, you should avoid using it. No replacement was suggested.
+Generating autoload files
+110 packages you are using are looking for funding.
+Use the `composer fund` command to find out more!
+phpstan/extension-installer: Extensions installed
+No security vulnerability advisories found.
+exit: 0

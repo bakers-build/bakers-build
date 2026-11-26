@@ -1,0 +1,6 @@
+$ drush updb -y
+ [success] No pending updates.
+exit: 0
+$ drush updatedb:status
+ [success] No database updates required.
+exit: 0

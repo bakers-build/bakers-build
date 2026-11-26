@@ -1,0 +1,25 @@
+$ drush cim -y
++------------+--------------------------+-----------+
+| Collection | Config                   | Operation |
++------------+--------------------------+-----------+
+|            | views.view.conductors    | Update    |
+|            | views.view.groups        | Update    |
+|            | views.view.machines      | Update    |
+|            | views.view.project_board | Update    |
+|            | views.view.projects      | Update    |
+|            | views.view.tickets       | Update    |
+|            | views.view.runs          | Update    |
++------------+--------------------------+-----------+
+
+ // Import the listed configuration changes?: yes.                              
+
+ [notice] Synchronized configuration: update views.view.conductors.
+ [notice] Synchronized configuration: update views.view.groups.
+ [notice] Synchronized configuration: update views.view.machines.
+ [notice] Synchronized configuration: update views.view.project_board.
+ [notice] Synchronized configuration: update views.view.projects.
+ [notice] Synchronized configuration: update views.view.tickets.
+ [notice] Synchronized configuration: update views.view.runs.
+ [notice] Finalizing configuration synchronization.
+ [success] The configuration was imported successfully.
+exit: 0
