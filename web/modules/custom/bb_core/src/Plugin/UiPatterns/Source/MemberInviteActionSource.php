@@ -17,7 +17,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('Opens the workspace invite dialog on the Members screen.'),
   prop_types: ['slot'],
 )]
-final class MemberInviteActionSource extends CreateActionSourceBase {
+final class MemberInviteActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

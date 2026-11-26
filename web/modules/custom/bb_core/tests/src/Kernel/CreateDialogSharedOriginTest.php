@@ -168,7 +168,7 @@ final class CreateDialogSharedOriginTest extends KernelTestBase {
       self::assertSame(
         [],
         $this->declaredBeyond($class, $allowed),
-        $class . ' declares more than its subject — the plumbing belongs to CreateActionSourceBase.',
+        $class . ' declares more than its subject — the plumbing belongs to CreateActionSource.',
       );
     }
   }

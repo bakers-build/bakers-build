@@ -14,7 +14,7 @@ use Drupal\ui_patterns\Attribute\Source;
  * A ui_patterns Source so it is placed from configuration by plugin id and
  * survives restructures of the screen that composes it. With JavaScript off
  * the `href` navigates to a real page carrying the same dialog. Everything
- * but the subject lives in `CreateActionSourceBase`.
+ * but the subject lives in `CreateActionSource`.
  */
 #[Source(
   id: 'bb_ticket_create_action',
@@ -22,7 +22,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('The add action that opens the create-ticket dialog over the current screen.'),
   prop_types: ['slot'],
 )]
-final class TicketCreateActionSource extends CreateActionSourceBase {
+final class TicketCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

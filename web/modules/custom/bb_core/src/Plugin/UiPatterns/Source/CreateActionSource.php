@@ -8,32 +8,48 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Controller\TitleResolverInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Plugin\Context\ContextRepositoryInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Routing\RouteProviderInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\Core\Utility\Token;
-use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\Entity\SampleEntityGeneratorInterface;
 use Drupal\ui_patterns\PropTypePluginManager;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\ui_patterns\UiPatternsNormalizerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
+use Symfony\Component\Routing\Route;
 
 /**
  * The affordance that opens one create dialog over the screen it is placed on.
  *
- * Shares the dialog format plumbing, URL building and htmx declaration across
- * the create subjects. The trigger is offered exactly when the dialog route's
- * own access check allows it, so affordance and route cannot disagree.
+ * Configured with the dialog route; the differences between create subjects
+ * are settings. The trigger is offered exactly when the dialog route's own
+ * access check allows it, so affordance and route cannot disagree, and it
+ * carries the route's title unless a `label` is set.
  *
  * @SuppressWarnings("PHPMD.ExcessiveParameterList")
+ * @SuppressWarnings("PHPMD.CouplingBetweenObjects")
  */
-abstract class CreateActionSourceBase extends SourcePluginBase {
+#[Source(
+  id: 'bb_create_action',
+  label: new TranslatableMarkup('[bakers.build] Create action'),
+  description: new TranslatableMarkup('Opens the create dialog of the configured route over the current screen.'),
+  prop_types: ['slot'],
+)]
+class CreateActionSource extends SourcePluginBase {
 
   /**
    * The query parameter carrying the screen the dialog is opened over.
@@ -89,6 +105,8 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
     UiPatternsNormalizerInterface $normalizer,
     protected readonly AccountInterface $currentUser,
     protected readonly RequestStack $requestStack,
+    protected readonly RouteProviderInterface $routeProvider,
+    protected readonly TitleResolverInterface $titleResolver,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $propTypeManager, $contextRepository, $routeMatch, $sampleEntityGenerator, $moduleHandler, $token, $normalizer);
   }
@@ -115,105 +133,127 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
       $container->get('ui_patterns.normalizer'),
       $container->get('current_user'),
       $container->get('request_stack'),
+      $container->get('router.route_provider'),
+      $container->get('title_resolver'),
     );
   }
 
   /**
-   * The route the dialog lives at.
+   * {@inheritdoc}
    *
-   * @return string
-   *   A route name, resolved with no parameters — the workspace segment is
-   *   filled in by `BbWorkspaceRouteProcessor` from the route the request
-   *   matched, so no subject states which workspace it is in.
+   * - `route`: the dialog route.
+   * - `screens`: route names the trigger appears on; a trailing `*` matches a
+   *   prefix; empty means every route.
+   * - `route_parameters`: fixed dialog route parameters, over the screen's own
+   *   raw parameters of the same name.
+   * - `query`: screen query keys forwarded to the dialog; `*` forwards all.
+   * - `route_query`: dialog query key => screen route parameter, sent as the
+   *   converted entity's id; it wins over a forwarded key.
+   * - `trigger_id`: the trigger's element id, for a dialog that returns focus.
+   * - `label`: the trigger's label; empty uses the dialog route's title.
+   *
+   * @return array<string, mixed>
+   *   The default settings.
    */
-  abstract protected function dialogRoute(): string;
+  public function defaultSettings(): array {
+    return [
+      'route' => '',
+      'screens' => [],
+      'route_parameters' => [],
+      'query' => [],
+      'route_query' => [],
+      'trigger_id' => '',
+      'label' => '',
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * The sequences and mappings are edited in the profile's config only: they
+   * name route parameters and query keys, which no widget can offer.
+   *
+   * @param array<string, mixed> $form
+   *   The form.
+   *
+   * @return array<string, mixed>
+   *   The form.
+   */
+  public function settingsForm(array $form, FormStateInterface $form_state): array {
+    foreach (['route' => $this->t('Dialog route'), 'trigger_id' => $this->t('Trigger id'), 'label' => $this->t('Label')] as $key => $title) {
+      $form[$key] = [
+        '#type' => 'textfield',
+        '#title' => $title,
+        '#default_value' => $this->getSetting($key),
+      ];
+    }
+    return $form;
+  }
+
+  /**
+   * The route the dialog lives at.
+   */
+  protected function dialogRoute(): string {
+    return (string) $this->getSetting('route');
+  }
+
+  /**
+   * The dialog route's parameters, or NULL when this screen cannot fill them.
+   *
+   * Each path variable takes the screen's raw parameter of the same name, so
+   * the dialog opens in the screen's workspace, project or team; the
+   * `route_parameters` setting overlays them.
+   *
+   * @return array<string, string>|null
+   *   Route parameters, or NULL for an unknown route or an unfilled variable.
+   */
+  protected function dialogRouteParameters(): ?array {
+    $route = $this->dialogRouteObject();
+    if (!$route instanceof Route) {
+      return NULL;
+    }
+    $variables = array_flip($route->compile()->getPathVariables());
+    $parameters = array_intersect_key((array) $this->getSetting('route_parameters') + $this->routeMatch->getRawParameters()->all(), $variables);
+    $missing = array_diff_key($variables, $parameters, $route->getDefaults());
+    return $missing === [] ? array_map('strval', $parameters) : NULL;
+  }
+
+  /**
+   * The dialog route, or NULL when none is configured or it does not exist.
+   */
+  private function dialogRouteObject(): ?Route {
+    $name = $this->dialogRoute();
+    if ($name === '') {
+      return NULL;
+    }
+    try {
+      return $this->routeProvider->getRouteByName($name);
+    }
+    catch (RouteNotFoundException) {
+      return NULL;
+    }
+  }
 
   /**
    * The label the trigger carries, which is its accessible name.
    *
    * `icon_only => TRUE` moves it into `aria-label` (`button.twig`), so this is
    * what a screen reader announces and what `getByRole('link', …)` matches.
-   *
-   * @return string
-   *   The translated label.
    */
-  abstract protected function triggerLabel(): string;
-
-  /**
-   * Whether the screen's own query is merged into the dialog's address.
-   *
-   * TRUE forwards the whole query, facet values included, because
-   * `PickerWidget` reads a field's opening value off the query key its
-   * `context_parameter` names. FALSE suits a dialog with no context field.
-   * Either way the screen's query survives inside `destination`
-   * ({@see currentAddress()}).
-   *
-   * @return bool
-   *   TRUE to merge the screen's query into the dialog's own.
-   */
-  abstract protected function forwardsScreenQuery(): bool;
-
-  /**
-   * Route parameters for a dialog route that has its own placeholders.
-   *
-   * Empty for workspace-prefixed routes, whose segment
-   * `BbWorkspaceRouteProcessor` fills in.
-   *
-   * @return array<string, int|string>
-   *   Route parameters.
-   */
-  protected function dialogRouteParameters(): array {
-    return [];
-  }
-
-  /**
-   * Values the add form opens with, beside the destination.
-   *
-   * The form revalidates them; a subclass passes only what it has checked.
-   *
-   * @return array<string, string>
-   *   Query values.
-   */
-  protected function prefill(): array {
-    return [];
-  }
-
-  /**
-   * A route parameter's value that must win over any forwarded screen query.
-   *
-   * A project-bound screen (for example the per-project ticket list) carries
-   * its project as a ROUTE parameter, which {@see forwardsScreenQuery()}
-   * never sees — that method only ever forwards the request's query string.
-   * A subject whose dialog must bind to that project overrides this to read
-   * the route parameter and name the dialog query key it corresponds to
-   * (`['project' => '42']`); the merge in {@see dialogUrl()} applies it AFTER
-   * both the forwarded query and {@see prefill()}, so a stale or conflicting
-   * facet in either can never win over the route the dialog was actually
-   * opened from.
-   *
-   * @return array<string, string>
-   *   Query keys/values to force onto the dialog address; empty when this
-   *   screen carries no such route-scoped context.
-   */
-  protected function routeBoundQuery(): array {
-    return [];
-  }
-
-  /**
-   * The trigger's element id, for a dialog that returns focus to it.
-   *
-   * @return string
-   *   An id, or empty for none.
-   */
-  protected function triggerId(): string {
-    return '';
+  private function triggerLabel(Route $route): string {
+    $label = (string) $this->getSetting('label');
+    if ($label !== '') {
+      return $label;
+    }
+    $title = $this->titleResolver->getTitle(new Request(), $route);
+    return is_array($title) ? (string) ($title['#markup'] ?? '') : (string) $title;
   }
 
   /**
    * Sets the trigger's id on its attributes, when it has one.
    */
   private function withTriggerId(Attribute $attributes): Attribute {
-    $id = $this->triggerId();
+    $id = (string) $this->getSetting('trigger_id');
     return $id === '' ? $attributes : $attributes->setAttribute('id', $id);
   }
 
@@ -223,24 +263,34 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
    * The shell page-header island offers every create source; each source
    * keeps itself off screens it does not own.
    */
-  protected function appliesToCurrentRoute(): bool {
-    return TRUE;
+  private function appliesToCurrentRoute(): bool {
+    $screens = (array) $this->getSetting('screens');
+    $current = (string) $this->routeMatch->getRouteName();
+    foreach ($screens as $screen) {
+      $screen = (string) $screen;
+      if (str_ends_with($screen, '*') ? str_starts_with($current, substr($screen, 0, -1)) : $screen === $current) {
+        return TRUE;
+      }
+    }
+    return $screens === [];
   }
 
   /**
    * {@inheritdoc}
    *
    * The cache contexts are declared above the branch because the empty
-   * answer depends on `user.permissions` too; `url` because both addresses
-   * are derived from the request.
+   * answer depends on `user.permissions` and the route too; `url` because
+   * both addresses are derived from the request.
    *
    * @return array<string, mixed>
    *   The trigger; cache metadata alone when the account may not create the
    *   subject, which renders to nothing.
    */
   public function getPropValue(): mixed {
-    $build = ['#cache' => ['contexts' => ['user.permissions', 'url']]];
-    if (!$this->appliesToCurrentRoute()) {
+    $build = ['#cache' => ['contexts' => ['user.permissions', 'url', 'route']]];
+    $route = $this->dialogRouteObject();
+    $parameters = $this->dialogRouteParameters();
+    if (!$route instanceof Route || $parameters === NULL || !$this->appliesToCurrentRoute()) {
       return $build;
     }
     $access = $this->createAccess();
@@ -262,12 +312,12 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
         ],
       ],
       '#props' => [
-        'label' => $this->triggerLabel(),
-        'href' => $this->dialogUrl(FALSE)->toString(),
+        'label' => $this->triggerLabel($route),
+        'href' => $this->dialogUrl($parameters, FALSE)->toString(),
         'variant' => 'primary',
         'icon_only' => TRUE,
         'attributes' => $this->withTriggerId((new Htmx())
-          ->get($this->dialogUrl(TRUE))
+          ->get($this->dialogUrl($parameters, TRUE))
           ->target('#' . static::TARGET_ID)
           // Stated, never inherited: the content island's inherited
           // `hx-select` would otherwise swap in nothing. `dialog`, not the
@@ -297,14 +347,13 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
   /**
    * The dialog route, carrying this screen's address and its subject's policy.
    *
-   * `Url::fromRoute()` and not `fromUserInput()`: the workspace segment is
-   * filled in by `BbWorkspaceRouteProcessor` from the route the request
-   * matched, so this method never states which workspace it is in.
+   * A MERGE, NEVER A SUFFIX: the forwarded screen keys go in first, the
+   * route-bound ones over them, and `destination` is written over the top, so
+   * a screen that already carried one cannot smuggle it in as the dialog's.
+   * Forwarded values are copied, not checked: the add forms revalidate them.
    *
-   * A MERGE, NEVER A SUFFIX, where {@see forwardsScreenQuery()} is TRUE: the
-   * screen's keys go in first and `destination` is written over the top, so a
-   * screen that already carried one cannot smuggle it in as the dialog's.
-   *
+   * @param array<string, string> $parameters
+   *   The dialog route's parameters.
    * @param bool $through_the_format
    *   TRUE for the `hx-get` address, which carries the wrapper format and is
    *   answered with the hull alone; FALSE for the plain `href` a browser with
@@ -315,33 +364,60 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
    *
    * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
    */
-  private function dialogUrl(bool $through_the_format): Url {
-    $query = [];
-    if ($this->forwardsScreenQuery()) {
-      $query = $this->screenQuery();
-    }
-
-    $query = $this->prefill() + $query;
-    // The route's own context wins over a conflicting forwarded facet or
-    // prefill.
-    $query = $this->routeBoundQuery() + $query;
+  private function dialogUrl(array $parameters, bool $through_the_format): Url {
+    $query = $this->routeBoundQuery() + $this->forwardedQuery();
     $query[static::RETURN_PARAMETER] = $this->currentAddress();
     if ($through_the_format) {
       $query[static::WRAPPER_FORMAT_PARAMETER] = static::WRAPPER_FORMAT_VALUE;
     }
 
-    return Url::fromRoute($this->dialogRoute(), $this->dialogRouteParameters(), ['query' => $query]);
+    return Url::fromRoute($this->dialogRoute(), $parameters, ['query' => $query]);
+  }
+
+  /**
+   * The screen's query keys the `query` setting forwards.
+   *
+   * `*` forwards facet values too, because `PickerWidget` reads a field's
+   * opening value off the query key its `context_parameter` names.
+   *
+   * @return array<string, mixed>
+   *   Query keys and values.
+   */
+  private function forwardedQuery(): array {
+    $keys = (array) $this->getSetting('query');
+    $query = $keys === [] ? [] : $this->screenQuery();
+    return in_array('*', $keys, TRUE) ? $query : array_intersect_key($query, array_flip($keys));
+  }
+
+  /**
+   * Route parameters that must win over any forwarded screen query.
+   *
+   * A project-bound screen carries its project as a ROUTE parameter, which the
+   * query never sees; its converted id is sent, because the add forms accept
+   * ids only while the raw slot may hold a key or UUID.
+   *
+   * @return array<string, string>
+   *   Dialog query keys and values.
+   */
+  private function routeBoundQuery(): array {
+    $query = [];
+    foreach ((array) $this->getSetting('route_query') as $key => $name) {
+      $value = $this->routeMatch->getParameter((string) $name);
+      if ($value instanceof EntityInterface) {
+        $value = $value->id();
+      }
+      if (is_scalar($value)) {
+        $query[$key] = (string) $value;
+      }
+    }
+    return $query;
   }
 
   /**
    * Offers the trigger exactly when the dialog route itself would be allowed.
    */
   protected function createAccess(): AccessResultInterface {
-    $workspace = $this->routeMatch->getParameter('bb_workspace');
-    if (!$workspace instanceof BbWorkspaceInterface) {
-      return AccessResult::forbidden()->addCacheContexts(['route']);
-    }
-    $route_access = Url::fromRoute($this->dialogRoute(), ['bb_workspace' => $workspace->getSlug()] + $this->dialogRouteParameters())
+    $route_access = Url::fromRoute($this->dialogRoute(), $this->dialogRouteParameters() ?? [])
       ->access($this->currentUser, TRUE);
     return AccessResult::allowed()->addCacheContexts(['route'])->andIf($route_access);
   }

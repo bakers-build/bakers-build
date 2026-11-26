@@ -20,7 +20,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('Opens the environment add form of the current project on its Environments tab.'),
   prop_types: ['slot'],
 )]
-final class EnvironmentCreateActionSource extends CreateActionSourceBase {
+final class EnvironmentCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

@@ -9,7 +9,7 @@ use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbTicketTemplateInterface;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\ui_patterns\Attribute\Source;
 
 /**
@@ -21,7 +21,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('Opens the trigger add form for the current ticket template.'),
   prop_types: ['slot'],
 )]
-final class TicketTriggerCreateActionSource extends CreateActionSourceBase {
+final class TicketTriggerCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

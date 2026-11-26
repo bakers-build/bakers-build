@@ -12,7 +12,7 @@ use Drupal\ui_patterns\Attribute\Source;
  *
  * The sibling of `TicketCreateActionSource`, offered by the shell
  * `page_header` island and kept off every route but the projects screen.
- * Everything but the subject lives in `CreateActionSourceBase`.
+ * Everything but the subject lives in `CreateActionSource`.
  */
 #[Source(
   id: 'bb_project_create_action',
@@ -20,7 +20,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('The add action that opens the create-project dialog over the current screen.'),
   prop_types: ['slot'],
 )]
-final class ProjectCreateActionSource extends CreateActionSourceBase {
+final class ProjectCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

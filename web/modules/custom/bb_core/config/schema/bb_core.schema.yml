@@ -394,6 +394,44 @@ ui_patterns_source.entity_form:
       type: string
       label: 'Form operation'
 
+ui_patterns_source.bb_create_action:
+  type: mapping
+  label: 'Source: bakers.build create action'
+  mapping:
+    route:
+      type: string
+      label: 'Dialog route'
+    screens:
+      type: sequence
+      label: 'Screen routes; a trailing * matches a prefix; empty is every route'
+      sequence:
+        type: string
+        label: 'Route name'
+    route_parameters:
+      type: sequence
+      label: 'Fixed dialog route parameters'
+      sequence:
+        type: string
+        label: 'Value'
+    query:
+      type: sequence
+      label: 'Screen query keys forwarded to the dialog; * forwards all'
+      sequence:
+        type: string
+        label: 'Query key'
+    route_query:
+      type: sequence
+      label: 'Dialog query keys bound to a screen route parameter'
+      sequence:
+        type: string
+        label: 'Route parameter name'
+    trigger_id:
+      type: string
+      label: 'Trigger element id'
+    label:
+      type: label
+      label: 'Label; empty uses the dialog route title'
+
 ui_patterns_source.bb_menu:
   type: mapping
   label: 'Source: bakers.build ambient menu'

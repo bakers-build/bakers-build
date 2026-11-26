@@ -10,7 +10,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_api_key\ServiceAccountManager;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\user\UserInterface;
 
@@ -26,7 +26,7 @@ use Drupal\user\UserInterface;
   description: new TranslatableMarkup('The add action that opens the create-API-key dialog over the key list.'),
   prop_types: ['slot'],
 )]
-final class ApiKeyCreateActionSource extends CreateActionSourceBase {
+final class ApiKeyCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

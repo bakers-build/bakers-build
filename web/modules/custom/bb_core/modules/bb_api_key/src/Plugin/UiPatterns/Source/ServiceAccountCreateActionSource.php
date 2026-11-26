@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Drupal\bb_api_key\Plugin\UiPatterns\Source;
 
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\ui_patterns\Attribute\Source;
 
 /**
  * The `Create service account` plus on the Service Accounts list.
  *
  * Default `createAccess()`/`dialogRouteParameters()` already resolve the
- * workspace from the current route (CreateActionSourceBase), the same as
+ * workspace from the current route (CreateActionSource), the same as
  * TeamCreateActionSource; only the dialog route, label and own screen gate
  * differ here.
  */
@@ -22,7 +22,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('Opens the workspace service-account creation dialog.'),
   prop_types: ['slot'],
 )]
-final class ServiceAccountCreateActionSource extends CreateActionSourceBase {
+final class ServiceAccountCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

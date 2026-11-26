@@ -9,7 +9,7 @@ use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\bb_track\Access\WorklogFormAccess;
 use Drupal\ui_patterns\Attribute\Source;
 
@@ -25,7 +25,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('The add action that opens the record-time dialog over a time calendar.'),
   prop_types: ['slot'],
 )]
-final class WorklogCreateActionSource extends CreateActionSourceBase {
+final class WorklogCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

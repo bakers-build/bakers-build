@@ -23,7 +23,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('Opens the ticket template add form for the current project or workspace.'),
   prop_types: ['slot'],
 )]
-final class TicketTemplateCreateActionSource extends CreateActionSourceBase {
+final class TicketTemplateCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

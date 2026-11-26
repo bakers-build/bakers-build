@@ -12,7 +12,7 @@ use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_api_key\ApiKeyManager;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\island\Form\WrappedDialogFormBase;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -238,7 +238,7 @@ final class ApiKeyCreateForm extends WrappedDialogFormBase {
    */
   private function buildResult(array $form, string $client_id, string $secret): array {
     if ($this->isDialogRequest()) {
-      $form['#attached']['http_header'][] = ['HX-Retarget', '#' . CreateActionSourceBase::TARGET_ID, TRUE];
+      $form['#attached']['http_header'][] = ['HX-Retarget', '#' . CreateActionSource::TARGET_ID, TRUE];
       $form['#attached']['http_header'][] = ['HX-Reselect', 'dialog:not(dialog dialog)', TRUE];
       $form['#attached']['http_header'][] = ['HX-Reswap', 'innerHTML', TRUE];
     }

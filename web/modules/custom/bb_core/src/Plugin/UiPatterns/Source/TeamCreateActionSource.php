@@ -16,7 +16,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('Opens the workspace team creation dialog.'),
   prop_types: ['slot'],
 )]
-final class TeamCreateActionSource extends CreateActionSourceBase {
+final class TeamCreateActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

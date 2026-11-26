@@ -9,7 +9,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Form\BbContentEntityFormBase;
 use Drupal\bb_core\Form\HtmxTransport;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\bb_webhook\Entity\BbWebhookInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -150,7 +150,7 @@ final class BbWebhookForm extends BbContentEntityFormBase {
   private function buildResult(array $form, string $secret): array {
     $form['#cache']['max-age'] = 0;
     if ($this->isDialogRequest()) {
-      $form['#attached']['http_header'][] = ['HX-Retarget', '#' . CreateActionSourceBase::TARGET_ID, TRUE];
+      $form['#attached']['http_header'][] = ['HX-Retarget', '#' . CreateActionSource::TARGET_ID, TRUE];
       $form['#attached']['http_header'][] = ['HX-Reselect', 'dialog:not(dialog dialog)', TRUE];
       $form['#attached']['http_header'][] = ['HX-Reswap', 'innerHTML', TRUE];
     }

@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * The page header's New billing account action on a project's Billing tab.
  *
- * Not a CreateActionSourceBase: that base resolves its dialog route without
+ * Not a CreateActionSource: that base resolves its dialog route without
  * parameters, and the dialog belongs to the route's project.
  */
 #[Source(

@@ -18,7 +18,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('Opens the add-member dialog on the team Members screen.'),
   prop_types: ['slot'],
 )]
-final class TeamMemberAddActionSource extends CreateActionSourceBase {
+final class TeamMemberAddActionSource extends CreateActionSource {
 
   /**
    * {@inheritdoc}

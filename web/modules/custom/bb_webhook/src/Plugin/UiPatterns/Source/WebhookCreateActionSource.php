@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_webhook\Plugin\UiPatterns\Source;
 
 use Drupal\bb_core\Entity\BbProjectInterface;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\ui_patterns\Attribute\Source;
 
@@ -18,7 +18,7 @@ use Drupal\ui_patterns\Attribute\Source;
   description: new TranslatableMarkup('Opens the webhook add form for the scope of the current Webhooks tab.'),
   prop_types: ['slot'],
 )]
-final class WebhookCreateActionSource extends CreateActionSourceBase {
+final class WebhookCreateActionSource extends CreateActionSource {
 
   /**
    * The add route of each Webhooks tab.

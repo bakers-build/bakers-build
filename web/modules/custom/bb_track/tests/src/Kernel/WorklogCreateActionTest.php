@@ -8,7 +8,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbPageHeaderDescriptionSource;
 use Drupal\bb_track\Plugin\UiPatterns\Source\WorklogCreateActionSource;
 use Drupal\ui_patterns\SourcePluginBase;
@@ -212,7 +212,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
     self::assertStringContainsString('data-hx-get="', $anchor);
     self::assertStringContainsString('_wrapper_format=island_dialog', $anchor);
     self::assertStringContainsString(
-      'data-hx-target="#' . CreateActionSourceBase::TARGET_ID . '"',
+      'data-hx-target="#' . CreateActionSource::TARGET_ID . '"',
       $anchor,
     );
     self::assertStringContainsString('data-hx-swap="innerHTML', $anchor);
