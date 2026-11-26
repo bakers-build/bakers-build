@@ -21,8 +21,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
 /**
  * The recessive line under the shell page title, when this route has one.
  *
- * Listings name the workspace; a ticket names project / workflow / people;
- * a project names key and group. Every other screen leaves the sub-line empty.
+ * A ticket names project / workflow / people. Every other page says what it
+ * shows through its route default `_description`; the project page names key
+ * and group and Insights its active scope. Any other route leaves it empty.
  * A ticket also fills the `subline` slot, where the creator's age is a time
  * element; the `description` string stays its plain text, shown on hover.
  */
@@ -59,48 +60,24 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
    * {@inheritdoc}
    */
   public function getPropValue(): mixed {
-    $route = (string) $this->routeMatch->getRouteName();
     $ticket = $this->ticketForSubline();
     if ($ticket !== NULL) {
       return BbTicketDetailHeaderSource::subline($ticket);
     }
-    // Screens that say what they hold; the Billing and Templates tabs
-    // instead of the project caption.
-    $fixed = [
-      'bb_track.account' => $this->t('Who recorded time on this project is billed to'),
-      'view.bb_api_keys.page' => $this->t('Keys that let a script, pipeline or other tool act as this account, with exactly its permissions. Dates are UTC.'),
-      'view.bb_ticket_templates.project_list' => $this->t('Reusable ticket recipes for this project.'),
-      'view.groups.workspace_list' => $this->t('A group grants no permissions — rights come from the workspace and the project only.'),
-      'view.bb_service_accounts.settings' => $this->t('Non-human automation accounts bound to this workspace, with their role, team and managed API keys.'),
-      'bb_core.my_work.stats' => $this->t('Your own figures — always visible to you'),
-      'bb_core.user.profile' => $this->t('bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.'),
-    ];
-    if (isset($fixed[$route])) {
-      return (string) $fixed[$route];
+    $description = $this->routeMatch->getRouteObject()?->getDefault('_description');
+    if (is_string($description) && $description !== '') {
+      // phpcs:ignore Drupal.Semantics.FunctionT.NotLiteralString
+      return (string) new TranslatableMarkup($description);
     }
+    $route = (string) $this->routeMatch->getRouteName();
     $project = $this->routeMatch->getParameter('bb_project');
-    if ($project instanceof BbProjectInterface) {
+    if ($route === 'entity.bb_project.canonical' && $project instanceof BbProjectInterface) {
       return $this->projectSubline($project);
     }
     if ($route === 'bb_core.workspace.insights') {
       return $this->insightsSubline();
     }
-    $workspace = $this->routeMatch->getParameter('bb_workspace');
-    $template = match (TRUE) {
-      str_starts_with($route, 'view.tickets.') => 'Every ticket in the @workspace workspace',
-      $route === 'view.worklog.page' => 'Your recorded hours in the @workspace workspace',
-      $route === 'bb_track.workspace.insights_billing' => '@workspace · billing report',
-      $route === 'view.projects.workspace_list' => 'Every project in the @workspace workspace',
-      $route === 'view.bb_ticket_templates.workspace_list' => 'Ticket templates for every project in the @workspace workspace',
-      default => '',
-    };
-    if ($template === '') {
-      return '';
-    }
-    if (!$workspace instanceof BbWorkspaceInterface) {
-      return str_replace('the @workspace workspace', 'this workspace', $template);
-    }
-    return str_replace('@workspace', (string) $workspace->label(), $template);
+    return '';
   }
 
   /**

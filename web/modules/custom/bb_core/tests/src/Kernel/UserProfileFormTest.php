@@ -256,14 +256,14 @@ final class UserProfileFormTest extends KernelTestBase {
    * The Profile page's AI-use notice goes through string translation.
    */
   public function testProfileDescriptionIsTranslatable(): void {
-    $notice = 'bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.';
+    $notice = 'Your background and goals, which bakers.build passes to its AI assistants so their answers fit you.';
     $this->container->get('string_translation')->addTranslator(new StaticTranslation([
       'en' => ['' => [$notice => 'Übersetzter Hinweis']],
     ]));
     $request = Request::create('/user/2/profile');
     $request->setSession($this->container->get('request_stack')->getSession());
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, 'bb_core.user.profile');
-    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, new Route('/user/{user}/profile'));
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, new Route('/user/{user}/profile', ['_description' => $notice]));
     $this->container->get('request_stack')->push($request);
     $this->container->get('current_route_match')->resetRouteMatch();
 
