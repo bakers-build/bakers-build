@@ -8,8 +8,8 @@ const props = defineProps<{
   items: readonly { image: string; title: string; text: string; alt: string }[]
 }>()
 const active = ref(0)
-// Intrinsic pixel sizes so each image reserves its own aspect ratio; unlisted captures are 1920x904.
-const sizes: Record<string, [number, number]> = { insights: [1920, 899], herdr: [1920, 1204], orca: [1920, 1148] }
+// Intrinsic pixel sizes so each image reserves its own aspect ratio; unlisted captures are 1920x900.
+const sizes: Record<string, [number, number]> = { herdr: [1920, 1204], orca: [1920, 1148] }
 
 function navigate(event: KeyboardEvent, index: number) {
   const count = props.items.length
@@ -61,7 +61,7 @@ function navigate(event: KeyboardEvent, index: number) {
           :src="`/landing/${s.image}.webp`"
           :alt="s.alt"
           :width="sizes[s.image]?.[0] ?? 1920"
-          :height="sizes[s.image]?.[1] ?? 904"
+          :height="sizes[s.image]?.[1] ?? 900"
           loading="lazy"
           class="block h-auto w-full rounded-[12px] border border-[color:var(--lp-rule)] shadow-[0_18px_40px_-18px_rgba(43,33,22,0.3)]"
         />

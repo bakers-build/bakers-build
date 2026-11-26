@@ -41,9 +41,9 @@ const en = {
     title: 'Your work, in view.',
     text: 'Follow tickets, understand your team’s activity, see where each project stands and track the hours. A look inside bakers.build, with live data.',
     screenshots: [
-      { image: 'ticket-list', title: 'Tickets', text: 'Find your next task and follow work from plan to review.', alt: 'Project ticket list with filters, each ticket showing its state, author, conductor and recent runs.' },
       { image: 'insights', title: 'Insights', text: 'See throughput, AI usage and how your backlog changes, here on a real workspace.', alt: 'Insights dashboard of a live workspace with throughput, runs per ticket, rating, AI usage and a new-versus-done chart.' },
       { image: 'project-overview', title: 'Project overview', text: 'See what needs attention and what is in progress, here on a real project.', alt: 'Project overview of a live project with counts of unhealthy, intake and in-progress tickets, a list of tickets that need attention and the project properties.' },
+      { image: 'ticket-list', title: 'Tickets', text: 'Find your next task and follow work from plan to review.', alt: 'Project ticket list with filters, each ticket showing its state, author, conductor and recent runs.' },
       { image: 'time-tracking', title: 'Time tracking', text: 'See recorded hours per customer account and month. Pull your own worklogs through the MCP server, for example for your invoice.', alt: 'Billing report with the month’s hours, accounts and AI tokens, and a table of hours, tickets and people per customer account.' },
     ],
   },
@@ -127,9 +127,9 @@ const de: Copy = {
     title: 'Deine Arbeit im Blick.',
     text: 'Verfolge Tickets, verstehe die Aktivitäten deines Teams, sieh, wo jedes Projekt steht, und erfasse die Stunden. Ein Blick in bakers.build mit Livedaten.',
     screenshots: [
-      { image: 'ticket-list', title: 'Tickets', text: 'Finde deine nächste Aufgabe und verfolge die Arbeit vom Plan bis zum Review.', alt: 'Ticketliste eines Projekts mit Filtern; jedes Ticket zeigt Status, Autor, Conductor und letzte Läufe.' },
       { image: 'insights', title: 'Insights', text: 'Sieh den Durchsatz, die KI-Nutzung und die Entwicklung deines Backlogs, hier in einem echten Arbeitsbereich.', alt: 'Insights-Dashboard eines Live-Arbeitsbereichs mit Durchsatz, Läufen pro Ticket, Bewertung, KI-Nutzung und einem Diagramm neuer und abgeschlossener Tickets.' },
       { image: 'project-overview', title: 'Projektübersicht', text: 'Sieh, was Aufmerksamkeit braucht und was in Arbeit ist, hier in einem echten Projekt.', alt: 'Projektübersicht eines Live-Projekts mit der Zahl problematischer, neuer und laufender Tickets, einer Liste der Tickets, die Aufmerksamkeit brauchen, und den Projekteigenschaften.' },
+      { image: 'ticket-list', title: 'Tickets', text: 'Finde deine nächste Aufgabe und verfolge die Arbeit vom Plan bis zum Review.', alt: 'Ticketliste eines Projekts mit Filtern; jedes Ticket zeigt Status, Autor, Conductor und letzte Läufe.' },
       { image: 'time-tracking', title: 'Zeiterfassung', text: 'Sieh die erfassten Stunden pro Kundenkonto und Monat. Hol dir deine eigenen Worklogs über den MCP-Server, etwa für deine Rechnung.', alt: 'Abrechnungsbericht mit Stunden, Konten und KI-Tokens des Monats und einer Tabelle mit Stunden, Tickets und Personen pro Kundenkonto.' },
     ],
   },
