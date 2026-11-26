@@ -2183,6 +2183,10 @@ content:
         current workspace that run each version. The definition is immutable
         once registered and may carry an inline SVG icon. Read-only on every
         screen.
+      view_modes:
+        list_item:
+          template: field-map
+          label: List item
       fields:
         name:
           type: string
@@ -2229,6 +2233,71 @@ content:
           title: Created
           required: false
           multiple: false
+        label:
+          type: string
+          title: Label
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            prints the definition's label. Present so the headline cell has a value.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        versions_label:
+          type: string
+          title: Versions
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            lists every version of the name once, newest first. Present so the
+            Versions cell has a value.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        initials:
+          type: string
+          title: Initials
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            draws the initials of the label. Present so the avatar has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_color:
+          type: string
+          title: Avatar colour
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            keys the avatar colour on the addon id. Present so the avatar has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_badges:
+          type: string
+          title: Conductors
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_conductors formatter
+            renders `conductors` as one dotted badge per conductor and version
+            ("<conductor> <version>", running when online, offline otherwise), or
+            "No conductor in this workspace". The value lists the badges as text;
+            its `_formatted` companion carries the rendered badges.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_picture:
+          type: string
+          title: Avatar picture
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            turns the definition's inline SVG icon into a data URI; empty for
+            initials. Present so the avatar has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
       omitted:
         id: Entity key, not a modelled field.
         uuid: Entity key.
@@ -2383,8 +2452,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_addon records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_addon records the View lists; Drupal renders each row as the addon
+            in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2392,7 +2461,7 @@ config:
             settings:
               entity_type: bb_addon
               bundle: bb_addon
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
