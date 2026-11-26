@@ -1,32 +1,20 @@
 (
-  /* THE MACHINES LISTING. One list row per machine owned by the URL account.
-     Pattern matches views.view.machines: headline linked name, meta host key,
-     current load and max parallel. */
-  $rows := [
-    { "id": "1", "name": "cw · laptop", "host_key": "cw-laptop", "current_load": 1, "max_parallel": 2 },
-    { "id": "2", "name": "e2e full-capacity host", "host_key": "e2e-host-full", "current_load": 2, "max_parallel": 2 }
-  ];
+  /* THE MACHINES LISTING: `bb_theme:list` whose `rows` slot holds each machine in its `list_item`
+     view mode, as Drupal's `bb_rows` style renders `views.view.machines`. The row's look (linked
+     name, parallel-slot and load badges, Owner, "Last run") lives in
+     `bb_machine.bb_machine.list_item.jsonata`, not here.
+
+     A view mapping takes no record, so it names the listed records itself: both machines, owned
+     by the URL account (user 1), in the view's sort, name ascending. */
   [
     {
       "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:list",
-      "props": {
-        "layout": "lines",
-        "pattern": {
-          "headline": ["name"],
-          "meta": ["host_key", "current_load", "max_parallel"],
-          "captions": { "current_load": "Load", "max_parallel": "Max parallel" }
-        },
-        "items": [$map($rows, function ($m) {
-          {
-            "url": "/user/" & $m.owner_user_id & "/machine/" & $m.id,
-            "cells": {
-              "name": { "kind": "link", "value": $m.name, "url": "/user/" & $m.owner_user_id & "/machine/" & $m.id },
-              "host_key": { "kind": "text", "value": $m.host_key },
-              "current_load": { "kind": "text", "value": $string($m.current_load) },
-              "max_parallel": { "kind": "text", "value": $string($m.max_parallel) }
-            }
-          }
-        })]
+      "props": { "layout": "lines" },
+      "slots": {
+        "rows": [
+          { "type": "entity", "entity_type": "bb_machine", "bundle": "bb_machine", "view_mode": "list_item", "record": 0 },
+          { "type": "entity", "entity_type": "bb_machine", "bundle": "bb_machine", "view_mode": "list_item", "record": 1 }
+        ]
       }
     }
   ]

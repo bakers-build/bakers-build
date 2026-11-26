@@ -7,6 +7,12 @@
   current_load: 1
   owner_user_id: '1'
   owner_label: Christian Wiedemann
+  last_run: '2026-06-30T09:10:00+00:00'
+  last_run_formatted: 5 minutes ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--machine-detail-overview">cw
+    · laptop</a>
   __designbook:
     section: machines
 - id: '2'
@@ -18,5 +24,11 @@
   current_load: 2
   owner_user_id: '1'
   owner_label: Christian Wiedemann
+  last_run: '2026-06-29T15:20:00+00:00'
+  last_run_formatted: 18 hours ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--machine-detail-overview">e2e
+    full-capacity host</a>
   __designbook:
     section: machines

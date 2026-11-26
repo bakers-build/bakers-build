@@ -1,0 +1,19 @@
+(
+  $fields := $;
+  [
+    {
+      "component": "bb_theme:list_item",
+      "slots": {
+        "headline": { "component": "bb_theme:list_cell", "props": {"key": "name", "primary": true}, "slots": { "value": $fields.name } },
+        "right": [
+          { "component": "bb_theme:list_cell", "props": {"key": "max_parallel", "align": "end", "fallback": "—"}, "slots": { "value": { "component": "bb_theme:badge", "props": { "icon": "machine", "tone": "neutral", "label": $fields.max_parallel } } } },
+          { "component": "bb_theme:list_cell", "props": {"key": "current_load", "align": "end", "fallback": "—"}, "slots": { "value": { "component": "bb_theme:badge", "props": { "icon": "run", "tone": "neutral", "label": $fields.current_load } } } }
+        ],
+        "right_meta": [
+          { "component": "bb_theme:list_cell", "props": {"key": "owner_user_id", "caption": "Owner"}, "slots": { "value": $fields.owner_label } },
+          { "component": "bb_theme:list_cell", "props": {"key": "last_run", "caption": "Last run"}, "slots": { "value": $fields.last_run } }
+        ]
+      }
+    }
+  ]
+)

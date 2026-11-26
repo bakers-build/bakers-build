@@ -564,6 +564,12 @@ content:
       view_modes:
         full:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
+        list_item_user:
+          template: field-map
+          label: List item (user)
       fields:
         created:
           type: datetime
@@ -694,6 +700,60 @@ content:
           multiple: false
           computed: true
           readonly: true
+        reported_load:
+          type: integer
+          title: Reported load
+          description: >-
+            The load the conductor reported on its last poll. The listing row
+            shows it as a run badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        owner_label:
+          type: string
+          title: Owner
+          description: >-
+            Design-only. Not a Drupal field: the entity_reference_label
+            formatter prints the owner's display name. Present so the row has
+            a value for the Owner cell.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        project_label:
+          type: string
+          title: Project
+          description: >-
+            Design-only. Not a Drupal field: the entity_reference_label
+            formatter prints the project's name. Present so the user listing's
+            row has a value for the Project cell.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        status_label:
+          type: string
+          title: Status label
+          description: >-
+            Design-only. Not a Drupal field: the bb_status_badge
+            formatter labels the status from its allowed values. Present so the
+            badge component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        status_tone:
+          type: string
+          title: Status tone
+          description: >-
+            Design-only. Not a Drupal field: the bb_status_badge
+            formatter keys the tone on the status (online running, offline
+            offline). Present so the badge component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
       omitted:
         id: Entity key, not a modelled field.
         uuid: Entity key.
@@ -711,6 +771,9 @@ content:
       view_modes:
         full:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -759,6 +822,16 @@ content:
           description: >-
             Display name of the owner, read through owner_user_id; the machine
             page shows it.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        last_run:
+          type: datetime
+          title: Last run
+          description: >-
+            Computed, internal: when the machine last started a run. The listing
+            row shows it relative, captioned "Last run".
           required: false
           multiple: false
           computed: true
@@ -2317,8 +2390,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_conductor records the View lists; Drupal renders each row with
-            the `fields` row plugin.
+            bb_conductor records the View lists; Drupal renders each row as the
+            conductor in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2326,7 +2399,7 @@ config:
             settings:
               entity_type: bb_conductor
               bundle: bb_conductor
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
@@ -2453,8 +2526,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_machine records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_machine records the View lists; Drupal renders each row as the machine
+            in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2462,7 +2535,7 @@ config:
             settings:
               entity_type: bb_machine
               bundle: bb_machine
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
