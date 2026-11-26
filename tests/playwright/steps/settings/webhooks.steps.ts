@@ -89,5 +89,5 @@ When('I delete the webhook', async ({ page }) => {
   await page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByRole('link', { name: 'Delete', exact: true }).first().click();
   await page.getByRole('button', { name: /^(Delete|Confirm)$/ }).click();
-  await expect(page.getByText(/has been deleted|deleted\./).first()).toBeVisible();
+  await expect(page.getByText(/^Deleted .+\.$/).first()).toBeVisible();
 });
