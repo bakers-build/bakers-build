@@ -106,4 +106,35 @@ final class WebhookScopeTest extends WebhookKernelTestBase {
     $this->assertSame($secret, $webhook->getSecret());
   }
 
+  /**
+   * Deleting a project, group or workspace deletes its webhooks.
+   */
+  public function testScopeDeleteCascades(): void {
+    $owner = $this->leads['a']->id();
+    $workspace = $this->fixture('a', 'bb_workspace');
+    $group = $this->createEntity('bb_group', ['name' => 'doomed', 'workspace_id' => $workspace->id(), 'owner_user_id' => $owner]);
+    $project = $this->createEntity('bb_project', [
+      'name' => 'doomed',
+      'group_id' => $group->id(),
+      'teams' => [$this->fixture('a', 'bb_team')->id()],
+      'owner_user_id' => $owner,
+    ]);
+    $lone = $this->createEntity('bb_workspace', ['name' => 'lone', 'owner_user_id' => $owner]);
+    $hooks = [
+      'project' => $this->newWebhook('a', ['project_id' => $project->id()]),
+      'group' => $this->newWebhook('a', ['group_id' => $group->id()]),
+      'workspace' => $this->newWebhook('a', ['workspace_id' => $lone->id()]),
+      'kept' => $this->newWebhook('a'),
+    ];
+    foreach ($hooks as $hook) {
+      $hook->save();
+    }
+    $project->delete();
+    $group->delete();
+    $lone->delete();
+
+    $left = array_keys($this->container->get('entity_type.manager')->getStorage('bb_webhook')->loadMultiple());
+    $this->assertSame([(int) $hooks['kept']->id()], array_map('intval', $left));
+  }
+
 }
