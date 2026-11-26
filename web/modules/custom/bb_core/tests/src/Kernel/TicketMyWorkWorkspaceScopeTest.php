@@ -65,7 +65,8 @@ final class TicketMyWorkWorkspaceScopeTest extends KernelTestBase {
     'better_exposed_filters', 'facets', 'facets_exposed_filters',
     'views_filters_summary',
     'ui_patterns', 'ui_patterns_views', 'display_builder',
-    'display_builder_views', 'bb_core',
+    'ui_patterns_field', 'display_builder_views',
+    'display_builder_entity_view', 'bb_core',
   ];
 
   /**

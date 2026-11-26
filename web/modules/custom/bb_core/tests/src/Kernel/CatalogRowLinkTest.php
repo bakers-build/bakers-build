@@ -100,7 +100,7 @@ final class CatalogRowLinkTest extends KernelTestBase {
    * The opening tag of the first row's link.
    */
   private function rowLink(string $html): string {
-    preg_match('/<li data-list-item.*?(<a\s[^>]*>)/s', $html, $match);
+    preg_match('/<li\b[^>]*\bdata-list-item\b.*?(<a\s[^>]*>)/s', $html, $match);
     return html_entity_decode($match[1] ?? '');
   }
 

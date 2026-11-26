@@ -60,13 +60,20 @@ trait ProjectsViewTestTrait {
     self::assertIsArray($data, "$name did not parse as a YAML mapping.");
     self::assertArrayHasKey('id', $data, "$name carries no view id.");
 
-    // A listing renders its rows in the row view modes it depends on; those
-    // displays need Display Builder's entity view schema, so a test that
-    // does not enable it does not render rows either.
+    // A listing renders its rows in the row view modes its displays name; a
+    // Search API view declares no dependency on them, so they are read from
+    // the row options. Those displays need Display Builder's entity view
+    // schema, so a test that does not enable it does not render rows either.
     if ($this->container->get('module_handler')->moduleExists('display_builder_entity_view')) {
-      foreach ($data['dependencies']['config'] ?? [] as $dependency) {
-        if (preg_match('/^core\.entity_view_mode\.(\w+)\.(\w+)$/', $dependency, $match)) {
-          $this->installRowViewMode($match[1], $match[2]);
+      foreach ($data['display'] ?? [] as $display) {
+        $row = $display['display_options']['row'] ?? [];
+        foreach ($row['options']['view_modes'] ?? [] as $datasource => $modes) {
+          foreach ($modes as $view_mode) {
+            $this->installRowViewMode(substr($datasource, strlen('entity:')), $view_mode);
+          }
+        }
+        if (str_starts_with($row['type'] ?? '', 'entity:') && isset($row['options']['view_mode'])) {
+          $this->installRowViewMode(substr($row['type'], strlen('entity:')), $row['options']['view_mode']);
         }
       }
     }
