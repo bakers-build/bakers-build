@@ -55,6 +55,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
     'delete-form' => '/_workspace/{bb_workspace}/webhook/{bb_webhook}/delete',
   ],
   admin_permission: 'administer bakers',
+  internal: TRUE,
   base_table: 'bb_webhook',
   constraints: [
     'Callback' => ['callback' => [self::class, 'validateScope']],

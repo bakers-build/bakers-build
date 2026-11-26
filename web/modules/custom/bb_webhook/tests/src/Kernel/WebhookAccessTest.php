@@ -96,6 +96,43 @@ final class WebhookAccessTest extends WebhookKernelTestBase {
   }
 
   /**
+   * An Admin of b who is only a Contributor of a cannot place a webhook in a.
+   *
+   * Create has no entity to fence, so this is the only bound on a write that
+   * does not pass the add routes.
+   */
+  public function testForeignWorkspaceCreateRejected(): void {
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $this->leads['b'], ['contributor']);
+    $webhook = $this->newWebhook('a', ['owner_user_id' => $this->leads['b']->id()]);
+    $this->assertContains('You may not place this in that tenancy.', $this->violations($webhook, $this->leads['b']));
+    $this->assertSame([], $this->violations($this->newWebhook('a'), $this->leads['a']));
+  }
+
+  /**
+   * A team lead without the workspace Admin rank is denied like a Contributor.
+   */
+  public function testTeamLeadDenied(): void {
+    $team_lead = $this->member('a');
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $team_lead, ['contributor']);
+    $membership = $this->addMembership($this->fixture('a', 'bb_team'), $team_lead, ['lead']);
+    $this->assertTrue($membership->hasRole('bb_team-bb_team-lead'), 'the team lead role is installed');
+    foreach ($this->webhooksOfA() as $scope => $webhook) {
+      foreach (['view', 'update', 'delete'] as $operation) {
+        $this->assertFalse($webhook->access($operation, $team_lead), "team lead may not $operation a $scope webhook");
+      }
+    }
+    $handler = $this->container->get('entity_type.manager')->getAccessControlHandler('bb_webhook');
+    $this->assertFalse($handler->createAccess(NULL, $team_lead));
+  }
+
+  /**
+   * Webhooks are not a JSON:API or REST resource.
+   */
+  public function testNotExposedToJsonApi(): void {
+    $this->assertTrue($this->container->get('entity_type.manager')->getDefinition('bb_webhook')->isInternal());
+  }
+
+  /**
    * Nobody reads or edits the secret through field access.
    */
   public function testSecretFieldAccessDenied(): void {
