@@ -2,9 +2,10 @@
    before anything is printed: a value whose output strips to nothing (theme
    debug comments included) is ABSENT, and a control or an image with no text
    node is content. An absent value renders nothing unless a `fallback` stands
-   in for it, so an optional fact leaves no gap in its region. In the end-aligned
-   (flex) form a space after the caption keeps "Took 0 s" one phrase for a
-   reader without changing the layout. #}
+   in for it, so an optional fact leaves no gap in its region. A space after the
+   caption keeps "Created 2 hours ago" one phrase for a reader; the flex form
+   collapses it, the inline form shows it beside the caption's margin, as the
+   listing rows always did. #}
 {% import 'bb_theme:table' as cells %}
 {%- set bb_value -%}{{ value }}{%- endset -%}
 {%- set bb_present = bb_value|striptags('<a><button><img><input><select><svg><textarea>')|trim is not empty -%}
@@ -18,7 +19,7 @@
     {%- set bb_classes = bb_classes|merge(['[&>a]:text-body', '[&>a]:no-underline', 'hover:[&>a]:underline', 'focus-visible:[&>a]:outline-2', 'focus-visible:[&>a]:outline-offset-2', 'focus-visible:[&>a]:outline-focus-ring', 'max-md:[&>a]:inline-flex', 'max-md:[&>a]:items-center', 'max-md:[&>a]:min-h-touch']) -%}
   {%- endif -%}
   <span{{ (attributes ?: create_attribute()).addClass(bb_classes).setAttribute('data-cell', key|default('')) }}>
-    {%- if caption -%}<span data-cell-label class="{{ bb_end ? 'text-meta text-text-faint' : 'mr-inline-xs text-meta text-text-faint' }}">{{ caption }}</span>{{ bb_end ? ' ' }}{%- endif -%}
+    {%- if caption -%}<span data-cell-label class="{{ bb_end ? 'text-meta text-text-faint' : 'mr-inline-xs text-meta text-text-faint' }}">{{ caption }}</span>{{ ' ' }}{%- endif -%}
     {%- if bb_present -%}{{ bb_value }}{%- else -%}{{ cells.cell({ 'kind': 'text', 'value': fallback, 'emphasis': 'faint' }) }}{%- endif -%}
   </span>
 {%- endif -%}
