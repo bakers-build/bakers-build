@@ -57,9 +57,9 @@ export default {
 <span id="configure-a-plugin-and-give-it-an-alias"></span>
 <span id="add-a-route"></span>
 
-For a single agent, omit `reviewed`. Routes only choose agents; they neither pick a conductor nor move the ticket through its [workflow](/skills-and-workflows/states).
+For a single agent, omit `reviewed`. Routes only choose agents; they neither pick a conductor nor move the ticket through its [workflow](/skills-and-workflows/workflow-reference).
 
-**Before you start:** the harness program must be installed, on `PATH` and signed in as the conductor user ([harnesses](/agents/reference#harnesses)); enabling the addon does neither. Merge `addons` and `agents` into your existing file: keep the `machine_id` from `bakers init`, your label and other settings, and do not add a second `agents` key. Keep the file private and out of Git. Use the same catalog and routes on every machine that may run the ticket.
+**Before you start:** the harness program must be installed, on `PATH` and signed in as the conductor user ([harnesses](/agents/agent-policy-reference#harnesses)); enabling the addon does neither. Merge `addons` and `agents` into your existing file: keep the `machine_id` from `bakers init`, your label and other settings, and do not add a second `agents` key. Keep the file private and out of Git. Use the same catalog and routes on every machine that may run the ticket.
 
 ### Inspect the catalog
 
@@ -92,7 +92,7 @@ These results assume the shown files and no other selectors. On an existing mach
 
 ### Choose the runtime per ticket
 
-The `runtime` slot works the same way: a catalog, routes and the `runtime:<alias>` label (with `@<state>`), see [Slot catalogs](/configuration/slot-catalogs). Adding a `runtime:` label needs a workspace permission, see [protected namespaces](/skills-and-workflows/collaboration#protected-label-namespaces).
+The `runtime` slot works the same way: a catalog, routes and the `runtime:<alias>` label (with `@<state>`), see [Slot catalogs](/configuration/slot-catalogs). Adding a `runtime:` label needs a workspace permission, see [protected namespaces](/skills-and-workflows/decide-when-people-approve#protected-label-namespaces).
 
 ### Verify the run
 
@@ -102,13 +102,13 @@ Run a small ticket and inspect the recorded agent and model. With `agent:coder`,
 
 ## When loading fails
 
-If `bakers agents` fails, check the named addon, alias or filter in its error. At least one agent must remain available, and the `default` route's `'*'` alias must name one. [Machine verification](/configuration/machine#verify) and the [agent reference](/agents/reference#old-keys-and-verification) explain the checks and retired keys.
+If `bakers agents` fails, check the named addon, alias or filter in its error. At least one agent must remain available, and the `default` route's `'*'` alias must name one. [Machine verification](/configuration/machine#verify) and the [agent reference](/agents/agent-policy-reference#old-keys-and-verification) explain the checks and retired keys.
 
 ## Required and optional values
 
-A harness addon and an available agent are required. Custom aliases, filters and routes are optional. [Configuration → Machine](/configuration/machine) owns file location, identity and other machine settings; [Agent policy](/agents/reference) lists every agent field and precedence rule.
+A harness addon and an available agent are required. Custom aliases, filters and routes are optional. [Configuration → Machine](/configuration/machine) owns file location, identity and other machine settings; [Agent policy](/agents/agent-policy-reference) lists every agent field and precedence rule.
 
-[Skills](/skills-and-workflows/skills) supply instructions, the [executor](/addons/slots) hosts the session, the [client](/get-started/use-your-client) is how you interact with the work, and the [worktree environment](/provision/guide) runs the application. Review [execution security](/provision/security/execution) before extending access.
+[Skills](/skills-and-workflows/install-the-bakers-skills) supply instructions, the [executor](/addons/slots) hosts the session, the [client](/get-started/use-your-client) is how you interact with the work, and the [worktree environment](/provision/guide) runs the application. Review [execution security](/provision/security/execution) before extending access.
 
 ## AI first
 

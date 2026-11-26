@@ -8,12 +8,12 @@ Move a workstation to a newer bakers.build release: the CLI first, then your con
 
 ```text
 Check my CLI and bakers skills versions. Guide their updates using
-https://bakers.build/configuration/guides/updates. Preview configuration
+https://bakers.build/configuration/guides/update-bakers-build. Preview configuration
 migration with --dry-run and show the effects before applying it.
 Use bb-init-project for shared project files in a branch.
 ```
 
-Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. They guide the update but do not replace your tools automatically. The exact CLI/configuration sequence follows.
+Refresh [skills](/skills-and-workflows/install-the-bakers-skills#updates) separately from the CLI. They guide the update but do not replace your tools automatically. The exact CLI/configuration sequence follows.
 
 ## Manual sequence and background
 

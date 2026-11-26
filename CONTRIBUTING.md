@@ -61,9 +61,9 @@ needed. Describe the user-visible result, commands actually run, immutable revis
 blockers. Follow the [commit/MR conventions](docs/bakers/git-and-delivery.md); open a pull request against `next` in `bakers-build/bakers-build` on GitHub. A draft is not
 release acceptance. Never commit private connection files, tokens, login links or customer data.
 
-For work within an existing Bakers project, follow [join a project](docs/get-started/first-ticket.md)
+For work within an existing Bakers project, follow [join a project](docs/get-started/run-the-first-ticket.md)
 with your own account. An existing team conductor can supply execution capacity. For a new local
 machine use [machine setup](docs/provision/machine.md); connector-only use starts at
-[connector setup](docs/get-started/connector.md). These paths have different prerequisites.
+[connector setup](docs/get-started/connect-your-chat.md). These paths have different prerequisites.
 
 Security concerns follow [SECURITY.md](SECURITY.md), not a public issue containing sensitive details.

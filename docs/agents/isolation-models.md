@@ -5,7 +5,7 @@ description: Detail page comparing native agent sandboxes, outer runtimes and op
 
 # Isolation models
 
-This page compares isolation boundaries in detail. How they combine with agent permissions and tools is explained in [Agent permissions and isolation](/agents/security).
+This page compares isolation boundaries in detail. How they combine with agent permissions and tools is explained in [Agent permissions and isolation](/agents/permissions-and-isolation).
 
 ## Status words
 
@@ -43,7 +43,7 @@ Bubblewrap and Linux containers share their host kernel. Mounts, privileges, net
 | Outer process sandbox | [Bubblewrap runtime addon](/addons/runtime-bwrap) | Select that machine runtime; example below |
 | Container per run | [Docker runtime addon](/addons/runtime-docker) | Select that machine runtime; Podman CLI configurable, not separately live verified here |
 | Own user, conductor container, dedicated VM/host | Operator provisions the environment | Start the conductor there with scoped credentials |
-| Another per-run backend | No shipped gVisor/microVM backend | [Write a runtime addon](/addons/build/runtime); implement and verify the boundary yourself |
+| Another per-run backend | No shipped gVisor/microVM backend | [Write a runtime addon](/addons/build/write-a-runtime-addon); implement and verify the boundary yourself |
 
 ## Native sandbox vs. outer runtime
 

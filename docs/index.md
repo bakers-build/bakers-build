@@ -14,6 +14,6 @@ Choose the guide for the work you want to do.
   { label: 'Self-hosting', text: 'Install, update and back up your own application server.', link: '/self-hosting/' }
 ]" />
 
-[Use your client](/get-started/use-your-client) compares herdr-cli, herdr-app, Orca and Hermes. For chat-only access, begin with [a connector](/get-started/connector). Already have a prepared worker? [Connect another project](/get-started/connect-a-project).
+[Use your client](/get-started/use-your-client) compares herdr-cli, herdr-app, Orca and Hermes. For chat-only access, begin with [a connector](/get-started/connect-your-chat). Already have a prepared worker? [Connect another project](/get-started/connect-a-project).
 
 The version row identifies the site's build. It can describe changes not yet in a released package. Hermes is an experimental Slack project-manager bot.

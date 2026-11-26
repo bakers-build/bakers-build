@@ -27,7 +27,7 @@ The marketplace points to a versioned ZIP on bakers.build with a SHA-256 checksu
 Ask Codex to install the skills:
 
 ```text
-Read https://bakers.build/skills-and-workflows/skills#codex.
+Read https://bakers.build/skills-and-workflows/install-the-bakers-skills#codex.
 Install bakers@bakers from https://github.com/bakers-build/bakers-build,
 using the main branch. Check existing marketplace registrations first
 and preserve my other plugins. Tell me when to start a new session.
@@ -57,4 +57,4 @@ The shipped Matt recipe is included. Project-specific runtime, design or testing
 
 ## Updates
 
-Claude can refresh the marketplace and update the plugin through its plugin manager. For Codex, `codex plugin marketplace upgrade bakers` refreshes the registered Git source; update the installed plugin through Codex's plugin manager. Keep the source pinned to `main`. Restart the agent and verify its skills again. Keep [CLI/configuration updates](/configuration/guides/updates) separate.
+Claude can refresh the marketplace and update the plugin through its plugin manager. For Codex, `codex plugin marketplace upgrade bakers` refreshes the registered Git source; update the installed plugin through Codex's plugin manager. Keep the source pinned to `main`. Restart the agent and verify its skills again. Keep [CLI/configuration updates](/configuration/guides/update-bakers-build) separate.

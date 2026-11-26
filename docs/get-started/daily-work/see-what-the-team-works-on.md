@@ -35,4 +35,4 @@ then list which need a person's decision, which are blocked and why.
 
 **Done when:** you can identify tickets needing attention and interpret the selected figures.
 
-**Next:** open those tickets; use [Ticket metrics](/skills-and-workflows/metrics) for detailed definitions.
+**Next:** open those tickets; use [Ticket metrics](/skills-and-workflows/ticket-metrics) for detailed definitions.

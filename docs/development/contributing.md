@@ -67,8 +67,8 @@ Drupal runtime checks run on the `recipe-test` world first and on the `existing-
 Use these guides for the implementation or documentation your change touches.
 
 - [Build the CLI from source](build-from-source.md) — Build your checkout and rebuild after edits.
-- [Addon contracts](../addons/build/contracts.md) — Choose an extension point and implement its contract.
-- [Inbox messages](../addons/build/actions.md) — Build an addon whose messages appear on a ticket.
+- [Addon contracts](../addons/build/addon-api-reference.md) — Choose an extension point and implement its contract.
+- [Inbox messages](../addons/build/messages.md) — Build an addon whose messages appear on a ticket.
 - [Skill contract](skill-contract.md) — Understand the frame, recipes, runtime guides and project hints.
 - [Write a recipe](../skills-and-workflows/recipes.md) — Add an engineering method for plan, working and review.
 - [Architecture](architecture.md) — Find the component that owns the behavior you want to change.

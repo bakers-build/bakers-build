@@ -18,7 +18,7 @@ This example counts staged changes, unstaged changes and untracked files. Ignore
 
 ## Before you start
 
-Use a disposable ticket in a working conductor project, with Git and Node.js on the conductor's machine. You need permission to edit project configuration and restart the conductor. The [addon basics](/addons/build/first-addon#what-an-addon-is) explain packages, presets and exports.
+Use a disposable ticket in a working conductor project, with Git and Node.js on the conductor's machine. You need permission to edit project configuration and restart the conductor. The [addon basics](/addons/build/build-your-first-addon#what-an-addon-is) explain packages, presets and exports.
 
 The preset supplies two connected capabilities: `tools` declares `git_is_dirty`, and `inbox` describes the ticket button bound to it. bakers.build renders the controls and answer; the JavaScript function runs on the conductor.
 
@@ -115,7 +115,7 @@ Expect pending/running followed by **Clean: no uncommitted changes.** or **Dirty
 
 `access: 'view'` permits someone who can read the ticket to request this read-only status. The visible answer belongs to the requester. In `bakers ui`, select the ticket's Overview message card and open it with Enter.
 
-The message API supplies this existing card and Markdown output. It does not load your JavaScript into the browser or add arbitrary web components. See [Messages](/addons/build/actions#extend-the-control-panel) for forms, access and lifecycle.
+The message API supplies this existing card and Markdown output. It does not load your JavaScript into the browser or add arbitrary web components. See [Messages](/addons/build/messages#extend-the-control-panel) for forms, access and lifecycle.
 
 ## Verify
 
@@ -135,4 +135,4 @@ No arguments are accepted. An ordinary operator shell uses the site's tools and 
 
 Remove its configuration entry, restart the conductor, then delete the example package. Existing message history remains. When changing a registered message definition, bump the package version before restarting.
 
-Continue with the [tool API](/addons/build/tools) and [message API](/addons/build/actions).
+Continue with the [tool API](/addons/build/tools) and [message API](/addons/build/messages).

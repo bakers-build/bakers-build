@@ -105,11 +105,11 @@ states: ['working', 'review'],
 poll_interval_ms: 10000,
 ```
 
-Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). Add `qualification` when it should qualify hand-written tickets.
+Use real workflow state names ([Workflows and states](/skills-and-workflows/workflow-reference)). Add `qualification` when it should qualify hand-written tickets.
 
 ## Named variants
 
-A variant is a second, complete project file `.bakers/project.<name>.config.js`, for example `project.review.config.js` with `states: ['review']`. It is not an overlay: it repeats `project` and every slot it needs. Its variant is `review`, so it registers as a separate conductor. Select it with `--conductor review` or `BAKERS_CONDUCTOR=review`; without a selector `project.config.js` is used, or the only file when there is just one. See [Conductors](/configuration/project/conductors).
+A variant is a second, complete project file `.bakers/project.<name>.config.js`, for example `project.review.config.js` with `states: ['review']`. It is not an overlay: it repeats `project` and every slot it needs. Its variant is `review`, so it registers as a separate conductor. Select it with `--conductor review` or `BAKERS_CONDUCTOR=review`; without a selector `project.config.js` is used, or the only file when there is just one. See [Conductors](/configuration/project/conductors-and-variants).
 
 Shared values can live in a module both files import; `bakers config check` reports a value it cannot read statically as not checked. Keep `project` literal.
 

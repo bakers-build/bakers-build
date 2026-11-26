@@ -1,6 +1,6 @@
 # Bubblewrap runtime
 
-**Experimental**, unreleased on `next` (13 November 2026). Review [limits](/agents/isolation#experimental-runtimes-known-limits).
+**Experimental**, unreleased on `next` (13 November 2026). Review [limits](/agents/isolation-models#experimental-runtimes-known-limits).
 
 `@bakers-build/addon-runtime-bwrap` isolates the complete agent process on Linux, including
 its file tools and subprocesses. It fills the [runtime slot](/addons/slots#runtime-where-a-run-starts)

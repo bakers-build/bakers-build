@@ -613,7 +613,7 @@ final class BbOnboardingWizardForm extends FormBase {
    */
   private function buildSetupFields(array &$form): void {
     $this->attachAudience($form, 'ticket_only', (string) $this->t('Ticket only'), (string) $this->t('Work through chat, without a local machine.'), [
-      (string) $this->t('Set up a connector') => '/get-started/connector',
+      (string) $this->t('Set up a connector') => '/get-started/connect-your-chat',
     ]);
     $this->attachAudience($form, 'developer', (string) $this->t('Developer'), (string) $this->t('Run the agent on your own machine.'), [
       (string) $this->t('Set up a machine') => '/provision/machine',

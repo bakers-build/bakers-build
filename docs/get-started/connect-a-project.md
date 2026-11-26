@@ -4,7 +4,7 @@ prev:
   link: /get-started/
 next:
   text: Run the first ticket
-  link: /get-started/first-ticket
+  link: /get-started/run-the-first-ticket
 ---
 
 <span id="set-up-a-project"></span>
@@ -53,7 +53,7 @@ To change the defaults later, see [Use your client](/get-started/use-your-client
 
 **Done when:** the skill reports all its checks as passed. It then offers to start the conductor and a first trial ticket.
 
-**Next:** [Run the first ticket](/get-started/first-ticket).
+**Next:** [Run the first ticket](/get-started/run-the-first-ticket).
 
 <span id="what-changes"></span>
 

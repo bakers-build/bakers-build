@@ -3,7 +3,7 @@
 The **workspace** owns a ticket's Git worktree; the **executor** hosts its agent terminal.
 The conductor owns lifecycle hooks. Each slot holds one addon.
 [Use your client](/get-started/use-your-client) explains the choices;
-[Write an executor or a workspace](/addons/build/executor-workspace) covers custom addons.
+[Write an executor or a workspace](/addons/build/executor-and-workspace-api) covers custom addons.
 
 ## Which addon fills which slot
 
@@ -57,14 +57,14 @@ The executor resolves in this order: the machine's `executor`, the project's `ex
 The optional machine slot `runtime` decides where the agent runs: on the host, in a
 [Docker container](/addons/runtime-docker), or a [Bubblewrap sandbox](/addons/runtime-bwrap). It rewrites the launch before the
 executor starts it; a failure fails the run. Agent permissions stay unchanged. To add your own
-backend, [write a runtime addon](/addons/build/runtime).
+backend, [write a runtime addon](/addons/build/write-a-runtime-addon).
 
 ## Start hook
 
 The conductor's `hooks` listeners may define `before_conductor_start(machine,
 conductor)` for start-only machine enrichment. This is an addon callback, not a
-project shell-hook slot. See [the start contract](/addons/build/contracts#before-conductor-start).
+project shell-hook slot. See [the start contract](/addons/build/addon-api-reference#before-conductor-start).
 
 ## Migrating an addon
 
-For custom implementations, follow the [executor/workspace migration notes](/addons/build/executor-workspace#migrating-an-addon).
+For custom implementations, follow the [executor/workspace migration notes](/addons/build/executor-and-workspace-api#migrating-an-addon).
