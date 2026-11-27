@@ -231,6 +231,8 @@ final class TicketSearchFacetsToolTest extends BakersToolTestBase {
     $cases = [
       [['query' => 'x', 'filters' => ['closed' => FALSE]], ['query', 'filters']],
       [['branch_name' => 'feat/x', 'facets' => ['state']], ['branch_name', 'facets']],
+      [['query' => 'x', 'facets' => []], ['query', 'facets']],
+      [['branch_name' => 'feat/x', 'filters' => []], ['branch_name', 'filters']],
       [['filters' => ['conductor_owner' => 'you']], ['conductor_owner']],
       [['facets' => ['assignee']], ['assignee']],
       [['filters' => ['conductor' => [$unknown]]], [$unknown]],

@@ -206,9 +206,9 @@ final class TicketSearch extends ToolBase {
    * {@inheritdoc}
    */
   protected function doExecute(array $values): ExecutableResult {
-    $given = array_filter(array_intersect_key($values, array_flip(['query', 'branch_name', 'filters', 'facets'])));
-    $text = array_keys(array_intersect_key($given, ['query' => 1, 'branch_name' => 1]));
-    $index = array_keys(array_intersect_key($given, ['filters' => 1, 'facets' => 1]));
+    $text = array_keys(array_filter(array_intersect_key($values, ['query' => 1, 'branch_name' => 1])));
+    // Given filters or facets count even when empty, so they are never ignored silently.
+    $index = array_keys(array_filter(array_intersect_key($values, ['filters' => 1, 'facets' => 1]), fn ($value) => $value !== NULL));
     if ($text && $index) {
       throw new \InvalidArgumentException(sprintf('Give %s or %s, not both: text search and filters run on different searches.', implode(' and ', $text), implode(' and ', $index)));
     }
