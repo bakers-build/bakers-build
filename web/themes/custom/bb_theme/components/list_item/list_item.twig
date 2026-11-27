@@ -78,10 +78,10 @@
   {% if has_right or has_right_meta %}
     <div class="ml-auto flex min-w-0 max-w-full flex-col items-end gap-inline-xs">
       {% if has_right %}
-        <div data-list-region="right" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline">{{ bb_right }}</div>
+        <div data-list-region="right" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline [&>[data-cell]]:flex [&>[data-cell]]:flex-wrap [&>[data-cell]]:items-center [&>[data-cell]]:justify-end [&>[data-cell]]:gap-inline-xs [&_[data-cell-label]]:mr-0">{{ bb_right }}</div>
       {% endif %}
       {% if has_right_meta %}
-        <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-stack gap-y-inline-xs text-meta text-text-faint">{{ bb_right_meta }}</div>
+        <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-stack gap-y-inline-xs text-meta text-text-faint [&>[data-cell]]:flex [&>[data-cell]]:flex-wrap [&>[data-cell]]:items-center [&>[data-cell]]:justify-end [&>[data-cell]]:gap-inline-xs [&_[data-cell-label]]:mr-0">{{ bb_right_meta }}</div>
       {% endif %}
     </div>
   {% endif %}

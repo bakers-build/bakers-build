@@ -3,20 +3,20 @@
    debug comments included) is ABSENT, and a control or an image with no text
    node is content. An absent value renders nothing unless a `fallback` stands
    in for it, so an optional fact leaves no gap in its region. A space after the
-   caption keeps "Created 2 hours ago" one phrase for a reader; the flex form
-   collapses it, the inline form shows it beside the caption's margin, as the
-   listing rows always did. #}
+   caption keeps "Created 2 hours ago" one phrase for a reader; inline it shows
+   beside the caption's margin, and in a flex cell (end-aligned, or any cell of
+   a row's right-hand regions) the gap replaces both. #}
 {% import 'bb_theme:table' as cells %}
 {%- set bb_value -%}{{ value }}{%- endset -%}
 {%- set bb_present = bb_value|striptags('<a><button><img><input><select><svg><textarea>')|trim is not empty -%}
 {%- if bb_present or fallback -%}
   {%- set bb_end = align == 'end' -%}
   {%- set bb_classes = bb_end
-    ? ['flex', 'min-w-0', 'max-w-full', 'flex-wrap', 'items-center', 'justify-end', 'gap-inline-xs', 'wrap-anywhere', 'text-text', '*:min-w-0']
-    : ['min-w-0', 'wrap-anywhere', 'text-text', '*:min-w-0'] -%}
-  {#- A formatter's bare link reads as the row's title, like the `link` cell kind. -#}
+    ? ['flex', 'min-w-0', 'max-w-full', 'flex-wrap', 'items-center', 'justify-end', 'gap-inline-xs', 'wrap-anywhere', '*:min-w-0']
+    : ['min-w-0', 'wrap-anywhere', '*:min-w-0'] -%}
+  {#- A formatter's bare link takes the headline's title type and loses the underline. -#}
   {%- if primary -%}
-    {%- set bb_classes = bb_classes|merge(['[&>a]:text-body', '[&>a]:no-underline', 'hover:[&>a]:underline', 'focus-visible:[&>a]:outline-2', 'focus-visible:[&>a]:outline-offset-2', 'focus-visible:[&>a]:outline-focus-ring', 'max-md:[&>a]:inline-flex', 'max-md:[&>a]:items-center', 'max-md:[&>a]:min-h-touch']) -%}
+    {%- set bb_classes = bb_classes|merge(['[&>a]:no-underline', 'hover:[&>a]:underline', 'focus-visible:[&>a]:outline-2', 'focus-visible:[&>a]:outline-offset-2', 'focus-visible:[&>a]:outline-focus-ring', 'max-md:[&>a]:inline-flex', 'max-md:[&>a]:items-center', 'max-md:[&>a]:min-h-touch']) -%}
   {%- endif -%}
   <span{{ (attributes ?: create_attribute()).addClass(bb_classes).setAttribute('data-cell', key|default('')) }}>
     {%- if caption -%}<span data-cell-label class="{{ bb_end ? 'text-meta text-text-faint' : 'mr-inline-xs text-meta text-text-faint' }}">{{ caption }}</span>{{ ' ' }}{%- endif -%}
