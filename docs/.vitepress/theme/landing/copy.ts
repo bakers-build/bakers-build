@@ -96,7 +96,7 @@ const en = {
     title: 'Try it on a real ticket.',
     text: 'Sign up, create your workspace and invite your team.',
   },
-  footer: ['Open source', 'Docs', 'GitHub'],
+  footer: ['Open source', 'Docs', 'GitHub', 'Cookie settings'],
 }
 
 export type Copy = typeof en
@@ -182,7 +182,7 @@ const de: Copy = {
     title: 'Probier es an einem echten Ticket.',
     text: 'Melde dich an, leg deinen Workspace an und lade dein Team ein.',
   },
-  footer: ['Open Source', 'Docs', 'GitHub'],
+  footer: ['Open Source', 'Docs', 'GitHub', 'Cookie-Einstellungen'],
 }
 
 export const COPY = { en, de }

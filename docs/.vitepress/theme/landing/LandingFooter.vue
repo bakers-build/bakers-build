@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import LogoMark from './LogoMark.vue'
 import { REPO_URL, type Copy } from './copy'
+import { openConsent } from '../components/consent'
 
 defineProps<{ t: Copy }>()
 </script>
@@ -16,5 +17,6 @@ defineProps<{ t: Copy }>()
     <span class="lp-mono text-[13.5px] font-medium text-[color:var(--lp-ink-2)]">{{ t.footer[0] }}</span>
     <a href="/get-started/" class="lp-mono text-[13.5px] font-medium text-[color:var(--lp-ink-2)] underline">{{ t.footer[1] }}</a>
     <a :href="REPO_URL" class="lp-mono text-[13.5px] font-medium text-[color:var(--lp-ink-2)] underline">{{ t.footer[2] }}</a>
+    <button type="button" class="lp-mono text-[13.5px] font-medium text-[color:var(--lp-ink-2)] underline" @click="openConsent">{{ t.footer[3] }}</button>
   </footer>
 </template>
