@@ -774,6 +774,64 @@ describe('site tools on the bakers server', () => {
     await client.close();
   });
 
+  it('keeps every write on an existing ticket of another project refused', async () => {
+    const site = fakeSite();
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: site,
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', runBinding(PROJECT_A)),
+    );
+    const created = await client.callTool({
+      name: 'bakers_ticket_create',
+      arguments: { title: 't', project: 'XX' },
+    });
+    expect(created.isError).toBeFalsy();
+    const before = site.calls.length;
+    const writes: Array<[string, Record<string, unknown>]> = [
+      ['bakers_ticket_update', { ticket: 'XX-9', labels_add: ['auto'] }],
+      ['bakers_ticket_classify', { ticket: 'XX-9', type: 'bug' }],
+      ['bakers_ticket_transition', { ticket: 'XX-9', state: 'done' }],
+      ['bakers_comment_create', { ticket: 'XX-9', type: 'comment', body: 'x' }],
+      ['bakers_metric_write', { ticket: 'XX-9', metric: 'm', value: 1 }],
+      ['bakers_run_cancel', { ticket: 'XX-9', reason: 'Stop' }],
+      ['bakers_ticket_update', { ticket: 'BB-1', blocked_by_add: ['XX-9'] }],
+      [
+        'bakers_ticket_update',
+        { ticket: 'BB-1', referenced_tickets_add: ['XX-9'] },
+      ],
+      // only an update reaches a ticket the run created
+      ['bakers_ticket_transition', { ticket: 'XX-10', state: 'done' }],
+      [
+        'bakers_comment_create',
+        { ticket: 'XX-10', type: 'comment', body: 'x' },
+      ],
+    ];
+    for (const [name, args] of writes) {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result, `${name} ${JSON.stringify(args)}`).toMatchObject({
+        isError: true,
+        content: [
+          {
+            text: expect.stringMatching(
+              new RegExp(
+                `XX-(9|10) belongs to project ${PROJECT_B}, this run may only touch project ${PROJECT_A}`,
+              ),
+            ),
+          },
+        ],
+      });
+    }
+    expect(
+      site.calls
+        .slice(before)
+        .filter((c) => c.name !== 'tool_api__bakers_ticket_read'),
+    ).toEqual([]);
+    await client.close();
+  });
+
   it("fills in the run's project and workspace and forwards own-project calls once, returning the site's result", async () => {
     const site = fakeSite();
     server = await startToolServer({
