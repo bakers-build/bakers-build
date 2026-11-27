@@ -14,6 +14,7 @@ use Drupal\bb_core\Access\BbOgMembershipAccessControlHandler;
 use Drupal\bb_core\Field\AssigneeColorItemList;
 use Drupal\bb_core\Field\AssigneeInitialsItemList;
 use Drupal\bb_core\Field\AssigneeNameItemList;
+use Drupal\bb_core\Field\AttentionItemList;
 use Drupal\bb_core\Field\ClaimMachineItemList;
 use Drupal\bb_core\Field\CommentAuthorColorItemList;
 use Drupal\bb_core\Field\CommentAuthorInitialsItemList;
@@ -498,6 +499,11 @@ final class EntitySchemaHooks {
         ->setComputed(TRUE)
         ->setClass(WorkStateItemList::class)
         ->setDisplayConfigurable('view', TRUE);
+      $fields['attention'] = BaseFieldDefinition::create('string')
+        ->setLabel(new TranslatableMarkup('Attention'))
+        ->setDescription(new TranslatableMarkup('Why this ticket needs a person: question, plan_ready, review, or empty.'))
+        ->setComputed(TRUE)
+        ->setClass(AttentionItemList::class);
       $fields['stall_reason'] = BaseFieldDefinition::create('string')
         ->setLabel(new TranslatableMarkup('Stall reason'))
         ->setDescription(new TranslatableMarkup('Why this ticket is standing still: frozen, blocked, no conductor, conductor no access, or failing.'))

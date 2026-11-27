@@ -2034,7 +2034,7 @@
     {
       "name": "tool_api__bakers_ticket_search",
       "title": "Search tickets",
-      "description": "Finds up to 50 readable tickets whose title or description contains the query, or whose branch is exactly branch_name, newest first, optionally within one project. Each row names its branch, base branch and parent.",
+      "description": "Finds up to 50 readable tickets whose title or description contains the query, or whose branch is exactly branch_name, newest first, optionally within one project. Each row names its branch, base branch and parent. Or, instead of query and branch_name (never together), filters and facets: filters narrow the rows (all must hold) and facets count the matching tickets per conductor, project, state or attention, in all readable projects unless project is given; the response then adds total and facets. Needs me: filters {attention: [review, plan_ready, question], conductor_owner: \"me\", closed: false}, facets [project, attention].",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -2073,6 +2073,104 @@
             ],
             "description": "Project UUID to search within.",
             "title": "Project"
+          },
+          "filters": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "conductor": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "description": "Readable conductor UUIDs; a ticket on any of them matches.",
+                "items": {
+                  "type": "string",
+                  "description": "One conductor UUID.",
+                  "title": "Conductor"
+                },
+                "title": "Conductors"
+              },
+              "conductor_owner": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only \"me\": tickets on conductors the signed-in user owns.",
+                "title": "Conductor owner"
+              },
+              "state": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "description": "Workflow state ids, e.g. plan or review; any matches.",
+                "items": {
+                  "type": "string",
+                  "description": "One workflow state id.",
+                  "title": "State"
+                },
+                "title": "States"
+              },
+              "attention": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "description": "Why a ticket needs a person: review (in review), plan_ready (in plan with a plan comment and no claimed or running run), question (frozen with the label Question); any matches. A closed ticket has none.",
+                "items": {
+                  "type": "string",
+                  "description": "review, plan_ready or question.",
+                  "title": "Attention value"
+                },
+                "title": "Attention"
+              },
+              "closed": {
+                "oneOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only closed (true) or open (false) tickets.",
+                "title": "Closed"
+              },
+              "frozen": {
+                "oneOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Only frozen (true) or unfrozen (false) tickets.",
+                "title": "Frozen"
+              }
+            },
+            "description": "Narrow the rows and counts; every given key must hold. Not with query or branch_name. An empty list or an unknown value is refused.",
+            "title": "Filters"
+          },
+          "facets": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "Count the matching tickets per conductor, project, state or attention. Not with query or branch_name.",
+            "items": {
+              "type": "string",
+              "description": "conductor, project, state or attention.",
+              "title": "Facet"
+            },
+            "title": "Facets"
           }
         },
         "additionalProperties": false
@@ -2163,6 +2261,17 @@
               "title": "Ticket"
             },
             "title": "Tickets"
+          },
+          "total": {
+            "type": "integer",
+            "description": "With filters or facets: every matching ticket, beyond the 50 rows.",
+            "title": "Total"
+          },
+          "facets": {
+            "type": "object",
+            "properties": {},
+            "description": "With facets: per asked facet, buckets {value, label, count}, most tickets first; conductor buckets add owner {uuid, name} and machine {uuid, name}, each null when gone or absent. Values are UUIDs for conductor and project, ids for state and attention. A ticket without a conductor or attention forms no bucket.",
+            "title": "Facets"
           }
         }
       }

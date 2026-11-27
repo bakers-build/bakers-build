@@ -15,11 +15,12 @@ use Drupal\search_api\Plugin\search_api\datasource\ContentEntityTrackingManager;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
- * Keeps the indexed work_state current when a blocker or a run changes.
+ * Keeps the indexed work_state and attention current.
  *
- * The work_state depends on the ticket's blockers and runs, which Search API
- * does not see as dependencies of the ticket, so the affected tickets are
- * queued for re-indexing by hand. Without Search API there is nothing to keep.
+ * The work_state depends on the ticket's blockers and runs, the attention on
+ * its runs and plan comments; Search API does not see either as dependencies
+ * of the ticket, so the affected tickets are queued for re-indexing by hand.
+ * Without Search API there is nothing to keep.
  */
 final class WorkStateIndexHooks {
 
@@ -52,6 +53,31 @@ final class WorkStateIndexHooks {
       ->condition('blocked_by', $ticket->id())
       ->execute();
     $this->track($ids);
+  }
+
+  /**
+   * Implements hook_ENTITY_TYPE_insert() for bb_comment.
+   */
+  #[Hook('bb_comment_insert')]
+  public function commentInsert(EntityInterface $comment): void {
+    $this->trackCommentTicket($comment);
+  }
+
+  /**
+   * Implements hook_ENTITY_TYPE_delete() for bb_comment.
+   */
+  #[Hook('bb_comment_delete')]
+  public function commentDelete(EntityInterface $comment): void {
+    $this->trackCommentTicket($comment);
+  }
+
+  /**
+   * Re-indexes the comment's ticket, whose plan comments may have changed.
+   */
+  private function trackCommentTicket(EntityInterface $comment): void {
+    if ($comment instanceof ContentEntityInterface && !$comment->get('ticket_id')->isEmpty()) {
+      $this->track([(int) $comment->get('ticket_id')->target_id]);
+    }
   }
 
   /**
@@ -92,7 +118,7 @@ final class WorkStateIndexHooks {
   }
 
   /**
-   * Queues tickets for re-indexing with a fresh computed work_state.
+   * Queues tickets for re-indexing with fresh computed fields.
    *
    * @param array<int|string> $ids
    *   Ticket ids.
@@ -102,7 +128,7 @@ final class WorkStateIndexHooks {
       return;
     }
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
-    // A cached entity keeps its computed work_state from before the change.
+    // A cached entity keeps its computed fields from before the change.
     $storage->resetCache($ids);
     foreach ($storage->loadMultiple($ids) as $ticket) {
       if ($ticket instanceof ContentEntityInterface) {
