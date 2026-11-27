@@ -366,6 +366,9 @@ function fakeSite(failLists = 0) {
     'BB-1': PROJECT_A,
     'BB-2': PROJECT_A,
     'XX-9': PROJECT_B,
+    // what a run creates in project XX, see bakers_ticket_create
+    'XX-10': PROJECT_B,
+    'uuid-new': PROJECT_B,
   };
   const keyOf: Record<string, string> = { BB: PROJECT_A, XX: PROJECT_B };
   const schema = (prop: string) => ({
@@ -404,6 +407,14 @@ function fakeSite(failLists = 0) {
           inputSchema: schema('project'),
         },
         {
+          name: 'tool_api__bakers_ticket_list',
+          inputSchema: schema('project'),
+        },
+        {
+          name: 'tool_api__bakers_conductor_list',
+          inputSchema: schema('project'),
+        },
+        {
           name: 'tool_api__bakers_project_create',
           inputSchema: schema('name'),
         },
@@ -422,6 +433,12 @@ function fakeSite(failLists = 0) {
       if (name === 'tool_api__bakers_project_read') {
         const uuid = keyOf[String(args.project)] ?? args.project;
         return json({ uuid, key: 'K' });
+      }
+      if (name === 'tool_api__bakers_ticket_create') {
+        if (args.project === 'NOPE')
+          throw new Error('Not allowed to create in NOPE.');
+        const project = keyOf[String(args.project)] ?? args.project;
+        return json({ id: 'uuid-new', identifier: 'XX-10', project });
       }
       return json({ ok: name, args });
     },
@@ -461,6 +478,8 @@ describe('site tools on the bakers server', () => {
       'bakers_ticket_create',
       'bakers_label_list',
       'bakers_project_read',
+      'bakers_ticket_list',
+      'bakers_conductor_list',
     ]);
     expect(
       tools.find((t) => t.name === 'bakers_ticket_read')?.inputSchema,
@@ -553,14 +572,6 @@ describe('site tools on the bakers server', () => {
       expect(result.isError).toBe(true);
       return (result.content as Array<{ text: string }>)[0]?.text;
     };
-    expect(await refused('bakers_ticket_read', { ticket: 'XX-9' })).toBe(
-      `bakers_ticket_read: ticket XX-9 belongs to project ${PROJECT_B}, this run may only touch project ${PROJECT_A}`,
-    );
-    expect(
-      await refused('bakers_ticket_search', { query: 'x', project: 'XX' }),
-    ).toBe(
-      `bakers_ticket_search: project XX belongs to project ${PROJECT_B}, this run may only touch project ${PROJECT_A}`,
-    );
     expect(
       await refused('bakers_ticket_create', {
         title: 't',
@@ -587,11 +598,6 @@ describe('site tools on the bakers server', () => {
         blocked_by: ['XX-9'],
       }),
     ).toMatch(/^bakers_ticket_create: blocked_by XX-9 belongs to project/);
-    expect(
-      await refused('bakers_label_list', { workspace: 'other-workspace' }),
-    ).toBe(
-      `bakers_label_list: workspace other-workspace is not the workspace ${WORKSPACE_A} of project ${PROJECT_A}`,
-    );
     // an empty project reads as "every project" on the site
     expect(await refused('bakers_project_read', { project: '' })).toBe(
       `bakers_project_read: an empty project would mean every project; this run may only touch project ${PROJECT_A}`,
@@ -625,6 +631,205 @@ describe('site tools on the bakers server', () => {
       ],
     });
     await unbound.close();
+  });
+
+  it('forwards reads, searches and lookups of another project or workspace unchanged', async () => {
+    const site = fakeSite();
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: site,
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', runBinding(PROJECT_A)),
+    );
+    const reads: Array<[string, Record<string, unknown>]> = [
+      ['bakers_ticket_read', { ticket: 'XX-9' }],
+      ['bakers_comment_read', { ticket: 'XX-9' }],
+      ['bakers_ticket_search', { query: 'x', project: 'XX' }],
+      ['bakers_ticket_list', { project: PROJECT_B }],
+      ['bakers_project_read', { project: 'XX' }],
+      ['bakers_conductor_list', { project: PROJECT_B }],
+      ['bakers_label_list', { workspace: 'other-workspace' }],
+    ];
+    for (const [name, args] of reads) {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result.isError, name).toBeFalsy();
+    }
+    expect(site.calls).toEqual(
+      reads.map(([name, args]) => ({ name: `tool_api__${name}`, args })),
+    );
+    // the site decides access; its refusal reaches the run unchanged
+    const denied = await client.callTool({
+      name: 'bakers_ticket_read',
+      arguments: { ticket: 'NOPE-1' },
+    });
+    expect(denied).toMatchObject({
+      isError: true,
+      content: [
+        { text: expect.stringMatching(/Ticket NOPE-1 does not exist/) },
+      ],
+    });
+    await client.close();
+  });
+
+  it('creates a ticket in another project and lets the run label, assign and link it', async () => {
+    const site = fakeSite();
+    const writes: unknown[] = [];
+    const binding = runBinding(PROJECT_A);
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: site,
+      onSiteWrite: (b) => writes.push(b),
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', binding),
+    );
+    const forwarded = async (name: string, args: Record<string, unknown>) => {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result.isError, `${name} ${JSON.stringify(args)}`).toBeFalsy();
+      expect(site.calls.at(-1)).toEqual({ name: `tool_api__${name}`, args });
+    };
+    await forwarded('bakers_ticket_create', {
+      title: 'Fix the library',
+      workflow: 'bb_work',
+      project: 'XX',
+      assignee: 'u1',
+    });
+    // the site's create takes no labels or conductor, so the run updates its new ticket
+    await forwarded('bakers_ticket_update', {
+      ticket: 'XX-10',
+      labels_add: ['auto'],
+      conductor: 'c1',
+    });
+    await forwarded('bakers_ticket_update', {
+      ticket: 'uuid-new',
+      assignee: 'u2',
+    });
+    await forwarded('bakers_ticket_update', {
+      ticket: 'BB-1',
+      links_add: [{ uri: 'https://app.example/ticket/xx-10' }],
+    });
+    expect(writes).toEqual([binding, binding, binding, binding]);
+    await client.close();
+  });
+
+  it('refuses a cross-project parent or blocker on create before forwarding', async () => {
+    const site = fakeSite();
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: site,
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', runBinding(PROJECT_A)),
+    );
+    const call = (name: string, args: Record<string, unknown>) =>
+      client.callTool({ name, arguments: args }) as Promise<{
+        isError?: boolean;
+        content: Array<{ text: string }>;
+      }>;
+    const home = new RegExp(
+      `belongs to project ${PROJECT_A}, this run may only touch project ${PROJECT_B}`,
+    );
+    for (const extra of [{ parent: 'BB-1' }, { blocked_by: ['BB-1'] }]) {
+      const result = await call('bakers_ticket_create', {
+        title: 't',
+        project: 'XX',
+        ...extra,
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0]?.text).toMatch(home);
+    }
+    expect(
+      site.calls.filter((c) => c.name === 'tool_api__bakers_ticket_create'),
+    ).toEqual([]);
+    const sameProject = await call('bakers_ticket_create', {
+      title: 't',
+      project: 'XX',
+      blocked_by: ['XX-9'],
+    });
+    expect(sameProject.isError).toBeFalsy();
+
+    // a refused create remembers nothing, and another run cannot update what this run created
+    const other = await connect(
+      server.url,
+      server.issueRunToken('run-2', runBinding(PROJECT_A)),
+    );
+    const denied = await other.callTool({
+      name: 'bakers_ticket_create',
+      arguments: { title: 't', project: 'NOPE' },
+    });
+    expect(denied).toMatchObject({
+      isError: true,
+      content: [{ text: expect.stringMatching(/Not allowed to create/) }],
+    });
+    const update = await other.callTool({
+      name: 'bakers_ticket_update',
+      arguments: { ticket: 'XX-10', labels_add: ['auto'] },
+    });
+    expect(update.isError).toBe(true);
+    await other.close();
+    await client.close();
+  });
+
+  it('keeps every write on an existing ticket of another project refused', async () => {
+    const site = fakeSite();
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: site,
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', runBinding(PROJECT_A)),
+    );
+    const created = await client.callTool({
+      name: 'bakers_ticket_create',
+      arguments: { title: 't', project: 'XX' },
+    });
+    expect(created.isError).toBeFalsy();
+    const before = site.calls.length;
+    const writes: Array<[string, Record<string, unknown>]> = [
+      ['bakers_ticket_update', { ticket: 'XX-9', labels_add: ['auto'] }],
+      ['bakers_ticket_classify', { ticket: 'XX-9', type: 'bug' }],
+      ['bakers_ticket_transition', { ticket: 'XX-9', state: 'done' }],
+      ['bakers_comment_create', { ticket: 'XX-9', type: 'comment', body: 'x' }],
+      ['bakers_metric_write', { ticket: 'XX-9', metric: 'm', value: 1 }],
+      ['bakers_run_cancel', { ticket: 'XX-9', reason: 'Stop' }],
+      ['bakers_ticket_update', { ticket: 'BB-1', blocked_by_add: ['XX-9'] }],
+      [
+        'bakers_ticket_update',
+        { ticket: 'BB-1', referenced_tickets_add: ['XX-9'] },
+      ],
+      // only an update reaches a ticket the run created
+      ['bakers_ticket_transition', { ticket: 'XX-10', state: 'done' }],
+      [
+        'bakers_comment_create',
+        { ticket: 'XX-10', type: 'comment', body: 'x' },
+      ],
+    ];
+    for (const [name, args] of writes) {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result, `${name} ${JSON.stringify(args)}`).toMatchObject({
+        isError: true,
+        content: [
+          {
+            text: expect.stringMatching(
+              new RegExp(
+                `XX-(9|10) belongs to project ${PROJECT_B}, this run may only touch project ${PROJECT_A}`,
+              ),
+            ),
+          },
+        ],
+      });
+    }
+    expect(
+      site.calls
+        .slice(before)
+        .filter((c) => c.name !== 'tool_api__bakers_ticket_read'),
+    ).toEqual([]);
+    await client.close();
   });
 
   it("fills in the run's project and workspace and forwards own-project calls once, returning the site's result", async () => {
@@ -683,8 +888,6 @@ describe('site tools on the bakers server', () => {
         args: { workspace: WORKSPACE_A },
       },
       { name: 'tool_api__bakers_ticket_read', args: { ticket: 'BB-1' } },
-      // the key is resolved once, then the call itself goes out
-      { name: 'tool_api__bakers_project_read', args: { project: 'BB' } },
       { name: 'tool_api__bakers_project_read', args: { project: 'BB' } },
     ]);
     await client.close();

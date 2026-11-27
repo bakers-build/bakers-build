@@ -1,6 +1,7 @@
 // The site's bakers tools, proxied on the `bakers` MCP server with the
 // conductor's own credentials. Only the allowlist is served, under the plain
-// name, and every call is held to the run ticket's project before it leaves.
+// name. Reads go to any project; writes stay in the run ticket's project, except
+// a create in another project and updates of the tickets the run created there.
 
 import type { ConductorLogger } from '@bakers-build/core';
 import type { SiteToolClient } from '../plugins/remote.js';
@@ -140,6 +141,13 @@ export function siteToolProxy(
         ),
         ['project', 'project', scoped.project],
       ];
+      // A create may target another project; its parent and blockers come from there.
+      // An update may reach a ticket this run created there.
+      let home = project;
+      if (name === 'bakers_ticket_create' && !blank(scoped.project))
+        home = await ownerOf('project', String(scoped.project));
+      if (name === 'bakers_ticket_update')
+        home = owners.get(`created:${String(scoped.ticket)}`) ?? project;
       for (const [kind, arg, value] of refs) {
         if (value === undefined || value === null) continue;
         if (value === '') {
@@ -149,25 +157,37 @@ export function siteToolProxy(
             `${name}: an empty ${arg} would mean every project; this run may only touch project ${project}`,
           );
         }
+        // the site decides who may read what
+        if (READS.includes(name)) continue;
         const owner = await ownerOf(kind, String(value));
-        if (owner !== project)
+        if (owner !== home)
           throw new Error(
-            `${name}: ${arg} ${String(value)} belongs to project ${owner}, this run may only touch project ${project}`,
+            `${name}: ${arg} ${String(value)} belongs to project ${owner}, this run may only touch project ${home}`,
           );
       }
-      if (
-        scoped.workspace !== undefined &&
-        scoped.workspace !== ticket.workspaceId
-      )
-        throw new Error(
-          `${name}: workspace ${String(scoped.workspace)} is not the workspace ${ticket.workspaceId ?? '(none)'} of project ${project}`,
-        );
 
-      const { content } = await client.call(`${WIRE}${name}`, scoped);
-      return { content };
+      const result = await client.call(`${WIRE}${name}`, scoped);
+      if (name === 'bakers_ticket_create' && home !== project) {
+        // shortcut: kept in memory, so a conductor restart forgets it; persist it if runs need that.
+        const out = resultJson(result);
+        for (const ref of [out.id, out.identifier])
+          if (ref) owners.set(`created:${String(ref)}`, home);
+      }
+      return { content: result.content };
     },
   };
 }
+
+/** Reads and lookups that may name any project or workspace. */
+const READS = [
+  'bakers_ticket_read',
+  'bakers_comment_read',
+  'bakers_ticket_search',
+  'bakers_ticket_list',
+  'bakers_project_read',
+  'bakers_label_list',
+  'bakers_conductor_list',
+];
 
 /** Tools whose missing `project` means the run's project. */
 const FILLS_PROJECT = [
@@ -176,7 +196,8 @@ const FILLS_PROJECT = [
   'bakers_ticket_create',
 ];
 
-/** Ticket and project refs already resolved, per run token; the run's own ticket is known. */
+/** Per run token: resolved ticket and project refs (the run's own ticket is known),
+ * and `created:<ref>` → project of the tickets this run created in another project. */
 const resolved = new WeakMap<ToolBinding, Map<string, string>>();
 
 function ownersOf(binding: ToolBinding, project: string): Map<string, string> {
