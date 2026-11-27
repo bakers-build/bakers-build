@@ -29,6 +29,7 @@ Feature: Everyone reads their own figures on My work › Stats
 
   Scenario: Choosing Today and then Yesterday shows one day per hour
     Given I am logged in as the account "north-lead"
+    And the fixture dates follow today
     When I visit My work tab "Insights"
     And I choose the period kind "Today"
     Then the address carries "filter[period]=day"

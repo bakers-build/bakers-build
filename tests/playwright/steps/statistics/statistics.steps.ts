@@ -20,6 +20,11 @@ Given('membership {string} holds no extra role', async ({ apiClient }, membershi
     Drush.exec(`php:eval '$m = \\Drupal::service("entity.repository")->loadEntityByUuid("og_membership", "${uuid}"); if (!$m) { throw new \\RuntimeException("Missing membership fixture ${membership}"); } $m->set("roles", [])->save();'`);
 });
 
+// The gate seeds once; a suite that crosses 00:00 UTC must not read the seed day as today.
+Given('the fixture dates follow today', async () => {
+    Drush.exec('php:script /var/www/html/scripts/e2e/relative-dates.php');
+});
+
 Then('the statistics discovery lists {string}', async ({ apiClient }, figureId: string) => {
     const document = await apiClient.response!.json();
     const figures = document.data.attributes.groups.flatMap(

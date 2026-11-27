@@ -42,6 +42,7 @@ Feature: Workspace leads read the Insights of their workspace
 
   Scenario: Choosing Today shows the day per hour in UTC
     Given I am logged in as the account "north-lead"
+    And the fixture dates follow today
     When I open the Insights of workspace "bakers"
     And I choose the period kind "Today"
     Then the address carries "filter[period]=day"
