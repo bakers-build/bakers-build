@@ -404,6 +404,14 @@ function fakeSite(failLists = 0) {
           inputSchema: schema('project'),
         },
         {
+          name: 'tool_api__bakers_ticket_list',
+          inputSchema: schema('project'),
+        },
+        {
+          name: 'tool_api__bakers_conductor_list',
+          inputSchema: schema('project'),
+        },
+        {
           name: 'tool_api__bakers_project_create',
           inputSchema: schema('name'),
         },
@@ -461,6 +469,8 @@ describe('site tools on the bakers server', () => {
       'bakers_ticket_create',
       'bakers_label_list',
       'bakers_project_read',
+      'bakers_ticket_list',
+      'bakers_conductor_list',
     ]);
     expect(
       tools.find((t) => t.name === 'bakers_ticket_read')?.inputSchema,
@@ -553,14 +563,6 @@ describe('site tools on the bakers server', () => {
       expect(result.isError).toBe(true);
       return (result.content as Array<{ text: string }>)[0]?.text;
     };
-    expect(await refused('bakers_ticket_read', { ticket: 'XX-9' })).toBe(
-      `bakers_ticket_read: ticket XX-9 belongs to project ${PROJECT_B}, this run may only touch project ${PROJECT_A}`,
-    );
-    expect(
-      await refused('bakers_ticket_search', { query: 'x', project: 'XX' }),
-    ).toBe(
-      `bakers_ticket_search: project XX belongs to project ${PROJECT_B}, this run may only touch project ${PROJECT_A}`,
-    );
     expect(
       await refused('bakers_ticket_create', {
         title: 't',
@@ -587,11 +589,6 @@ describe('site tools on the bakers server', () => {
         blocked_by: ['XX-9'],
       }),
     ).toMatch(/^bakers_ticket_create: blocked_by XX-9 belongs to project/);
-    expect(
-      await refused('bakers_label_list', { workspace: 'other-workspace' }),
-    ).toBe(
-      `bakers_label_list: workspace other-workspace is not the workspace ${WORKSPACE_A} of project ${PROJECT_A}`,
-    );
     // an empty project reads as "every project" on the site
     expect(await refused('bakers_project_read', { project: '' })).toBe(
       `bakers_project_read: an empty project would mean every project; this run may only touch project ${PROJECT_A}`,
@@ -625,6 +622,46 @@ describe('site tools on the bakers server', () => {
       ],
     });
     await unbound.close();
+  });
+
+  it('forwards reads, searches and lookups of another project or workspace unchanged', async () => {
+    const site = fakeSite();
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: site,
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', runBinding(PROJECT_A)),
+    );
+    const reads: Array<[string, Record<string, unknown>]> = [
+      ['bakers_ticket_read', { ticket: 'XX-9' }],
+      ['bakers_comment_read', { ticket: 'XX-9' }],
+      ['bakers_ticket_search', { query: 'x', project: 'XX' }],
+      ['bakers_ticket_list', { project: PROJECT_B }],
+      ['bakers_project_read', { project: 'XX' }],
+      ['bakers_conductor_list', { project: PROJECT_B }],
+      ['bakers_label_list', { workspace: 'other-workspace' }],
+    ];
+    for (const [name, args] of reads) {
+      const result = await client.callTool({ name, arguments: args });
+      expect(result.isError, name).toBeFalsy();
+    }
+    expect(site.calls).toEqual(
+      reads.map(([name, args]) => ({ name: `tool_api__${name}`, args })),
+    );
+    // the site decides access; its refusal reaches the run unchanged
+    const denied = await client.callTool({
+      name: 'bakers_ticket_read',
+      arguments: { ticket: 'NOPE-1' },
+    });
+    expect(denied).toMatchObject({
+      isError: true,
+      content: [
+        { text: expect.stringMatching(/Ticket NOPE-1 does not exist/) },
+      ],
+    });
+    await client.close();
   });
 
   it("fills in the run's project and workspace and forwards own-project calls once, returning the site's result", async () => {
@@ -683,8 +720,6 @@ describe('site tools on the bakers server', () => {
         args: { workspace: WORKSPACE_A },
       },
       { name: 'tool_api__bakers_ticket_read', args: { ticket: 'BB-1' } },
-      // the key is resolved once, then the call itself goes out
-      { name: 'tool_api__bakers_project_read', args: { project: 'BB' } },
       { name: 'tool_api__bakers_project_read', args: { project: 'BB' } },
     ]);
     await client.close();

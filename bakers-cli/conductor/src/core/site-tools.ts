@@ -149,25 +149,31 @@ export function siteToolProxy(
             `${name}: an empty ${arg} would mean every project; this run may only touch project ${project}`,
           );
         }
+        // the site decides who may read what
+        if (READS.includes(name)) continue;
         const owner = await ownerOf(kind, String(value));
         if (owner !== project)
           throw new Error(
             `${name}: ${arg} ${String(value)} belongs to project ${owner}, this run may only touch project ${project}`,
           );
       }
-      if (
-        scoped.workspace !== undefined &&
-        scoped.workspace !== ticket.workspaceId
-      )
-        throw new Error(
-          `${name}: workspace ${String(scoped.workspace)} is not the workspace ${ticket.workspaceId ?? '(none)'} of project ${project}`,
-        );
 
       const { content } = await client.call(`${WIRE}${name}`, scoped);
       return { content };
     },
   };
 }
+
+/** Reads and lookups that may name any project or workspace. */
+const READS = [
+  'bakers_ticket_read',
+  'bakers_comment_read',
+  'bakers_ticket_search',
+  'bakers_ticket_list',
+  'bakers_project_read',
+  'bakers_label_list',
+  'bakers_conductor_list',
+];
 
 /** Tools whose missing `project` means the run's project. */
 const FILLS_PROJECT = [
