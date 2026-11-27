@@ -24,6 +24,16 @@ use Symfony\Component\Routing\Route;
 final class BbMachineRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_machine.canonical' => 'This machine and its details.',
+    'bb_core.bb_machine.settings' => "Change this machine's settings.",
+    'entity.bb_machine.restart_form' => 'Restart the runs on this machine.',
+    'entity.bb_machine.delete_form' => 'Confirm the deletion of this machine.',
+  ];
+
+  /**
    * Titles the machine, falling back to its host key when the name is blank.
    *
    * Core's `EntityController::title()` titles the FIRST entity parameter, and
@@ -66,6 +76,9 @@ final class BbMachineRouteProvider extends AdminHtmlRouteProvider {
     $restart->setOption('parameters', ['bb_machine' => ['type' => 'entity:bb_machine']]);
     $this->pinOwner($restart);
     $collection->add('entity.bb_machine.restart_form', $restart);
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
     return $collection;
   }
 

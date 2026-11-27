@@ -10,7 +10,7 @@ Feature: Everyone reads their own figures on My work › Stats
   Scenario: A lead reads their own figures
     Given I am logged in as the account "north-lead"
     When I visit My work tab "Insights"
-    Then the page header describes the screen as "Your own figures — always visible to you"
+    Then the page header describes the screen as "Your own figures in every workspace, always visible to you."
     And the page shows "Throughput"
     And the page shows "Runs per ticket"
     And the page shows "Rating"

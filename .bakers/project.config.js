@@ -102,7 +102,7 @@ export default {
     },
     {
       url: 'https://github.com/pen-drop/designbook.git',
-      ref: 'next',
+      ref: 'v0.14.0',
       plugins: [
         'designbook',
         'designbook-drupal',

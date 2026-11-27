@@ -6,6 +6,7 @@ entity.bb_webhook.add_for_project:
   defaults:
     _entity_form: 'bb_webhook.add'
     _title: 'Create webhook'
+    _description: 'Add a webhook to this project.'
   requirements:
     _bb_workspace_create: 'bb_webhook'
   options:
@@ -18,6 +19,7 @@ entity.bb_webhook.add_for_group:
   defaults:
     _entity_form: 'bb_webhook.add'
     _title: 'Create webhook'
+    _description: 'Add a webhook to this group.'
   requirements:
     _bb_workspace_create: 'bb_webhook'
   options:
@@ -30,5 +32,6 @@ entity.bb_webhook.add_for_workspace:
   defaults:
     _entity_form: 'bb_webhook.add'
     _title: 'Create webhook'
+    _description: 'Add a webhook to this workspace.'
   requirements:
     _bb_workspace_create: 'bb_webhook'

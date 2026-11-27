@@ -219,7 +219,7 @@ Then('the page has no password field', async ({ page }) => {
   await expect(page.locator('input[type="password"]')).toHaveCount(0);
 });
 
-const AI_USE_NOTICE = 'bakers.build passes these details as context to the AI assistants it uses';
+const AI_USE_NOTICE = 'Your background and goals, which bakers.build passes to its AI assistants so their answers fit you.';
 
 Then('the profile form has no retired account fields', async ({ page }) => {
   await expect(page.locator('form.user-form')).toBeVisible();

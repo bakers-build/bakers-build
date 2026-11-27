@@ -17,6 +17,26 @@ use Symfony\Component\Routing\Route;
 final class BbTermRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_term.add_form' => 'Add a type, recipe or label to the catalog of this workspace.',
+    'entity.bb_term.edit_form' => 'Change this catalog entry.',
+    'entity.bb_term.delete_form' => 'Confirm the deletion of this catalog entry.',
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRoutes(EntityTypeInterface $entity_type) {
+    $collection = parent::getRoutes($entity_type);
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
+    return $collection;
+  }
+
+  /**
    * {@inheritdoc}
    */
   protected function getEditFormRoute(EntityTypeInterface $entity_type): ?Route {

@@ -18,6 +18,17 @@ use Symfony\Component\Routing\Route;
 final class BbRunRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_run.add_form' => 'Add a run to a ticket.',
+    'entity.bb_run.canonical' => 'This run, with its details and its log.',
+    'entity.bb_run.overlay' => 'This run at a glance.',
+    'entity.bb_run.edit_form' => "Change this run's details.",
+    'entity.bb_run.delete_form' => 'Confirm the deletion of this run.',
+  ];
+
+  /**
    * Titles the run as "Run #id".
    */
   public static function title(BbRunInterface $bb_run): string {
@@ -32,6 +43,9 @@ final class BbRunRouteProvider extends AdminHtmlRouteProvider {
     $overlay = $this->overlayRoute($entity_type);
     if ($overlay !== NULL) {
       $collection->add('entity.bb_run.overlay', $overlay);
+    }
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
     }
     return $collection;
   }

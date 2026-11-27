@@ -177,13 +177,13 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
   }
 
   /**
-   * The line under the Groups title says that groups grant no permissions.
+   * The line under the Groups title, from the route, says groups grant none.
    */
   public function testTheGroupsHeaderStatesGroupsGrantNoPermissions(): void {
     $this->enterRoute('view.groups.workspace_list');
     $this->container->get('current_route_match')->resetRouteMatch();
     self::assertSame(
-      'A group grants no permissions — rights come from the workspace and the project only.',
+      'The groups of this workspace; a group grants no permissions of its own.',
       (string) $this->source('bb_page_header_description', 'string')->getPropValue(),
     );
   }

@@ -60,6 +60,7 @@ bb_track.schedule:
   defaults:
     _form: '\Drupal\bb_track\Form\WorkScheduleForm'
     _title: 'Personal schedule'
+    _description: 'Your default working hours for each weekday.'
   requirements:
     _user_is_logged_in: 'TRUE'
     _custom_access: '\Drupal\bb_track\Access\TimeRouteAccess::personal'
@@ -73,6 +74,7 @@ bb_track.account:
   defaults:
     _form: '\Drupal\bb_track\Form\AccountForm'
     _title: 'Billing'
+    _description: 'The billing accounts of this project, one of them the default.'
   requirements:
     _entity_access: 'bb_project.update'
   options:
@@ -86,6 +88,7 @@ bb_track.account_add:
   defaults:
     _form: '\Drupal\bb_track\Form\AccountEditForm'
     _title: 'New billing account'
+    _description: 'Add a billing account to this project.'
   requirements:
     _entity_access: 'bb_project.update'
   options:
@@ -99,6 +102,7 @@ bb_track.account_edit:
   defaults:
     _form: '\Drupal\bb_track\Form\AccountEditForm'
     _title: 'Edit billing account'
+    _description: 'Change this billing account''s details.'
   requirements:
     _entity_access: 'bb_project.update'
     bb_track_account: '\d+'
@@ -117,6 +121,7 @@ entity.bb_track_account.canonical:
   defaults:
     _entity_view: 'bb_track_account.full'
     _title_callback: '\Drupal\Core\Entity\Controller\EntityController::title'
+    _description: 'This billing account and its details.'
   requirements:
     _entity_access: 'bb_project.update'
     _custom_access: '\Drupal\bb_track\Access\AccountRouteAccess::ownProject'
@@ -134,6 +139,7 @@ entity.bb_track_submission.canonical:
   defaults:
     _form: '\Drupal\bb_track\Form\SubmissionReviewForm'
     _title: 'Submission'
+    _description: 'Review the hours of this time submission.'
   requirements:
     _entity_access: 'bb_track_submission.view'
     _user_is_logged_in: 'TRUE'
@@ -165,5 +171,6 @@ bb_track.workspace.insights_billing:
   defaults:
     _controller: '\Drupal\bb_track\Controller\BillingReportController::page'
     _title: 'Insights'
+    _description: 'The billing report of this workspace.'
   requirements:
     _bb_workspace_permission: 'view bakers figure workspace_overview'

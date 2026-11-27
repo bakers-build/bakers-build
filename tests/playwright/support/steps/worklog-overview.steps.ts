@@ -74,7 +74,7 @@ Then('I see the My time overview', async ({ page }) => {
 
 Then('the My time heading describes recorded hours', async ({ page }) => {
   await expect(page.locator('[data-page-header] p')).toContainText(
-    'Your recorded hours in the',
+    'Your recorded hours in this workspace.',
   );
 });
 

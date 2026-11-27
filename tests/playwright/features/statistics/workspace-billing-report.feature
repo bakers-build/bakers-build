@@ -14,7 +14,7 @@ Feature: Workspace leads read the billing report of their workspace
     And I click the tab "Billing report"
     Then the tab "Billing report" is current
     And the page heading is "Insights"
-    And the page header describes the screen as "Northside Bakery · billing report"
+    And the page header describes the screen as "The billing report of this workspace."
     And the rail marks "Insights" as current
     And the page shows "proposed time is excluded"
 

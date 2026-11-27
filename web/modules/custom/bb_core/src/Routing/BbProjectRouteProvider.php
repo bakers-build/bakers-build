@@ -22,6 +22,17 @@ use Symfony\Component\Routing\RouteCollection;
 final class BbProjectRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_project.add_form' => 'Add a project to this workspace.',
+    'entity.bb_project.edit_form' => "Change this project's details.",
+    'bb_core.bb_project.settings' => "Change this project's settings.",
+    'bb_core.bb_project.stats' => 'The figures of this project.',
+    'entity.bb_project.delete_form' => 'Confirm the deletion of this project.',
+  ];
+
+  /**
    * The controller-backed tabs beyond Overview.
    *
    * `settings` is NOT one of them — see `getSettingsRoute()`. Board is a
@@ -40,6 +51,9 @@ final class BbProjectRouteProvider extends AdminHtmlRouteProvider {
       $collection->add('bb_core.bb_project.' . $tab, $this->getTabRoute($tab));
     }
     $collection->add('bb_core.bb_project.settings', $this->getSettingsRoute());
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
     return $collection;
   }
 

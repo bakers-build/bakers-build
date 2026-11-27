@@ -18,6 +18,17 @@ use Symfony\Component\Routing\Route;
 final class BbTicketTriggerRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_ticket_trigger.add_form' => 'Add a trigger that creates tickets from this template.',
+    'entity.bb_ticket_trigger.canonical' => 'This trigger and its details.',
+    'entity.bb_ticket_trigger.edit_form' => "Change this trigger's details.",
+    'entity.bb_ticket_trigger.toggle_form' => 'Pause or resume this trigger.',
+    'entity.bb_ticket_trigger.delete_form' => 'Confirm the deletion of this trigger.',
+  ];
+
+  /**
    * {@inheritdoc}
    */
   public function getRoutes(EntityTypeInterface $entity_type) {
@@ -31,6 +42,9 @@ final class BbTicketTriggerRouteProvider extends AdminHtmlRouteProvider {
       $parameters = $route->getOption('parameters') ?? [];
       $parameters['bb_ticket_template'] = ['type' => 'entity:bb_ticket_template'];
       $route->setOption('parameters', $parameters);
+    }
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
     }
     return $collection;
   }
