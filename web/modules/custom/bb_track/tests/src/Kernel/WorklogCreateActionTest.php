@@ -8,9 +8,10 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbPageHeaderDescriptionSource;
-use Drupal\bb_track\Plugin\UiPatterns\Source\WorklogCreateActionSource;
+use Drupal\Tests\bb_core\Kernel\CreateActionTestTrait;
+use Drupal\bb_track\Form\WorklogFormValidator;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -25,6 +26,7 @@ use Symfony\Component\Yaml\Yaml;
 #[Group('bb_track')]
 final class WorklogCreateActionTest extends KernelTestBase {
 
+  use CreateActionTestTrait;
   use OgScopeFixtureTrait;
   use UserCreationTrait;
 
@@ -162,9 +164,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
     [, $query_string] = explode('?', $href, 2);
     parse_str($query_string, $query);
     self::assertSame($uuid, $query['submission'] ?? NULL);
-    [, $forged_string] = explode('?', $this->hrefOf($this->actionMarkup('mode=week&submission=not-a-uuid')), 2);
-    parse_str($forged_string, $forged);
-    self::assertArrayNotHasKey('submission', $forged);
+    self::assertNull($this->dialogOpensWith('mode=week&submission=not-a-uuid')['submission']);
   }
 
   /**
@@ -184,11 +184,9 @@ final class WorklogCreateActionTest extends KernelTestBase {
     self::assertIsString($destination);
     self::assertStringContainsString('person=3', $destination);
 
-    $forged = $this->hrefOf($this->actionMarkup('date=06-10-2026&project=x'));
-    [, $forged_string] = explode('?', $forged, 2);
-    parse_str($forged_string, $forged_query);
-    self::assertArrayNotHasKey('date', $forged_query);
-    self::assertArrayNotHasKey('project', $forged_query);
+    $forged = $this->dialogOpensWith('date=06-10-2026&project=x');
+    self::assertNull($forged['date']);
+    self::assertNull($forged['project']);
   }
 
   /**
@@ -197,7 +195,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
   public function testTheActionAppliesOnThePersonalCalendar(): void {
     $this->asRecorder();
     $uid = $this->container->get('current_user')->id();
-    $value = $this->onPath('/user/' . $uid . '/time', fn (): mixed => $this->source()->getPropValue());
+    $value = $this->onPath('/user/' . $uid . '/time', fn (): mixed => $this->createTrigger('bb_track.create.worklog'));
     self::assertIsArray($value);
     self::assertArrayHasKey('#component', $value);
   }
@@ -212,7 +210,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
     self::assertStringContainsString('data-hx-get="', $anchor);
     self::assertStringContainsString('_wrapper_format=island_dialog', $anchor);
     self::assertStringContainsString(
-      'data-hx-target="#' . CreateActionSourceBase::TARGET_ID . '"',
+      'data-hx-target="#' . CreateActionSource::TARGET_ID . '"',
       $anchor,
     );
     self::assertStringContainsString('data-hx-swap="innerHTML', $anchor);
@@ -226,7 +224,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
   public function testTheActionAppliesOnlyOnMyTime(): void {
     $this->asRecorder();
     $on_projects = $this->onPath('/' . self::WORKSPACE_SLUG . '/projects', function (): mixed {
-      return $this->source()->getPropValue();
+      return $this->createTrigger('bb_track.create.worklog');
     });
     self::assertIsArray($on_projects);
     self::assertArrayNotHasKey('#component', $on_projects);
@@ -236,14 +234,16 @@ final class WorklogCreateActionTest extends KernelTestBase {
   }
 
   /**
-   * Both island profile copies place the source in the page-header actions.
+   * Record time appears on the four calendars; both profiles place the source.
    */
   public function testShippedShellHeaderListsTheAction(): void {
+    $appears_on = $this->container->get('plugin.manager.menu.local_action')->getDefinition('bb_track.create.worklog')['appears_on'];
+    self::assertSame(['view.worklog.page', 'view.worklog.personal', 'view.worklog.team', 'view.worklog.project'], $appears_on);
     $root = dirname(__DIR__, 7);
     foreach (['recipes/bakers/config', 'config/sync'] as $where) {
       $header = Yaml::parseFile($root . '/' . $where . '/island.profile.bb_shell.yml')['placements']['shell_page_header']['configuration']['component'];
       self::assertContains(
-        'bb_worklog_create_action',
+        'bb_create_action',
         array_column($header['slots']['actions']['sources'], 'source_id'),
         $where,
       );
@@ -251,7 +251,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
   }
 
   /**
-   * The shell sub-line names recorded hours on My time.
+   * The shell sub-line names recorded hours on My time, not the workspace.
    */
   public function testTheHeaderDescribesRecordedHours(): void {
     $this->asRecorder();
@@ -266,7 +266,8 @@ final class WorklogCreateActionTest extends KernelTestBase {
       self::assertInstanceOf(BbPageHeaderDescriptionSource::class, $source);
       return $source->getPropValue();
     });
-    self::assertSame('Your recorded hours in the Workspace A workspace', $value);
+    self::assertSame('Your recorded hours in this workspace.', (string) $value);
+    self::assertStringNotContainsString('Workspace A', (string) $value);
   }
 
   /**
@@ -318,7 +319,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
    *   The prop value.
    */
   private function actionValue(string $query = ''): array {
-    $value = $this->onTheScreen($query, fn (): mixed => $this->source()->getPropValue());
+    $value = $this->onTheScreen($query, fn (): mixed => $this->createTrigger('bb_track.create.worklog'));
     self::assertIsArray($value);
     return $value;
   }
@@ -334,7 +335,7 @@ final class WorklogCreateActionTest extends KernelTestBase {
    */
   private function actionMarkup(string $query = ''): string {
     return $this->onTheScreen($query, function (): string {
-      $build = $this->source()->getPropValue();
+      $build = $this->createTrigger('bb_track.create.worklog');
       self::assertIsArray($build);
       return (string) $this->container->get('renderer')->renderInIsolation($build);
     });
@@ -394,18 +395,18 @@ final class WorklogCreateActionTest extends KernelTestBase {
   }
 
   /**
-   * A fresh Record time source, reading the request and account as they are.
+   * What the record-time dialog opens with from the trigger on this screen.
+   *
+   * The trigger forwards the screen's values as they are; the dialog's
+   * validator decides which of them it keeps.
+   *
+   * @return array<string, mixed>
+   *   The dialog's prefill context.
    */
-  private function source(): WorklogCreateActionSource {
-    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
-      ->getDefinition('slot')['schema'];
-    $source = $this->container->get('plugin.manager.ui_patterns_source')
-      ->createInstance(
-        'bb_worklog_create_action',
-        SourcePluginBase::buildConfiguration('actions', $definition, ['source' => []], []),
-      );
-    self::assertInstanceOf(WorklogCreateActionSource::class, $source);
-    return $source;
+  private function dialogOpensWith(string $screen_query): array {
+    $query = Request::create($this->hrefOf($this->actionMarkup($screen_query)))->query->all();
+    $validator = new WorklogFormValidator($this->container->get('entity_type.manager'), $this->container->get('bb_core.workspace_read_scope'));
+    return $validator->prefill($query, $this->container->get('current_user'));
   }
 
   /**

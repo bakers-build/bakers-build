@@ -306,7 +306,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * The description source carries the creator's age on the ticket only.
    *
    * The `subline` slot gets the age as a time element, and the component its
-   * max-age. A nested run URL shows no ticket caption, so it gets neither.
+   * max-age. A nested run URL shows its own route description instead of the
+   * ticket caption, so it gets no age.
    */
   public function testHeaderDescriptionCarriesTheAgeOnTheTicketOnly(): void {
     $owner = $this->createUser([], 'Ada Lovelace');
@@ -332,7 +333,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $this->tabsOn('entity.bb_run.canonical', ['bb_ticket' => $this->ticket, 'bb_run' => $run]);
     $source = $this->descriptionSource();
     self::assertSame([], $source->getValue($slot));
-    self::assertSame('', $source->getValue());
+    self::assertSame('This run, with its details and its log.', (string) $source->getValue());
     self::assertSame(Cache::PERMANENT, $source->alterComponent([])['#cache']['max-age']);
   }
 

@@ -5,10 +5,7 @@ dependencies:
     - island.app.bakers
     - system.menu.bakers-rail
   module:
-    - bb_api_key
     - bb_core
-    - bb_ticket_trigger
-    - bb_track
     - island_ui_patterns
     - system
     - ui_patterns
@@ -195,31 +192,11 @@ placements:
                   plugin_id: local_tasks_block
           actions:
             sources:
-              - source_id: bb_ticket_create_action
-                source: {  }
-              - source_id: bb_project_create_action
+              - source_id: bb_create_action
                 source: {  }
               - source_id: island_placement
                 source:
                   placement: shell_project_favorite
-              - source_id: bb_ticket_template_create_action
-                source: {  }
-              - source_id: bb_term_create_action
-                source: {  }
-              - source_id: bb_ticket_trigger_create_action
-                source: {  }
-              - source_id: bb_group_create_action
-                source: {  }
-              - source_id: bb_member_invite_action
-                source: {  }
-              - source_id: bb_team_member_add_action
-                source: {  }
-              - source_id: bb_worklog_create_action
-                source: {  }
-              - source_id: bb_track_billing_account_create_action
-                source: {  }
-              - source_id: bb_service_account_create_action
-                source: {  }
       boost: true
       target_placement: shell_content_island
     data: {  }

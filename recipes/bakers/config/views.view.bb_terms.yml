@@ -11,7 +11,7 @@ dependencies:
 id: bb_terms
 label: 'Workspace terms'
 module: views
-description: 'The workspace settings tabs Types, Recipes and Labels: one display per term bundle, filtered to the workspace of the route. Each row links to the term''s page, which carries Edit and Delete.'
+description: 'The Catalog tabs Types, Recipes and Labels: one display per term bundle, filtered to the workspace of the route. Each row links to the term''s page, which carries Edit and Delete.'
 tag: ''
 base_table: bb_term
 base_field: id
@@ -39,9 +39,8 @@ display:
           element_label_colon: false
           hide_empty: true
           click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: true
+          type: bb_edit_dialog_link
+          settings: {  }
         description:
           id: description
           table: bb_term
@@ -243,7 +242,7 @@ display:
                           source: {  }
                           node_id: bb_terms_labels_pager
               node_id: bb_terms_labels_canvas
-      path: _workspace/%bb_workspace/settings/labels
+      path: _workspace/%bb_workspace/settings/catalog/labels
     cache_metadata:
       max-age: -1
       contexts:
@@ -329,7 +328,7 @@ display:
                           source: {  }
                           node_id: bb_terms_recipes_pager
               node_id: bb_terms_recipes_canvas
-      path: _workspace/%bb_workspace/settings/recipes
+      path: _workspace/%bb_workspace/settings/catalog/recipes
     cache_metadata:
       max-age: -1
       contexts:
@@ -415,7 +414,7 @@ display:
                           source: {  }
                           node_id: bb_terms_types_pager
               node_id: bb_terms_types_canvas
-      path: _workspace/%bb_workspace/settings/types
+      path: _workspace/%bb_workspace/settings/catalog/types
     cache_metadata:
       max-age: -1
       contexts:

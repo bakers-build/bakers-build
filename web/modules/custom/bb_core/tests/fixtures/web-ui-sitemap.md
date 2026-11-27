@@ -34,14 +34,14 @@ with real content is a named follow-up, created after this ticket merges.
 | Place | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
 | My work | `view.tickets.my_work` | `/{ws}/tickets` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
-| My work › Stats | `bb_core.my_work.stats` | `/{ws}/stats` | Controller | authenticated | `_user_is_logged_in` (BB-481; a user's own figures are always disclosed to them, so this route adds no permission of its own and the figures still filter themselves) |
+| My work › Insights | `bb_core.my_work.stats` | `/{ws}/stats` | Controller | authenticated | `_user_is_logged_in` (BB-481; a user's own figures are always disclosed to them, so this route adds no permission of its own and the figures still filter themselves) |
 | Groups | `view.groups.workspace_list` | `/{ws}/groups` | View (page display) | `view bb_group` | `_permission` (the display's own access) |
 | Projects | `view.projects.workspace_list` | `/{ws}/projects` | View (page display) | `view bb_project` | `_permission` (the display's own access) |
 | Insights | `bb_core.workspace.insights` | `/{ws}/insights` | Controller | `view bakers figure workspace_overview` in this workspace (workspace lead) | `_bb_workspace_permission` (the workspace figures, all projects of the workspace; contributors, members and guests are refused, an outsider meets the workspace boundary's 404) |
 | Settings | `bb_core.bb_workspace.settings` | `/{ws}/settings` | Controller | `bb_workspace.update` (→ `update any bb_workspace`) | `_entity_access` |
 | Teams | `entity.bb_team.canonical` (one row per team) | `/{ws}/team/{id}` | — (rows added by `BbMenuSource` under the Teams heading) | `bb_team.view` | An `accessCheck(TRUE)` team query, scoped to the ambient workspace |
 
-## Workspace settings — seven tabs, Settings default
+## Workspace settings — five tabs, Settings default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
@@ -49,13 +49,22 @@ with real content is a named follow-up, created after this ticket merges.
 | Members | `bb_core.bb_workspace.members` | `/{ws}/settings/members` | Controller (island) | `bb_workspace.update` | `_entity_access` |
 | Addons | `view.addons.settings` | `/{ws}/settings/addons` | View (page display) | `bb_workspace.update` | `_entity_access`, set on the Views route by `BbWorkspaceRouteSubscriber` (the display's own access is `none`) |
 | Templates | `view.bb_ticket_templates.workspace_list` | `/{ws}/settings/templates` | View (page display) | `view bb_ticket_template` in this workspace | `_bb_workspace_permission` instead of its sibling tabs' lead gate, so contributors may list and use workspace templates and a guest may not, whatever rank it holds elsewhere; they see no Settings entry and reach the tab by its address. Lists the workspace templates of this workspace only. Its *Add template* header action opens `entity.bb_ticket_template.add_for_workspace`, gated by `_bb_workspace_create` (the create right in this workspace); its optional project makes a project template. |
-| Types | `view.bb_terms.types` | `/{ws}/settings/types` | View (page display) | `bb_workspace.update` | `_entity_access`, set on the Views route by `BbWorkspaceRouteSubscriber` (the display's own access is `view bb_term`). Lists the `type` terms of this workspace. |
-| Recipes | `view.bb_terms.recipes` | `/{ws}/settings/recipes` | View (page display) | `bb_workspace.update` | As Types, for the `recipe` terms. |
-| Labels | `view.bb_terms.labels` | `/{ws}/settings/labels` | View (page display) | `bb_workspace.update` | As Types, for the `label` terms. |
+| Catalog | `view.bb_terms.types` | `/{ws}/settings/catalog/types` | View (page display) | `view bb_term` in this workspace | `_bb_workspace_permission`; opens on the Catalog's Types tab, whose second tab row is the Catalog table below. Every rank that reads terms reaches it by its address; the Settings rail entry is the lead's only. |
 
 The `bb_api_key` submodule adds a further tab, **Service accounts**
 (`view.bb_service_accounts.settings`, `/{ws}/settings/service-accounts`), when
 it is enabled; see service accounts.
+
+## Catalog — three tabs under Workspace settings › Catalog, Types default
+
+The categories tickets pick from. Each tab needs its kind's view right in the
+route's workspace, set on the Views route by `BbWorkspaceRouteSubscriber`.
+
+| Tab | Route name | Path | Renders | Gate | Mechanism |
+|---|---|---|---|---|---|
+| Types (default) | `view.bb_terms.types` | `/{ws}/settings/catalog/types` | View (page display) | `view bb_term` in this workspace | `_bb_workspace_permission`. Lists the `type` terms of this workspace. |
+| Recipes | `view.bb_terms.recipes` | `/{ws}/settings/catalog/recipes` | View (page display) | `view bb_term` in this workspace | As Types, for the `recipe` terms. |
+| Labels | `view.bb_terms.labels` | `/{ws}/settings/catalog/labels` | View (page display) | `view bb_term` in this workspace | As Types, for the `label` terms. |
 
 ## Workspace invitation — a dialog, not a tab
 
@@ -76,17 +85,18 @@ route; without JavaScript it is its own page.
 |---|---|---|---|---|---|
 | Add member | `bb_core.bb_team.member_add` | `/{ws}/team/{id}/members/add` | Form (island dialog) | `bb_team.update` | `_entity_access` |
 
-## Project detail — eight tabs, Overview default
+## Project detail — nine tabs, Overview default
 
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
 | Overview (default) | `entity.bb_project.canonical` | `/{ws}/project/{id}` | `_entity_view` (`bb_project.full`) | `bb_project.view` | `_entity_access` |
 | Board | `view.project_board.project_board` | `/{ws}/project/{id}/board` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
-| Stats | `bb_core.bb_project.stats` | `/{ws}/project/{id}/stats` | Controller (`BbStatsController::projectStats`: the Insights period, tiles, New vs. done and People for this project, with Epic and Person filters) | `bb_project.view` | `_entity_access` |
+| Insights | `bb_core.bb_project.stats` | `/{ws}/project/{id}/stats` | Controller (`BbStatsController::projectStats`: the Insights period, tiles, New vs. done and People for this project, with Epic and Person filters) | `bb_project.view` | `_entity_access` |
 | Tickets | `view.tickets.project_tickets` | `/{ws}/project/{id}/tickets` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
 | Runs | `view.runs.project_runs` | `/{ws}/project/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Conductors | `view.conductors.project_list` | `/{ws}/project/{id}/conductors` | View (page display) | `view bb_conductor` | view's own `access: type: perm`. Rows are this project's conductors, any owner. |
 | Templates | `view.bb_ticket_templates.project_list` | `/{ws}/project/{id}/templates` | View (page display) | `view bb_ticket_template` | view's own `access: type: perm`; rows are scoped by the template read scope. Its *Add template* header action opens the project-scoped add form. |
+| Environments | `view.bb_environments.project_list` | `/{ws}/project/{id}/environments` | View (page display) | `view bb_environment` | view's own `access: type: perm`, so a guest has no such tab. Rows are this project's environments; a row opens the environment's edit form in the dialog. Its *Add environment* header action opens `entity.bb_environment.add_for_project`. |
 | Settings | `bb_core.bb_project.settings` | `/{ws}/project/{id}/settings` | Controller | `bb_project.update` (→ `edit bb_project`, or `update own bb_project` as owner) | `_entity_access` |
 
 ## Team detail — five tabs, Overview default
@@ -94,7 +104,7 @@ route; without JavaScript it is its own page.
 | Tab | Route name | Path | Renders | Gate | Mechanism |
 |---|---|---|---|---|---|
 | Overview (default) | `entity.bb_team.canonical` | `/{ws}/team/{id}` | Controller | `bb_team.view` | `_entity_access` |
-| Stats | `bb_core.bb_team.stats` | `/{ws}/team/{id}/stats` | Controller | `bb_team.view` | `_entity_access` |
+| Insights | `bb_core.bb_team.stats` | `/{ws}/team/{id}/stats` | Controller | `bb_team.view` | `_entity_access` |
 | Tickets | `view.tickets.team_tickets` | `/{ws}/team/{id}/tickets` | View (page display) | workspace membership | `_bb_workspace_match` (the display delegates: `access: type: none`) |
 | Runs | `view.runs.team_runs` | `/{ws}/team/{id}/runs` | View (page display) | `view bb_run` | view's own `access: type: perm` |
 | Members | `bb_core.bb_team.members` | `/{ws}/team/{id}/members` | Controller (island) | `bb_team.view` | `_entity_access` |
@@ -134,10 +144,12 @@ profiles) keep their admin pages, reachable by URL and never from the rail.
   (`entity.bb_invite.canonical`, `/{ws}/invite/{id}`) and a billing account
   (`entity.bb_track_account.canonical`, `/{ws}/project/{id}/accounts/{id}`)
   are opened from their Members or Billing row, under the list's own gate.
-- A term (`entity.bb_term.canonical`, `/{ws}/term/{id}`) and a ticket trigger
-  (`entity.bb_ticket_trigger.canonical`,
-  `/{ws}/ticket-template/{id}/trigger/{id}`) are opened from their Terms or
-  Triggers row, under the entity's own view access.
+- A ticket trigger (`entity.bb_ticket_trigger.canonical`,
+  `/{ws}/ticket-template/{id}/trigger/{id}`) is opened from its Triggers row,
+  under the entity's own view access.
+- A term and an environment have no page: their Catalog or project row opens
+  the edit form (`entity.bb_term.edit_form`, `entity.bb_environment.edit_form`)
+  in the dialog, under the entity's own update access.
 
 ## User area
 

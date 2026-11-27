@@ -3,6 +3,7 @@ bb_activity.notifications:
   defaults:
     _entity_form: 'bb_notification_setting.default'
     _title: 'Notifications'
+    _description: 'Choose which activity emails you receive.'
   requirements:
     _user_is_logged_in: 'TRUE'
     _custom_access: '\Drupal\bb_activity\Access\NotificationSettingAccess::route'

@@ -7,7 +7,7 @@ description: Run the bakers.build server with one Docker Compose file behind you
 
 The server runs from one Docker Compose file on a Linux `amd64` host with Docker Compose v2.24.4
 or newer. You need a DNS name for the host, an SMTP account (sign-in works by email link) and an
-HTTPS reverse proxy ([examples](/self-hosting/proxy)). Releases are listed on
+HTTPS reverse proxy ([examples](/self-hosting/reverse-proxy)). Releases are listed on
 [GitHub](https://github.com/bakers-build/bakers-build/releases); their images are public.
 
 ## Compose file
@@ -170,13 +170,28 @@ BB_OAUTH_GOOGLE_CLIENT_SECRET=
 | `DOMAIN` | The public hostname, e.g. `bakers.example.org`. |
 | `ADMIN_EMAIL` | The first administrator's email address. |
 | `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `HASH_SALT` | Three random values, e.g. from `openssl rand -hex 32`. Keep them; an update needs the same ones. |
-| `MAIL_SMTP_DSN`, `MAIL_FROM_ADDRESS` | Your SMTP URL, e.g. `smtp://user%40example.org:password@smtp.example.org:587`, and its sender address. |
+| `MAIL_SMTP_DSN`, `MAIL_FROM_ADDRESS` | Your SMTP URL, e.g. `smtp://user%40example.org:password@smtp.example.org:587`, and its sender address. For Gmail see [Google Workspace](#google-workspace). |
 | `FEATURE_FLAG_RUN_LOG_STORAGE` | See [Run-log storage](#run-log-storage). |
 | `HTTP_PORT` | Loopback port your proxy forwards to. |
 | `INTERNAL_SUBNET` | Change only if `172.30.42.0/24` is already used on the host. |
 | `TRUSTED_PROXY_SUBNET` | Leave empty: a proxy on any private network is trusted for the client address, never for the host. To narrow it, set the subnet your proxy connects from; `docker network inspect <its network>` shows it. |
 
 `docker compose config -q` reports a missing value. Keep `.env` private (`chmod 600 .env`).
+
+### Google Workspace
+
+To send through Gmail from an address on a second domain:
+
+- Add the sending domain in the Admin console as a **user alias domain** of the primary domain.
+  The alias address, e.g. `noreply@example.net`, then belongs to the sending user.
+- Turn on 2-step verification for the sending user and create an **app password** for it.
+- Set `MAIL_SMTP_DSN=smtp://user%40example.org:<app-password>@smtp.gmail.com:587`: the user's
+  primary address with `@` encoded as `%40`, and the app password without spaces.
+- In the sending user's Gmail settings, add the alias under Accounts › Send mail as;
+  otherwise Gmail rewrites the sender to the primary address. Set `MAIL_FROM_ADDRESS` to it.
+- Publish SPF (`v=spf1 include:_spf.google.com ~all`) and the DKIM key from Admin console ›
+  Gmail › Authenticate email as TXT records of the sending domain, then start authentication
+  for that domain there; DMARC is recommended.
 
 ## Install
 
@@ -187,7 +202,7 @@ docker compose logs deploy
 
 On the first start the `deploy` service finds an empty database and installs the site with
 `ADMIN_EMAIL` as administrator. It installs only into a database without any table and stops on
-anything else, so it never overwrites data. Then set up your [reverse proxy](/self-hosting/proxy).
+anything else, so it never overwrites data. Then set up your [reverse proxy](/self-hosting/reverse-proxy).
 
 ## First sign-in
 

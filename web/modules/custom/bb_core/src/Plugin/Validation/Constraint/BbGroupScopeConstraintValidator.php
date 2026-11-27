@@ -92,7 +92,7 @@ final class BbGroupScopeConstraintValidator extends ConstraintValidator implemen
     foreach ($value as $delta => $item) {
       $target = $item->entity ?? NULL;
       if ($target instanceof EntityInterface
-        && !$this->anchorIsPermitted($entity, (string) $value->getName(), $target, $permission)) {
+        && !$this->anchorIsPermitted($entity, (string) $value->getName(), $target)) {
         $this->context->buildViolation($constraint->message)
           ->atPath((string) $delta)
           ->addViolation();
@@ -109,43 +109,29 @@ final class BbGroupScopeConstraintValidator extends ConstraintValidator implemen
    *   The anchor field name.
    * @param \Drupal\Core\Entity\EntityInterface $target
    *   The referenced entity.
-   * @param string $permission
-   *   The `create <type>` permission the anchor demands.
    *
    * @return bool
    *   TRUE when the anchor may stand.
    */
-  private function anchorIsPermitted(EntityInterface $entity, string $field_name, EntityInterface $target, string $permission): bool {
+  private function anchorIsPermitted(EntityInterface $entity, string $field_name, EntityInterface $target): bool {
     // An unchanged anchor is not re-litigated: the row is already there, and
     // failing it would make every unrelated edit of an inherited row impossible
     // for the very people who work in that tenancy.
     if ($this->isUnchanged($entity, $field_name, $target)) {
       return TRUE;
     }
-    $groups = $this->fence->groupsAnchoredBy($target);
-    if ($groups === []) {
-      // Unresolvable chain — the same answer the read/write fence gives, so an
-      // orphan row stays governed by the ordinary access checks rather than by
-      // a guess made here.
-      return TRUE;
-    }
 
     // `create bb_project` is a workspace-scoped right (teams carry
-    // visibility, not rights), so the permission loop alone would let any
+    // visibility, not rights), so the permission rule alone would let any
     // workspace contributor place a project into any team. The actor must
     // also be an active member of the target team, unless they hold the
     // workspace see-all rank.
-    if ($target->getEntityTypeId() === 'bb_team' && !$this->belongsToOrSeesAllOf($target, $groups)) {
+    $groups = $this->fence->groupsAnchoredBy($target);
+    if ($groups !== [] && $target->getEntityTypeId() === 'bb_team' && !$this->belongsToOrSeesAllOf($target, $groups)) {
       return FALSE;
     }
 
-    foreach ($groups as $group) {
-      if ($this->capability->hasGroupPermission($this->currentUser, $permission, $group)) {
-        return TRUE;
-      }
-    }
-
-    return FALSE;
+    return $this->fence->mayCreateIn($this->currentUser, $entity->getEntityTypeId(), $target);
   }
 
   /**

@@ -1,0 +1,41 @@
+uuid: 11d7bd5f-6f61-4109-b71c-a32e8ba281c3
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_webhook
+id: bb_webhook.bb_webhook.default
+targetEntityType: bb_webhook
+bundle: bb_webhook
+mode: default
+content:
+  enabled:
+    type: boolean_checkbox
+    weight: 2
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
+  name:
+    type: string_textfield
+    weight: 0
+    region: content
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  url:
+    type: string_textfield
+    weight: 1
+    region: content
+    settings:
+      size: 60
+      placeholder: 'https://'
+    third_party_settings: {  }
+hidden:
+  created: true
+  group_id: true
+  owner_user_id: true
+  project_id: true
+  secret: true
+  workspace_id: true

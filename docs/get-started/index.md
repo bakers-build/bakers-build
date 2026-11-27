@@ -1,6 +1,6 @@
 # Get started
 
-bakers.build is a ticket-driven AI software factory: agents work each ticket, a person decides at [every station](/get-started/first-ticket#how-it-works). Open source, hosted or [self-hosted](/self-hosting/), free.
+bakers.build is a ticket-driven AI software factory: agents work each ticket, a person decides at [every station](/get-started/run-the-first-ticket#how-it-works). Open source, hosted or [self-hosted](/self-hosting/), free.
 
 ## Quick start {#quick-start}
 
@@ -95,7 +95,7 @@ Web-only ticket writers skip this.
 
    :::
 
-   `bb-init` signs you in, adds your agent and turns on the [sandbox](/agents/security): the agent's commands run in its OS sandbox and reach only what its rules allow.
+   `bb-init` signs you in, adds your agent and turns on the [sandbox](/agents/permissions-and-isolation): the agent's commands run in its OS sandbox and reach only what its rules allow.
 
 **Done when:** `bakers conductor check` prints `sandbox ok`. Remote or manual setup: [Choose where agents run](/provision/machine).
 
@@ -109,7 +109,7 @@ Describe a small change with its expected result: [Create a ticket](/get-started
 
 ### 4. Run a ticket {#run-a-ticket}
 
-Start your agents and read the first result: [Run the first ticket](/get-started/first-ticket).
+Start your agents and read the first result: [Run the first ticket](/get-started/run-the-first-ticket).
 
 <span id="after-your-first-ticket"></span>
 

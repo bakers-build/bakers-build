@@ -52,8 +52,8 @@ importers:
         specifier: ^10
         version: 10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       storybook-addon-designbook:
-        specifier: ^0.14.0
-        version: 0.14.0(playwright@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(vite@6.4.3(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
+        specifier: ^0.18.0
+        version: 0.18.0(playwright@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(twing@7.3.1)(vite@6.4.3(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
       storybook-addon-sdc:
         specifier: ^0.24.18
         version: 0.24.18(@storybook/html-vite@10.4.3(esbuild@0.27.7)(rollup@4.61.1)(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(vite@6.4.3(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)))(drupal-attribute@1.2.1)(rollup@4.61.1)(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(twing@7.3.1)(vite@6.4.3(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
@@ -2445,18 +2445,21 @@ packages:
   sprintf-js@1.0.3:
     resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
 
-  storybook-addon-designbook@0.14.0:
-    resolution: {integrity: sha512-UH2uIz+uGZcApGm5b5gA6CApuj+0+YlL8rSKnjL1MKfNysSX06rPU1H+C9UtP5MklAkt6nRDdCxJ1lBnRac22w==}
+  storybook-addon-designbook@0.18.0:
+    resolution: {integrity: sha512-IouMKRRW0IA8ZxYeOZoIiAniVT0vU/vZbZJpb9OM1JtCxY7WF3X1VDWyF1QydfV1pRhpW/hU7KLqpZD6sETO/Q==}
     hasBin: true
     peerDependencies:
       playwright: ^1.58.2
       storybook: '*'
+      twing: ^7.3.0
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0
       vue: ^3.0.0
     peerDependenciesMeta:
       playwright:
         optional: true
       storybook:
+        optional: true
+      twing:
         optional: true
       vite:
         optional: true
@@ -5277,7 +5280,7 @@ snapshots:
 
   sprintf-js@1.0.3: {}
 
-  storybook-addon-designbook@0.14.0(playwright@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(vite@6.4.3(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)):
+  storybook-addon-designbook@0.18.0(playwright@1.61.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(twing@7.3.1)(vite@6.4.3(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)):
     dependencies:
       '@ark-ui/react': 5.37.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@storybook/addon-themes': 10.4.3(storybook@10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
@@ -5297,6 +5300,7 @@ snapshots:
     optionalDependencies:
       playwright: 1.61.1
       storybook: 10.4.3(@testing-library/dom@10.4.1)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      twing: 7.3.1
       vite: 6.4.3(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0)
     transitivePeerDependencies:
       - react

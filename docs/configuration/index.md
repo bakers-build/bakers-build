@@ -18,9 +18,9 @@ No file overlays another.
 
 - **Connection:** `--config`, `--connection`, `BAKERS_CONFIG`, `BAKERS_CONNECTION`, then defaults; the first match wins ([selection](/configuration/connection#which-connection-is-used)).
 - **Project:** one file is evaluated; a variant is complete, never an overlay.
-- **Addons:** machine entries precede project entries. Same package and alias combine; machine `with` wins. The machine `executor` beats the project's; explicit slots beat addons ([contracts](/addons/build/contracts#how-discovery-works)).
+- **Addons:** machine entries precede project entries. Same package and alias combine; machine `with` wins. The machine `executor` beats the project's; explicit slots beat addons ([contracts](/addons/build/addon-api-reference#how-discovery-works)).
 - **Permissions:** harness default, project, machine, harness entry, key by key ([shared settings](/provision/security/shared-settings)).
-- **Agents:** machine catalog and routes; labels can override ([precedence](/agents/reference#which-agent-runs-a-state)).
+- **Agents:** machine catalog and routes; labels can override ([precedence](/agents/agent-policy-reference#which-agent-runs-a-state)).
 
 ## Example
 
@@ -52,4 +52,4 @@ bakers config check --scope all --online
 bakers config upgrade --scope all --dry-run
 ```
 
-An old key name fails as an unknown key, and an old file name is not read; rename them by hand. See [Update bakers.build](/configuration/guides/updates).
+An old key name fails as an unknown key, and an old file name is not read; rename them by hand. See [Update bakers.build](/configuration/guides/update-bakers-build).

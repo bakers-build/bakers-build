@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\bb_core\Form\BbContentEntityDeleteForm;
-use Drupal\bb_core\Form\BbTermForm;
+use Drupal\bb_core\Form\BbContentEntityFormBase;
 use Drupal\bb_core\Routing\BbTermRouteProvider;
 use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\ContentEntityBase;
@@ -54,14 +54,13 @@ use Drupal\user\EntityOwnerInterface;
     'list_builder' => EntityListBuilder::class,
     'views_data' => EntityViewsData::class,
     'form' => [
-      'add' => BbTermForm::class,
-      'edit' => BbTermForm::class,
+      'add' => BbContentEntityFormBase::class,
+      'edit' => BbContentEntityFormBase::class,
       'delete' => BbContentEntityDeleteForm::class,
     ],
     'route_provider' => ['html' => BbTermRouteProvider::class],
   ],
   links: [
-    'canonical' => '/_workspace/{bb_workspace}/term/{bb_term}',
     'add-form' => '/_workspace/{bb_workspace}/term/{bb_vocabulary}/add',
     'edit-form' => '/_workspace/{bb_workspace}/term/{bb_term}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/term/{bb_term}/delete',

@@ -12,6 +12,7 @@ use Drupal\bb_core\Statistics\InsightsPage;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Tests\bb_core\Kernel\Statistics\InsightsFixtureTrait;
 use Symfony\Component\HttpFoundation\Request;
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Access\AccessResultReasonInterface;
 use Drupal\Core\Session\AnonymousUserSession;
 use Drupal\Core\Url;
@@ -134,6 +135,27 @@ final class WorkspaceInsightsRouteTest extends KernelTestBase {
     self::assertSame($today, $range['date']);
     $chart = $this->components($build, 'bb_theme:flow-chart')[0]['#props']['chart'];
     self::assertStringStartsWith('Per hour, UTC', $chart['caption']);
+  }
+
+  /**
+   * In the first hour after 00:00 UTC, Today is still grouped per hour.
+   */
+  public function testTodayIsPerHourInTheFirstHourAfterMidnight(): void {
+    $now = (new \DateTimeImmutable('2026-11-27 00:05', new \DateTimeZone('UTC')))->getTimestamp();
+    $time = $this->createMock(TimeInterface::class);
+    $time->method('getCurrentTime')->willReturn($now);
+    $time->method('getRequestTime')->willReturn($now);
+    $this->container->set('datetime.time', $time);
+    // Statistics services built during setUp hold the real clock.
+    foreach ($this->container->getServiceIds() as $id) {
+      if (str_starts_with($id, 'bb_core.') && $this->container->initialized($id)) {
+        $this->container->set($id, NULL);
+      }
+    }
+    $build = $this->page(['filter' => ['period' => 'day', 'date' => '2026-11-27']]);
+    $charts = $this->components($build, 'bb_theme:flow-chart');
+    self::assertNotEmpty($charts, 'A ticket closed at 00:04 shows the flow chart.');
+    self::assertStringStartsWith('Per hour, UTC', $charts[0]['#props']['chart']['caption']);
   }
 
   /**

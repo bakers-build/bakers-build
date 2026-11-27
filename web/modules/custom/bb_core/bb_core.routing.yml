@@ -105,6 +105,7 @@ bb_core.ticket_template_instantiate_form:
   defaults:
     _form: '\Drupal\bb_core\Form\TicketTemplateInstantiateForm'
     _title: 'Create ticket from template'
+    _description: 'Create a ticket from this template.'
   requirements:
     _permission: 'use bb_ticket_template'
     _entity_access: 'bb_ticket_template.view'
@@ -160,7 +161,8 @@ bb_core.my_work.stats:
   path: '/_workspace/{bb_workspace}/stats'
   defaults:
     _controller: '\Drupal\bb_core\Controller\BbStatsController::myWork'
-    _title: 'Stats'
+    _title: 'Insights'
+    _description: 'Your own figures in every workspace, always visible to you.'
   requirements:
     _user_is_logged_in: 'TRUE'
 
@@ -207,6 +209,7 @@ entity.bb_environment.add_for_project:
   defaults:
     _entity_form: 'bb_environment.add'
     _title: 'Add environment'
+    _description: 'Add an environment to this project.'
   requirements:
     _entity_create_access: 'bb_environment'
   options:
@@ -221,6 +224,7 @@ entity.bb_ticket_template.add_for_project:
   defaults:
     _entity_form: 'bb_ticket_template.add'
     _title: 'Add template'
+    _description: 'Add a ticket template to this project.'
   requirements:
     _entity_create_access: 'bb_ticket_template'
   options:
@@ -235,6 +239,7 @@ entity.bb_ticket_template.add_for_workspace:
   defaults:
     _entity_form: 'bb_ticket_template.add'
     _title: 'Add template'
+    _description: 'Add a ticket template to this workspace.'
   requirements:
     _bb_workspace_create: 'bb_ticket_template'
 
@@ -254,6 +259,7 @@ entity.bb_ticket.create_form:
     # the surface's. This title is what a JavaScript-less visit puts in the
     # browser tab and what a generic `island_dialog` hull would announce.
     _title: 'New ticket'
+    _description: 'Add a ticket to a project of this workspace.'
   requirements:
     _entity_create_access: 'bb_ticket'
 
@@ -269,6 +275,7 @@ entity.bb_project.create_form:
     # Also the dialog's own head: this form composes no hull, so island's
     # generic hull reads the route `_title`. Renaming it renames the dialog.
     _title: 'New project'
+    _description: 'Add a project to this workspace.'
   requirements:
     _entity_create_access: 'bb_project'
 
@@ -326,6 +333,7 @@ entity.bb_comment.review_form:
   defaults:
     _entity_form: 'bb_comment.review'
     _title: 'Review'
+    _description: 'Draft this review, then submit, accept or reject it.'
   requirements:
     _custom_access: 'Drupal\bb_core\Access\ReviewCommentFormAccess::form'
     _user_is_logged_in: 'TRUE'
@@ -340,6 +348,7 @@ bb_core.review_transition:
   defaults:
     _controller: '\Drupal\bb_core\Controller\ReviewTransitionController::form'
     _title: 'Review'
+    _description: 'Change the state of this review.'
   requirements:
     _custom_access: 'Drupal\bb_core\Access\ReviewCommentFormAccess::transition'
     _user_is_logged_in: 'TRUE'
@@ -385,6 +394,7 @@ entity.bb_conductor.action_form:
   defaults:
     _entity_form: 'bb_conductor.action'
     _title: 'Conductor activity'
+    _description: 'Confirm enabling or disabling this conductor.'
   requirements:
     _entity_access: 'bb_conductor.update'
     _user_is_logged_in: 'TRUE'
@@ -399,6 +409,7 @@ entity.bb_conductor.restart_form:
   defaults:
     _entity_form: 'bb_conductor.restart'
     _title: 'Restart runs'
+    _description: 'Restart the runs of this conductor.'
   requirements:
     _custom_access: '\Drupal\bb_core\Form\BbRestartRunsForm::access'
   options:
@@ -411,6 +422,7 @@ entity.bb_group.create_form:
   defaults:
     _entity_form: 'bb_group.create'
     _title: 'New group'
+    _description: 'Add a group to this workspace.'
   requirements:
     _entity_create_access: 'bb_group'
     _bb_workspace_create: 'bb_group'
@@ -424,6 +436,7 @@ bb_core.bb_group.settings:
   defaults:
     _entity_form: 'bb_group.settings'
     _title: 'Settings'
+    _description: 'Change this group''s settings.'
   requirements:
     _entity_access: 'bb_group.update'
   options:
@@ -436,6 +449,7 @@ entity.bb_team.create_form:
   defaults:
     _entity_form: 'bb_team.create'
     _title: 'New team'
+    _description: 'Add a team to this workspace.'
   requirements:
     _entity_create_access: 'bb_team'
     _bb_workspace_create: 'bb_team'
@@ -448,6 +462,7 @@ bb_core.bb_workspace.settings:
   defaults:
     _entity_form: 'bb_workspace.settings'
     _title: 'Settings'
+    _description: 'Change this workspace''s settings.'
   requirements:
     _entity_access: 'bb_workspace.update'
 
@@ -463,6 +478,7 @@ bb_core.workspace_invite:
   defaults:
     _form: '\Drupal\bb_core\Form\WorkspaceInviteForm'
     _title: 'Invite members'
+    _description: 'Invite people to this workspace by email address.'
   requirements:
     _entity_access: 'bb_workspace.update'
   options:
@@ -477,6 +493,7 @@ bb_core.bb_team.member_add:
   defaults:
     _form: '\Drupal\bb_core\Form\TeamMemberAddForm'
     _title: 'Add member'
+    _description: 'Add a workspace member to this team.'
   requirements:
     _entity_access: 'bb_team.update'
   options:
@@ -491,6 +508,7 @@ bb_core.bb_workspace.members:
   defaults:
     _controller: '\Drupal\bb_core\Controller\BbWorkspaceMembersController::members'
     _title: 'Members'
+    _description: 'The members of this workspace and their roles.'
   requirements:
     _entity_access: 'bb_workspace.update'
   options:
@@ -506,6 +524,7 @@ bb_core.bb_workspace.member:
   defaults:
     _controller: '\Drupal\bb_core\Controller\BbWorkspaceMembersController::member'
     _title_callback: '\Drupal\bb_core\Controller\BbWorkspaceMembersController::memberTitle'
+    _description: 'One member of this workspace, with their role.'
   requirements:
     _entity_access: 'bb_workspace.update'
     user: '\d+'
@@ -523,6 +542,7 @@ bb_core.bb_team.member:
   defaults:
     _controller: '\Drupal\bb_core\Controller\BbTeamTabController::member'
     _title_callback: '\Drupal\bb_core\Controller\BbWorkspaceMembersController::memberTitle'
+    _description: 'One member of this team.'
   requirements:
     _entity_access: 'bb_team.view'
     user: '\d+'
@@ -598,6 +618,7 @@ bb_core.user.profile:
   defaults:
     _entity_form: 'bb_profile.default'
     _title_callback: '\Drupal\bb_core\Controller\UserProfileController::title'
+    _description: 'Your background and goals, which bakers.build passes to its AI assistants so their answers fit you.'
   requirements:
     _entity_access: 'user.edit profile'
     user: '\d+'

@@ -1111,7 +1111,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1170,7 +1170,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1231,7 +1231,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1290,7 +1290,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1345,7 +1345,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1393,7 +1393,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1442,7 +1442,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1492,7 +1492,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1568,7 +1568,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: true
                             - label: Runs
@@ -1714,7 +1714,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -1933,7 +1933,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -2099,7 +2099,7 @@ scenes:
                             - label: Tickets
                               url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -2191,7 +2191,7 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-projects-scenes--project-time
                               active: true
-                            - label: Stats
+                            - label: Insights
                               url: >-
                                 /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
@@ -2491,7 +2491,7 @@ scenes:
                             - label: Time
                               url: /?path=/story/designbook-sections-projects-scenes--project-time
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs
@@ -2655,7 +2655,7 @@ scenes:
                             - label: Time
                               url: /?path=/story/designbook-sections-projects-scenes--project-time
                               active: false
-                            - label: Stats
+                            - label: Insights
                               url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
                               active: false
                             - label: Runs

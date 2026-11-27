@@ -16,11 +16,11 @@ Feature: Groups and Projects are separate workspace listings
     And the rail lists "My work", "Groups" and "Projects" before the "Teams" heading
     And the rail lists "Groups", "Projects" and "Settings" before the "Teams" heading
 
-  Scenario: The Groups listing states that a group grants no permissions
+  Scenario: The Groups listing explains that a group grants no permissions of its own
     Given I am signed in as a member of the "bakers" workspace
     When I visit the "Groups" listing
     Then only the "Groups" listing is visible
-    And the line under the Groups title says "A group grants no permissions"
+    And the line under the Groups title says "The groups of this workspace; a group grants no permissions of its own."
 
   Scenario: Each listing renders rows of the workspace's own data
     Given I am signed in as a member of the "bakers" workspace

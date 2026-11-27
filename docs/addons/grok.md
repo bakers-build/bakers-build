@@ -22,7 +22,7 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
-[Isolation models](/agents/isolation): platform support.
+[Isolation models](/agents/isolation-models): platform support.
 
 | Mode | Flags |
 |---|---|
@@ -64,4 +64,4 @@ Under [Bubblewrap](/addons/runtime-bwrap) or [Docker](/addons/runtime-docker) th
 
 Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
 
-More: [Run security](/provision/security/execution#grok-in-sandbox-mode), [Choose agents](/agents/guide).
+More: [Run security](/provision/security/execution#grok-in-sandbox-mode), [Choose agents](/agents/configure-and-select-agents).

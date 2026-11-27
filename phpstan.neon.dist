@@ -75,6 +75,14 @@ parameters:
         - web/modules/custom/bb_core/src/JsonApi/BbResourceType.php
         - web/modules/custom/bb_core/src/JsonApi/BbResourceTypeRepository.php
     -
+      # Core's normalization cacher caches a normalization at terminate under
+      # the then-current tag checksum, even when its entity changed after the
+      # load. The cacher is also the terminate subscriber holding the pending
+      # items, so a decorator would split them from the write; a subclass that
+      # skips a changed entity is the only lever.
+      identifier: classExtendsInternalClass.classExtendsInternalClass
+      path: web/modules/custom/bb_core/src/JsonApi/FreshNormalizationCacher.php
+    -
       # The HTML mail backend extends core's @internal Symfony mail plugin to
       # keep its DSN transport and header mapping rather than copy them; the
       # kernel test pins that behaviour against the locked core version.

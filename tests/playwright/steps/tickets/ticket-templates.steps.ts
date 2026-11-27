@@ -7,7 +7,7 @@ import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
 import { php } from '../../support/drush';
 import { clickHeaderAction } from '../../support/shell';
-import { optionRow, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
+import { optionRow, pickOption as pick, pickerPanel, pickerTrigger, waitForPickerBehaviour } from '../../support/picker';
 
 const { When, Then, After } = createBdd(test);
 
@@ -79,15 +79,6 @@ When(
     await expect(page.locator('dialog[open]')).toHaveCount(0);
   },
 );
-
-/** Picks one option of a template form property pill, as a pointer user does. */
-async function pick(page: Page, scope: string, field: string, label: string): Promise<void> {
-  const trigger = pickerTrigger(page, scope, field);
-  await waitForPickerBehaviour(trigger);
-  await trigger.click();
-  await optionRow(page, pickerPanel(trigger), label).click();
-  await expect(trigger).toContainText(label);
-}
 
 Then('the add template form offers the conductor {string} but not {string}', async ({ page }, offered: string, foreign: string) => {
   const scope = (await page.locator('dialog[open]').count()) > 0 ? 'dialog[open]' : 'main';

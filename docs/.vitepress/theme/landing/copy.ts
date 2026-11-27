@@ -6,7 +6,7 @@ export const SIGN_UP_URL = 'https://app.bakers.build/'
 export const ADDONS_URL = '/addons/'
 export const DOCS_URL = '/get-started/'
 export const SELF_HOST_URL = '/self-hosting/'
-export const SECURITY_URL = '/agents/security'
+export const SECURITY_URL = '/agents/permissions-and-isolation'
 export const REPO_URL = 'https://github.com/bakers-build/bakers-build'
 export const SYMPHONY_URL = 'https://github.com/openai/symphony'
 // The language switch, in the design's fixed order.

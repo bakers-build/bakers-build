@@ -49,6 +49,28 @@ Feature: Settings tabs edit their entity
     And I set the name to "Renamed team" and save the Settings
     Then the rail links "Renamed team"
 
+  Scenario: A team image chosen in Settings shows on the team page and in the rail until removed
+    Given I lead a disposable workspace world
+    Then the team page and its rail row show its initials
+    When I open the team Settings
+    And I choose the image "avatar-wide.png" in the Settings
+    And I apply the crop
+    And I save the Settings
+    Then the team page and its rail row show its image
+    When I open the team Settings
+    And I remove the image in the Settings
+    Then the team page and its rail row show its initials
+
+  Scenario: A favorite project shows its image in the rail, its initials without one
+    Given I lead a disposable workspace world
+    And the project is my favorite
+    Then the rail row of the favorite project shows its initials
+    When I open the project Settings
+    And I choose the image "avatar-wide.png" in the Settings
+    And I apply the crop
+    And I save the Settings
+    Then the rail row of the favorite project shows its image
+
   Scenario: The workspace slug and Settings address survive a rename
     Given I lead a disposable workspace world
     When I open the workspace Settings

@@ -4,7 +4,7 @@ Run tickets with Claude.
 
 ## AI first
 
-Ask AI to check [skills](/skills-and-workflows/skills).
+Ask AI to check [skills](/skills-and-workflows/install-the-bakers-skills).
 
 ## Setup
 
@@ -36,7 +36,7 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
-Default: `system`. A [runtime](/addons/runtime-docker) preserves the configured permissions. [Execution security](/provision/security/execution) covers environment filtering; [isolation models](/agents/isolation) compare boundaries per platform.
+Default: `system`. A [runtime](/addons/runtime-docker) preserves the configured permissions. [Execution security](/provision/security/execution) covers environment filtering; [isolation models](/agents/isolation-models) compare boundaries per platform.
 
 | `permissions` | Launch flags |
 |---|---|
@@ -96,5 +96,5 @@ bakers agents
 - `proxy: true` only logs the requests; `measure` wins when both are set.
 - Listed in a project config, an agent addon is ignored with a warning.
 
-More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
+More: [Choose agents and models](/agents/configure-and-select-agents), [Machines](/agents/agent-policy-reference#harnesses).
 

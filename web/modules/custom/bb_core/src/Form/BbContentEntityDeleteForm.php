@@ -267,7 +267,7 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
       'bb_project' => Url::fromRoute('view.projects.workspace_list'),
       'bb_team', 'bb_group' => Url::fromRoute('view.groups.workspace_list'),
       'bb_environment' => ($project = $reference('project_id'))
-        ? Url::fromRoute('bb_core.bb_project.settings', ['bb_project' => $project->id()])
+        ? Url::fromRoute('view.bb_environments.project_list', $project->toUrl()->getRouteParameters())
         : NULL,
       'bb_ticket_template' => ($project = $reference('project_id'))
         ? Url::fromRoute('view.bb_ticket_templates.project_list', ['bb_project' => $project->id()])

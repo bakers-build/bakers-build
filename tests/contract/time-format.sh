@@ -36,6 +36,8 @@ php_allow=(
   'web/modules/custom/bb_core/src/Plugin/tool/Tool/TicketInputTrait.php'
   'web/modules/custom/bb_core/src/Plugin/tool/Tool/TicketList.php'
   'web/modules/custom/bb_core/src/Statistics/Figure/FigureEvaluator.php'
+  # The webhook payload's ISO 8601 `occurred`.
+  'web/modules/custom/bb_webhook/src/Webhook/WebhookPayload.php'
   # Date math: today's UTC date as a period anchor.
   'web/modules/custom/bb_core/src/Statistics/MyWorkStatsPage.php'
   'web/modules/custom/bb_core/src/Statistics/InsightsPage.php'

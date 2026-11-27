@@ -70,6 +70,11 @@ if [ "${1:-}" = exec ]; then
       #   capture-image <revision> <story-id> <view> <subject> <state> <width> <prelude|none> [<selector>]
       # <revision> is <id>/<rev> under designbook/references, <prelude> a file in designbook/preludes,
       # the PNG <view>--<subject>--<state>.png. The other reference commands need no browser.
+      # The browserless CLI and the static build run here too, so the host runs no Designbook:
+      #   intake | plan | validate | instructions | compare-images <arg>…
+      #   build   (storybook build into the theme's storybook-static/)
+      # Their arguments are flags from a fixed list or values that pass `safe` without a `..`
+      # segment, paths relative to the theme; --config*, --output and --flag=value are refused.
       [ "$#" -ge 1 ] || usage
       book=/var/www/html/web/themes/custom/bb_theme/designbook
       refuse() { echo "Refused argument: $1" >&2; exit 1; }
@@ -99,6 +104,19 @@ if [ "${1:-}" = exec ]; then
           [ "$#" = 8 ] || [[ "$9" =~ $selector ]] || refuse "$9"
           set -- reference capture-image --reference "$ref" --path "$4--$5--$6.png" --url "$(story "$3")" \
             --width "$7" --view "$4" --state "$6" --selector "${9:-}" "${preludes[@]}"
+          ;;
+        intake|plan|validate|instructions|compare-images)
+          for arg in "${@:2}"; do
+            case "$arg" in
+              --palette|--ephemeral|--tasks|--name|--format|--task|--title|--data-file|--step|--workflow|--file|--reference|--actual|--diff|--threshold) ;;
+              -*) refuse "$arg" ;;
+              *) safe "$arg"; [[ "/$arg/" != */../* ]] || refuse "$arg" ;;
+            esac
+          done
+          ;;
+        build)
+          [ "$#" = 1 ] || usage
+          web env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c 'cd web/themes/custom/bb_theme && npx storybook build --output-dir storybook-static'
           ;;
         *) usage ;;
       esac

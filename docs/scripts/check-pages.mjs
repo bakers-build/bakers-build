@@ -90,14 +90,14 @@ requireNavigation(
     ['Self-hosting', '/self-hosting/'],
   ]), 'manual areas must be Get started, Provision, Agents, Skills & Workflows, Addons, Configuration, Self-hosting in that order',
 )
-for (const slug of ['connector', 'connect-a-project', 'first-ticket']) {
+for (const slug of ['connect-your-chat', 'connect-a-project', 'run-the-first-ticket']) {
   requireNavigation(
     sidebarLinks(SIDEBAR['/get-started/'] ?? []).includes(`/get-started/${slug}`),
     `missing setup entry: ${slug}`,
   )
 }
 // The security overview lives under Agents but stays in the Provision sidebar.
-for (const link of ['/provision/machine', '/provision/guide', '/provision/tools', '/agents/security', '/provision/examples']) {
+for (const link of ['/provision/machine', '/provision/guide', '/provision/tools-and-integrations', '/agents/permissions-and-isolation', '/provision/choose-an-example']) {
   requireNavigation(
     sidebarLinks(SIDEBAR['/provision/'] ?? []).includes(link),
     `missing provision entry: ${link}`,

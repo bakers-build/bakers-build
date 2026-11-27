@@ -144,6 +144,16 @@ final class BbTicketDetailHeaderSourceTest extends KernelTestBase {
   }
 
   /**
+   * The sub-line names the workflow by its label, not its id.
+   */
+  public function testSublineNamesTheWorkflowByItsLabel(): void {
+    $description = $this->headerDescription($this->createTicket());
+
+    self::assertStringContainsString('Plan/Work/Review', $description);
+    self::assertStringNotContainsString('bb_work', $description);
+  }
+
+  /**
    * The creator's age follows their name, relative, with the date on hover.
    */
   public function testSublineCarriesCreatorAndAge(): void {

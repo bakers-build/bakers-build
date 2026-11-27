@@ -63,14 +63,16 @@ bb_core.rail.insights:
     # The Billing report tab (bb_track) is a page of Insights too.
     active_routes: [bb_track.workspace.insights_billing]
 
+# Settings is also current on the Catalog pages and the term forms.
 bb_core.rail.settings:
   title: 'Settings'
   route_name: bb_core.bb_workspace.settings
   menu_name: bakers-rail
   class: '\Drupal\bb_core\Plugin\Menu\WorkspaceMenuLink'
-  weight: 4
+  weight: 5
   options:
     icon: settings
+    active_routes: [view.bb_terms.recipes, view.bb_terms.labels, view.bb_terms.types, entity.bb_term.add_form, entity.bb_term.edit_form, entity.bb_term.delete_form]
 
 # A heading without a destination. `bb_children: teams` makes
 # `BbMenuSource` fill it with the ambient workspace's teams and the team

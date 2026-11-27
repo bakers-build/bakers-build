@@ -230,6 +230,31 @@ Given('I open the create-ticket dialog from the ticket list', async ({ page }) =
  * naming a conductor this step does not create would otherwise read as a
  * fixture declaration and be a no-op.
  */
+/**
+ * A conductor of the named project, owned by an instance admin and open for
+ * assignment, so everyone who may work there is offered it; idempotent.
+ */
+Given('the conductor {string} works on project {string}', async ({}, conductorId: string, projectLabel: string) => {
+  const out = php(
+    [
+      '$etm = \\Drupal::entityTypeManager();',
+      `$p = current($etm->getStorage("bb_project")->loadByProperties(["name" => "${safe(projectLabel)}"]));`,
+      'if (!$p) { print "missing"; } else {',
+      '$storage = $etm->getStorage("bb_conductor");',
+      `$c = current($storage->loadByProperties(["conductor_id" => "${safe(conductorId)}"])) ?: $storage->create([`,
+      `"conductor_id" => "${safe(conductorId)}", "label" => "${safe(conductorId)}",`,
+      '"owner_user_id" => 1, "status" => "online", "states" => ["working"],',
+      '"last_seen" => \\Drupal::time()->getRequestTime(),',
+      ']);',
+      '$c->set("project_id", $p->id())->set("assignment", "allow")->save();',
+      'print "ok"; }',
+    ].join(' '),
+  );
+  if (out !== 'ok') {
+    throw new Error(`No bb_project named "${projectLabel}" exists in the seeded world.`);
+  }
+});
+
 Given('the conductor {string} exists', async ({}, conductorId: string) => {
   if (conductorId !== CONDUCTOR_ID) {
     throw new Error(
@@ -314,26 +339,24 @@ function anyProject(): { id: string; label: string } {
  * assertion in this suite.
  */
 /**
- * BB-664 AC-1: a dialog opened from a project route carries the project as
- * resolved server-side context, never as an editable picker — this replaces
- * the pre-BB-664 step that asserted the opposite (the picker existed and
- * read the list's own project). `alterFormDisplay()` only adds the widget
- * back when nothing bound a project yet, so its absence here is the
- * positive assertion, not merely "something else wasn't found".
- */
-Then("the dialog carries the list's project with no editable picker", async ({ page }) => {
-  const trigger = pickerTrigger(page, 'Project');
-  await expect(trigger, 'A route-bound dialog must not offer an editable project picker').toHaveCount(0);
-});
-
-/**
- * The AC-8 counterpart of the assertion above: a screen with no route/query
- * project ({@see BbTicketCreateForm::alterFormDisplay()}) must offer the
- * picker back, reusing the same widget rather than a second screen.
+ * Every create dialog, opened on a project or not, offers the Project picker.
  */
 Then('the dialog offers an editable project picker', async ({ page }) => {
   const trigger = pickerTrigger(page, 'Project');
-  await expect(trigger, 'An unbound dialog must offer an editable project picker').toBeAttached();
+  await expect(trigger, 'The dialog must offer an editable project picker').toBeAttached();
+});
+
+/**
+ * One candidate is offered and another is not, by label — other seeded
+ * candidates may sit beside them. Read off the collapsed panel, which
+ * `option_picker.twig` renders `hidden`, not absent.
+ */
+Then('the {string} picker lists {string} but not {string}', async ({ page }, field: string, listed: string, absent: string) => {
+  const labels = pickerPanel(pickerTrigger(page, field)).locator('[role="option"] .option-list__label');
+  // Whole label: seeded candidates may contain the name, e.g. "fixture-e2e-node".
+  const exact = (text: string) => new RegExp(`^\\s*${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`);
+  await expect(labels.filter({ hasText: exact(listed) }), `"${field}" does not list "${listed}"`).toHaveCount(1);
+  await expect(labels.filter({ hasText: exact(absent) }), `"${field}" lists "${absent}"`).toHaveCount(0);
 });
 
 When('I open the {string} picker', async ({ page }, field: string) => {
@@ -770,17 +793,14 @@ Then('the create-ticket dialog is still operable', async ({ page }) => {
     'The refused dialog holds no form_build_id — the next submit cannot be made',
   ).toHaveCount(1);
 
-  // Seven, not eight (BB-664): every scenario that reaches this step opens a
-  // route/query-BOUND dialog ("I open the create-ticket dialog from the
-  // ticket list" always carries `?project=`), and a bound dialog never
-  // renders the "Project" picker — see "the dialog carries the list's
-  // project with no editable picker" elsewhere in this file.
+  // Nine: every create dialog renders the "Project" picker beside the
+  // eight others.
   const pickers = dialog.locator('[data-option-picker]');
   await expect(
     pickers,
-    'The refused dialog does not render all seven pickers of the bound create display',
-  ).toHaveCount(7);
-  for (let index = 0; index < 7; index += 1) {
+    'The refused dialog does not render all nine pickers of the create display',
+  ).toHaveCount(9);
+  for (let index = 0; index < 8; index += 1) {
     await expect(
       pickers.nth(index),
       `Picker ${index} came back without its JavaScript — did the swapped dialog lose it?`,
@@ -946,17 +966,6 @@ Then('the stored ticket belongs to project {string}', async ({}, projectLabel: s
   expect(facts.projectLabel, 'The stored ticket does not carry the expected project').toBe(projectLabel);
 });
 
-/**
- * The same assertion against `anyProject()`'s OWN resolved label, for the
- * scenario that picks whichever project the fixture world happens to offer
- * (via `I pick a project option`) rather than naming one literally.
- */
-Then('the stored ticket belongs to the picked project', async () => {
-  const { label } = anyProject();
-  const facts = loadCreatedTicketFacts(requireLastTypedTitle());
-  expect(facts.projectLabel, 'The stored ticket does not carry the picked project').toBe(label);
-});
-
 Then("the stored ticket is in its workflow's first state", async () => {
   const facts = loadCreatedTicketFacts(requireLastTypedTitle());
   const firstState = php(
@@ -998,8 +1007,8 @@ When('I visit the My work list', async ({ page }) => {
  * BB-664 review finding 2: the two scenarios below used to visit the
  * route-less `/tickets/all` table and then assert the route-bound dialog
  * behaviour (no picker, a scoped conductor) — a claim that table can never
- * make, since nothing on it binds a project at all. `TicketCreateActionSource
- * ::routeBoundQuery()` reads the `bb_project` route parameter specifically,
+ * make, since nothing on it binds a project at all. The ticket trigger's
+ * `dialog.route_query` (`bb_core.create.ticket`) reads the `bb_project` route parameter,
  * so this is the one navigation that exercises the actual AC-1 path: a
  * screen whose OWN route names a project.
  */
@@ -1085,31 +1094,6 @@ Then('the dialog is inside the shell overlay', async ({ page }) => {
 // submit's own `disabled` attribute. See the feature file's own scenario
 // comment for the measured defect this guards.
 // ---------------------------------------------------------------------------
-
-/**
- * Picks a project by whichever label `anyProject()` resolves, rather than a
- * literal named in the feature file — the same reasoning `anyProject()`'s own
- * docblock gives: the claim under test is that PICKING A PROJECT enables the
- * submit, not that any particular fixture project does.
- *
- * Reused by BB-664's unbound-dialog scenario for the same reason: the
- * project this picks is whichever one the fixture world actually resolves,
- * and `the stored ticket belongs to project {string}` step reads the same
- * `anyProject()` label back to assert it landed.
- */
-When('I pick a project option', async ({ page }) => {
-  const { label } = anyProject();
-  const trigger = page
-    .locator(`${DIALOG} [data-option-picker-trigger][aria-expanded="true"]`)
-    .first();
-  await expect(trigger, 'No picker is currently open').toBeAttached();
-  const row = pickerPanel(trigger)
-    .locator('[role="option"]')
-    .filter({ has: page.locator('.option-list__label', { hasText: label }) })
-    .first();
-  await expect(row, `The open picker offers no "${label}" option`).toBeAttached();
-  await settledProjectRefresh(page, () => row.click());
-});
 
 Then('the submit is enabled', async ({ page }) => {
   await expect(dialogRoot(page).locator('button[type="submit"]')).toBeEnabled();
@@ -1206,6 +1190,7 @@ async function settledProjectRefresh(page: Page, pick: () => Promise<void>): Pro
   await expect(page.locator(`${DIALOG} [data-ticket-project-scoped]:is(.htmx-swapping, .htmx-settling)`)).toHaveCount(0);
   await waitForPickerBehaviour(pickerTrigger(page, 'Parent'));
   await waitForPickerBehaviour(pickerTrigger(page, 'Blocked by'));
+  await waitForPickerBehaviour(pickerTrigger(page, 'Conductor'));
 }
 
 When('I choose the dialog project {string}', async ({ page }, label: string) => {
@@ -1223,11 +1208,6 @@ Then('the {string} picker offers {string}', async ({ page }, field: string, iden
 
 Then('the {string} picker does not offer {string}', async ({ page }, field: string, identifier: string) => {
   await expect(relationRow(page, field, identifier), `"${field}" offers ${identifier}`).toBeHidden();
-});
-
-Then('the {string} picker offers no tickets', async ({ page }, field: string) => {
-  const rows = pickerPanel(pickerTrigger(page, field)).locator('[role="option"]:not([data-option-list-clear])');
-  await expect(rows, `"${field}" offers tickets`).toHaveCount(0);
 });
 
 When('I search the open picker for {string}', async ({ page }, text: string) => {
@@ -1261,6 +1241,35 @@ When('I post {string} as {string} instead', async ({ page }, identifier: string,
 
 Then('the dialog shows the error {string}', async ({ page }, text: string) => {
   await expect(dialogRoot(page).locator('[data-component-id="bb_theme:message"]')).toContainText(text);
+});
+
+When('I type {string} into the origin line', async ({ page }, text: string) => {
+  await dialogRoot(page).getByRole('textbox', { name: 'Origin URL' }).fill(text);
+});
+
+/** The reviewers' display names and the origin of the ticket titled as typed. */
+function storedReviewersAndOrigin(): { reviewers: string[]; origin: string } {
+  const line = php(
+    [
+      `$found = \\Drupal::entityTypeManager()->getStorage("bb_ticket")->loadByProperties(["title" => "${safe(requireLastTypedTitle())}"]);`,
+      '$t = $found ? end($found) : NULL;',
+      'print $t ? "ok|" . implode(",", array_map(fn ($u) => $u->getDisplayName(), $t->get("reviewers")->referencedEntities())) . "|" . ($t->get("origin")->value ?? "") : "";',
+    ].join(' '),
+  );
+  const [ok, reviewers, origin] = line.split('|');
+  if (ok !== 'ok') {
+    throw new Error(`No bb_ticket titled "${requireLastTypedTitle()}" was stored.`);
+  }
+  return { reviewers: reviewers ? reviewers.split(',').sort() : [], origin: origin ?? '' };
+}
+
+Then('the stored ticket has reviewers {string}', async ({}, expected: string) => {
+  const names = expected.split(',').map((s) => s.trim()).sort();
+  expect(storedReviewersAndOrigin().reviewers).toEqual(names);
+});
+
+Then('the stored ticket has origin {string}', async ({}, expected: string) => {
+  expect(storedReviewersAndOrigin().origin).toBe(expected);
 });
 
 function storedRelations(): { parent: string; blockers: string[] } {
