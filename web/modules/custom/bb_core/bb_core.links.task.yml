@@ -14,7 +14,7 @@
 # the two share a weight and discovery order puts Stats first.
 
 bb_core.my_work.stats:
-  title: 'Stats'
+  title: 'Insights'
   route_name: bb_core.my_work.stats
   base_route: view.tickets.my_work
   weight: 2
@@ -37,7 +37,7 @@ entity.bb_project.canonical:
   weight: 0
 
 bb_core.bb_project.stats:
-  title: 'Stats'
+  title: 'Insights'
   route_name: bb_core.bb_project.stats
   base_route: entity.bb_project.canonical
   weight: 2
@@ -65,6 +65,13 @@ view.bb_ticket_templates.project_list:
   route_name: view.bb_ticket_templates.project_list
   base_route: entity.bb_project.canonical
   weight: 5.5
+
+# A project's environments, edited in the dialog from their row.
+view.bb_environments.project_list:
+  title: 'Environments'
+  route_name: view.bb_environments.project_list
+  base_route: entity.bb_project.canonical
+  weight: 5.7
 
 bb_core.bb_project.settings:
   title: 'Settings'
@@ -160,7 +167,7 @@ entity.bb_team.canonical:
   weight: 0
 
 bb_core.bb_team.stats:
-  title: 'Stats'
+  title: 'Insights'
   route_name: bb_core.bb_team.stats
   base_route: entity.bb_team.canonical
   weight: 1
@@ -190,7 +197,7 @@ bb_core.bb_team.settings:
   weight: 5
 
 
-# --- Workspace settings: Settings, Members, Addons, Templates, Types, Recipes, Labels ---
+# --- Workspace settings: Settings, Members, Addons, Service accounts, Templates ---
 # Settings is the default tab on its own route (same shape as project/team
 # Overview). Members is the invite-and-roster face.
 
@@ -219,24 +226,32 @@ bb_core.bb_workspace.templates:
   base_route: bb_core.bb_workspace.settings
   weight: 4
 
-# The workspace vocabulary, one tab per term bundle, after Templates.
-bb_core.bb_workspace.types:
-  title: Types
+# --- Catalog: a settings tab with Types, Recipes, Labels ---
+# The categories tickets pick from; Types is the default of its second row.
+
+bb_core.bb_workspace.catalog:
+  title: Catalog
   route_name: view.bb_terms.types
   base_route: bb_core.bb_workspace.settings
   weight: 5
 
-bb_core.bb_workspace.recipes:
+bb_core.catalog.types:
+  title: Types
+  route_name: view.bb_terms.types
+  parent_id: bb_core.bb_workspace.catalog
+  weight: 0
+
+bb_core.catalog.recipes:
   title: Recipes
   route_name: view.bb_terms.recipes
-  base_route: bb_core.bb_workspace.settings
-  weight: 6
+  parent_id: bb_core.bb_workspace.catalog
+  weight: 1
 
-bb_core.bb_workspace.labels:
+bb_core.catalog.labels:
   title: Labels
   route_name: view.bb_terms.labels
-  base_route: bb_core.bb_workspace.settings
-  weight: 7
+  parent_id: bb_core.bb_workspace.catalog
+  weight: 2
 
 # --- User: Profile after core's View and Edit ---
 # Position and background only; the tab shows where `edit profile` allows.

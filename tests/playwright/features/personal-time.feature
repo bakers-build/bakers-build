@@ -5,6 +5,7 @@ Feature: Employees review their own time across workspaces in the account area
     Given I am logged in as the account "fixture-crew-mate"
     When I open the personal time view of "fixture-crew-mate" at "mode=day&date=2026-12-08"
     Then the page heading is "My time"
+    And the page header describes the screen as "Your recorded hours in all workspaces."
     And the time scope reads "Your recorded hours in all workspaces"
     And the account rail marks "Time" as current
     And the day lists "Crew mate home"

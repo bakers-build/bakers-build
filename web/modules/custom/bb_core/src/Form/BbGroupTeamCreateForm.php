@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\Display\EntityFormDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
@@ -60,6 +61,18 @@ final class BbGroupTeamCreateForm extends BbCreateDialogFormBase {
    */
   protected function formDisplayMode(): string {
     return $this->entity->getEntityTypeId() === 'bb_team' ? 'settings' : 'create';
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * A team is created by name alone; its image is set in Settings.
+   */
+  protected function alterFormDisplay(EntityFormDisplayInterface $display, FormStateInterface $form_state): void {
+    parent::alterFormDisplay($display, $form_state);
+    if ($this->entity->getEntityTypeId() === 'bb_team') {
+      $display->removeComponent('image');
+    }
   }
 
   /**

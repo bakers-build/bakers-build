@@ -7,9 +7,9 @@ description: Agent permission modes, native sandbox rules, prerequisites and exc
 
 <span id="run-security"></span>
 
-Agent permissions govern actions the harness allows, refuses or asks you to approve. `permissions: 'sandbox'` also enables the harness's native OS restrictions where supported. This does not select a whole-process runtime: choose [isolation](/agents/isolation) separately. [Tools](/provision/tools#work-across-permissions-and-isolation) provide required operations without broadly relaxing either layer.
+Agent permissions govern actions the harness allows, refuses or asks you to approve. `permissions: 'sandbox'` also enables the harness's native OS restrictions where supported. This does not select a whole-process runtime: choose [isolation](/agents/isolation-models) separately. [Tools](/provision/tools-and-integrations#work-across-permissions-and-isolation) provide required operations without broadly relaxing either layer.
 
-Set `permissions` in the harness entry's `with`. A `catalog` entry uses its own `with`: omitted keys take defaults, not the harness entry's values. [Shared policy](/provision/security/shared-settings) supplies supported machine/project defaults; [Agent policy](/agents/reference#run-security) explains placement.
+Set `permissions` in the harness entry's `with`. A `catalog` entry uses its own `with`: omitted keys take defaults, not the harness entry's values. [Shared policy](/provision/security/shared-settings) supplies supported machine/project defaults; [Agent policy](/agents/agent-policy-reference#run-security) explains placement.
 
 ## Modes
 
@@ -120,7 +120,7 @@ The inbox and addon listener contexts for `after_done`, `on_freeze` and `on_resu
 
 ## Use tools for required operations
 
-Keep operations requiring extra authority behind [conductor tools](/provision/tools#work-across-permissions-and-isolation): `provision_up` for application preparation, DDEV tools for application checks, Forge for delivery, Ports for previews. This keeps the shell restricted and credentials with the integration. Enable the appropriate addons and tool access; a denied tool call is not fixed by choosing an outer runtime.
+Keep operations requiring extra authority behind [conductor tools](/provision/tools-and-integrations#work-across-permissions-and-isolation): `provision_up` for application preparation, DDEV tools for application checks, Forge for delivery, Ports for previews. This keeps the shell restricted and credentials with the integration. Enable the appropriate addons and tool access; a denied tool call is not fixed by choosing an outer runtime.
 
 Tools execute with their own permissions, outside the agent boundary where configured. Their authorization, mounts and editable scripts still need review. Native sandbox and outer isolation rules do not automatically constrain a host-side tool.
 

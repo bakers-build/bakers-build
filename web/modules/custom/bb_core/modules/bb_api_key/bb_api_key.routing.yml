@@ -3,6 +3,7 @@ bb_api_key.add:
   defaults:
     _form: '\Drupal\bb_api_key\Form\ApiKeyCreateForm'
     _title: 'Create API key'
+    _description: 'Create an API key that acts as you, with exactly your permissions.'
   requirements:
     _user_is_logged_in: 'TRUE'
     _custom_access: 'Drupal\bb_api_key\Access\ApiKeyAccess::personal'
@@ -22,6 +23,7 @@ bb_api_key.view:
   defaults:
     _entity_view: 'consumer.full'
     _title: 'API key'
+    _description: 'This API key and its details.'
   requirements:
     _user_is_logged_in: 'TRUE'
     _custom_access: 'Drupal\bb_api_key\Access\ApiKeyAccess::view'
@@ -40,6 +42,7 @@ bb_api_key.delete:
   defaults:
     _form: '\Drupal\bb_api_key\Form\ApiKeyDeleteForm'
     _title: 'Revoke API key'
+    _description: 'Confirm revoking this API key; scripts that use it stop working.'
   requirements:
     _user_is_logged_in: 'TRUE'
     _custom_access: 'Drupal\bb_api_key\Access\ApiKeyAccess::revoke'
@@ -64,6 +67,7 @@ bb_api_key.service_account.add:
   defaults:
     _form: '\Drupal\bb_api_key\Form\ServiceAccountCreateForm'
     _title: 'Create service account'
+    _description: 'Create an account for automation in this workspace.'
   requirements:
     _custom_access: 'Drupal\bb_api_key\Access\ServiceAccountAccess::createAccount'
   options:
@@ -78,6 +82,7 @@ bb_api_key.service_account.key_add:
   defaults:
     _form: '\Drupal\bb_api_key\Form\ServiceAccountKeyCreateForm'
     _title: 'Create API key'
+    _description: 'Create an API key that acts as this service account.'
   requirements:
     _custom_access: 'Drupal\bb_api_key\Access\ServiceAccountAccess::issueKey'
     user: '\d+'
@@ -95,6 +100,7 @@ bb_api_key.service_account.key_revoke:
   defaults:
     _form: '\Drupal\bb_api_key\Form\ServiceAccountKeyRevokeForm'
     _title: 'Revoke API key'
+    _description: 'Confirm revoking this API key of the service account.'
   requirements:
     _custom_access: 'Drupal\bb_api_key\Access\ServiceAccountAccess::manageKey'
     user: '\d+'
@@ -113,6 +119,7 @@ bb_api_key.service_account.disable:
   defaults:
     _form: '\Drupal\bb_api_key\Form\ServiceAccountDisableForm'
     _title: 'Disable service account'
+    _description: 'Confirm disabling this service account for good.'
   requirements:
     _custom_access: 'Drupal\bb_api_key\Access\ServiceAccountAccess::manageAccount'
     user: '\d+'

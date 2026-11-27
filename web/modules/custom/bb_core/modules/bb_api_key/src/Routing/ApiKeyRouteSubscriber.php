@@ -19,14 +19,26 @@ use Symfony\Component\Routing\RouteCollection;
  * blanket `/settings/*` → `bb_workspace.update` gate (no second access
  * plugin needed for that); this subscriber still has to add its
  * cookie-only restriction, the same as every other Service Accounts route,
- * so a bearer key cannot even reach the list.
+ * so a bearer key cannot even reach the list. It also sets their
+ * `_description`, the line under the page title.
  */
 final class ApiKeyRouteSubscriber extends RouteSubscriberBase {
+
+  /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'view.bb_api_keys.page' => 'Your API keys; each acts as you, with exactly your permissions.',
+    'view.bb_service_accounts.settings' => 'The automation accounts of this workspace, with their role, team and API keys.',
+  ];
 
   /**
    * {@inheritdoc}
    */
   protected function alterRoutes(RouteCollection $collection): void {
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
     $list = $collection->get('view.bb_api_keys.page');
     if ($list !== NULL) {
       $parameters = $list->getOption('parameters') ?? [];

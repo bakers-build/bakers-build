@@ -135,6 +135,7 @@ const agent: BbAgent = {
 type Seed = {
   identifier: string;
   state?: string;
+  stateAtStart?: string;
   labels?: string[];
   conductorOwner?: string;
 };
@@ -172,7 +173,7 @@ function setup(
       runUuid: `run-${t.identifier}`,
       runId: index + 1,
       ticketUuid: t.identifier,
-      stateAtStart: t.state ?? 'working',
+      stateAtStart: t.stateAtStart ?? t.state ?? 'working',
       handler: 'code' as const,
     })),
   );
@@ -299,6 +300,19 @@ describe('runtime chosen per ticket', () => {
       runtimeReason: 'preset',
     });
     expect(s.envOf('BB-2')?.BAKERS_RUNTIME_ISOLATES).toBe('1');
+  });
+
+  it("routes by the run's stateAtStart, not a stale ticket state", async () => {
+    const s = setup(
+      { preset: 'box', routes: { default: { review: 'system' } } },
+      [{ identifier: 'BB-1', state: 'working', stateAtStart: 'review' }],
+    );
+    await s.run();
+    expect(s.dispatched('BB-1')).toMatchObject({
+      state: 'review',
+      runtimeAlias: 'system',
+      runtimeReason: 'route',
+    });
   });
 
   it('takes a runtime:<alias> label naming an isolating entry', async () => {

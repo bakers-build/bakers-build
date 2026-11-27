@@ -2,7 +2,7 @@
 
 `bakers conductor` is the node agent: it registers this machine's conductor for a project checkout, claims tickets and runs agents on them, using the checkout's existing configuration. `bakers oven` is a hidden alias of it.
 
-This page is the command reference. What a cycle does and how to run several conductors is in [Conductors](/configuration/project/conductors); the config file is in [Project configuration](/configuration/project).
+This page is the command reference. What a cycle does and how to run several conductors is in [Conductors](/configuration/project/conductors-and-variants); the config file is in [Project configuration](/configuration/project).
 
 ## Synopsis
 
@@ -51,7 +51,7 @@ By default `start` launches the loop as a detached background process: it has it
 - When the control plane does not know this conductor's id yet but this machine, project and variant already have a conductor under another id (for example from before the upgrade), `start` asks once in a terminal whether to take it over, or which one when there are several; it keeps its tickets and runs. Without a terminal it stops and names `--adopt <uuid>` (take it over) and `--new` (register another conductor); the two cannot be combined.
 - `--force` turns "already running" into a restart: a verified `SIGTERM`, a grace period, then `SIGKILL`, then the normal start. It fails rather than starting a second conductor when the running one cannot be verified or stopped.
 
-An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. After the install and migration the start continues on the new release. The procedure, decline window and failure behaviour are in [Update bakers.build](/configuration/guides/updates).
+An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. After the install and migration the start continues on the new release. The procedure, decline window and failure behaviour are in [Update bakers.build](/configuration/guides/update-bakers-build).
 
 A start on a machine where an enabled agent cannot start its sandbox prints `warning: sandbox unavailable: <agent>: <cause> — <fix>` and still starts; the loop then claims nothing until the cause is fixed (see `check`).
 

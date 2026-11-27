@@ -1,0 +1,18 @@
+# Create dialogs rendered by bb_create_action (see bb_core.links.action.yml).
+bb_webhook.create.project:
+  route_name: entity.bb_webhook.add_for_project
+  title: 'Create webhook'
+  appears_on: [view.bb_webhooks.project_list]
+  dialog: {}
+
+bb_webhook.create.group:
+  route_name: entity.bb_webhook.add_for_group
+  title: 'Create webhook'
+  appears_on: [view.bb_webhooks.group_list]
+  dialog: {}
+
+bb_webhook.create.workspace:
+  route_name: entity.bb_webhook.add_for_workspace
+  title: 'Create webhook'
+  appears_on: [view.bb_webhooks.workspace_list]
+  dialog: {}

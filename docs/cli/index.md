@@ -32,7 +32,7 @@ Run `bakers <command> --help` for the options available in your installed versio
 
 ## Install and update
 
-[Machine setup](/provision/machine) owns installation and sign-in. `bakers update` installs the latest CLI; [Updates](/configuration/guides/updates) separates code updates from configuration migration.
+[Machine setup](/provision/machine) owns installation and sign-in. `bakers update` installs the latest CLI; [Updates](/configuration/guides/update-bakers-build) separates code updates from configuration migration.
 
 ## bakers init
 

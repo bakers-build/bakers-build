@@ -32,6 +32,10 @@ services:
     class: Drupal\bb_core\Routing\BbWorkspaceRouteSubscriber
     tags:
       - { name: event_subscriber }
+  bb_core.page_description_route_subscriber:
+    class: Drupal\bb_core\Routing\PageDescriptionRouteSubscriber
+    tags:
+      - { name: event_subscriber }
   bb_core.front_end_route_subscriber:
     class: Drupal\bb_core\Routing\FrontEndRouteSubscriber
     tags:
@@ -162,6 +166,10 @@ services:
   bb_core.ticket_search_filter_subscriber:
     class: Drupal\bb_core\EventSubscriber\TicketSearchFilterSubscriber
     arguments: ['@bb_core.ticket_search_resolver', '@entity.repository']
+    tags:
+      - { name: event_subscriber }
+  bb_core.ticket_etag_subscriber:
+    class: Drupal\bb_core\EventSubscriber\TicketEtagSubscriber
     tags:
       - { name: event_subscriber }
   bb_core.run_log_compression_subscriber:

@@ -6,7 +6,7 @@ For anyone whose machine should run tickets with OpenCode.
 
 ## AI first
 
-Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/skills).
+Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/install-the-bakers-skills).
 
 ## Setup
 
@@ -30,7 +30,7 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
-[Isolation models](/agents/isolation): platform support.
+[Isolation models](/agents/isolation-models): platform support.
 
 OpenCode has no OS sandbox, and its permission policies do not sandbox plugin code, so bakers.build cannot protect an OpenCode run. It therefore runs in `system`, the default for every harness, and rejects `sandbox`:
 
@@ -62,5 +62,5 @@ bakers agents
 - Listed in a project config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
-More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
+More: [Choose agents and models](/agents/configure-and-select-agents), [Machines](/agents/agent-policy-reference#harnesses).
 

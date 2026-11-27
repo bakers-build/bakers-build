@@ -1,4 +1,8 @@
 services:
+  bb_board.page_description_route_subscriber:
+    class: Drupal\bb_board\Routing\PageDescriptionRouteSubscriber
+    tags:
+      - { name: event_subscriber }
   # Board-card records for one column's tickets.
   bb_board.project_board:
     class: Drupal\bb_board\ProjectBoard

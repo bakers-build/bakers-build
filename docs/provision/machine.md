@@ -40,7 +40,7 @@ Follow these steps only if you are responsible for preparing the chosen environm
 
 ### 1. Install missing skills
 
-Follow [skill installation](/skills-and-workflows/skills) for your chosen agent, then start a new session. That page owns the install commands and update procedure; the skills guide setup and later ticket work.
+Follow [skill installation](/skills-and-workflows/install-the-bakers-skills) for your chosen agent, then start a new session. That page owns the install commands and update procedure; the skills guide setup and later ticket work.
 
 <span id="2-install-and-sign-in"></span>
 
@@ -61,7 +61,7 @@ change before applying it. Leave project tooling for project setup.
 
 The skill opens with a welcome naming the steps and the files it will write, and marks each question `Step n of m`. It checks Git, host [Node.js ≥20.19 and npm](https://nodejs.org/en/download), the agent and its [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites). Container Node does not supply the host CLI.
 
-It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. Sign-in uses `https://app.bakers.build` unless you name another server; the device link opens with its code filled in for you to compare with the terminal. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connection) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/guide); initialization alone does not supply an agent catalog. Its model credentials go to `~/.bakers/.bakers.env`, the conductor's private [secrets file](/configuration/machine#secrets-file). For a `sandbox` permission mode the skill offers only the runtimes this machine supports: [bubblewrap](/addons/runtime-bwrap) (Linux, light, uses host tools) or [Docker](/addons/runtime-docker) (stronger isolation, tools from the image). It shows every written file back, secrets masked.
+It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. Sign-in uses `https://app.bakers.build` unless you name another server; the device link opens with its code filled in for you to compare with the terminal. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connection) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/configure-and-select-agents); initialization alone does not supply an agent catalog. Its model credentials go to `~/.bakers/.bakers.env`, the conductor's private [secrets file](/configuration/machine#secrets-file). For a `sandbox` permission mode the skill offers only the runtimes this machine supports: [bubblewrap](/addons/runtime-bwrap) (Linux, light, uses host tools) or [Docker](/addons/runtime-docker) (stronger isolation, tools from the image). It shows every written file back, secrets masked.
 :::
 
 <span id="install-and-sign-in"></span>

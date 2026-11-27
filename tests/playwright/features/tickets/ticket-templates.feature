@@ -47,7 +47,7 @@ Feature: Projects and workspaces list their ticket templates
     And I click the tab "Overview"
     And I click the tab "Templates"
     Then the listing shows the empty state "This project has no ticket templates yet."
-    And the page header describes the screen as "Reusable ticket recipes for this project."
+    And the page header describes the screen as "The ticket templates of this project."
 
   Scenario: A lead adds a template from the tab
     Given I am logged in as the account "north-lead"
@@ -57,9 +57,9 @@ Feature: Projects and workspaces list their ticket templates
     Then the add template form explains the placeholders of both patterns
     And the add template form offers no "Project" picker
     And the add template form offers the conductor "No conductor" but not "srv01-bakers"
-    When I save the template "Added template JS" with the title pattern "Added {{month}}", the workflow "bakers.build work" and the target state "Plan"
+    When I save the template "Added template JS" with the title pattern "Added {{month}}", the workflow "Plan/Work/Review" and the target state "Plan"
     Then the tab "Templates" is current
-    And the template "Added template JS" is listed with the workflow "bakers.build work"
+    And the template "Added template JS" is listed with the workflow "Plan/Work/Review"
 
   @nojs
   Scenario: A lead adds a template without JavaScript
@@ -68,9 +68,9 @@ Feature: Projects and workspaces list their ticket templates
     And I click the tab "Templates"
     And I open the Add template action twice
     Then the add template form explains the placeholders of both patterns
-    When I save the template "Added template no-JS" with the title pattern "Added {{month}}", the workflow "bakers.build work" and the target state "Plan"
+    When I save the template "Added template no-JS" with the title pattern "Added {{month}}", the workflow "Plan/Work/Review" and the target state "Plan"
     Then the tab "Templates" is current
-    And the template "Added template no-JS" is listed with the workflow "bakers.build work"
+    And the template "Added template no-JS" is listed with the workflow "Plan/Work/Review"
 
   Scenario: A lead opens a template from the tab
     Given I am logged in as the account "north-lead"
@@ -79,7 +79,7 @@ Feature: Projects and workspaces list their ticket templates
     And I click the tab "Overview"
     And I click the tab "Templates"
     And I open the template "Web fixture template"
-    Then the template shows "Workflow" as "bakers.build work"
+    Then the template shows "Workflow" as "Plan/Work/Review"
     And the template shows "Target state" as "Qualification"
     And the template shows "Title" as "Web fixture ticket {{date}}"
     And the page shows "Generated from the fixture template."
@@ -124,9 +124,9 @@ Feature: Projects and workspaces list their ticket templates
     When I open the Add template action twice
     Then the add template form offers the project "Template fixtures"
     And the add template form offers the conductor "No conductor" but not "srv01-bakers"
-    When I save the template "Added template workspace" with the title pattern "Added {{month}}", the workflow "bakers.build work" and the target state "Working"
+    When I save the template "Added template workspace" with the title pattern "Added {{month}}", the workflow "Plan/Work/Review" and the target state "Working"
     Then the tab "Templates" is current
-    And the template "Added template workspace" is listed with the workflow "bakers.build work"
+    And the template "Added template workspace" is listed with the workflow "Plan/Work/Review"
 
   Scenario: A contributor uses a workspace template in a chosen project
     Given I am logged in as the account "fixture-time-contributor"

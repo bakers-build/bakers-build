@@ -11,9 +11,9 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\DefaultEntityLocalTaskProvider;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Drupal\bb_core\Form\BbEnvironmentForm;
+use Drupal\bb_core\ViewsData\BbEnvironmentViewsData;
 use Drupal\user\EntityOwnerTrait;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\user\EntityOwnerInterface;
@@ -22,9 +22,9 @@ use Drupal\user\EntityOwnerInterface;
  * Represents a bakers.build managed deployment environment (dev2, prod, …).
  *
  * Each environment belongs to exactly one project and is unique per project.
- * There is deliberately no global collection or add form: environments are
- * created only from within their project (the project-scoped add route
- * pre-fills the project) and are surfaced on the project via its computed
+ * The workspace lists them on its Catalog Environments tab, and adds one there
+ * for a chosen project of the workspace; the project-scoped add route
+ * pre-fills the project, which surfaces them via its computed
  * `environments` field. Live up/down status is intentionally NOT stored
  * here — this entity holds only the environment's stable descriptor (URL +
  * tier).
@@ -42,6 +42,7 @@ use Drupal\user\EntityOwnerInterface;
     // WorkspaceReadScopeSubscriber.
     'query_access' => QueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
+    'views_data' => BbEnvironmentViewsData::class,
     'form' => [
       'default' => BbEnvironmentForm::class,
       'add' => BbEnvironmentForm::class,
@@ -49,13 +50,11 @@ use Drupal\user\EntityOwnerInterface;
       'delete' => BbContentEntityDeleteForm::class,
     ],
     'route_provider' => ['html' => AdminHtmlRouteProvider::class],
-    'local_task_provider' => ['default' => DefaultEntityLocalTaskProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
   // BbWorkspacePathProcessor bridges the two forms in both directions.
   links: [
-    'canonical' => '/_workspace/{bb_workspace}/environment/{bb_environment}',
     'edit-form' => '/_workspace/{bb_workspace}/environment/{bb_environment}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/environment/{bb_environment}/delete',
   ],

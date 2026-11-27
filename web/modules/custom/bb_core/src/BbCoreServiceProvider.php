@@ -6,8 +6,11 @@ namespace Drupal\bb_core;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\DependencyInjection\ServiceProviderBase;
+use Drupal\bb_core\Hook\LoadedEntityChecksumHooks;
 use Drupal\bb_core\JsonApi\BbResourceTypeRepository;
+use Drupal\bb_core\JsonApi\FreshNormalizationCacher;
 use Drupal\bb_core\Storage\PreviewSampleEntityGenerator;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Supplies the optional JSON:API and UI Patterns service implementations.
@@ -34,6 +37,11 @@ final class BbCoreServiceProvider extends ServiceProviderBase {
     }
     $container->getDefinition('jsonapi.resource_type.repository')
       ->setClass(BbResourceTypeRepository::class);
+    // A class swap too: the cacher is also the terminate subscriber that
+    // writes the cache, which a decorator would split from its pending items.
+    $container->getDefinition('jsonapi.normalization_cacher')
+      ->setClass(FreshNormalizationCacher::class)
+      ->addMethodCall('setLoadedEntityChecksums', [new Reference(LoadedEntityChecksumHooks::class)]);
   }
 
 }

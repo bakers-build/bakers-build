@@ -1,4 +1,8 @@
 services:
+  bb_ticket_trigger.page_description_route_subscriber:
+    class: Drupal\bb_ticket_trigger\Routing\PageDescriptionRouteSubscriber
+    tags:
+      - { name: event_subscriber }
   # Ticket trigger types; `bb_ticket_trigger.plugin_type.yml` exposes them
   # to the Plugin module's field type.
   plugin.manager.bb_ticket_trigger_type:

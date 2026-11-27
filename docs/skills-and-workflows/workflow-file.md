@@ -1,6 +1,6 @@
 # Set project rules
 
-Use `WORKFLOW.md` at the repository root for preparation, project checks, extra skills and delivery rules. Start with a [connected project](/get-started/connect-a-project) and the [bakers skills](/skills-and-workflows/skills).
+Use `WORKFLOW.md` at the repository root for preparation, project checks, extra skills and delivery rules. Start with a [connected project](/get-started/connect-a-project) and the [bakers skills](/skills-and-workflows/install-the-bakers-skills).
 
 ## Start with your project
 
@@ -81,7 +81,7 @@ preview link and login instructions for manual review.
 
 Use your own test-user document. **Verify:** the handoff names the required personas and their access, and delivery records the required CI results. Missing access stays missing; it must not be replaced with an administrator account.
 
-Choose [a recipe](/skills-and-workflows/recipes) for the engineering method and [collaboration labels](/skills-and-workflows/collaboration) for human approvals. Project rules cannot change the [fixed workflow boundaries](/skills-and-workflows/states#what-stays-fixed).
+Choose [a recipe](/skills-and-workflows/recipes) for the engineering method and [collaboration labels](/skills-and-workflows/decide-when-people-approve) for human approvals. Project rules cannot change the [fixed workflow boundaries](/skills-and-workflows/workflow-reference#what-stays-fixed).
 
 ## Optional: mirror progress to GitLab
 

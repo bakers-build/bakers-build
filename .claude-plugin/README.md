@@ -24,7 +24,7 @@ codex plugin add bakers@bakers
 ```
 
 Always select `main` for stable skills, independently of the repository's default branch.
-See the [installation guide](https://bakers.build/skills-and-workflows/skills)
+See the [installation guide](https://bakers.build/skills-and-workflows/install-the-bakers-skills)
 for existing registrations, verification and updates.
 
 ## What ships

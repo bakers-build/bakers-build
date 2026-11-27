@@ -12,6 +12,7 @@ use Drupal\bb_core\Entity\BbTeamInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbMenuSource;
 use Drupal\bb_core\Profile\Profiles;
+use Drupal\file\Entity\File;
 use Drupal\user\UserInterface;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\views\Entity\View;
@@ -38,6 +39,7 @@ final class BbMenuSourceTest extends KernelTestBase {
   use TicketNavigationViewsTrait;
   use RailRequestTrait;
   use OgScopeFixtureTrait;
+  use ShippedImageConfigTrait;
 
   /**
    * {@inheritdoc}
@@ -45,7 +47,7 @@ final class BbMenuSourceTest extends KernelTestBase {
    * @var array<string>
    */
   protected static $modules = [
-    'file', 'image',
+    'file', 'image', 'crop',
     'system', 'user', 'options', 'entity', 'state_machine',
     'link', 'text', 'field', 'filter', 'markdown_easy', 'og',
     'ui_patterns',
@@ -67,6 +69,15 @@ final class BbMenuSourceTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
+  protected function setUpFilesystem(): void {
+    parent::setUpFilesystem();
+    // Before the container is built, so the private stream wrapper exists.
+    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp(): void {
     parent::setUp();
     $this->installEntitySchema('user');
@@ -77,7 +88,11 @@ final class BbMenuSourceTest extends KernelTestBase {
     $this->installEntitySchema('bb_project');
     $this->installEntitySchema('bb_profile');
     $this->installSchema('user', ['users_data']);
+    $this->installEntitySchema('file');
+    $this->installSchema('file', ['file_usage']);
+    $this->installEntitySchema('crop');
     $this->installConfig(['system', 'user']);
+    $this->installAvatarStyle();
     $this->setUpCurrentUser(['uid' => 1]);
 
     $this->installTicketNavigationViews();
@@ -252,7 +267,7 @@ final class BbMenuSourceTest extends KernelTestBase {
     $team = $this->createTeam('Platform Crew');
     $colors = ['running', 'attention', 'unassigned', 'lease', 'offline'];
     self::assertSame(
-      ['initials' => 'PC', 'color' => $colors[(int) $team->id() % 5]],
+      ['initials' => 'PC', 'color' => $colors[(int) $team->id() % 5], 'picture' => ''],
       $this->teamsGroup()['below'][0]['mark'] ?? NULL,
     );
   }
@@ -460,6 +475,51 @@ final class BbMenuSourceTest extends KernelTestBase {
   }
 
   /**
+   * The Catalog has no rail entry; its pages mark Settings for the lead.
+   */
+  public function testCatalogPagesMarkTheSettingsRailEntry(): void {
+    $this->installOgScopeFixture();
+    $this->installCatalogTermDisplays();
+    $this->container->get('router.builder')->rebuild();
+    $lead = $this->createUser([], 'acme-lead');
+    self::assertNotFalse($lead);
+    // Before the account is current: rank permissions are memoised per account.
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+
+    self::assertNotContains('Catalog', array_column($this->emitted(), 'title'));
+    foreach (['types', 'recipes', 'labels'] as $tab) {
+      $this->visit('view.bb_terms.' . $tab, ['bb_workspace' => 'acme']);
+      self::assertTrue(array_column($this->emitted(), NULL, 'title')['Settings']['in_active_trail'], $tab);
+    }
+  }
+
+  /**
+   * Stubs the term tab displays at their Catalog paths.
+   */
+  private function installCatalogTermDisplays(): void {
+    $displays = [
+      'default' => [
+        'id' => 'default',
+        'display_title' => 'Default',
+        'display_plugin' => 'default',
+        'position' => 0,
+        'display_options' => ['access' => ['type' => 'perm', 'options' => ['perm' => 'view bb_term']]],
+      ],
+    ];
+    foreach (['types', 'recipes', 'labels'] as $position => $display_id) {
+      $displays[$display_id] = [
+        'id' => $display_id,
+        'display_title' => ucfirst($display_id),
+        'display_plugin' => 'page',
+        'position' => $position + 1,
+        'display_options' => ['path' => '_workspace/%bb_workspace/settings/catalog/' . $display_id],
+      ];
+    }
+    View::create(['id' => 'bb_terms', 'label' => 'bb_terms', 'base_table' => 'users_field_data', 'display' => $displays])->save();
+  }
+
+  /**
    * An account without membership sees no team and no empty Teams heading.
    */
   public function testTeamIsDeniedToAnAccountWithNoMembership(): void {
@@ -633,6 +693,84 @@ final class BbMenuSourceTest extends KernelTestBase {
     self::assertContains('bb_profile_list', $cache->getCacheTags());
     self::assertContains('bb_project_list', $cache->getCacheTags());
     self::assertContains('user', $cache->getCacheContexts());
+  }
+
+  /**
+   * A favorite with an image shows its avatar derivative in the rail mark.
+   */
+  public function testFavoriteShowsItsImage(): void {
+    $project = $this->favoriteOfLead();
+    $project->set('image', $this->privateImage('project-images'))->save();
+    $picture = $this->projectsRow()['below'][0]['mark']['picture'] ?? NULL;
+    self::assertIsString($picture);
+    self::assertStringContainsString('/system/files/styles/avatar/private/project-images/', $picture);
+  }
+
+  /**
+   * Without an image, or with a lost file, the favorite keeps its initials.
+   */
+  public function testFavoriteWithoutImageKeepsInitials(): void {
+    $project = $this->favoriteOfLead();
+    $mark = $this->projectsRow()['below'][0]['mark'];
+    self::assertSame(['initials' => 'A', 'picture' => ''], array_intersect_key($mark, ['initials' => 1, 'picture' => 1]));
+
+    $project->set('image', ['target_id' => 987654])->save();
+    self::assertSame('', $this->projectsRow()['below'][0]['mark']['picture'] ?? NULL);
+  }
+
+  /**
+   * A team row with an image carries it in its mark.
+   */
+  public function testTeamRowShowsItsImage(): void {
+    $this->installOgScopeFixture();
+    $team = $this->createTeam('Platform Crew');
+    // Downloading the image re-checks team view access, which membership
+    // grants.
+    $member = $this->createUser([], 'crew-member');
+    self::assertInstanceOf(UserInterface::class, $member);
+    $this->addMembership($this->workspace, $member, ['contributor']);
+    $this->addMembership($team, $member, ['member']);
+    $this->setCurrentUser($member);
+    self::assertSame('', $this->teamsGroup()['below'][0]['mark']['picture'] ?? NULL);
+    $team->set('image', $this->privateImage('team-images'))->save();
+    self::assertStringContainsString('/system/files/styles/avatar/private/team-images/', (string) ($this->teamsGroup()['below'][0]['mark']['picture'] ?? ''));
+  }
+
+  /**
+   * The absolute avatar URLs make the rail vary by host and by the style.
+   */
+  public function testAlterComponentDeclaresTheImageCacheability(): void {
+    $cache = CacheableMetadata::createFromRenderArray($this->source()->alterComponent([]));
+    self::assertContains('url.site', $cache->getCacheContexts());
+    self::assertContains('config:image.style.avatar', $cache->getCacheTags());
+  }
+
+  /**
+   * A workspace lead with one favorite project named Alpha.
+   */
+  private function favoriteOfLead(): BbProjectInterface {
+    $this->installOgScopeFixture();
+    $lead = $this->createUser([], 'acme-lead');
+    self::assertInstanceOf(UserInterface::class, $lead);
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+    $project = $this->favoriteProject('Alpha', 'ALPHA');
+    $this->container->get(Profiles::class)->forAccount((int) $lead->id(), (int) $this->workspace->id())
+      ->toggleFavorite((int) $project->id())->save();
+    return $project;
+  }
+
+  /**
+   * A permanent private PNG in the given image directory.
+   */
+  private function privateImage(string $directory): int {
+    $directory = 'private://' . $directory;
+    $this->container->get('file_system')->prepareDirectory($directory, 1);
+    $uri = $directory . '/image-' . uniqid() . '.png';
+    file_put_contents($uri, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+    $file = File::create(['uri' => $uri, 'status' => 1]);
+    $file->save();
+    return (int) $file->id();
   }
 
   /**

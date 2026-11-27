@@ -12,6 +12,7 @@ use Drupal\Core\Entity\EntityDeleteForm;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Entity\Routing\AdminHtmlRouteProvider;
 use Drupal\island\Form\IslandProfileForm;
+use Drupal\island\IslandDependencyRemovalInterface;
 use Drupal\island\ListBuilder\IslandProfileListBuilder;
 
 /**
@@ -138,6 +139,32 @@ final class IslandProfile extends ConfigEntityBase implements IslandProfileInter
       }
     }
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * A placement drops what the removal orphans, so the profile survives.
+   */
+  public function onDependencyRemoval(array $dependencies): bool {
+    $changed = parent::onDependencyRemoval($dependencies);
+    $islands = \Drupal::service('plugin.manager.island');
+    foreach ($this->placements as $id => $placement) {
+      try {
+        $plugin = $islands->createInstance($placement['plugin_id'] ?? '', $placement['configuration'] ?? []);
+      }
+      catch (PluginException) {
+        continue;
+      }
+      $pruned = $plugin instanceof IslandDependencyRemovalInterface
+        ? $plugin->withoutDependencies($placement['configuration'] ?? [], $dependencies)
+        : NULL;
+      if ($pruned !== NULL) {
+        $this->placements[$id]['configuration'] = $pruned;
+        $changed = TRUE;
+      }
+    }
+    return $changed;
   }
 
   /**
