@@ -24,7 +24,7 @@ scope entirely** (`chore: <subject>`) — the bakers.build identifier is deliber
 into it, because it is already in the trailer. The body is optional and stays proportional:
 enough to explain *why*, not a transcript. **`ref:<identifier>` is always the very last line**,
 where `<identifier>` is the value of the ticket's own `identifier` field, copied verbatim in its
-canonical casing — never a literal prefix plus a number. That field is `<project key>-<number>`,
+canonical casing — never a literal prefix plus a number. That field is `<identifier prefix>-<number>` as of its creation,
 so a ticket whose `identifier` is `SHOP-42` gets `ref:SHOP-42`, and one whose `identifier` is
 `BB-392` gets `ref:BB-392`; on this project the two coincide, which is exactly why the
 distinction has to be stated. The trailer matters because it is what `bakers deployment tickets`

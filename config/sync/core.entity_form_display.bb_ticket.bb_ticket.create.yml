@@ -57,7 +57,7 @@ content:
     third_party_settings: {  }
   labels:
     type: bb_picker
-    weight: 9
+    weight: 10
     region: content
     settings:
       picker_region: pills
@@ -71,6 +71,14 @@ content:
       note_lead: ''
       note_prefix: ''
       note_suffix: ''
+    third_party_settings: {  }
+  origin:
+    type: string_textfield
+    weight: 4
+    region: content
+    settings:
+      size: 60
+      placeholder: 'https://…'
     third_party_settings: {  }
   parent_id:
     type: bb_picker
@@ -90,9 +98,27 @@ content:
       note_suffix: ''
       selection_handler: bb_ticket_in_ticket_project
     third_party_settings: {  }
+  project_id:
+    type: bb_picker
+    weight: 0
+    region: content
+    settings:
+      picker_region: pills
+      label: Project
+      icon: folder
+      searchable: true
+      clear_label: ''
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+      selection_handler: bb_project_ticket_creatable
+    third_party_settings: {  }
   recipe:
     type: bb_picker
-    weight: 9
+    weight: 10
     region: content
     settings:
       picker_region: pills
@@ -107,9 +133,27 @@ content:
       note_prefix: ''
       note_suffix: ''
     third_party_settings: {  }
-  ticket_type:
+  reviewers:
     type: bb_picker
     weight: 9
+    region: content
+    settings:
+      picker_region: pills
+      label: Reviewers
+      icon: user
+      searchable: true
+      selected_chips: true
+      clear_label: 'No reviewers'
+      create_label: ''
+      context_parameter: ''
+      default_value: ''
+      note_lead: ''
+      note_prefix: ''
+      note_suffix: ''
+    third_party_settings: {  }
+  ticket_type:
+    type: bb_picker
+    weight: 10
     region: content
     settings:
       picker_region: pills
@@ -176,12 +220,9 @@ hidden:
   links: true
   metrics: true
   number: true
-  origin: true
   owner_user_id: true
   priority: true
-  project_id: true
   referenced_tickets: true
-  reviewers: true
   runs: true
   since_label: true
   stall_reason: true

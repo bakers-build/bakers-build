@@ -143,3 +143,10 @@ describe('KimiAgent run log and footprint', () => {
     expect(agent.parseFootprint('')).toEqual(emptyAgentFootprint());
   });
 });
+
+describe('herdr agent name', () => {
+  it('declares kimi so herdr identifies an isolated run', async () => {
+    const agent = new (await loadKimiModule()).KimiAgent({});
+    expect(agent.herdrAgent).toBe('kimi');
+  });
+});

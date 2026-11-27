@@ -18,7 +18,7 @@ done
 # Only operator/setup paths are exempt; tools.md retains its MCP transport fallback.
 cd "$root"
 mapfile -d '' files < <(find .claude/skills/bakers-build -name '*.md' \
-  ! -path '*/bb-init/*' ! -path '*/bb-init-project/*' \
+  ! -path '*/bb-init/*' ! -path '*/bb-init-project/*' ! -path '*/bb-get-started/*' \
   ! -path '*/bb-prepare-time/*' \
   ! -name 'read-ticket-troubleshooting.md' -print0)
 hits="$(grep -nE "$pattern" "${files[@]}" WORKFLOW.md)" || status=$?

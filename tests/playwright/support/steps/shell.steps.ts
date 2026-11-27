@@ -6,7 +6,7 @@ import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../drush';
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { CONTENT_ISLAND, PAGE_HEADER_ISLAND, RAIL_ISLAND, documentWasKept, markDocument, pageErrors as errors } from '../shell';
+import { CONTENT_ISLAND, PAGE_HEADER_ISLAND, RAIL_ISLAND, documentWasKept, markDocument, pageErrors as errors, tabPathSegment } from '../shell';
 import { php } from '../drush';
 import { active } from '../listing';
 
@@ -64,7 +64,7 @@ Given('I visit the team {string}', async ({ page }, label: string) => {
 });
 
 When('I visit the team {string} tab {string}', async ({ page }, label: string, tab: string) => {
-  await page.goto(`${teamUrl(label)}/${tab.toLowerCase()}`);
+  await page.goto(`${teamUrl(label)}/${tabPathSegment(tab)}`);
   await markDocument(page);
 });
 
@@ -143,6 +143,19 @@ Then('the tab {string} is current', async ({ page }, tab: string) => {
 Then('the My work tabs are {string}', async ({ page }, labels: string) => {
   const wanted = labels.split(',').map((label) => label.trim());
   await expect(primaryTabLinks(page)).toHaveText(wanted);
+});
+
+Then('the tabs are {string}', async ({ page }, labels: string) => {
+  const wanted = labels.split(',').map((label) => label.trim());
+  await expect(primaryTabLinks(page)).toHaveText(wanted);
+});
+
+// The secondary row, which Drupal labels "Subsections" beneath the primary one.
+Then('the subsection tabs are {string}', async ({ page }, labels: string) => {
+  const wanted = labels.split(',').map((label) => label.trim());
+  await expect(
+    page.locator(PAGE_HEADER_ISLAND).getByRole('navigation', { name: 'Subsections', exact: true }).getByRole('link'),
+  ).toHaveText(wanted);
 });
 
 // The primary tab row only: a secondary row is its own `<nav>` with its own
@@ -315,6 +328,15 @@ Then('the tab change made no full document request', async () => {
 Then('the rail marks {string} as current', async ({ page }, label: string) => {
   const current = page.locator(`${RAIL_ISLAND} [aria-current]`).filter({ hasText: label });
   await expect(current.first()).toBeAttached();
+});
+
+// The named rail entries, in their rail order; other entries are ignored.
+Then('the rail lists {string} in this order', async ({ page }, labels: string) => {
+  const wanted = labels.split(',').map((label) => label.trim());
+  const links = page.locator(RAIL_ISLAND).getByRole('link');
+  await expect(links.first()).toBeVisible();
+  const names = (await links.allInnerTexts()).map((text) => text.trim()).filter((text) => wanted.includes(text));
+  expect(names).toEqual(wanted);
 });
 
 When('I click the rail entry {string}', async ({ page }, label: string) => {

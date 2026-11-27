@@ -70,7 +70,7 @@ function workspaceSlug(): string {
  * The one project id the ticket surface's own head resolves to.
  *
  * THE TICKET DIALOG NEEDS IT AND THE PROJECT DIALOG DOES NOT, which is the
- * only asymmetry left in the opening step. `TicketCreateActionSource` forwards
+ * only asymmetry left in the opening step. The ticket action (`dialog.query: ['*']`) forwards
  * the screen's own `?project=` into the dialog's query, and without it the
  * dialog opens with an unresolved context and a DISABLED submit
  * (`data-option-picker-requires="project_id"`). None of the parity assertions
@@ -87,6 +87,16 @@ function anyProjectId(): string {
     throw new Error('No bb_project exists in the seeded world.');
   }
   return id;
+}
+
+/** The Environments tab of a seeded project of the workspace, by its name. */
+function projectEnvironmentsPath(name: string): string {
+  return (
+    php(
+      `$p = current(\\Drupal::entityTypeManager()->getStorage("bb_project")->loadByProperties(["name" => ${JSON.stringify(name)}]));` +
+        ' print $p ? $p->toUrl()->toString() : "";',
+    ).trim() + '/environments'
+  );
 }
 
 const SURFACES: Record<string, Surface> = {
@@ -111,14 +121,19 @@ const SURFACES: Record<string, Surface> = {
     form: 'form#bb-team-create-form',
   },
   label: {
-    screen: () => `/${workspaceSlug()}/settings/labels`,
+    screen: () => `/${workspaceSlug()}/settings/catalog/labels`,
     trigger: 'Add label',
     form: 'form#bb-term-label-add-form',
   },
   recipe: {
-    screen: () => `/${workspaceSlug()}/settings/recipes`,
+    screen: () => `/${workspaceSlug()}/settings/catalog/recipes`,
     trigger: 'Add recipe',
     form: 'form#bb-term-recipe-add-form',
+  },
+  environment: {
+    screen: () => projectEnvironmentsPath('bakers.build Platform'),
+    trigger: 'Add environment',
+    form: 'form#bb-environment-add-form',
   },
 };
 

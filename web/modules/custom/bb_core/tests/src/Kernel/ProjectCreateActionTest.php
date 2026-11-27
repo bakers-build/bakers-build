@@ -9,8 +9,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Theme\Icon\IconCollector;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
-use Drupal\bb_core\Plugin\UiPatterns\Source\ProjectCreateActionSource;
-use Drupal\ui_patterns\SourcePluginBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,7 +21,7 @@ use Symfony\Component\Yaml\Yaml;
  * The `New project` affordance, offered by the shell page_header island.
  *
  * Spec D9. WHY THE TRIGGER IS A SOURCE is argued once, in
- * `TicketCreateActionSource`'s own docblock, and this file does not restate it:
+ * `CreateActionSource`'s own docblock, and this file does not restate it:
  * a trigger that lived inside the object composing a screen was deleted twice,
  * and a ui_patterns Source is addressed from configuration by plugin id, so a
  * restructure changes the config that PLACES it rather than the plugin.
@@ -47,6 +46,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
 
   use ProjectsViewTestTrait;
   use OgScopeFixtureTrait;
+  use CreateActionTestTrait;
   use UserCreationTrait;
 
   /**
@@ -189,13 +189,13 @@ final class ProjectCreateActionTest extends KernelTestBase {
    * - No `_wrapper_format`. A format written into the `href` would send a
    *   browser with JavaScript off to a dialog fragment with no document around
    *   it, which is the no-JavaScript path defeating itself.
-   * - No forwarded query key. `TicketCreateActionSource` merges the screen's
-   *   whole query into the dialog's, because `PickerWidget` reads a field's
-   *   opening value off whichever key its `context_parameter` names and the
-   *   ticket list has a project facet to inherit. This surface has no context
-   *   field at all (spec D4), so a forwarded key would be a mechanism with no
-   *   consumer — asserted as an absence so a later copy-paste from the ticket
-   *   trigger fails here.
+   * - No forwarded query key. The ticket trigger (`query: ['*']`) merges the
+   *   screen's whole query into the dialog's, because `PickerWidget` reads a
+   *   field's opening value off whichever key its `context_parameter` names
+   *   and the ticket list has a project facet to inherit. This surface has no
+   *   context field at all (spec D4), so a forwarded key would be a mechanism
+   *   with no consumer — asserted as an absence so a later copy-paste from the
+   *   ticket trigger fails here.
    * - The screen's query IS kept inside `destination`, percent-encoded, because
    *   `Cancel` has to land the reader back on the list they were looking at.
    *   `/` is not percent-encoded by `UrlHelper::buildQuery()` and `?` is, which
@@ -289,7 +289,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
     self::assertStringContainsString('data-hx-get="', $anchor);
     self::assertStringContainsString('_wrapper_format=island_dialog', $anchor);
     self::assertStringContainsString(
-      'data-hx-target="#' . ProjectCreateActionSource::TARGET_ID . '"',
+      'data-hx-target="#' . CreateActionSource::TARGET_ID . '"',
       $anchor,
     );
     self::assertStringContainsString('data-hx-swap="innerHTML', $anchor);
@@ -486,7 +486,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
   private function actionValue(string $query = ''): array {
     return $this->onTheScreen(
       $query,
-      fn (): mixed => $this->createActionSource()->getPropValue(),
+      fn (): mixed => $this->createTrigger('bb_core.create.project'),
     );
   }
 
@@ -501,7 +501,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
    */
   private function actionMarkup(string $query = ''): string {
     return $this->onTheScreen($query, function (): string {
-      $build = $this->createActionSource()->getPropValue();
+      $build = $this->createTrigger('bb_core.create.project');
       self::assertIsArray($build);
 
       return (string) $this->container->get('renderer')->renderInIsolation($build);
@@ -548,27 +548,6 @@ final class ProjectCreateActionTest extends KernelTestBase {
     finally {
       $this->container->get('request_stack')->pop();
     }
-  }
-
-  /**
-   * A fresh trigger source, reading the request and the account as they are.
-   *
-   * Configured through `SourcePluginBase::buildConfiguration()` — the factory
-   * `ComponentElementBuilder` itself calls — rather than by hand-assembling
-   * the array, and the prop definition is READ from the `slot` PropType so
-   * this test cannot pass against a shape the product no longer has.
-   */
-  private function createActionSource(): ProjectCreateActionSource {
-    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
-      ->getDefinition('slot')['schema'];
-    $source = $this->container->get('plugin.manager.ui_patterns_source')
-      ->createInstance(
-        'bb_project_create_action',
-        SourcePluginBase::buildConfiguration('actions', $definition, ['source' => []], []),
-      );
-    self::assertInstanceOf(ProjectCreateActionSource::class, $source);
-
-    return $source;
   }
 
   /**

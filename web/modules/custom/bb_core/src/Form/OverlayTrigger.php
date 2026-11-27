@@ -7,7 +7,7 @@ namespace Drupal\bb_core\Form;
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Url;
-use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSourceBase;
+use Drupal\bb_core\Plugin\UiPatterns\Source\CreateActionSource;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -21,7 +21,7 @@ final class OverlayTrigger {
   /**
    * The DOM id of the shell region a dialog is swapped into.
    */
-  public const string TARGET_ID = CreateActionSourceBase::TARGET_ID;
+  public const string TARGET_ID = CreateActionSource::TARGET_ID;
 
   /**
    * Only the outermost dialog of the answer: a form may nest its own.

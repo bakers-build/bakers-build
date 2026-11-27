@@ -558,6 +558,19 @@ describe('runtime slot — launch wrapping', () => {
     expect(s.order).toContain('after_run');
   });
 
+  it('names the herdr agent to the executor only for an isolating runtime', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const isolated = setup(recordingRuntime([], rec), false, {
+      herdrAgent: 'claude',
+    });
+    await isolated.run();
+    expect(isolated.executor.started[0]?.agent).toBe('claude');
+    const { hostRuntime } = await import('../../src/plugins/runtime.js');
+    const host = setup(hostRuntime, false, { herdrAgent: 'claude' });
+    await host.run();
+    expect(host.executor.started[0]).not.toHaveProperty('agent');
+  });
+
   it('host runtime passes the launch through unchanged', async () => {
     const plain = setup(undefined, true);
     await plain.run();

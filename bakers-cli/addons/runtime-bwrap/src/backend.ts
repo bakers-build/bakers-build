@@ -30,6 +30,8 @@ export interface BwrapDeps {
   bwrapPath?: string;
   cliRoot: string;
   env: Readonly<Record<string, string | undefined>>;
+  /** Reads `/proc/sys/dev/tty/legacy_tiocsti`; injected by tests. */
+  readTiocsti?: () => string;
 }
 
 const SYSTEM = [
@@ -84,6 +86,18 @@ function softwarePaths(env: BwrapDeps['env']): string[] {
     }
   }
   return paths;
+}
+
+/** True only when the host reads `legacy_tiocsti` as 0; unreadable keeps `--new-session`. */
+function tiocstiBlocked(deps: BwrapDeps): boolean {
+  try {
+    const read =
+      deps.readTiocsti ??
+      (() => readFileSync('/proc/sys/dev/tty/legacy_tiocsti', 'utf8'));
+    return read().trim() === '0';
+  } catch {
+    return false;
+  }
 }
 
 /** Build an explicit filesystem view; no blanket bind of the host root or home. */
@@ -180,7 +194,8 @@ function argv(
     '--unshare-pid',
     '--unshare-ipc',
     '--unshare-uts',
-    '--new-session',
+    // TIOCSTI already blocked: stay in the pane's foreground group so herdr sees the agent.
+    ...(tiocstiBlocked(deps) ? [] : ['--new-session']),
     '--die-with-parent',
     '--cap-drop',
     'ALL',

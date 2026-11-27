@@ -153,11 +153,11 @@ export class HerdrCoreExecutor implements BbExecutor {
     let started = false;
     try {
       // The run's env travels inside the 0600 launch script, never in argv.
-      launch = writeLaunchScript(this.commandFor(input));
+      launch = writeLaunchScript(this.commandFor(input), input.agent);
       // hc's CLI cannot set the start size, its API can: hc's headless default
       // (200x120) rewraps the agent's first draw in any smaller pane.
       await this.terminalRun({
-        argv: [process.execPath, RESIZE_FORWARDER, 'sh', launch.wrapPath],
+        argv: [process.execPath, RESIZE_FORWARDER, ...launch.argv],
         cwd: input.workspacePath,
         name,
         labels: {

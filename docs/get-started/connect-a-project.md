@@ -4,7 +4,7 @@ prev:
   link: /get-started/
 next:
   text: Run the first ticket
-  link: /get-started/first-ticket
+  link: /get-started/run-the-first-ticket
 ---
 
 <span id="set-up-a-project"></span>
@@ -13,6 +13,8 @@ next:
 # Prepare your project
 
 Connect a repository on your computer so agents can work on its tickets. A server **project** holds those tickets within your team's **workspace**; your checkout holds the code. This needs your [computer set up](/get-started/#set-up-your-computer).
+
+Ticket identifiers start with the project's **identifier prefix**, such as `SHOP` in `SHOP-42`, derived from the project name. A project editor can change it on the project's **Settings** tab or with `bakers_project_update`; existing tickets keep their identifier and only tickets created afterwards use the new prefix. A prefix that another project's tickets still carry stays reserved.
 
 <span id="skill-wizard-—-recommended"></span>
 <span id="connect-or-reuse"></span>
@@ -51,7 +53,7 @@ To change the defaults later, see [Use your client](/get-started/use-your-client
 
 **Done when:** the skill reports all its checks as passed. It then offers to start the conductor and a first trial ticket.
 
-**Next:** [Run the first ticket](/get-started/first-ticket).
+**Next:** [Run the first ticket](/get-started/run-the-first-ticket).
 
 <span id="what-changes"></span>
 

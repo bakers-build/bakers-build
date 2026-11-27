@@ -228,8 +228,11 @@ final class ShellPageLayoutTabRoutesTest extends KernelTestBase {
       $data = Yaml::parseFile(dirname(__DIR__, 7) . "/config/sync/island.profile.$profile.yml");
       return array_column($data['placements']['shell_page_header']['configuration']['component']['slots']['actions']['sources'], 'source_id');
     };
-    self::assertContains('bb_api_key_create_action', $actions('bb_shell_account'));
-    self::assertNotContains('bb_api_key_create_action', $actions('bb_shell'));
+    self::assertContains('bb_create_action', $actions('bb_shell_account'));
+    $key_actions = Yaml::parseFile(dirname(__DIR__, 4) . '/bb_core/modules/bb_api_key/bb_api_key.links.action.yml');
+    foreach (['bb_api_key.create.key', 'bb_api_key.create.service_account_key'] as $id) {
+      self::assertSame(['view.bb_api_keys.page'], $key_actions[$id]['appears_on'], $id);
+    }
   }
 
   /**

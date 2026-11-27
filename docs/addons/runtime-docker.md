@@ -1,6 +1,6 @@
 # Docker runtime
 
-**Experimental**, unreleased on `next` (13 November 2026). Review [limits](/agents/isolation#experimental-runtimes-known-limits).
+**Experimental**, unreleased on `next` (13 November 2026). Review [limits](/agents/isolation-models#experimental-runtimes-known-limits).
 
 `@bakers-build/addon-runtime-docker` fills the [`runtime` slot](/addons/slots#runtime-where-a-run-starts),
 starting each run in a container at host paths. Machine scope:

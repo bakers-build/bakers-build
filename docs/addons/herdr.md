@@ -72,7 +72,7 @@ addons: [
 
 `auto_setup_merge` behaves as in [workspace-git](/addons/workspace-git#options).
 
-<span id="isolated-runs"></span>Under an isolating runtime, each run gets a fresh [run clone](/addons/workspace-git#isolated-runs) registered on the host as a worktree of the parent repository, so herdr opens it with `herdr worktree open` and groups it under that repository. A plain workspace an older run opened, labelled with the branch, is reused until closed. `shared` is set on the runtime there too; the workspace option is a deprecated fallback with the same garbage-collection requirement.
+<span id="isolated-runs"></span>Under an isolating runtime, each run gets a fresh [run clone](/addons/workspace-git#isolated-runs) registered on the host as a worktree of the parent repository, so herdr opens it with `herdr worktree open` and groups it under that repository. A launcher named after the agent lets herdr identify it. A plain workspace an older run opened, labelled with the branch, is reused until closed. `shared` is set on the runtime there too; the workspace option is a deprecated fallback with the same garbage-collection requirement.
 
 A `panes` array replaces the previous one. The open layout runs once, after `after_create`, for a freshly created worktree; the executor applies it, also to a worktree another workspace made ([Conductor slots](/addons/slots)). Top-level `states` chooses what is served, while `with.states` only lays out panes.
 
@@ -82,7 +82,7 @@ Restart the conductor after changing options, then dispatch a disposable ticket 
 
 ## Verify
 
-Run `bakers conductor check`, then [a first ticket](/get-started/first-ticket). Its agent must open in a herdr tab named after its identifier, within the ticket worktree. A frozen ticket shows a `bb_frozen` sidebar token; resuming clears it.
+Run `bakers conductor check`, then [a first ticket](/get-started/run-the-first-ticket). Its agent must open in a herdr tab named after its identifier, within the ticket worktree. A frozen ticket shows a `bb_frozen` sidebar token; resuming clears it.
 
 Harness commands run through non-interactive `/bin/sh`, so binaries must resolve through `PATH`; shell aliases are not loaded.
 

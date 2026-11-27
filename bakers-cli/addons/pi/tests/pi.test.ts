@@ -378,3 +378,10 @@ describe('PiAgent.parseFootprint', () => {
     expect(new PiAgent({}).parseFootprint('')).toEqual(emptyAgentFootprint());
   });
 });
+
+describe('herdr agent name', () => {
+  it('declares pi so herdr identifies an isolated run', async () => {
+    const agent = new (await loadPiModule()).PiAgent({});
+    expect(agent.herdrAgent).toBe('pi');
+  });
+});

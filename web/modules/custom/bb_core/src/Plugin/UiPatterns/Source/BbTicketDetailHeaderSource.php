@@ -16,6 +16,7 @@ use Drupal\bb_core\Deployment\DeploymentLookup;
 use Drupal\Core\Template\Attribute;
 use Drupal\bb_core\Ticket\TicketLinkGroups;
 use Drupal\bb_core\Time\BbDate;
+use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\state_machine\Plugin\Workflow\WorkflowInterface;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
@@ -130,7 +131,7 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
       $parts[] = (string) $project->label();
     }
     if ($ticket->getWorkflow() !== '') {
-      $parts[] = $ticket->getWorkflow();
+      $parts[] = TypeWorkflows::ticketWorkflowOptions()[$ticket->getWorkflow()] ?? $ticket->getWorkflow();
     }
     $assignee = $ticket->get('assignee_user_id')->entity;
     if ($assignee instanceof AccountInterface) {

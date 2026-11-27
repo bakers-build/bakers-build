@@ -23,6 +23,8 @@ const NO_PROSE = new Set(['landing.md', 'de/index.md'])
 const NO_SIDEBAR = new Set(['index.md', 'landing.md', 'de/index.md'])
 
 function limitFor(rel) {
+  // Get started holds the Quick start and the Advanced setup on one page.
+  if (rel === 'get-started/index.md') return 350
   if (AREA_INDEX.has(rel)) return 250
   // Detailed addon references keep the configuration tier after relocation.
   if (/^addons\/[^/]+\//.test(rel)) return 1500
@@ -88,14 +90,14 @@ requireNavigation(
     ['Self-hosting', '/self-hosting/'],
   ]), 'manual areas must be Get started, Provision, Agents, Skills & Workflows, Addons, Configuration, Self-hosting in that order',
 )
-for (const slug of ['connector', 'connect-a-project', 'first-ticket']) {
+for (const slug of ['connect-your-chat', 'connect-a-project', 'run-the-first-ticket']) {
   requireNavigation(
     sidebarLinks(SIDEBAR['/get-started/'] ?? []).includes(`/get-started/${slug}`),
     `missing setup entry: ${slug}`,
   )
 }
 // The security overview lives under Agents but stays in the Provision sidebar.
-for (const link of ['/provision/machine', '/provision/guide', '/provision/tools', '/agents/security', '/provision/examples']) {
+for (const link of ['/provision/machine', '/provision/guide', '/provision/tools-and-integrations', '/agents/permissions-and-isolation', '/provision/choose-an-example']) {
   requireNavigation(
     sidebarLinks(SIDEBAR['/provision/'] ?? []).includes(link),
     `missing provision entry: ${link}`,

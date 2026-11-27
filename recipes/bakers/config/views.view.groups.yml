@@ -507,7 +507,7 @@ display:
                     actions:
                       sources:
                         -
-                          source_id: bb_group_create_action
+                          source_id: bb_create_action
                           source: {  }
                           node_id: groups_new_group
                     content:

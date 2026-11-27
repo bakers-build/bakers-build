@@ -21,3 +21,97 @@ entity.bb_figure_group.add_form:
   title: 'Add figure group'
   appears_on:
     - entity.bb_figure_group.collection
+
+# Create dialogs. The `dialog` key makes bb_create_action render an action as
+# the shell page header's round plus (core's local actions block is not
+# placed on these screens). `dialog` options: `query` (screen keys forwarded,
+# `*` for all), `route_query` (dialog key => screen route parameter, sent as
+# its id), `trigger_id` (element id for focus return).
+bb_core.create.ticket:
+  route_name: entity.bb_ticket.create_form
+  title: 'New ticket'
+  appears_on:
+    - view.tickets.my_work
+    - view.tickets.page_1
+    - view.tickets.project_tickets
+    - view.tickets.team_tickets
+  dialog:
+    query: ['*']
+    route_query:
+      project: bb_project
+
+bb_core.create.project:
+  route_name: entity.bb_project.create_form
+  title: 'New project'
+  appears_on: [view.projects.workspace_list]
+  dialog: {}
+
+bb_core.create.ticket_template_project:
+  route_name: entity.bb_ticket_template.add_for_project
+  title: 'Add template'
+  appears_on: [view.bb_ticket_templates.project_list]
+  dialog: {}
+
+bb_core.create.ticket_template_workspace:
+  route_name: entity.bb_ticket_template.add_for_workspace
+  title: 'Add template'
+  appears_on: [view.bb_ticket_templates.workspace_list]
+  dialog: {}
+
+bb_core.create.term_type:
+  route_name: entity.bb_term.add_form
+  route_parameters:
+    bb_vocabulary: type
+  title: 'Add type'
+  appears_on: [view.bb_terms.types]
+  dialog: {}
+
+bb_core.create.term_recipe:
+  route_name: entity.bb_term.add_form
+  route_parameters:
+    bb_vocabulary: recipe
+  title: 'Add recipe'
+  appears_on: [view.bb_terms.recipes]
+  dialog: {}
+
+bb_core.create.term_label:
+  route_name: entity.bb_term.add_form
+  route_parameters:
+    bb_vocabulary: label
+  title: 'Add label'
+  appears_on: [view.bb_terms.labels]
+  dialog: {}
+
+bb_core.create.environment:
+  route_name: entity.bb_environment.add_for_project
+  title: 'Add environment'
+  appears_on: [view.bb_environments.project_list]
+  dialog: {}
+
+bb_core.create.group:
+  route_name: entity.bb_group.create_form
+  title: 'New group'
+  appears_on: [view.groups.workspace_list]
+  dialog: {}
+
+bb_core.create.member_invite:
+  route_name: bb_core.workspace_invite
+  title: 'Invite members'
+  appears_on: [bb_core.bb_workspace.members]
+  dialog:
+    trigger_id: members-invite
+
+bb_core.create.team_member:
+  route_name: bb_core.bb_team.member_add
+  title: 'Add member'
+  appears_on: [bb_core.bb_team.members]
+  dialog:
+    trigger_id: members-add
+
+# The rail's team plus, rendered on every screen through the source's
+# `action` setting (BbMenuSource).
+bb_core.create.team:
+  route_name: entity.bb_team.create_form
+  title: 'New team'
+  appears_on: []
+  dialog: {}

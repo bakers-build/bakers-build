@@ -105,8 +105,8 @@ content:
           reference: bb_team
         key:
           type: string
-          title: Key
-          description: Ticket identifier prefix, e.g. "bakers.build" in BB-328.
+          title: Identifier prefix
+          description: Ticket identifier prefix, e.g. BB in BB-328. A change applies only to tickets created afterwards.
           required: false
           multiple: false
         next_number:
@@ -1805,6 +1805,16 @@ content:
           required: true
           multiple: false
           reference: bb_workspace
+        image:
+          type: image
+          title: Image
+          description: >-
+            Optional single image (png, gif, jpg, webp; 2 MB), stored privately
+            under team-images, square-cropped on the team's Settings form and
+            shown in the team page header and the rail's team row; initials
+            when absent.
+          required: false
+          multiple: false
         projects:
           type: reference
           title: Projects

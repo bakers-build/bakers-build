@@ -388,7 +388,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     $html = $this->renderMode('full');
     self::assertStringContainsString('About', $html);
     self::assertStringContainsString('The settings note on Overview.', $html);
-    foreach (['Key', 'Origin', 'Repository', 'Teams', 'Group', 'Environments'] as $label) {
+    foreach (['Identifier prefix', 'Origin', 'Repository', 'Teams', 'Group', 'Environments'] as $label) {
       self::assertStringContainsString('>' . $label . '<', $html);
     }
     self::assertMatchesRegularExpression('#<a[^>]*href="https://gitlab.example.com/keytec/bakers"[^>]*>GitLab - keytec/bakers</a>#', $html);
@@ -405,7 +405,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     $inspector = $this->container->get(ProjectInspectorRows::class);
     $rows = $inspector->build($this->project);
     self::assertSame(['key', 'repository', 'environments'], array_keys($rows));
-    self::assertSame('Key', $rows['key']['cells']['label']['value']);
+    self::assertSame('Identifier prefix', $rows['key']['cells']['label']['value']);
     self::assertSame('mono', $rows['key']['cells']['value']['kind']);
     self::assertSame('BB', $rows['key']['cells']['value']['value']);
     self::assertSame('badge', $rows['environments']['cells']['value']['kind']);

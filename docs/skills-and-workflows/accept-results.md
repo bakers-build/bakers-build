@@ -51,7 +51,7 @@ Use the findings to tell the agent what should happen next:
 
 For example: “The result meets the criteria. Wait for my merge instruction.” A merge needs explicit permission for the specific merge request, passing required CI checks and a mergeable branch. Deployment follows your project's workflow.
 
-**Done when:** the findings and next action are recorded, with someone responsible for that action. This completes your review; the ticket follows its own workflow to completion. Optional completion [ratings](/skills-and-workflows/metrics) are described separately.
+**Done when:** the findings and next action are recorded, with someone responsible for that action. This completes your review; the ticket follows its own workflow to completion. Optional completion [ratings](/skills-and-workflows/ticket-metrics) are described separately.
 
 ## Agent review and human review
 

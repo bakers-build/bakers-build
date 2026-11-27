@@ -1,0 +1,20 @@
+# Create dialogs rendered by bb_create_action (see bb_core.links.action.yml).
+bb_track.create.account:
+  route_name: bb_track.account_add
+  title: 'New billing account'
+  appears_on: [bb_track.account]
+  dialog: {}
+
+bb_track.create.worklog:
+  route_name: bb_track.worklog.add
+  title: 'Record time'
+  class: Drupal\bb_track\Menu\WorklogCreateAction
+  appears_on:
+    - view.worklog.page
+    - view.worklog.personal
+    - view.worklog.team
+    - view.worklog.project
+  dialog:
+    query: [date, project, ticket, submission]
+    route_query:
+      project: bb_project

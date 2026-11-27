@@ -115,6 +115,39 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A given priority is stored; without one the ticket has none.
+   */
+  public function testCreatesWithPriority(): void {
+    $values = ['title' => 'Urgent', 'workflow' => 'bb_work', 'project' => $this->project->uuid()];
+    $repository = $this->container->get('entity.repository');
+    $high = $repository->loadEntityByUuid('bb_ticket', $this->outputs($this->runTool('bakers_ticket_create', $values + ['priority' => 1]))['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $high);
+    self::assertSame('1', (string) $high->get('priority')->value);
+    $none = $repository->loadEntityByUuid('bb_ticket', $this->outputs($this->runTool('bakers_ticket_create', $values))['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $none);
+    self::assertTrue($none->get('priority')->isEmpty());
+  }
+
+  /**
+   * Any priority but 1, 2 or 3 is refused with the values; nothing is saved.
+   */
+  public function testInvalidPriorityIsRefused(): void {
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
+    $before = $storage->getQuery()->accessCheck(FALSE)->count()->execute();
+    foreach ([4, 0] as $priority) {
+      $this->assertFailure($this->runTool('bakers_ticket_create', [
+        'title' => 'Never',
+        'workflow' => 'bb_work',
+        'project' => $this->project->uuid(),
+        'recipe' => 'priority-refused',
+        'priority' => $priority,
+      ]), 'Priority must be 1 (High), 2 (Medium) or 3 (Low).');
+    }
+    self::assertSame($before, $storage->getQuery()->accessCheck(FALSE)->count()->execute());
+    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'priority-refused']));
+  }
+
+  /**
    * A description at the limit is stored; an oversized create saves nothing.
    */
   public function testDescriptionByteBudget(): void {
@@ -369,6 +402,83 @@ final class TicketCreateToolTest extends BakersToolTestBase {
       'project' => $this->project->uuid(),
     ]), 'may not create');
     self::assertEmpty($etm->getStorage('bb_ticket')->loadByProperties(['title' => 'Denied']));
+  }
+
+  /**
+   * AC6: a contributor creates in every project of the workspace.
+   */
+  public function testCreatesInAnyPermittedProject(): void {
+    $second = $this->project->createDuplicate();
+    $second->set('key', 'TWO');
+    $second->save();
+    $this->container->get('current_user')->setAccount($this->rankedReader(['contributor']));
+
+    foreach ([$this->project, $second] as $project) {
+      $out = $this->outputs($this->runTool('bakers_ticket_create', [
+        'title' => 'Allowed',
+        'workflow' => 'bb_work',
+        'project' => $project->uuid(),
+      ]));
+      $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+      self::assertInstanceOf(BbTicketInterface::class, $stored);
+      self::assertSame($project->id(), $stored->get('project_id')->target_id);
+    }
+  }
+
+  /**
+   * AC6: a readable project without the create right is refused by name.
+   *
+   * The caller may create tickets elsewhere, so only this project's right
+   * is missing.
+   */
+  public function testReadableProjectWithoutCreateRightIsRefused(): void {
+    $this->project->set('key', 'TOOL')->save();
+    $caller = $this->rankedReader(['member']);
+    $elsewhere = $this->container->get('entity_type.manager')->getStorage('bb_workspace')
+      ->create(['name' => 'elsewhere', 'slug' => 'elsewhere']);
+    assert($elsewhere instanceof ContentEntityInterface);
+    $elsewhere->save();
+    $this->addMembership($elsewhere, $caller, ['contributor']);
+    $this->container->get('current_user')->setAccount($caller);
+    $before = $this->ticketCount();
+
+    $this->assertFailure($this->runTool('bakers_ticket_create', [
+      'title' => 'Refused',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+    ]), 'You may not create tickets in project TOOL: you lack the create-ticket right there.');
+    self::assertSame($before, $this->ticketCount());
+  }
+
+  /**
+   * A reader of the fixture project holding these workspace roles only.
+   *
+   * @param array<string> $workspace_roles
+   *   Its workspace roles.
+   */
+  private function rankedReader(array $workspace_roles): UserInterface {
+    $etm = $this->container->get('entity_type.manager');
+    if ($etm->getStorage('user_role')->load('ranked') === NULL) {
+      $etm->getStorage('user_role')->create(['id' => 'ranked', 'label' => 'Ranked'])->save();
+      user_role_grant_permissions('ranked', [
+        'view bb_ticket', 'view bb_project', 'view bb_term', 'use text format bb_rich',
+      ]);
+    }
+    $reader = $this->account('ranked-' . implode('-', $workspace_roles), ['ranked']);
+    $this->addMembership($this->workspace, $reader, $workspace_roles);
+    $team = $this->project->get('teams')->entity;
+    assert($team instanceof ContentEntityInterface);
+    $this->addMembership($team, $reader);
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    return $reader;
+  }
+
+  /**
+   * The number of tickets, access-unchecked.
+   */
+  private function ticketCount(): int {
+    return count($this->container->get('entity_type.manager')->getStorage('bb_ticket')
+      ->getQuery()->accessCheck(FALSE)->execute());
   }
 
   /**

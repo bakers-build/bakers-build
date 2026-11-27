@@ -165,6 +165,8 @@ const git = (args: string[], cwd?: string) =>
     cwd,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
+    // Node's 1 MiB default overflows on a large tree listing (ENOBUFS).
+    maxBuffer: Infinity,
   }).trim();
 
 const tryGit = (args: string[]) => {

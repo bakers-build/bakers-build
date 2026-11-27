@@ -28,7 +28,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_create',
   label: new TranslatableMarkup('Create a ticket'),
-  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee user UUID assigns that user when they may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Each reviewer user UUID adds that user as a reviewer when they may review in the project’s workspace; otherwise it adds no one and the message says so. Each blocker (ticket identifier or UUID) must be a readable, open ticket of the same project; otherwise no ticket is created. Returns the new ticket’s UUID, identifier, state, assignee and reviewers (each with UUID, name and mail) and URL.'),
+  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee user UUID assigns that user when they may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Each reviewer user UUID adds that user as a reviewer when they may review in the project’s workspace; otherwise it adds no one and the message says so. Each blocker (ticket identifier or UUID) must be a readable, open ticket of the same project; otherwise no ticket is created. An optional priority is 1 (High), 2 (Medium) or 3 (Low); any other value creates nothing. Returns the new ticket’s UUID, identifier, state, assignee and reviewers (each with UUID, name and mail) and URL.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -48,7 +48,7 @@ use Drupal\tool\TypedData\OutputDefinition;
     'project' => new InputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Project'),
-      description: new TranslatableMarkup('Project key (e.g. BAKERS) or UUID.'),
+      description: new TranslatableMarkup('Project identifier prefix (e.g. BAKERS) or UUID.'),
       constraints: ['NotBlank' => []],
     ),
     'description' => new InputDefinition(
@@ -109,6 +109,12 @@ use Drupal\tool\TypedData\OutputDefinition;
         description: new TranslatableMarkup('One ticket identifier or UUID.'),
         constraints: ['NotBlank' => []],
       ),
+    ),
+    'priority' => new InputDefinition(
+      data_type: 'integer',
+      label: new TranslatableMarkup('Priority'),
+      description: new TranslatableMarkup('1 High, 2 Medium or 3 Low; omit for none. Any other value creates nothing.'),
+      required: FALSE,
     ),
   ],
   output_definitions: [
@@ -222,7 +228,7 @@ final class TicketCreate extends ToolBase {
     if (!$this->entities()->getAccessControlHandler('bb_ticket')->createAccess('bb_ticket', $this->currentUser)) {
       throw new \InvalidArgumentException('You may not create tickets.');
     }
-    $project = $this->readableProject($values['project']);
+    $project = $this->creatableProject($values['project']);
     TicketWriteBudget::check($values['description'] ?? '');
     $fields = [
       'title' => $values['title'],
@@ -230,6 +236,7 @@ final class TicketCreate extends ToolBase {
       'project_id' => $project->id(),
       'description' => ['value' => $values['description'] ?? NULL, 'format' => 'bb_rich'],
       'parent_id' => empty($values['parent']) ? NULL : $this->readableTicket($values['parent'])->id(),
+      'priority' => $this->priority($values['priority'] ?? NULL, FALSE),
     ];
     foreach (array_intersect_key(['type' => 'ticket_type', 'recipe' => 'recipe'], array_filter($values)) as $vid => $field) {
       $fields[$field] = $this->term($project->getGroup()?->getWorkspace(), $vid, $values[$vid])->id();
@@ -276,6 +283,19 @@ final class TicketCreate extends ToolBase {
       ...$this->ticketPeople($ticket),
       'url' => $ticket->toUrl()->setAbsolute()->toString(),
     ]);
+  }
+
+  /**
+   * The readable project of this key or UUID the caller may create in.
+   *
+   * @throws \InvalidArgumentException
+   */
+  private function creatableProject(string $project): BbProjectInterface {
+    $found = $this->readableProject($project);
+    if (!$this->fence()->mayCreateIn($this->currentUser, 'bb_ticket', $found)) {
+      throw new \InvalidArgumentException(sprintf('You may not create tickets in project %s: you lack the create-ticket right there.', $found->getKey()));
+    }
+    return $found;
   }
 
   /**

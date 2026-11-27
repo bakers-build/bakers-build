@@ -27,6 +27,16 @@ class ToolServerTests(unittest.TestCase):
         plain = simulation.call('bakers', {'argv': TOOL})
         self.assertEqual(selected, plain)
 
+    def test_a_created_project_reads_back_and_takes_tickets(self):
+        simulation = load_server().Simulation({'simulation': {}})
+        call = lambda tool, data: simulation.call('bakers', {'argv': [*TOOL, tool, '--data', json.dumps(data)]})
+        created = json.loads(call('bakers_project_create', {'group': 'g', 'name': 'shop', 'teams': ['t'],
+                                                             'repository': {'url': 'https://git.example.test/shop.git', 'default_branch': 'main'}})['stdout'])
+        self.assertIsNone(created['repository']['branch_convention'])
+        self.assertEqual(call('bakers_project_read', {'project': created['uuid']})['exit_code'], 0)
+        self.assertEqual(call('bakers_ticket_create', {'project': created['uuid'], 'title': 'T', 'workflow': 'bb_work'})['exit_code'], 0)
+        self.assertNotEqual(call('bakers_ticket_create', {'project': 'unknown', 'title': 'T', 'workflow': 'bb_work'})['exit_code'], 0)
+
     def test_a_relative_path_reads_the_same_virtual_file(self):
         simulation = load_server().Simulation({'simulation': {'files': {'WORKFLOW.md': '# Project'}}})
         self.assertEqual(simulation.call('read_file', {'path': './WORKFLOW.md'}), simulation.call('read_file', {'path': 'WORKFLOW.md'}))

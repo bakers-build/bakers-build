@@ -31,7 +31,7 @@ export default {
 | `schema_version` | `1`. The `// @bakers-schema-version 1` header and this field must agree. |
 | `machine_id` | Required; this host's own key on the server. `bakers init` generates a UUID for a new machine and keeps an existing one; a UUID in any case loads lowercased. Conductor ids derive from it, so a second user with the same id is refused at `bakers conductor start`; remove `machine_id` and run `bakers init` for a fresh UUID. |
 | `label` | Required display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. It names the machine on the server when the machine first registers, and a machine still named after its `machine_id` on its next start; rename it there afterwards. |
-| `addons` | This host's addons: a package name or `{ use, alias?, with? }`, the same shape as the project's `addons`. Agent harnesses go here as agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. `with` is checked against the addon's options schema. See [Configure addons](/addons/configure). |
+| `addons` | This host's addons: a package name or `{ use, alias?, with? }`, the same shape as the project's `addons`. Agent harnesses go here as agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. `with` is checked against the addon's options schema. See [Configure addons](/addons/configure-addons). |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
 | `agents` | Object, described [below](#agents). An array is invalid. |
 | `agents.catalog` | Extra aliases `{ harness, alias?, with? }` built from installed harnesses. |
@@ -65,7 +65,7 @@ Assigning means setting a conductor on a ticket or template. The machine's **Ass
 | `allow` | The owner and anyone who can view the conductor. |
 | `forbid` | The owner only; nobody else, administrators included. |
 
-A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`. Only the owner changes it, on the machine's web UI **Settings**; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
+A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`. Only the owner changes it, on the machine's web UI **Settings**; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors-and-variants#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
 
 ## Preview-link tunnels
 
@@ -77,17 +77,17 @@ Configure [Ports](/addons/ports) and its chosen transport in this machine's `add
 
 ## Agents
 
-Top-level `addons` supplies harnesses; the sibling `agents` object holds the catalog, filters and routes. Keep these beside `machine_id`, not in the project file. The guide shows complete files for [one catalog agent](/agents/guide#use-one-agent) and [agent routes](/agents/guide#use-agent-routes).
+Top-level `addons` supplies harnesses; the sibling `agents` object holds the catalog, filters and routes. Keep these beside `machine_id`, not in the project file. The guide shows complete files for [one catalog agent](/agents/configure-and-select-agents#use-one-agent) and [agent routes](/agents/configure-and-select-agents#use-agent-routes).
 
 ### The agents object
 
-`agents.catalog` adds or overrides aliases supplied by the harness addons. `enabled` and `disabled` filter what is available. See [all catalog fields, defaults and loading order](/agents/reference#configure-the-catalog).
+`agents.catalog` adds or overrides aliases supplied by the harness addons. `enabled` and `disabled` filter what is available. See [all catalog fields, defaults and loading order](/agents/agent-policy-reference#configure-the-catalog).
 
 ### Which agent runs a state
 
-`agents.routes` maps workflow states to catalog aliases; its `default` route applies without a route label, and its `'*'` entry is the default agent. Ticket labels can select an alias or named route. See [selection fields](/agents/reference#configure-selection) and [the complete precedence order](/agents/reference#which-agent-runs-a-state).
+`agents.routes` maps workflow states to catalog aliases; its `default` route applies without a route label, and its `'*'` entry is the default agent. Ticket labels can select an alias or named route. See [selection fields](/agents/agent-policy-reference#configure-selection) and [the complete precedence order](/agents/agent-policy-reference#which-agent-runs-a-state).
 
-[Harness configuration](/agents/reference#harnesses) links package-specific options; [Execution security](/provision/security/execution) owns sandbox modes and prerequisites.
+[Harness configuration](/agents/agent-policy-reference#harnesses) links package-specific options; [Execution security](/provision/security/execution) owns sandbox modes and prerequisites.
 
 ### Agent plugins
 
@@ -97,11 +97,11 @@ The plugins a run installs are the project's [`marketplaces`](/configuration/pro
 addons: [{ use: '@bakers-build/addon-claude', with: { plugins: false } }],
 ```
 
-Claude in `system` or `yolo` uses your own `~/.claude`; `home: 'individual'` keeps a separate [agent home](/configuration/project#agent-plugins).
+Claude in `system` or [bypass mode](/provision/security/execution#modes) uses your own `~/.claude`; `home: 'individual'` keeps a separate [agent home](/configuration/project#agent-plugins).
 
 ## Secrets file
 
-The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start: foreground, detached, the restart after a config change or an update, and `bakers conductor once`. Never put it in the project's committed `.bakers/`.
+The conductor reads this machine's model credentials from `~/.bakers/.bakers.env`, beside `machine.config.js` (`BAKERS_HOME` moves both). It reads the file at every start, `bakers conductor once` included. Never commit it to the project's `.bakers/`.
 
 ```sh
 # ~/.bakers/.bakers.env
@@ -111,8 +111,9 @@ export OPENAI_API_KEY='sk-...'
 
 | Rule | Behavior |
 |---|---|
-| Format | One `KEY=value` per line; a leading `export ` is accepted, `#` starts a comment line, blank lines are skipped. A value in matching `'…'` or `"…"` loses the quotes. No expansion and no escapes: `$(…)`, backticks and `$VAR` stay literal text, and the file is never run as shell. |
+| Format | One `KEY=value` per line; a leading `export `, `#` comment lines and blank lines are allowed. A value in matching `'…'` or `"…"` loses the quotes. No expansion and no escapes: `$(…)`, backticks and `$VAR` stay literal text, and the file is never run as shell. |
 | Bad line | The start stops and names the line number, never its text. |
+| Config files | Never in `process.env` while config files load: `process.env.X` in `machine.config.js` or `project.config.js` is `undefined`. |
 | Permissions | Only you may read it. A file group or others can read stops the start with `chmod 600 ~/.bakers/.bakers.env` as the fix. A missing file is no error. |
 | Shell wins | A variable exported in the shell that starts the conductor overrides the file, so `( . ~/.bakers/.backer.env; bakers conductor start )` keeps working. To switch, rename that file to `.bakers.env` and `chmod 600` it. |
 | Hand-out | A run receives a value only when its agent addon declares the variable. Every other value stays in the conductor, under every runtime, the host included. |

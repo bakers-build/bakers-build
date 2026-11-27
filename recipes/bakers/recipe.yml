@@ -33,6 +33,8 @@ install:
   # Ticket activities and their opt-in mails; an account's mail settings row
   # is written only when it saves its notifications page.
   - bb_activity
+  # Signed webhooks per project, group or workspace, fed by ticket activities.
+  - bb_webhook
   # The island link layer (BB-398). Path-based custom code, not a composer
   # package, so nothing enables it implicitly — and every hook it ships is
   # silently inert while it is uninstalled.
@@ -294,7 +296,7 @@ config:
       # `field_config` entities), which is what keeps this display shippable
       # without pulling in anything that computes `next_number`.
       #
-      # The project, group and workspace displays below their modes are NOT
+      # The project, group, team and workspace displays below their modes are NOT
       # here: their image widget is `bb_square_image`, which `bb_core` does
       # not depend on, so they ship in this recipe's own `config/` and in
       # `config/sync/**`, and no longer from the module.
@@ -302,7 +304,6 @@ config:
       - core.entity_form_mode.bb_group.create
       - core.entity_form_mode.bb_group.settings
       - core.entity_form_mode.bb_team.settings
-      - core.entity_form_display.bb_team.bb_team.settings
       - core.entity_form_mode.bb_workspace.settings
       - core.entity_form_mode.bb_machine.settings
       - core.entity_form_mode.bb_conductor.settings

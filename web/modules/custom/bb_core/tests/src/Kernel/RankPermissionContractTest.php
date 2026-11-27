@@ -43,6 +43,9 @@ final class RankPermissionContractTest extends KernelTestBase {
     // The lead rank names `* bb_ticket_trigger`, which the Entity module's
     // permission provider generates only while the submodule is enabled.
     'views', 'plugin', 'bb_ticket_trigger',
+    // The lead rank names `* bb_webhook`, generated likewise only while
+    // bb_webhook is enabled.
+    'bb_activity', 'bb_webhook',
     // The contributor and lead ranks name `access mcp server`.
     'mcp_server',
   ];

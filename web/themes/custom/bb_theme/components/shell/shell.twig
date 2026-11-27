@@ -32,7 +32,7 @@
    so a form swapped into this wrapper with no target of its own resolves
    `this` AT THIS ELEMENT rather than at itself — which is what lets
    `BbTicketCreateForm` state no target at all and still land in exactly one
-   place. `TicketCreateActionSource::TARGET_ID` (BB-420 Task 36 moved it there
+   place. `CreateActionSource::TARGET_ID` (BB-420 Task 36 moved it there
    when `BbDialogPlacement` was deleted) stays the single spelling this id is
    drawn from (Controller Ruling) precisely so `ShellOverlayTargetTest` can
    still catch a rename on either side; this attribute is the second half of

@@ -7,9 +7,9 @@ description: Agent permission modes, native sandbox rules, prerequisites and exc
 
 <span id="run-security"></span>
 
-Agent permissions govern actions the harness allows, refuses or asks you to approve. `permissions: 'sandbox'` also enables the harness's native OS restrictions where supported. This does not select a whole-process runtime: choose [isolation](/agents/isolation) separately. [Tools](/provision/tools#work-across-permissions-and-isolation) provide required operations without broadly relaxing either layer.
+Agent permissions govern actions the harness allows, refuses or asks you to approve. `permissions: 'sandbox'` also enables the harness's native OS restrictions where supported. This does not select a whole-process runtime: choose [isolation](/agents/isolation-models) separately. [Tools](/provision/tools-and-integrations#work-across-permissions-and-isolation) provide required operations without broadly relaxing either layer.
 
-Set `permissions` in the harness entry's `with`. A `catalog` entry uses its own `with`: omitted keys take defaults, not the harness entry's values. [Shared policy](/provision/security/shared-settings) supplies supported machine/project defaults; [Agent policy](/agents/reference#run-security) explains placement.
+Set `permissions` in the harness entry's `with`. A `catalog` entry uses its own `with`: omitted keys take defaults, not the harness entry's values. [Shared policy](/provision/security/shared-settings) supplies supported machine/project defaults; [Agent policy](/agents/agent-policy-reference#run-security) explains placement.
 
 ## Modes
 
@@ -17,10 +17,10 @@ Set `permissions` in the harness entry's `with`. A `catalog` entry uses its own 
 |---|---|---|---|
 | `sandbox` | No permission bypass; the harness's own OS sandbox, tuned by the `sandbox` keys | explicit `sandbox.mcp_servers` plus run-bound conductor tools, where supported | dropped |
 | `system` (default) | bakers.build adds no security flag; your own harness configuration decides | yours | dropped |
-| `yolo` | Harness safeguards bypassed; outer runtime still applies | yours | passed |
+| `yolo` | **The bypass mode**: harness safeguards bypassed; outer runtime still applies | yours | passed |
 | `custom` | Only your `config`, handed to the harness unchanged | as `config` says | dropped |
 
-The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so an explicit `permissions: 'sandbox'` fails loading for them; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions`, `security` (renamed `permissions`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
+Bypass flags: Claude `--dangerously-skip-permissions`; Codex `--sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust`; Grok `--permission-mode bypassPermissions`; OpenCode `--auto`. Other modes' flags, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so an explicit `permissions: 'sandbox'` fails loading for them; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions`, `security` (renamed `permissions`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
 ## Sandbox prerequisites
 
@@ -30,7 +30,7 @@ The launch flags per mode, the `sandbox` keys and their defaults are on the [Cla
 bakers conductor check
 ```
 
-It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix>`, and exits 1 when one agent cannot start its sandbox. `system`, `yolo` and `custom` agents are not checked.
+It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix>`, and exits 1 when one agent cannot start its sandbox. Other modes are not checked.
 
 | Platform | Claude | Codex | Grok |
 |---|---|---|---|
@@ -39,7 +39,7 @@ It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <
 
 Install Linux prerequisites through your host's package manager. Native sandbox mode inside an outer runtime needs those prerequisites there too; `conductor check` probes only the host.
 
-OpenCode has no OS sandbox on any platform; it runs in `system` and rejects `sandbox` when loading, so `bakers conductor check` never checks it.
+`bakers conductor check` never checks OpenCode: it has no OS sandbox.
 
 A host or container that forbids unprivileged user namespaces shows `bwrap cannot set up its sandbox: …` (Claude) or `codex sandbox cannot start: …` (Codex). Allow them on the host (on Ubuntu 24.04 and later, AppArmor restricts them), or run the conductor where they are allowed.
 
@@ -47,7 +47,7 @@ While an enabled agent cannot start its sandbox, the conductor claims nothing an
 
 ## Claude in `sandbox` mode
 
-The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)` and `AskUserQuestion`. They run without a prompt. Anything else asks you in the run's terminal, because Claude starts in `default` permission mode: `dontAsk` would deny it outright, and no allow rule can permit a write to a protected path such as `.claude/` or `.git`. A run nobody watches therefore waits at such a prompt.
+The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)`, `AskUserQuestion` and, with plugins on, `Read` of the agent home's `plugins/`. They run without a prompt. Anything else asks in the run's terminal, because Claude starts in `default` permission mode: `dontAsk` would deny it outright, and no allow rule can permit a write to a protected path such as `.claude/` or `.git`. An unwatched run waits there.
 
 What the default blocks:
 
@@ -120,7 +120,7 @@ The inbox and addon listener contexts for `after_done`, `on_freeze` and `on_resu
 
 ## Use tools for required operations
 
-Keep operations requiring extra authority behind [conductor tools](/provision/tools#work-across-permissions-and-isolation): `provision_up` for application preparation, DDEV tools for application checks, Forge for delivery, Ports for previews. This keeps the shell restricted and credentials with the integration. Enable the appropriate addons and tool access; a denied tool call is not fixed by choosing an outer runtime.
+Keep operations requiring extra authority behind [conductor tools](/provision/tools-and-integrations#work-across-permissions-and-isolation): `provision_up` for application preparation, DDEV tools for application checks, Forge for delivery, Ports for previews. This keeps the shell restricted and credentials with the integration. Enable the appropriate addons and tool access; a denied tool call is not fixed by choosing an outer runtime.
 
 Tools execute with their own permissions, outside the agent boundary where configured. Their authorization, mounts and editable scripts still need review. Native sandbox and outer isolation rules do not automatically constrain a host-side tool.
 

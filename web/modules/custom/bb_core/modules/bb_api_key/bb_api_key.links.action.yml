@@ -1,0 +1,22 @@
+# Create dialogs rendered by bb_create_action (see bb_core.links.action.yml).
+bb_api_key.create.service_account:
+  route_name: bb_api_key.service_account.add
+  title: 'Create service account'
+  appears_on: [view.bb_service_accounts.settings]
+  dialog: {}
+
+# One key list, two dialogs: the owner's own form, or a service account's
+# workspace route (ApiKeyCreateAction picks by the listed account).
+bb_api_key.create.key:
+  route_name: bb_api_key.add
+  title: 'Create API key'
+  class: Drupal\bb_api_key\Menu\ApiKeyCreateAction
+  appears_on: [view.bb_api_keys.page]
+  dialog: {}
+
+bb_api_key.create.service_account_key:
+  route_name: bb_api_key.service_account.key_add
+  title: 'Create API key'
+  class: Drupal\bb_api_key\Menu\ApiKeyCreateAction
+  appears_on: [view.bb_api_keys.page]
+  dialog: {}

@@ -6,7 +6,7 @@ Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example
 
 ## AI first
 
-On the server, open your signed-in agent and [install its bakers skills](/skills-and-workflows/skills), then ask:
+On the server, open your signed-in agent and [install its bakers skills](/skills-and-workflows/install-the-bakers-skills), then ask:
 
 ```text
 Use bakers:bb-init for this remote worker. Follow the worker-server
@@ -57,7 +57,7 @@ This example assumes a project already chose herdr and a Docker-based runtime. O
    bakers auth login
    ```
 
-   Device-code sign-in is suitable for an attended setup. For unattended operation, use a [service account or operator-issued identity](/provision/security/credentials#machine-identities) with `--auth-type client_credentials --secret-env <NAME>` ([connections](/configuration/connection)). Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)).
+   Device-code sign-in is suitable for an attended setup. For unattended operation, use a [service account or operator-issued identity](/provision/security/api-keys-and-service-accounts#machine-identities) with `--auth-type client_credentials --secret-env <NAME>` ([connections](/configuration/connection)). Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)).
 
 6. Verify as the worker user:
 
@@ -68,6 +68,6 @@ This example assumes a project already chose herdr and a Docker-based runtime. O
    bakers info
    ```
 
-**Done when:** all checks succeed, the online check has no findings and `bakers info` lists a workspace. Continue with [project setup](/get-started/connect-a-project) on this server. If the checkout is already configured, go to [your first ticket](/get-started/first-ticket).
+**Done when:** all checks succeed, the online check has no findings and `bakers info` lists a workspace. Continue with [project setup](/get-started/connect-a-project) on this server. If the checkout is already configured, go to [your first ticket](/get-started/run-the-first-ticket).
 
 After reboot, nothing restarts by itself: a service manager must start `herdr server` as the worker user, because agent runs open in its panes, and `bakers conductor start --foreground` for each conductor; bakers.build ships no service unit.

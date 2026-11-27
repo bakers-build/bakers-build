@@ -27,6 +27,7 @@ Feature: Create dialogs share dismissal and submission behavior
       | project |
       | label   |
       | recipe  |
+      | environment |
 
   Scenario Outline: A create dialog opens with focus in its first field
     When I open the "<surface>" create dialog
@@ -55,6 +56,7 @@ Feature: Create dialogs share dismissal and submission behavior
       | surface |
       | ticket  |
       | project |
+      | environment |
 
   @regression:short-viewport
   Scenario Outline: Create actions and close controls remain reachable in a short window

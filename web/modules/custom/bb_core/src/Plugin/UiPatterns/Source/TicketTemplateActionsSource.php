@@ -56,7 +56,7 @@ final class TicketTemplateActionsSource extends SourcePluginBase {
       $dialog = Url::fromRoute('bb_core.ticket_template_instantiate_form', $template->toUrl()->getRouteParameters(), ['query' => $back + ['_wrapper_format' => 'island_dialog']]);
       $build['create'] = $this->button((string) $this->t('Create ticket'), $create->setOption('query', $back)->toString(), 'primary');
       $build['create']['#props']['attributes'] = (new Htmx())->get($dialog)
-        ->target('#' . CreateActionSourceBase::TARGET_ID)->select('dialog:not(dialog dialog)')->swap('innerHTML')->getAttributes();
+        ->target('#' . CreateActionSource::TARGET_ID)->select('dialog:not(dialog dialog)')->swap('innerHTML')->getAttributes();
       $build['create']['#attached']['library'] = ['core/drupal.htmx'];
     }
     $build += BbContentEntityFormBase::deleteAction($template);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
@@ -87,8 +87,8 @@ function navigation(t, mutate = () => {}) {
     { label: 'Self-hosting', link: '/self-hosting/' },
   ]
   const sidebar = Object.fromEntries(areas.map(({ label, link }) => [link, [{ text: label, items: [{ link }] }]]))
-  sidebar['/get-started/'][0].items.push(...['connector', 'connect-a-project', 'first-ticket'].map(slug => ({ link: `/get-started/${slug}` })))
-  sidebar['/provision/'][0].items.push(...['/provision/machine', '/provision/guide', '/provision/tools', '/agents/security', '/provision/examples'].map(link => ({ link })))
+  sidebar['/get-started/'][0].items.push(...['connect-your-chat', 'connect-a-project', 'run-the-first-ticket'].map(slug => ({ link: `/get-started/${slug}` })))
+  sidebar['/provision/'][0].items.push(...['/provision/machine', '/provision/guide', '/provision/tools-and-integrations', '/agents/permissions-and-isolation', '/provision/choose-an-example'].map(link => ({ link })))
   for (const route of [...areas.map(a => a.link), ...Object.values(sidebar).flatMap(gs => gs.flatMap(g => g.items.map(i => i.link)))]) {
     const file = join(root, 'docs', route.slice(1) + (route.endsWith('/') ? 'index.md' : '.md'))
     mkdirSync(dirname(file), { recursive: true })
@@ -118,7 +118,7 @@ test('accepts complete navigation and rejects missing setup or excluded sidebar 
   const valid = navigation(t)
   assert.equal(valid.status, 0, valid.stdout)
   const invalid = navigation(t, (_areas, sidebar) => {
-    sidebar['/get-started/'][0].items = sidebar['/get-started/'][0].items.filter(i => i.link !== '/get-started/connector')
+    sidebar['/get-started/'][0].items = sidebar['/get-started/'][0].items.filter(i => i.link !== '/get-started/connect-your-chat')
     sidebar['/addons/'][0].items.push({ link: '/development/internal-only' })
   })
   assert.equal(invalid.status, 1, invalid.stdout)
@@ -128,10 +128,10 @@ test('accepts complete navigation and rejects missing setup or excluded sidebar 
 
 test('requires machine setup, tools and security under Provision', t => {
   const result = navigation(t, (_areas, sidebar) => {
-    sidebar['/provision/'][0].items = sidebar['/provision/'][0].items.filter(i => !['/provision/machine', '/provision/tools', '/agents/security'].includes(i.link))
+    sidebar['/provision/'][0].items = sidebar['/provision/'][0].items.filter(i => !['/provision/machine', '/provision/tools-and-integrations', '/agents/permissions-and-isolation'].includes(i.link))
   })
   assert.equal(result.status, 1, result.stdout)
-  for (const link of ['/provision/machine', '/provision/tools', '/agents/security']) assert.ok(result.stdout.includes(`missing provision entry: ${link}`), result.stdout)
+  for (const link of ['/provision/machine', '/provision/tools-and-integrations', '/agents/permissions-and-isolation']) assert.ok(result.stdout.includes(`missing provision entry: ${link}`), result.stdout)
 })
 
 test('redirect HTML preserves an incoming fragment unless its target specifies one', async () => {
@@ -150,5 +150,15 @@ test('redirect HTML preserves an incoming fragment unless its target specifies o
     runInNewContext(script, { location: { hash, replace: to => { destination = to } } })
     assert.equal(destination, expected)
     assert.ok(html.includes(`http-equiv="refresh" content="0;url=${target}"`), 'no-JS fallback remains')
+  }
+})
+
+test('get started opens with the quick start, then the advanced setup with its old anchors', () => {
+  // The source, not the build: CI runs these tests without a site build; check-site.mjs resolves links.
+  const md = readFileSync(new URL('../get-started/index.md', import.meta.url), 'utf8')
+  const h2 = [...md.matchAll(/^## .*?\{#([\w-]+)\}$/gm)].map(match => match[1])
+  assert.deepEqual(h2.slice(0, 2), ['quick-start', 'advanced-setup'], `h2 order: ${h2}`)
+  for (const id of ['set-up-your-computer', 'set-up-your-project', 'create-a-ticket', 'run-a-ticket']) {
+    assert.match(md, new RegExp(`^### .*\\{#${id}\\}$`, 'm'), `old anchor #${id} must stay under Advanced setup`)
   }
 })

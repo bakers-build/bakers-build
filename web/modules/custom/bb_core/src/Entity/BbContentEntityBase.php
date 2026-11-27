@@ -18,6 +18,11 @@ use Drupal\bb_core\Access\WorkspaceResolverInterface;
  * through the BbContentEntityInterface accessors so that every concrete
  * bakers.build entity inherits uniform creation/modification tracking without
  * repetition.
+ *
+ * Every bakers.build content entity type extends it, so its children grow with
+ * the product; suppressed as IslandPluginBase does.
+ *
+ * @SuppressWarnings("PHPMD.NumberOfChildren")
  */
 abstract class BbContentEntityBase extends ContentEntityBase implements BbContentEntityInterface {
 

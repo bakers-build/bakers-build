@@ -54,6 +54,39 @@ export function checkOutput(fixture, output) {
     checks.push({ id: 'max-doc-loads', met: loads <= fixture.input.max_doc_loads,
       reason: `At most ${fixture.input.max_doc_loads} documentation page loads per setup; loaded ${loads}` });
   }
+  const commands = saved.tools.filter(({ action }) => action?.type === 'command').map(({ action }) => action.argv);
+  for (const words of fixture.input.forbidden_commands ?? []) {
+    const pattern = new RegExp(`(^| )${words.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}( |$)`);
+    checks.push({ id: `forbidden-${words}`, met: !commands.some(argv => pattern.test(argv.join(' '))), reason: `No command may run \`${words}\`` });
+  }
+  const final = saved.turns.findLast(turn => turn.role === 'assistant' && turn.content?.type === 'final')?.content.text ?? '';
+  for (const fragment of fixture.input.final_fragments ?? []) {
+    checks.push({ id: `final-${fragment}`, met: final.includes(fragment), reason: `The final report must contain \`${fragment}\`` });
+  }
+  for (const words of fixture.input.required_commands ?? []) {
+    checks.push({ id: `required-${words}`, met: commands.some(argv => argv.join(' ') === words), reason: `The command \`${words}\` must run as given` });
+  }
+  // Text the person sees before answering: messages and questions up to the first reply after the request.
+  const firstReply = saved.turns.findIndex((turn, index) => index > 0 && turn.role === 'user');
+  const shown = saved.turns.slice(0, firstReply < 0 ? undefined : firstReply)
+    .filter(turn => turn.role === 'assistant' && ['message', 'question'].includes(turn.content?.type)).map(turn => turn.content.text).join('\n');
+  for (const fragment of fixture.input.shown_before_answer ?? []) {
+    checks.push({ id: `shown-${fragment}`, met: shown.includes(fragment), reason: `\`${fragment}\` must be shown before the person answers` });
+  }
+  if (fixture.input.min_questions !== undefined) checks.push({ id: 'min-questions', met: questions.length >= fixture.input.min_questions,
+    reason: `At least ${fixture.input.min_questions} questions; asked ${questions.length}` });
+  if (fixture.input.tool_sequence) {
+    // Each step is the next `bakers tools <tool>` call; its argv names every fragment, and no other step's.
+    const calls = commands.filter(argv => argv[0] === 'bakers' && argv[1] === 'tools').map(argv => ({ tool: argv[2], text: argv.slice(3).join(' ') }));
+    const steps = fixture.input.tool_sequence;
+    const others = step => steps.filter(other => other.tool === step.tool && other !== step).flatMap(other => other.fragments.filter(f => !step.fragments.includes(f)));
+    let index = 0;
+    for (const call of calls) {
+      const step = steps[index];
+      if (step && call.tool === step.tool && step.fragments.every(f => call.text.includes(f)) && !others(step).some(f => call.text.includes(f))) index += 1;
+    }
+    checks.push({ id: 'tool-sequence', met: index === steps.length, reason: `Tool calls in order: ${steps.map(step => `${step.tool}(${step.fragments.join(', ')})`).join(' → ')}` });
+  }
   if (fixture.input.no_writes) checks.push({ id: 'no-writes', met: Object.keys(saved.files).length === Object.keys(fixture.input.preserved_files).length &&
     Object.entries(saved.files).every(([path, content]) => fixture.input.preserved_files[path] === content), reason: 'Cancelled or unresolved setup must not create or change files' });
   if (fixture.input.no_questions) checks.push({ id: 'known-answers-reused', met: !saved.turns.some(turn => turn.role === 'assistant' && turn.content?.type === 'question'), reason: 'Explicit supplied scope, path and label must not be asked again' });

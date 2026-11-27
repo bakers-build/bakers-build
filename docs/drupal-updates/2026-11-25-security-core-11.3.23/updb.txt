@@ -1,0 +1,15 @@
+$ drush updb -y
+ -------- --------------- ------------- -------------------------------------- 
+  Module   Update ID       Type          Description                           
+ -------- --------------- ------------- -------------------------------------- 
+  system   mark_installa   post-update   Mark the installation as finished on  
+           tion_finished                 sites with incomplete install state.  
+ -------- --------------- ------------- -------------------------------------- 
+
+
+ // Do you wish to run the specified pending updates?: yes.                     
+
+>  [notice] Update started: system_post_update_mark_installation_finished
+>  [notice] Update completed: system_post_update_mark_installation_finished
+ [success] Finished performing updates.
+exit=0
