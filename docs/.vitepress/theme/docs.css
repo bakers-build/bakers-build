@@ -682,3 +682,11 @@ html:not(.landing-page) .doc-tile:focus-visible {
     max-width: none;
   }
 }
+
+/* "Cookie settings" below each doc page (theme/index.ts, doc-after slot). */
+.bb-cookie-settings {
+  margin-top: 32px;
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+  text-decoration: underline;
+}

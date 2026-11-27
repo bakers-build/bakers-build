@@ -12,7 +12,6 @@ import TrustStrip from './TrustStrip.vue'
 import LineSection from './LineSection.vue'
 import RunSection from './RunSection.vue'
 import PainsSection from './PainsSection.vue'
-import RecipeSection from './RecipeSection.vue'
 import OvenSection from './OvenSection.vue'
 import FaqSection from './FaqSection.vue'
 import TryBand from './TryBand.vue'
@@ -35,7 +34,6 @@ onBeforeUnmount(() => document.documentElement.classList.remove('landing-page'))
       <LineSection :t="t" />
       <RunSection :t="t" />
       <PainsSection :t="t" />
-      <RecipeSection :t="t" />
       <OvenSection :t="t" />
       <FaqSection :t="t" />
       <TryBand :t="t" />

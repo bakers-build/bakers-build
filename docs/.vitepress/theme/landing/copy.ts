@@ -38,20 +38,22 @@ const en = {
   trust: ['Open source', 'Your code stays on your machines', 'Every run recorded'],
   line: {
     eyebrow: 'How it works',
-    title: 'Every ticket passes the same line.',
-    text: 'Four stations. Agents do the work, and a person decides at every station. You choose who: your customer, a developer or you.',
-    stations: [
-      ['Plan', 'You describe what you need: in the browser, in a chat with Claude or in the terminal. The agent sorts it, asks what’s unclear and proposes a plan with acceptance criteria you can check.', 'Nothing gets built until you approve the scope.'],
-      ['Build', 'The agent works on its own branch, in its own environment on your machines. Automated tests run before the ticket moves on.', 'You confirm the result.'],
-      ['Review', 'A second agent reviews independently and gives a verdict. When it needs an expert eye, a developer joins.', 'Confirm it, or send it back with a clear expectation.'],
-      ['Ship', 'After the merge, a ship ticket can move a batch of merged tickets to an environment and tag the release.', 'A person authorizes the merge: you or someone on your team.'],
+    title: 'Your work, in view.',
+    text: 'Follow tickets, understand your team’s activity, see where each project stands and track the hours. A look inside bakers.build, with live data.',
+    screenshots: [
+      { image: 'insights', title: 'Insights', text: 'See throughput, AI usage and how your backlog changes, here on a real workspace.', alt: 'Insights dashboard of a live workspace with throughput, runs per ticket, rating, AI usage and a new-versus-done chart.' },
+      { image: 'project-overview', title: 'Project overview', text: 'See what needs attention and what is in progress, here on a real project.', alt: 'Project overview of a live project with counts of unhealthy, intake and in-progress tickets, a list of tickets that need attention and the project properties.' },
+      { image: 'ticket-list', title: 'Tickets', text: 'Find your next task and follow work from plan to review.', alt: 'Project ticket list with filters, each ticket showing its state, author, conductor and recent runs.' },
+      { image: 'time-tracking', title: 'Time tracking', text: 'See recorded hours per customer account and month. Pull your own worklogs through the MCP server, for example for your invoice.', alt: 'Billing report with the month’s hours, accounts and AI tokens, and a table of hours, tickets and people per customer account.' },
     ],
   },
   run: {
     title: 'This is what a run looks like.',
     text: 'The agent works and tests. If something is missing, you send the ticket back with one sentence. If it fits, you authorize the merge.',
-    sendBack: 'The redirect works, but keep the return URL after login. Sending it back.',
-    merge: 'Review is OK. Merge it.',
+    clients: [
+      { image: 'herdr', title: 'herdr', text: 'Review a ticket’s outcome, problems and next action without leaving the terminal.', alt: 'herdr with the bakers-build project and its ticket branches in the sidebar next to the bakers terminal UI, which shows a ticket overview with summary, success, problems and manual review.' },
+      { image: 'orca', title: 'Orca', text: 'Follow a ticket’s plan next to your worktrees and files in the Orca app.', alt: 'The bakers terminal UI inside the Orca app showing a plan summary beside the worktree list and file tree.' },
+    ],
   },
   pains: {
     eyebrow: 'Why bakers.build',
@@ -63,15 +65,6 @@ const en = {
       ['“I can’t see what’s happening, or what it costs.”', 'Every run is recorded: who or what worked on it, when, with which result and how many tokens, tool calls and agent turns it used.'],
       ['“Another tool that forces a process on us.”', 'Your process lives in WORKFLOW.md in your repo. One text edit, and the line works differently.'],
       ['“Our code must not end up in someone else’s cloud.”', 'Agents run on your machines, with your own agent subscription.'],
-    ],
-  },
-  recipe: {
-    title: 'Change the recipe, and the line changes.',
-    text: 'How your line works lives in WORKFLOW.md next to your code. No migration, no support ticket.',
-    points: [
-      'Set which checks must pass before the merge.',
-      'Add your own skills for your stack’s builds, tests and deployments.',
-      'The recipe goes through code review like everything else.',
     ],
   },
   oven: {
@@ -103,7 +96,7 @@ const en = {
     title: 'Try it on a real ticket.',
     text: 'Sign up, create your workspace and invite your team.',
   },
-  footer: ['Open source', 'Docs', 'GitHub'],
+  footer: ['Open source', 'Docs', 'GitHub', 'Cookie settings'],
 }
 
 export type Copy = typeof en
@@ -131,20 +124,22 @@ const de: Copy = {
   trust: ['Open Source', 'Dein Code bleibt auf deinen Rechnern', 'Jeder Lauf protokolliert'],
   line: {
     eyebrow: 'So funktioniert’s',
-    title: 'Jedes Ticket läuft über dieselbe Backstraße.',
-    text: 'Vier Stationen. Agenten machen die Arbeit, an jeder Station entscheidet ein Mensch. Wer das ist, legst du fest: dein Kunde, ein Entwickler oder du selbst.',
-    stations: [
-      ['Planen', 'Du beschreibst, was du brauchst: im Browser, im Chat mit Claude oder im Terminal. Der Agent ordnet ein, fragt nach und legt einen Plan mit prüfbaren Abnahmekriterien vor.', 'Gebaut wird erst, wenn du den Umfang freigibst.'],
-      ['Umsetzen', 'Der Agent arbeitet auf eigenem Branch in einer eigenen Umgebung auf deinen Rechnern. Automatische Tests laufen, bevor das Ticket weitergeht.', 'Du bestätigst das Ergebnis.'],
-      ['Prüfen', 'Ein zweiter Agent prüft unabhängig und gibt ein Urteil ab. Wenn es den Blick vom Fach braucht, kommt ein Entwickler dazu.', 'Bestätigen oder mit klarer Erwartung zurückschicken.'],
-      ['Fertig', 'Nach dem Merge kann ein Ship-Ticket einen Stapel gemergter Tickets in eine Umgebung bringen und das Release taggen.', 'Ein Mensch gibt den Merge frei: du selbst oder jemand aus deinem Team.'],
+    title: 'Deine Arbeit im Blick.',
+    text: 'Verfolge Tickets, verstehe die Aktivitäten deines Teams, sieh, wo jedes Projekt steht, und erfasse die Stunden. Ein Blick in bakers.build mit Livedaten.',
+    screenshots: [
+      { image: 'insights', title: 'Insights', text: 'Sieh den Durchsatz, die KI-Nutzung und die Entwicklung deines Backlogs, hier in einem echten Arbeitsbereich.', alt: 'Insights-Dashboard eines Live-Arbeitsbereichs mit Durchsatz, Läufen pro Ticket, Bewertung, KI-Nutzung und einem Diagramm neuer und abgeschlossener Tickets.' },
+      { image: 'project-overview', title: 'Projektübersicht', text: 'Sieh, was Aufmerksamkeit braucht und was in Arbeit ist, hier in einem echten Projekt.', alt: 'Projektübersicht eines Live-Projekts mit der Zahl problematischer, neuer und laufender Tickets, einer Liste der Tickets, die Aufmerksamkeit brauchen, und den Projekteigenschaften.' },
+      { image: 'ticket-list', title: 'Tickets', text: 'Finde deine nächste Aufgabe und verfolge die Arbeit vom Plan bis zum Review.', alt: 'Ticketliste eines Projekts mit Filtern; jedes Ticket zeigt Status, Autor, Conductor und letzte Läufe.' },
+      { image: 'time-tracking', title: 'Zeiterfassung', text: 'Sieh die erfassten Stunden pro Kundenkonto und Monat. Hol dir deine eigenen Worklogs über den MCP-Server, etwa für deine Rechnung.', alt: 'Abrechnungsbericht mit Stunden, Konten und KI-Tokens des Monats und einer Tabelle mit Stunden, Tickets und Personen pro Kundenkonto.' },
     ],
   },
   run: {
     title: 'So sieht ein Lauf aus.',
     text: 'Der Agent arbeitet und testet. Fehlt etwas, schickst du das Ticket mit einem Satz zurück. Passt es, gibst du den Merge frei.',
-    sendBack: 'Klappt, aber die Rücksprung-URL nach dem Login soll bleiben.',
-    merge: 'Review passt. Merge.',
+    clients: [
+      { image: 'herdr', title: 'herdr', text: 'Prüfe Ergebnis, Probleme und nächste Aktion eines Tickets, ohne das Terminal zu verlassen.', alt: 'herdr mit dem Projekt bakers-build und seinen Ticket-Branches in der Seitenleiste neben der bakers-Terminal-Oberfläche, die eine Ticketübersicht aus Zusammenfassung, Erfolg, Problemen und manueller Prüfung zeigt.' },
+      { image: 'orca', title: 'Orca', text: 'Verfolge den Plan eines Tickets neben deinen Worktrees und Dateien in der Orca-App.', alt: 'Die bakers-Terminal-Oberfläche in der Orca-App mit einer Plan-Zusammenfassung neben Worktree-Liste und Dateibaum.' },
+    ],
   },
   pains: {
     eyebrow: 'Warum bakers.build',
@@ -156,15 +151,6 @@ const de: Copy = {
       ['„Ich sehe nicht, was gerade passiert und was es kostet.“', 'Jeder Lauf ist protokolliert: wer oder was daran gearbeitet hat, wann, mit welchem Ergebnis und wie vielen Tokens, Tool-Aufrufen und Agenten-Turns.'],
       ['„Noch ein Tool, das uns einen Prozess aufzwingt.“', 'Dein Ablauf steht in WORKFLOW.md im Repo. Eine Textänderung, und die Backstraße arbeitet anders.'],
       ['„Unser Code soll nicht in fremden Clouds landen.“', 'Die Agenten laufen auf deinen Rechnern, mit deinem eigenen Agenten-Abo.'],
-    ],
-  },
-  recipe: {
-    title: 'Ändere das Rezept, und die Backstraße arbeitet anders.',
-    text: 'Wie deine Backstraße arbeitet, steht in WORKFLOW.md neben deinem Code. Keine Migration, kein Support-Ticket.',
-    points: [
-      'Lege fest, welche Prüfungen vor dem Merge bestehen müssen.',
-      'Ergänze eigene Skills für Builds, Tests und Deployments deines Stacks.',
-      'Das Rezept geht durchs Code-Review wie alles andere.',
     ],
   },
   oven: {
@@ -196,7 +182,7 @@ const de: Copy = {
     title: 'Probier es an einem echten Ticket.',
     text: 'Melde dich an, leg deinen Workspace an und lade dein Team ein.',
   },
-  footer: ['Open Source', 'Docs', 'GitHub'],
+  footer: ['Open Source', 'Docs', 'GitHub', 'Cookie-Einstellungen'],
 }
 
 export const COPY = { en, de }

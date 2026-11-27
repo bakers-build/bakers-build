@@ -23,6 +23,8 @@ import SidebarAreas from './components/SidebarAreas.vue'
 import BbMermaid from './components/BbMermaid.vue'
 import DocTiles from './components/DocTiles.vue'
 import DocQuickLinks from './components/DocQuickLinks.vue'
+import ConsentBanner from './components/ConsentBanner.vue'
+import { openConsent } from './components/consent'
 import type { Theme } from 'vitepress'
 
 /**
@@ -99,6 +101,10 @@ export default {
           h(LogoMark, { size: 32, radius: 7 }),
           h('span', null, ['bakers', h('span', { class: 'bb-wordmark__dot' }, '.'), 'build']),
         ]),
+      // Reopens the analytics consent banner; the landing has its own in LandingFooter.
+      'doc-after': () =>
+        h('button', { type: 'button', class: 'bb-cookie-settings', onClick: openConsent }, 'Cookie settings'),
+      'layout-bottom': () => h(ConsentBanner),
     }),
   enhanceApp({ app }) {
     app.component('Landing', Landing)
