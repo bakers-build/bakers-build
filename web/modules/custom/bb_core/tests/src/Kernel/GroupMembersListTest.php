@@ -250,7 +250,7 @@ final class GroupMembersListTest extends KernelTestBase {
 
     $html = $this->renderFace('team', $this->team) . $this->renderFace('team', $this->team, $this->rosa);
 
-    self::assertStringContainsString('<li data-list-item', $html, 'the roster still renders');
+    self::assertMatchesRegularExpression('/<li\b[^>]*\bdata-list-item\b/', $html, 'the roster still renders');
     self::assertStringContainsString('rosa', $html);
     self::assertStringNotContainsString('remove_member_', $html, 'no removal is offered');
     self::assertStringNotContainsString('member_role_', $html, 'no role pick is offered');
@@ -313,10 +313,10 @@ final class GroupMembersListTest extends KernelTestBase {
    *   The rows, each from its own `<tr>` up to the next one.
    */
   private function itemsOf(string $html): array {
-    $chunks = preg_split('#(?=<li data-list-item)#', $html) ?: [];
+    $chunks = preg_split('#(?=<li\b[^>]*\bdata-list-item\b)#', $html) ?: [];
     return array_values(array_filter(
       $chunks,
-      static fn (string $chunk): bool => str_starts_with($chunk, '<li data-list-item'),
+      static fn (string $chunk): bool => preg_match('#^<li\b[^>]*\bdata-list-item\b#', $chunk) === 1,
     ));
   }
 

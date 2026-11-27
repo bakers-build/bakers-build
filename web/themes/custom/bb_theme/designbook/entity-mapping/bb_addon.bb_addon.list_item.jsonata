@@ -1,0 +1,20 @@
+(
+  $fields := $;
+  [
+    {
+      "component": "bb_theme:list_item",
+      "slots": {
+        "avatar": { "component": "bb_theme:list_cell", "props": { "key": "icon" }, "slots": { "value": { "component": "bb_theme:person", "props": { "variant": "compact", "size": "md", "image_fit": "contain", "color": $fields.avatar_color, "picture": $fields.avatar_picture, "initials": $fields.initials } } } },
+        "headline": [
+          { "component": "bb_theme:list_cell", "props": { "key": "label", "primary": true }, "slots": { "value": $fields.label } },
+          { "component": "bb_theme:list_cell", "props": { "key": "name" }, "slots": { "value": $fields.name } }
+        ],
+        "meta": [
+          { "component": "bb_theme:list_cell", "props": { "key": "versions", "caption": "Versions" }, "slots": { "value": $fields.versions_label } },
+          { "component": "bb_theme:list_cell", "props": { "key": "contract", "caption": "Contract" }, "slots": { "value": $fields.contract } }
+        ],
+        "right": { "component": "bb_theme:list_cell", "props": { "key": "conductors", "fallback": "—", "align": "end" }, "slots": { "value": $fields.conductor_badges } }
+      }
+    }
+  ]
+)

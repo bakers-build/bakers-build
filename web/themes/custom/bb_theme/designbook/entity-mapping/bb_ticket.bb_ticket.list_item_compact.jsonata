@@ -1,0 +1,14 @@
+(
+  $fields := $;
+  [
+    {
+      "component": "bb_theme:list_item",
+      "slots": {
+        "headline": [
+          { "component": "bb_theme:list_cell", "props": { "key": "identifier" }, "slots": { "value": $fields.identifier } },
+          { "component": "bb_theme:list_cell", "props": { "key": "title", "primary": true }, "slots": { "value": $fields.title } }
+        ]
+      }
+    }
+  ]
+)

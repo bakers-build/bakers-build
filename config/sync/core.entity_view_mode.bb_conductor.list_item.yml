@@ -1,0 +1,11 @@
+uuid: 12dccf28-b41f-4011-9439-9392d53540c1
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_conductor.list_item
+label: List item
+description: One row of a listing.
+targetEntityType: bb_conductor
+cache: true

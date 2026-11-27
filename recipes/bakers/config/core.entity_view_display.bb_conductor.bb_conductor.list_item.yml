@@ -1,0 +1,212 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_conductor.list_item
+  module:
+    - bb_core
+    - display_builder
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:list_item'
+            variant_id: null
+            props: {  }
+            slots:
+              headline:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: label
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: (unnamed)
+                          primary:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:label'
+                                  'field:bb_conductor:bb_conductor:label':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:label'
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: true
+                                            third_party_settings: {  }
+                    node_id: list_item_label
+              meta:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: status
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:status'
+                                  'field:bb_conductor:bb_conductor:status':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:status'
+                                          source:
+                                            type: bb_status_badge
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_status
+              right:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: reported_load
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:reported_load'
+                                  'field:bb_conductor:bb_conductor:reported_load':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:reported_load'
+                                          source:
+                                            type: bb_integer_badge
+                                            settings:
+                                              icon: run
+                                              tone: neutral
+                                              singular: '1 load'
+                                              plural: '@count loads'
+                                            third_party_settings: {  }
+                    node_id: list_item_reported_load
+              right_meta:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: owner_user_id
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Owner
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:owner_user_id'
+                                  'field:bb_conductor:bb_conductor:owner_user_id':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:owner_user_id'
+                                          source:
+                                            type: entity_reference_label
+                                            settings:
+                                              link: false
+                                            third_party_settings: {  }
+                    node_id: list_item_owner_user_id
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: last_seen
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: 'Last run'
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_conductor:bb_conductor:last_seen'
+                                  'field:bb_conductor:bb_conductor:last_seen':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_conductor:bb_conductor:last_seen'
+                                          source:
+                                            type: bb_time
+                                            settings:
+                                              date_only: false
+                                            third_party_settings: {  }
+                    node_id: list_item_last_seen
+        node_id: bb_conductor_list_item
+id: bb_conductor.bb_conductor.list_item
+targetEntityType: bb_conductor
+bundle: bb_conductor
+mode: list_item
+content: {  }
+hidden:
+  active: true
+  last_seen_label: true
+  node_load_label: true
+  node_states_label: true
+  node_status: true
+  search_api_excerpt: true

@@ -40,8 +40,8 @@ final class ListingPatternTest extends KernelTestBase {
     'file', 'image', 'crop',
     'system', 'user', 'options', 'entity', 'state_machine',
     'link', 'text', 'field', 'og', 'views', 'better_exposed_filters',
-    'ui_patterns', 'ui_patterns_views', 'display_builder',
-    'display_builder_views',
+    'ui_patterns', 'ui_patterns_views', 'ui_patterns_field', 'display_builder',
+    'display_builder_views', 'display_builder_entity_view',
     'bb_core',
   ];
 
@@ -275,12 +275,13 @@ final class ListingPatternTest extends KernelTestBase {
    * An empty right-hand value reads as a faint dash, never as a blank.
    */
   public function testEmptyRightValueReadsAsFaintDash(): void {
-    $view = $this->executed('projects');
-    // The description, moved right and rewritten to nothing for every row.
-    $view->style_plugin->options['pattern'] = ['headline' => ['name'], 'meta' => [], 'right' => ['description']];
-    $view->field['description']->options['alter']['alter_text'] = TRUE;
-    $view->field['description']->options['alter']['text'] = ' ';
-    $view->field['description']->options['hide_empty'] = TRUE;
+    $view = $this->executed('projects', [], NULL, $this->fieldRows());
+    // The key, moved right and rewritten to nothing for every row.
+    $view->style_plugin->options['pattern'] = ['headline' => ['name'], 'meta' => [], 'right' => ['key']];
+    $view->field['key']->options['exclude'] = FALSE;
+    $view->field['key']->options['alter']['alter_text'] = TRUE;
+    $view->field['key']->options['alter']['text'] = ' ';
+    $view->field['key']->options['hide_empty'] = TRUE;
     $right = $this->region($this->firstItem($this->renderView($view)), 'right');
 
     self::assertStringContainsString('—', $right);
@@ -345,8 +346,7 @@ final class ListingPatternTest extends KernelTestBase {
    * The style rejects unknown, excluded and doubly assigned field IDs.
    */
   public function testPatternValidationRejectsBadFieldIds(): void {
-    $view = Views::getView('projects');
-    $view->setDisplay('default');
+    $view = $this->fieldRows();
     $view->initStyle();
     /** @var \Drupal\views\Plugin\views\field\FieldPluginBase $key */
     $key = $view->display_handler->getHandlers('field')['key'];
@@ -525,6 +525,20 @@ final class ListingPatternTest extends KernelTestBase {
   }
 
   /**
+   * The projects view with field rows, as the admin listings keep them.
+   *
+   * The listing renders entity rows; `bb_list`, which the admin listings still
+   * use, is checked on the fields the projects view keeps for its search.
+   */
+  private function fieldRows(): ViewExecutable {
+    $view = Views::getView('projects');
+    $view->setDisplay('default');
+    $view->display_handler->setOption('style', ['type' => 'bb_list', 'options' => []]);
+    $view->display_handler->setOption('row', ['type' => 'fields', 'options' => []]);
+    return $view;
+  }
+
+  /**
    * Executes and renders a view's style output.
    */
   private function renderListing(string $view_id): string {
@@ -538,6 +552,8 @@ final class ListingPatternTest extends KernelTestBase {
     $switcher = $this->container->get('account_switcher');
     $switcher->switchTo($account ?? $this->reader);
     try {
+      // Entity rows are built in pre-render, as View::render() does.
+      $view->style_plugin->preRender($view->result);
       $build = $view->style_plugin->render();
       return (string) $this->container->get('renderer')->renderInIsolation($build);
     }
@@ -547,9 +563,13 @@ final class ListingPatternTest extends KernelTestBase {
   }
 
   /**
-   * Drops the request-scoped counter memo, as a new request would.
+   * Drops the request-scoped memos, as a new request would.
+   *
+   * The counter's memo, and the loaded entities that hold their computed
+   * counts.
    */
   private function startNewRequest(): void {
+    $this->container->get('entity.memory_cache')->deleteAll();
     $this->container->set('bb_core.reference_counter', new ReferenceCounter(
       $this->container->get('entity_type.manager'),
       $this->container->get('current_user'),

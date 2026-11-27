@@ -1,0 +1,14 @@
+component: "bb_theme:list_cell"
+name: "Default"
+props:
+  key: "versions"
+  caption: "Versions"
+slots:
+  value:
+    - type: "component"
+      component: "bb_theme:text"
+      props:
+        text: "1.2.3, 1.1.0"
+        as: "span"
+        size: "meta"
+        tone: "faint"

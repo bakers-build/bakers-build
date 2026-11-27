@@ -3,8 +3,8 @@
   changed: '2026-01-10T08:00:00+00:00'
   name: keytec
   description: >-
-    keytec builds and runs bakers.build; its projects carry the platform and the design
-    system.
+    keytec builds and runs bakers.build; its projects carry the platform and the
+    design system.
   image:
     alt: keytec logo
     src: /themes/custom/bb_theme/logo.svg
@@ -13,6 +13,14 @@
     cost_centre: KT-1000
     invoice_to: billing@keytec.example
   owner_user_id: '1'
+  projects: 3
+  initials: K
+  avatar_color: attention
+  avatar_picture: /themes/custom/bb_theme/logo.svg
+  changed_formatted: 2 hours ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--group-detail-overview">keytec</a>
   __designbook:
     section: settings
 - id: '2'
@@ -25,6 +33,15 @@
     cost_centre: NW-2200
     invoice_to: ap@northwind.example
   owner_user_id: '3'
+  projects: 1
+  initials: NT
+  avatar_color: unassigned
+  avatar_picture: ''
+  changed_formatted: 6 months ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--group-detail-overview">Northwind
+    Trading</a>
   __designbook:
     section: settings
 - id: '3'
@@ -37,5 +54,14 @@
     ÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜberführungsbauwerkinstandsetzungsdoku
   workspace_id: '1'
   owner_user_id: '3'
+  projects: 0
+  initials: ÆS
+  avatar_color: lease
+  avatar_picture: ''
+  changed_formatted: 4 months ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--group-detail-overview">Ærøskøbing
+    Søndergård Genossenschaft für Brückenbau und Küstenschutz</a>
   __designbook:
     section: projects

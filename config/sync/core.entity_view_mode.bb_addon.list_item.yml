@@ -1,0 +1,11 @@
+uuid: dbdeacc6-33fc-41a0-9e4d-52b42495a51f
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_addon
+id: bb_addon.list_item
+label: 'List item'
+description: 'One row of a listing.'
+targetEntityType: bb_addon
+cache: true

@@ -1,0 +1,287 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_project.list_item
+  module:
+    - bb_core
+    - display_builder
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:list_item'
+            variant_id: null
+            props: {  }
+            slots:
+              avatar:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: name_avatar
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_project:bb_project:name'
+                                  'field:bb_project:bb_project:name':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:name'
+                                          source:
+                                            type: bb_entity_avatar
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_name_avatar
+              headline:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: name
+                          primary:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_project:bb_project:name'
+                                  'field:bb_project:bb_project:name':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:name'
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: true
+                                            third_party_settings: {  }
+                    node_id: list_item_name
+              description:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: description
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_project:bb_project:description'
+                                  'field:bb_project:bb_project:description':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:description'
+                                          source:
+                                            type: basic_string
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_description
+              right:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: open_tickets
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_project:bb_project:open_tickets'
+                                  'field:bb_project:bb_project:open_tickets':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:open_tickets'
+                                          source:
+                                            type: bb_integer_badge
+                                            settings:
+                                              icon: ticket
+                                              tone: neutral
+                                              singular: '1 open ticket'
+                                              plural: '@count open tickets'
+                                            third_party_settings: {  }
+                    node_id: list_item_open_tickets
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: conductor_tickets
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_project:bb_project:conductor_tickets'
+                                  'field:bb_project:bb_project:conductor_tickets':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:conductor_tickets'
+                                          source:
+                                            type: bb_integer_badge
+                                            settings:
+                                              icon: conductor
+                                              tone: lease
+                                              singular: '1 open ticket with a conductor'
+                                              plural: '@count open tickets with a conductor'
+                                            third_party_settings: {  }
+                    node_id: list_item_conductor_tickets
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: closed_tickets
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_project:bb_project:closed_tickets'
+                                  'field:bb_project:bb_project:closed_tickets':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:closed_tickets'
+                                          source:
+                                            type: bb_integer_badge
+                                            settings:
+                                              icon: check
+                                              tone: neutral
+                                              singular: '1 closed ticket'
+                                              plural: '@count closed tickets'
+                                            third_party_settings: {  }
+                    node_id: list_item_closed_tickets
+              right_meta:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: created
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Created
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_project:bb_project:created'
+                                  'field:bb_project:bb_project:created':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_project:bb_project:created'
+                                          source:
+                                            type: bb_time
+                                            settings:
+                                              date_only: false
+                                            third_party_settings: {  }
+                    node_id: list_item_created
+        node_id: bb_project_list_item
+id: bb_project.bb_project.list_item
+targetEntityType: bb_project
+bundle: bb_project
+mode: list_item
+content: {  }
+hidden:
+  description: true
+  env_vars: true
+  environments: true
+  image: true
+  origin_sources: true
+  repository: true
+  search_api_excerpt: true
+  teams: true

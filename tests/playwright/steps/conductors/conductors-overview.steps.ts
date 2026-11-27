@@ -72,14 +72,6 @@ Then('the user Conductors listing is visible', async ({ page }) => {
   await expect.poll(async () => await userListRows(page).count(), { timeout: 10000 }).toBeGreaterThanOrEqual(1);
 });
 
-Then(
-  'the user Conductors listing shows the conductor {string} in the project {string}',
-  async ({ page }, label: string, project: string) => {
-    const row = userListRows(page).filter({ hasText: label }).first();
-    await expect(row, `The conductor "${label}" names no project "${project}"`).toContainText(project);
-  },
-);
-
 Then('the user Conductors listing shows {string}', async ({ page }, label: string) => {
   await expect(
     userList(page).locator('[data-component-id="bb_theme:list"]').getByText(label, { exact: true }),

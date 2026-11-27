@@ -1,0 +1,50 @@
+$schema: "https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json"
+name: "List cell"
+status: "stable"
+group: "Data Display"
+provider: "bb_theme"
+description: >-
+  One value of a listing row (`list_item`): a field's rendered output in its
+  `value` slot, with an optional faint caption before it ("Versions",
+  "Owner"), because a row has no header to say what a value is. A cell whose
+  value renders nothing (no text and no control or image) renders nothing at
+  all, so an optional fact leaves no gap; with `fallback` it renders that text
+  faintly instead, as the right-hand column's em-dash does. `align: end` is the
+  right-hand column's form: a small wrapping flex group, right-aligned, so one
+  multi-value field (a badge per conductor) wraps instead of shrinking each
+  badge. `primary` marks the headline cell that carries the row's own link: on a
+  narrow viewport that link becomes a touch target.
+props:
+  type: "object"
+  properties:
+    key:
+      type: "string"
+      title: "Key"
+      description: "Names the value, as `data-cell` (a field id in Drupal)."
+    caption:
+      type: "string"
+      title: "Caption"
+      description: "A short visible caption shown faintly before the value."
+    fallback:
+      type: "string"
+      title: "Fallback"
+      description: "Faint text shown when the value is empty; omitted renders nothing."
+    align:
+      type: "string"
+      title: "Alignment"
+      enum:
+        - "start"
+        - "end"
+      default: "start"
+    primary:
+      type: "boolean"
+      title: "Primary"
+      description: "The headline cell holding the row's link; it is a touch target below md."
+      default: false
+slots:
+  value:
+    title: "Value"
+    description: "The rendered value, such as one field's formatter output."
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

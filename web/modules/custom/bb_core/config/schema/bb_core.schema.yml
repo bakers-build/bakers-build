@@ -23,6 +23,14 @@ field.formatter.settings.bb_integer_badge:
       type: label
       label: Plural tooltip
 
+field.formatter.settings.bb_integer_unit:
+  type: mapping
+  label: 'Integer with unit'
+  mapping:
+    unit:
+      type: label
+      label: Unit
+
 bb_core.settings:
   type: config_object
   label: 'bakers.build core settings'
@@ -415,6 +423,20 @@ ui_patterns_source.bb_menu:
     depth:
       type: integer
       label: 'Number of levels to display'
+
+ui_patterns_source.bb_field:
+  type: mapping
+  label: 'Source: bakers.build field'
+  mapping:
+    field:
+      type: string
+      label: 'Field name'
+    type:
+      type: string
+      label: 'Formatter'
+    settings:
+      type: field.formatter.settings.[%parent.type]
+      label: 'Formatter settings'
 
 ui_patterns_source.bb_workspace_switcher:
   type: ignore

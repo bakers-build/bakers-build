@@ -25,6 +25,17 @@
     - '1'
     - '3'
   owner_user_id: '1'
+  open_tickets: 4
+  conductor_tickets: 1
+  closed_tickets: 23
+  initials: BP
+  avatar_color: attention
+  avatar_picture: /themes/custom/bb_theme/logo.svg
+  created_formatted: 3 days ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--project-detail-overview">bakers.build
+    Platform</a>
   __designbook:
     section: bb_ticket
 - id: '2'
@@ -48,6 +59,17 @@
   teams:
     - '2'
   owner_user_id: '3'
+  open_tickets: 2
+  conductor_tickets: 0
+  closed_tickets: 5
+  initials: NS
+  avatar_color: unassigned
+  avatar_picture: ''
+  created_formatted: 9 months ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--project-detail-overview">Northwind
+    Shop</a>
   __designbook:
     section: settings
 - id: '3'
@@ -71,6 +93,17 @@
   teams:
     - '1'
   owner_user_id: '1'
+  open_tickets: 1
+  conductor_tickets: 1
+  closed_tickets: 8
+  initials: BD
+  avatar_color: lease
+  avatar_picture: ''
+  created_formatted: 3 days ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--project-detail-overview">bakers.build
+    Designbook</a>
   __designbook:
     section: settings
 - id: '4'
@@ -87,5 +120,16 @@
   teams:
     - '1'
   owner_user_id: '1'
+  open_tickets: 2
+  conductor_tickets: 1
+  closed_tickets: 1
+  initials: ØÆ
+  avatar_color: offline
+  avatar_picture: ''
+  created_formatted: 3 days ago
+  name_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--project-detail-overview">Øresund
+    Ærø Straße Überführungsgesellschaft für Großprojekte</a>
   __designbook:
     section: projects

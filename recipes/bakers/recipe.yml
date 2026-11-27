@@ -544,6 +544,14 @@ config:
       # The machine detail's Overview body (BB-619); its display ships in
       # `recipes/bakers/config/`, so it needs no entry here.
       - core.entity_view_mode.bb_machine.full
+      # The listing rows; their displays ship in `recipes/bakers/config/`.
+      - core.entity_view_mode.bb_group.list_item
+      - core.entity_view_mode.bb_project.list_item
+      - core.entity_view_mode.bb_machine.list_item
+      - core.entity_view_mode.bb_conductor.list_item
+      - core.entity_view_mode.bb_ticket.list_item_compact
+      - core.entity_view_mode.bb_run.list_item
+      - core.entity_view_mode.bb_ticket.list_item
       # The project detail's Overview body (BB-628); its display ships in
       # `recipes/bakers/config/`, so it needs no entry here.
       - core.entity_view_mode.bb_project.full
@@ -725,6 +733,9 @@ config:
     # The billing account's detail; its display ships in `recipes/bakers/config/`.
     bb_track:
       - core.entity_view_mode.bb_track_account.full
+    # The addon's listing row; its display ships in `recipes/bakers/config/`.
+    bb_addon:
+      - core.entity_view_mode.bb_addon.list_item
     bb_api_key:
       # The team "Reporter" rank: lets a team member — human or a
       # workspace service account — create tickets in that team's projects,

@@ -40,7 +40,7 @@ trait ListRowLinkTestTrait {
    */
   protected function assertRowsLinkOnlyToTheirDetail(string $html, array $hrefs): void {
     $rows = [];
-    foreach (array_slice(preg_split('/<(?:li data-list-item|tr[^>]*class="[^"]*table__row)/', $html) ?: [], 1) as $row) {
+    foreach (array_slice(preg_split('/<(?:li\b[^>]*\bdata-list-item\b|tr[^>]*class="[^"]*table__row)/', $html) ?: [], 1) as $row) {
       $row = explode('</li>', explode('</tr>', $row)[0])[0];
       preg_match_all('/<a\s[^>]*href="([^"]*)"/', $row, $links);
       self::assertCount(1, $links[1], 'A row holds exactly one link.');

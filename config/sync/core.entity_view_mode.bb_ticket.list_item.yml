@@ -1,0 +1,11 @@
+uuid: 873f5c2d-b8c0-4857-b03a-5b1674096033
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_ticket.list_item
+label: List item
+description: One row of a listing.
+targetEntityType: bb_ticket
+cache: true

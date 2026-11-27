@@ -1,0 +1,11 @@
+uuid: d6246be5-f199-43f9-8764-e41c0ce830ec
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_run.list_item
+label: List item
+description: One row of a listing.
+targetEntityType: bb_run
+cache: true

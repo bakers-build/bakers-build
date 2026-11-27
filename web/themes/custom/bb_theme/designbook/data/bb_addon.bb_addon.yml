@@ -2,28 +2,88 @@
   name: ports
   version: 1.2.3
   contract: 1
-  definition: '{"label":"Ports","views":[],"actions":[]}'
+  contract_formatted: '1'
+  definition: >-
+    {"label":"Ports","icon":"<svg xmlns=\"http://www.w3.org/2000/svg\"
+    viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\"
+    rx=\"4\" fill=\"#2f6f5e\"/><circle cx=\"8\" cy=\"12\" r=\"2\"
+    fill=\"#fff\"/><circle cx=\"16\" cy=\"12\" r=\"2\" fill=\"#fff\"/><path
+    d=\"M10 12h4\" stroke=\"#fff\"
+    stroke-width=\"2\"/></svg>","views":[],"actions":[]}
   conductors:
     - '1'
   created: '2026-06-02T09:00:00+00:00'
+  label: Ports
+  versions_label: 1.2.3, 1.1.0
+  initials: P
+  avatar_color: attention
+  avatar_picture: >-
+    data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iNCIgZmlsbD0iIzJmNmY1ZSIvPjxjaXJjbGUgY3g9IjgiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2ZmZiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iMTIiIHI9IjIiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMTAgMTJoNCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=
+  conductor_badges: cw · framework 1.2.3, mvd · shop 1.1.0
+  conductor_badges_formatted: >-
+    <span class="inline-flex max-w-full min-w-0 overflow-x-clip *:min-w-0
+    items-center gap-inline-xs min-h-5 md:h-5 px-inline rounded-sm text-badge
+    md:whitespace-nowrap bg-state-running-tint text-state-running-ink"><span
+    class="inline-block shrink-0 w-2 h-2 rounded-full bg-state-running"
+    aria-hidden="true"></span>  <span data-badge-label="">cw · framework
+    1.2.3</span></span><span class="inline-flex max-w-full min-w-0
+    overflow-x-clip *:min-w-0 items-center gap-inline-xs min-h-5 md:h-5
+    px-inline rounded-sm text-badge md:whitespace-nowrap bg-surface-3
+    text-text-light"><span class="inline-block shrink-0 w-2 h-2 rounded-full
+    bg-transparent border-2 border-state-offline" aria-hidden="true"></span> 
+    <span data-badge-label="">mvd · shop 1.1.0</span></span>
   __designbook:
     section: projects
 - id: '2'
   name: ports
   version: 1.1.0
   contract: 1
-  definition: '{"label":"Ports","views":[],"actions":[]}'
+  contract_formatted: '1'
+  definition: >-
+    {"label":"Ports","icon":"<svg xmlns=\"http://www.w3.org/2000/svg\"
+    viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\"
+    rx=\"4\" fill=\"#2f6f5e\"/><circle cx=\"8\" cy=\"12\" r=\"2\"
+    fill=\"#fff\"/><circle cx=\"16\" cy=\"12\" r=\"2\" fill=\"#fff\"/><path
+    d=\"M10 12h4\" stroke=\"#fff\"
+    stroke-width=\"2\"/></svg>","views":[],"actions":[]}
   conductors:
     - '2'
   created: '2026-05-11T09:00:00+00:00'
+  label: Ports
+  versions_label: 1.2.3, 1.1.0
+  initials: P
+  avatar_color: unassigned
+  avatar_picture: >-
+    data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iNCIgZmlsbD0iIzJmNmY1ZSIvPjxjaXJjbGUgY3g9IjgiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2ZmZiIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iMTIiIHI9IjIiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNMTAgMTJoNCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=
+  conductor_badges: cw · framework 1.2.3, mvd · shop 1.1.0
+  conductor_badges_formatted: >-
+    <span class="inline-flex max-w-full min-w-0 overflow-x-clip *:min-w-0
+    items-center gap-inline-xs min-h-5 md:h-5 px-inline rounded-sm text-badge
+    md:whitespace-nowrap bg-state-running-tint text-state-running-ink"><span
+    class="inline-block shrink-0 w-2 h-2 rounded-full bg-state-running"
+    aria-hidden="true"></span>  <span data-badge-label="">cw · framework
+    1.2.3</span></span><span class="inline-flex max-w-full min-w-0
+    overflow-x-clip *:min-w-0 items-center gap-inline-xs min-h-5 md:h-5
+    px-inline rounded-sm text-badge md:whitespace-nowrap bg-surface-3
+    text-text-light"><span class="inline-block shrink-0 w-2 h-2 rounded-full
+    bg-transparent border-2 border-state-offline" aria-hidden="true"></span> 
+    <span data-badge-label="">mvd · shop 1.1.0</span></span>
   __designbook:
     section: projects
 - id: '3'
   name: bare
   version: 1.0.0
   contract: 1
+  contract_formatted: '1'
   definition: '{"label":"Bare","views":[],"actions":[]}'
   conductors: []
   created: '2026-06-20T09:00:00+00:00'
+  label: Bare
+  versions_label: 1.0.0
+  initials: B
+  avatar_color: lease
+  avatar_picture: ''
+  conductor_badges: No conductor in this workspace
+  conductor_badges_formatted: No conductor in this workspace
   __designbook:
     section: projects

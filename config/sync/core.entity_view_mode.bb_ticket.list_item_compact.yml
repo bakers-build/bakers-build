@@ -1,0 +1,11 @@
+uuid: 35536b3a-bbda-40ea-9e93-2a17b21a570a
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_ticket.list_item_compact
+label: Compact list item
+description: 'One row of a listing: identifier and title.'
+targetEntityType: bb_ticket
+cache: true

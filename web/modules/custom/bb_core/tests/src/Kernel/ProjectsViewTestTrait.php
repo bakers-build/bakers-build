@@ -60,9 +60,69 @@ trait ProjectsViewTestTrait {
     self::assertIsArray($data, "$name did not parse as a YAML mapping.");
     self::assertArrayHasKey('id', $data, "$name carries no view id.");
 
+    // A listing renders its rows in the row view modes its displays name; a
+    // Search API view declares no dependency on them, so they are read from
+    // the row options. Those displays need Display Builder's entity view
+    // schema, so a test that does not enable it does not render rows either.
+    if ($this->container->get('module_handler')->moduleExists('display_builder_entity_view')) {
+      foreach ($data['display'] ?? [] as $display) {
+        $row = $display['display_options']['row'] ?? [];
+        foreach ($row['options']['view_modes'] ?? [] as $datasource => $modes) {
+          foreach ($modes as $view_mode) {
+            $this->installRowViewMode(substr($datasource, strlen('entity:')), $view_mode);
+          }
+        }
+        if (str_starts_with($row['type'] ?? '', 'entity:') && isset($row['options']['view_mode'])) {
+          $this->installRowViewMode(substr($row['type'], strlen('entity:')), $row['options']['view_mode']);
+        }
+      }
+    }
     $storage = $this->container->get('entity_type.manager')->getStorage('view');
     if ($storage->load($data['id']) === NULL) {
       $storage->create($data)->save();
+    }
+  }
+
+  /**
+   * Installs a shipped Search API index from its recipe copy.
+   *
+   * A view of an index renders Search API rows, which need the index to exist
+   * when the view is saved.
+   *
+   * @param string $name
+   *   The config object name, e.g. `search_api.index.bb_runs`.
+   */
+  protected function installShippedIndex(string $name): void {
+    $path = dirname(__DIR__, 7) . '/recipes/bakers/config/' . $name . '.yml';
+    self::assertFileExists($path, "$name is not shipped in recipes/bakers/config.");
+    $data = Yaml::parseFile($path);
+    self::assertIsArray($data, "$name did not parse as a YAML mapping.");
+    $storage = $this->container->get('entity_type.manager')->getStorage('search_api_index');
+    if ($storage->load($data['id']) === NULL) {
+      $storage->create($data)->save();
+    }
+  }
+
+  /**
+   * Creates a row view mode and its Display Builder display from config/sync.
+   */
+  protected function installRowViewMode(string $entity_type_id, string $mode): void {
+    // The row is built by Display Builder, whose `default` profile it names.
+    $this->installConfig(['display_builder']);
+    // The repository root, seven levels above this file.
+    $dir = dirname(__DIR__, 7) . '/config/sync/';
+    $manager = $this->container->get('entity_type.manager');
+    foreach ([
+      'entity_view_mode' => "core.entity_view_mode.$entity_type_id.$mode",
+      'entity_view_display' => "core.entity_view_display.$entity_type_id.$entity_type_id.$mode",
+    ] as $storage_id => $name) {
+      $data = Yaml::parseFile($dir . $name . '.yml');
+      self::assertIsArray($data, "$name did not parse as a YAML mapping.");
+      unset($data['uuid']);
+      $storage = $manager->getStorage($storage_id);
+      if ($storage->load($data['id']) === NULL) {
+        $storage->create($data)->save();
+      }
     }
   }
 

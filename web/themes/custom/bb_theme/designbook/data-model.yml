@@ -22,6 +22,9 @@ content:
         epics:
           template: field-map
           label: Epics
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -130,6 +133,68 @@ content:
           required: false
           multiple: true
           reference: bb_environment
+          computed: true
+          readonly: true
+        open_tickets:
+          type: integer
+          title: Open tickets
+          description: >-
+            Computed, internal: the project's tickets not yet closed. The listing
+            row shows it as a ticket badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_tickets:
+          type: integer
+          title: Conductor tickets
+          description: >-
+            Computed, internal: the project's tickets a conductor currently
+            holds. The listing row shows it as a conductor badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        closed_tickets:
+          type: integer
+          title: Closed tickets
+          description: >-
+            Computed, internal: the project's closed tickets. The listing row
+            shows it as a check badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        initials:
+          type: string
+          title: Initials
+          description: >-
+            Design-only. Not a Drupal field: the bb_entity_avatar formatter
+            draws the initials from the name. Present so the avatar component
+            has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_color:
+          type: string
+          title: Avatar colour
+          description: >-
+            Design-only. Not a Drupal field: Drupal keys the avatar colour on
+            the project id. Present so the avatar component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_picture:
+          type: string
+          title: Avatar picture
+          description: >-
+            Design-only. Not a Drupal field: the URL Drupal derives from
+            `image` in the avatar image style; empty for initials. Present so
+            the avatar component has a prop.
+          required: false
+          multiple: false
           computed: true
           readonly: true
       omitted:
@@ -499,6 +564,9 @@ content:
       view_modes:
         full:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -629,6 +697,49 @@ content:
           multiple: false
           computed: true
           readonly: true
+        reported_load:
+          type: integer
+          title: Reported load
+          description: >-
+            The load the conductor reported on its last poll. The listing row
+            shows it as a run badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        owner_label:
+          type: string
+          title: Owner
+          description: >-
+            Design-only. Not a Drupal field: the entity_reference_label
+            formatter prints the owner's display name. Present so the row has
+            a value for the Owner cell.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        status_label:
+          type: string
+          title: Status label
+          description: >-
+            Design-only. Not a Drupal field: the bb_status_badge
+            formatter labels the status from its allowed values. Present so the
+            badge component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        status_tone:
+          type: string
+          title: Status tone
+          description: >-
+            Design-only. Not a Drupal field: the bb_status_badge
+            formatter keys the tone on the status (online running, offline
+            offline). Present so the badge component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
       omitted:
         id: Entity key, not a modelled field.
         uuid: Entity key.
@@ -646,6 +757,9 @@ content:
       view_modes:
         full:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -698,6 +812,16 @@ content:
           multiple: false
           computed: true
           readonly: true
+        last_run:
+          type: datetime
+          title: Last run
+          description: >-
+            Computed, internal: when the machine last started a run. The listing
+            row shows it relative, captioned "Last run".
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
       omitted:
         id: Entity key, not a modelled field.
         uuid: Entity key.
@@ -715,6 +839,9 @@ content:
           template: field-map
         full:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -773,6 +900,48 @@ content:
           required: false
           multiple: false
           reference: bb_workspace
+        projects:
+          type: integer
+          title: Projects
+          description: >-
+            Computed, internal: the number of the group's projects the reader
+            may view. The listing row shows it as a project badge.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        initials:
+          type: string
+          title: Initials
+          description: >-
+            Design-only. Not a Drupal field: the bb_entity_avatar formatter
+            draws the initials from the name. Present so the avatar component
+            has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_color:
+          type: string
+          title: Avatar colour
+          description: >-
+            Design-only. Not a Drupal field: Drupal keys the avatar colour on
+            the group id. Present so the avatar component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_picture:
+          type: string
+          title: Avatar picture
+          description: >-
+            Design-only. Not a Drupal field: the URL Drupal derives from
+            `image` in the avatar image style; empty for initials. Present so
+            the avatar component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
       omitted:
         id: Entity key, not a modelled field.
         uuid: Entity key.
@@ -784,6 +953,12 @@ content:
           template: field-map
         full:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
+        list_item_compact:
+          template: field-map
+          label: List item (compact)
       fields:
         created:
           type: datetime
@@ -1141,6 +1316,149 @@ content:
           multiple: false
           computed: true
           readonly: true
+        row_accent:
+          type: string
+          title: Row accent
+          description: >-
+            Computed, internal: the listing row's accent rail, attention in the review
+            phase, running while a conductor holds the ticket, otherwise none.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_summary:
+          type: string
+          title: Run summary
+          description: >-
+            Computed, internal: the run count and the latest run's state, as the
+            bb_run_summary formatter's badge label ("5 runs · last running").
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_summary_tone:
+          type: string
+          title: Run summary tone
+          description: >-
+            Design-only. Not a Drupal field: bb_run_summary keys the badge tone on the
+            latest run's state. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        run_summary_suffix:
+          type: string
+          title: Run summary time
+          description: >-
+            Design-only. Not a Drupal field: bb_run_summary appends the latest run's
+            relative time. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        stall_suffix:
+          type: string
+          title: Stall time
+          description: >-
+            Design-only. Not a Drupal field: bb_stall_reason appends how long a frozen
+            ticket has been frozen. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        identifier_link:
+          type: string
+          title: Identifier link
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_identifier_cell renders
+            `identifier` as a mono link to the ticket, while the compact row prints
+            it plain. The value is the identifier; its `_formatted` companion
+            carries the link.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        state_icon:
+          type: string
+          title: State icon
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_state_icon_cell draws the state
+            as an icon labelled with the state (running phase full, otherwise faint).
+            The value is the label; its `_formatted` companion carries the mark.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        priority_label:
+          type: string
+          title: Priority label
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_priority_cell labels the priority
+            from its allowed values. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        priority_tone:
+          type: string
+          title: Priority tone
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_priority_cell marks the highest
+            priority critical. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_label:
+          type: string
+          title: Conductor label
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_conductor_cell prints the
+            conductor's label as a mono lease badge. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_mine:
+          type: boolean
+          title: Conductor is the reader's
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_conductor_cell marks the badge
+            when the conductor belongs to the reader. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        owner_name:
+          type: string
+          title: Owner name
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_owner_cell draws the owner as a
+            person cell. Present so the person component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        owner_initials:
+          type: string
+          title: Owner initials
+          description: >-
+            Design-only. Not a Drupal field: the owner's person initials. Present so the
+            person component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        owner_color:
+          type: string
+          title: Owner colour
+          description: >-
+            Design-only. Not a Drupal field: the owner's person colour. Present so the
+            person component has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
       omitted:
         id: >-
           Entity key, not a modelled field; sample data carries it as the record
@@ -1301,6 +1619,9 @@ content:
           template: field-map
         teaser:
           template: field-map
+        list_item:
+          template: field-map
+          label: List item
       fields:
         created:
           type: datetime
@@ -1464,6 +1785,58 @@ content:
           type: string
           title: Duration
           description: Humanised closed_date − started_at, e.g. "1m 12s".
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        ticket_identifier:
+          type: string
+          title: Ticket identifier
+          description: >-
+            Design-only. Not a Drupal field: the row reaches the ticket's
+            identifier through ticket_id, rendered by bb_ticket_identifier_cell as
+            a mono link to the ticket. Present so the headline cell has a value.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        state_label:
+          type: string
+          title: State label
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_state_cell labels the run
+            state from the bb_run workflow. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        state_tone:
+          type: string
+          title: State tone
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_state_cell keys the tone on
+            the state (BbRun::STATE_MARKS). Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_label:
+          type: string
+          title: Conductor label
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_conductor_cell prints the
+            conductor's label as a mono lease badge. Present so the badge has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_mine:
+          type: boolean
+          title: Conductor is the reader's
+          description: >-
+            Design-only. Not a Drupal field: bb_ticket_conductor_cell marks the
+            badge when the conductor belongs to the reader. Present so the badge has
+            a prop.
           required: false
           multiple: false
           computed: true
@@ -1955,6 +2328,10 @@ content:
         current workspace that run each version. The definition is immutable
         once registered and may carry an inline SVG icon. Read-only on every
         screen.
+      view_modes:
+        list_item:
+          template: field-map
+          label: List item
       fields:
         name:
           type: string
@@ -2001,6 +2378,71 @@ content:
           title: Created
           required: false
           multiple: false
+        label:
+          type: string
+          title: Label
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            prints the definition's label. Present so the headline cell has a value.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        versions_label:
+          type: string
+          title: Versions
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            lists every version of the name once, newest first. Present so the
+            Versions cell has a value.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        initials:
+          type: string
+          title: Initials
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            draws the initials of the label. Present so the avatar has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_color:
+          type: string
+          title: Avatar colour
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            keys the avatar colour on the addon id. Present so the avatar has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        conductor_badges:
+          type: string
+          title: Conductors
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_conductors formatter
+            renders `conductors` as one dotted badge per conductor and version
+            ("<conductor> <version>", running when online, offline otherwise), or
+            "No conductor in this workspace". The value lists the badges as text;
+            its `_formatted` companion carries the rendered badges.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+        avatar_picture:
+          type: string
+          title: Avatar picture
+          description: >-
+            Design-only. Not a Drupal field: the bb_addon_definition formatter
+            turns the definition's inline SVG icon into a data URI; empty for
+            initials. Present so the avatar has a prop.
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
       omitted:
         id: Entity key, not a modelled field.
         uuid: Entity key.
@@ -2155,8 +2597,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_addon records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_addon records the View lists; Drupal renders each row as the addon
+            in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2164,7 +2606,7 @@ config:
             settings:
               entity_type: bb_addon
               bundle: bb_addon
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
@@ -2217,8 +2659,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_conductor records the View lists; Drupal renders each row with
-            the `fields` row plugin.
+            bb_conductor records the View lists; Drupal renders each row as the
+            conductor in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2226,7 +2668,7 @@ config:
             settings:
               entity_type: bb_conductor
               bundle: bb_conductor
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
@@ -2261,8 +2703,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_ticket records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_ticket records the View lists; Drupal renders each row as the
+            ticket in its `list_item_compact` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2270,7 +2712,7 @@ config:
             settings:
               entity_type: bb_ticket
               bundle: bb_ticket
-              view_mode: default
+              view_mode: list_item_compact
         empty:
           type: text
           title: Empty
@@ -2305,8 +2747,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_group records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_group records the View lists; Drupal renders each row as the group
+            in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2314,7 +2756,7 @@ config:
             settings:
               entity_type: bb_group
               bundle: bb_group
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
@@ -2353,8 +2795,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_machine records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_machine records the View lists; Drupal renders each row as the machine
+            in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2362,7 +2804,7 @@ config:
             settings:
               entity_type: bb_machine
               bundle: bb_machine
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
@@ -2628,8 +3070,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_project records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_project records the View lists; Drupal renders each row as the
+            project in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2637,7 +3079,7 @@ config:
             settings:
               entity_type: bb_project
               bundle: bb_project
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
@@ -2678,8 +3120,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_run records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_run records the View lists; Drupal renders each row as the run in its
+            `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2687,7 +3129,7 @@ config:
             settings:
               entity_type: bb_run
               bundle: bb_run
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page
@@ -2743,8 +3185,8 @@ config:
           type: view_rows
           title: Rows
           description: >-
-            bb_ticket records the View lists; Drupal renders each row with the
-            `fields` row plugin.
+            bb_ticket records the View lists; Drupal renders each row as the
+            ticket in its `list_item` view mode.
           required: true
           multiple: true
           sample_template:
@@ -2752,7 +3194,7 @@ config:
             settings:
               entity_type: bb_ticket
               bundle: bb_ticket
-              view_mode: default
+              view_mode: list_item
         items_per_page:
           type: integer
           title: Items per page

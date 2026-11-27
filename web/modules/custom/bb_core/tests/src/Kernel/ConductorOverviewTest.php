@@ -280,6 +280,8 @@ final class ConductorOverviewTest extends KernelTestBase {
     $view->setArguments([(string) $this->accounts['lead']->id()]);
     $view->preExecute();
     $view->execute();
+    // Entity rows are built in pre-render, as View::render() does.
+    $view->style_plugin->preRender($view->result);
     $build = $view->style_plugin->render();
     $html = (string) $this->container->get('renderer')->renderInIsolation($build);
 
@@ -463,6 +465,8 @@ final class ConductorOverviewTest extends KernelTestBase {
     $view->setArguments([(string) $this->accounts['lead']->id()]);
     $view->preExecute();
     $view->execute();
+    // Entity rows are built in pre-render, as View::render() does.
+    $view->style_plugin->preRender($view->result);
     $build = $view->style_plugin->render();
     $html = (string) $this->container->get('renderer')->renderInIsolation($build);
     $item = $this->itemNamed($html, 'Alpha');

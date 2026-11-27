@@ -97,10 +97,6 @@ views.area.bb_empty:
   type: views.area.text_custom
   label: 'Empty state with configured text'
 
-views.field.bb_related_max_timestamp:
-  type: views_field
-  label: 'Related max timestamp'
-
 views.field.bb_entity_edit_dialog:
   type: views.field.entity_link_edit
   label: 'Entity label opening its edit form in the dialog'

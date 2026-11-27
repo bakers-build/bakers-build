@@ -1,0 +1,15 @@
+(
+  $fields := $;
+  [
+    {
+      "component": "bb_theme:list_item",
+      "slots": {
+        "avatar": { "component": "bb_theme:list_cell", "props": { "key": "name_avatar" }, "slots": { "value": { "component": "bb_theme:person", "props": { "variant": "compact", "size": "md", "image_fit": "contain", "color": $fields.avatar_color, "picture": $fields.avatar_picture, "initials": $fields.initials } } } },
+        "headline": { "component": "bb_theme:list_cell", "props": { "key": "name", "primary": true }, "slots": { "value": $fields.name } },
+        "description": { "component": "bb_theme:list_cell", "props": { "key": "description" }, "slots": { "value": $fields.description } },
+        "right": { "component": "bb_theme:list_cell", "props": { "key": "projects", "align": "end", "fallback": "—" }, "slots": { "value": { "component": "bb_theme:badge", "props": { "icon": "project", "tone": "neutral", "label": $fields.projects } } } },
+        "right_meta": { "component": "bb_theme:list_cell", "props": { "key": "changed", "caption": "Updated" }, "slots": { "value": $fields.changed } }
+      }
+    }
+  ]
+)

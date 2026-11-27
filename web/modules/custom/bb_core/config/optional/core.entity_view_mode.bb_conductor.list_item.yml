@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_conductor.list_item
+label: List item
+description: One row of a listing.
+targetEntityType: bb_conductor
+cache: true

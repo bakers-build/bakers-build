@@ -83,6 +83,9 @@
     list is as wrong as a list without items. So the caller that sets
     `bb_theme:zone`'s `list: true` says so here too. It disappears the moment a
     container owns its own items. #}
+{#- `label` is required: a badge without one renders nothing, so a row whose fact is absent
+    (no conductor, no runs) leaves its cell empty rather than an unlabelled pill. #}
+{%- if label is not empty -%}
 <span{{ (attributes ?: create_attribute()).addClass(badge_classes) }}{% if list_item %} role="listitem"{% endif %}>
   {%- if dot %}<span class="inline-block shrink-0 w-2 h-2 rounded-full {{ dot_map[tone_key]|default('bg-state-offline') }}" aria-hidden="true"></span>{% endif %}
   {%- if icon %}{{ include('bb_theme:icon', { name: icon, size: 'xs' }, with_context = false) }}{% endif %}
@@ -90,3 +93,4 @@
   {%- if suffix and suffix_datetime %}{{ include('bb_theme:time', { label: suffix, datetime: suffix_datetime, title: suffix_title|default(''), attributes: create_attribute({ class: ['text-badge', 'text-text-faint'] }) }, with_context = false) }}
   {%- elseif suffix %}<span class="tabular-nums text-badge text-text-faint">{{ suffix }}</span>{% endif %}
 </span>
+{%- endif -%}

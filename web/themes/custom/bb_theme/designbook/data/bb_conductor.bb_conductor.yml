@@ -19,6 +19,15 @@
   last_seen: '2026-06-30T09:15:00+00:00'
   lease_expires_at: '2026-06-30T09:20:00+00:00'
   active: false
+  reported_load: 1
+  owner_label: Christian Wiedemann
+  status_label: Online
+  status_tone: running
+  last_seen_formatted: 1 minute ago
+  label_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--conductor-detail-overview">cw
+    · framework</a>
   __designbook:
     section: conductors
 - id: '2'
@@ -40,5 +49,14 @@
   last_seen: '2026-06-29T17:40:00+00:00'
   lease_expires_at: '2026-06-29T17:45:00+00:00'
   active: true
+  reported_load: 0
+  owner_label: Marieke van Dijk
+  status_label: Offline
+  status_tone: offline
+  last_seen_formatted: 17 hours ago
+  label_formatted: >-
+    <a
+    href="/?path=/story/designbook-sections-projects-scenes--conductor-detail-overview">mvd
+    · shop</a>
   __designbook:
     section: conductors

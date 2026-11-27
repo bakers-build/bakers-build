@@ -1,0 +1,11 @@
+uuid: 9b8b2722-ab7a-438b-8f0f-0d7979f8a481
+langcode: en
+status: true
+dependencies:
+  module:
+    - bb_core
+id: bb_group.list_item
+label: List item
+description: One row of a listing.
+targetEntityType: bb_group
+cache: true

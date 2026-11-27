@@ -1,6 +1,8 @@
 langcode: en
 status: true
 dependencies:
+  config:
+    - core.entity_view_mode.bb_machine.list_item
   module:
     - bb_core
     - better_exposed_filters
@@ -22,283 +24,6 @@ display:
     position: 0
     display_options:
       title: Machines
-      fields:
-        name:
-          id: name
-          table: bb_machine
-          field: name
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_machine
-          entity_field: name
-          plugin_id: field
-          label: ''
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: false
-          click_sort_column: value
-          type: string
-          settings:
-            link_to_entity: true
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        max_parallel:
-          id: max_parallel
-          table: bb_machine
-          field: max_parallel
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_machine
-          entity_field: max_parallel
-          plugin_id: field
-          label: ''
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: bb_integer_badge
-          settings:
-            icon: machine
-            tone: neutral
-            singular: '1 parallel slot'
-            plural: '@count parallel slots'
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        current_load:
-          id: current_load
-          table: bb_machine
-          field: current_load
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_machine
-          entity_field: current_load
-          plugin_id: field
-          label: ''
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: false
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: value
-          type: bb_integer_badge
-          settings:
-            icon: run
-            tone: neutral
-            singular: '1 load'
-            plural: '@count loads'
-          group_column: value
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        owner_user_id:
-          id: owner_user_id
-          table: bb_machine
-          field: owner_user_id
-          relationship: none
-          group_type: group
-          admin_label: ''
-          entity_type: bb_machine
-          entity_field: owner_user_id
-          plugin_id: field
-          label: Owner
-          exclude: false
-          alter:
-            alter_text: false
-            text: ''
-            make_link: false
-            path: ''
-            absolute: false
-            external: false
-            replace_spaces: false
-            path_case: none
-            trim_whitespace: false
-            alt: ''
-            rel: ''
-            link_class: ''
-            prefix: ''
-            suffix: ''
-            target: ''
-            nl2br: false
-            max_length: 0
-            word_boundary: true
-            ellipsis: true
-            more_link: false
-            more_link_text: ''
-            more_link_path: ''
-            strip_tags: false
-            trim: false
-            preserve_tags: ''
-            html: false
-          element_type: ''
-          element_class: ''
-          element_label_type: ''
-          element_label_class: ''
-          element_label_colon: false
-          element_wrapper_type: ''
-          element_wrapper_class: ''
-          element_default_classes: true
-          empty: ''
-          hide_empty: true
-          empty_zero: false
-          hide_alter_empty: true
-          click_sort_column: target_id
-          type: entity_reference_label
-          settings:
-            link: false
-          group_column: target_id
-          group_columns: {  }
-          group_rows: true
-          delta_limit: 0
-          delta_offset: 0
-          delta_reversed: false
-          delta_first_last: false
-          multi_type: separator
-          separator: ', '
-          field_api_classes: false
-        last_run:
-          id: last_run
-          table: bb_machine
-          field: last_run
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: bb_related_max_timestamp
-          label: 'Last run'
-          exclude: false
       pager:
         type: full
         options:
@@ -383,29 +108,14 @@ display:
       arguments: {  }
       filters: {  }
       style:
-        type: bb_list
+        type: bb_rows
         options:
           grouping: {  }
-          uses_fields: false
-          pattern:
-            avatar: {  }
-            headline:
-              - name
-            meta: {  }
-            description: {  }
-            right:
-              - max_parallel
-              - current_load
-            right_meta:
-              - owner_user_id
-              - last_run
       row:
-        type: fields
+        type: entity:bb_machine
         options:
-          default_field_elements: true
-          inline: {  }
-          separator: ''
-          hide_empty: false
+          relationship: none
+          view_mode: list_item
       query:
         type: views_query
         options:
@@ -421,8 +131,7 @@ display:
         display_builder:
           profile: default
           sources:
-            -
-              source_id: component
+            - source_id: component
               source:
                 component:
                   component_id: 'bb_theme:zone'
@@ -435,19 +144,16 @@ display:
                   slots:
                     heading:
                       sources:
-                        -
-                          source_id: textfield
+                        - source_id: textfield
                           source:
                             value: Conductors
                           node_id: machines_heading
                     content:
                       sources:
-                        -
-                          source_id: view_rows
+                        - source_id: view_rows
                           source: {  }
                           node_id: machines_rows
-                        -
-                          source_id: view_pager
+                        - source_id: view_pager
                           source: {  }
                           node_id: machines_pager
               node_id: machines_zone
@@ -612,8 +318,7 @@ display:
         display_builder:
           profile: default
           sources:
-            -
-              source_id: component
+            - source_id: component
               source:
                 component:
                   component_id: 'bb_theme:canvas'
@@ -622,8 +327,7 @@ display:
                   slots:
                     main:
                       sources:
-                        -
-                          source_id: component
+                        - source_id: component
                           source:
                             component:
                               component_id: 'bb_theme:zone'
@@ -636,8 +340,7 @@ display:
                               slots:
                                 content:
                                   sources:
-                                    -
-                                      source_id: component
+                                    - source_id: component
                                       source:
                                         component:
                                           component_id: 'bb_theme:filters'
@@ -654,21 +357,17 @@ display:
                                           slots:
                                             controls:
                                               sources:
-                                                -
-                                                  source_id: bb_view_search
+                                                - source_id: bb_view_search
                                                   source: {  }
                                                   node_id: machines_user_list_search
                                       node_id: machines_user_list_toolbar
-                                    -
-                                      source_id: view_rows
+                                    - source_id: view_rows
                                       source: {  }
                                       node_id: machines_list_rows
-                                    -
-                                      source_id: view_pager
+                                    - source_id: view_pager
                                       source: {  }
                                       node_id: machines_list_pager
-                                    -
-                                      source_id: view_exposed
+                                    - source_id: view_exposed
                                       source: {  }
                                       node_id: machines_list_exposed
                           node_id: machines_list_zone

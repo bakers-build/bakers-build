@@ -45,6 +45,8 @@ final class RunListRouteTest extends KernelTestBase {
     $this->installConfig(['search_api']);
     $this->container->get('config.installer')
       ->installOptionalConfig(NULL, ['module' => 'bb_core']);
+    $this->installSchema('search_api', ['search_api_item']);
+    $this->installShippedIndex('search_api.index.bb_runs');
     $this->installShippedView('views.view.runs');
     $this->container->get('router.builder')->rebuild();
   }

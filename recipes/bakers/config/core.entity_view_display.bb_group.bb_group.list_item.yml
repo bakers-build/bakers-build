@@ -1,0 +1,202 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.bb_group.list_item
+  module:
+    - bb_core
+    - display_builder
+third_party_settings:
+  display_builder:
+    profile: default
+    sources:
+      -
+        source_id: component
+        source:
+          component:
+            component_id: 'bb_theme:list_item'
+            variant_id: null
+            props: {  }
+            slots:
+              avatar:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: name_avatar
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_group:bb_group:name'
+                                  'field:bb_group:bb_group:name':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:name'
+                                          source:
+                                            type: bb_entity_avatar
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_name_avatar
+              headline:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: name
+                          primary:
+                            source_id: checkbox
+                            source:
+                              value: true
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_group:bb_group:name'
+                                  'field:bb_group:bb_group:name':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:name'
+                                          source:
+                                            type: string
+                                            settings:
+                                              link_to_entity: true
+                                            third_party_settings: {  }
+                    node_id: list_item_name
+              description:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: description
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_group:bb_group:description'
+                                  'field:bb_group:bb_group:description':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:description'
+                                          source:
+                                            type: basic_string
+                                            settings: {  }
+                                            third_party_settings: {  }
+                    node_id: list_item_description
+              right:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: projects
+                          fallback:
+                            source_id: textfield
+                            source:
+                              value: —
+                          align:
+                            source_id: select
+                            source:
+                              value: end
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_group:bb_group:projects'
+                                  'field:bb_group:bb_group:projects':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:projects'
+                                          source:
+                                            type: bb_integer_badge
+                                            settings:
+                                              icon: project
+                                              tone: neutral
+                                              singular: '1 project'
+                                              plural: '@count projects'
+                                            third_party_settings: {  }
+                    node_id: list_item_projects
+              right_meta:
+                sources:
+                  -
+                    source_id: component
+                    source:
+                      component:
+                        component_id: 'bb_theme:list_cell'
+                        variant_id: null
+                        props:
+                          key:
+                            source_id: textfield
+                            source:
+                              value: changed
+                          caption:
+                            source_id: textfield
+                            source:
+                              value: Updated
+                        slots:
+                          value:
+                            sources:
+                              -
+                                source_id: entity_field
+                                source:
+                                  derivable_context: 'field:bb_group:bb_group:changed'
+                                  'field:bb_group:bb_group:changed':
+                                    value:
+                                      sources:
+                                        -
+                                          source_id: 'field_formatter:bb_group:bb_group:changed'
+                                          source:
+                                            type: bb_time
+                                            settings:
+                                              date_only: false
+                                            third_party_settings: {  }
+                    node_id: list_item_changed
+        node_id: bb_group_list_item
+id: bb_group.bb_group.list_item
+targetEntityType: bb_group
+bundle: bb_group
+mode: list_item
+content: {  }
+hidden:
+  description: true
+  image: true
+  search_api_excerpt: true
