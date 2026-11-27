@@ -20,6 +20,27 @@ use Symfony\Component\Routing\Route;
 final class BbCommentRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_comment.add_form' => 'Write a new comment.',
+    'entity.bb_comment.canonical' => 'This comment on its own page.',
+    'entity.bb_comment.edit_form' => 'Change the text of this comment.',
+    'entity.bb_comment.delete_form' => 'Confirm the deletion of this comment.',
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRoutes(EntityTypeInterface $entity_type) {
+    $collection = parent::getRoutes($entity_type);
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
+    return $collection;
+  }
+
+  /**
    * Titles the comment as "Open {type} comment".
    */
   public static function title(BbCommentInterface $bb_comment): string {

@@ -32,6 +32,10 @@ services:
     class: Drupal\bb_core\Routing\BbWorkspaceRouteSubscriber
     tags:
       - { name: event_subscriber }
+  bb_core.page_description_route_subscriber:
+    class: Drupal\bb_core\Routing\PageDescriptionRouteSubscriber
+    tags:
+      - { name: event_subscriber }
   bb_core.front_end_route_subscriber:
     class: Drupal\bb_core\Routing\FrontEndRouteSubscriber
     tags:

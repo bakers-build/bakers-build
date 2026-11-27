@@ -27,6 +27,19 @@ use Symfony\Component\Routing\RouteCollection;
 final class BbTeamRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_team.add_form' => 'Add a team to this workspace.',
+    'entity.bb_team.canonical' => 'This team and its details.',
+    'entity.bb_team.edit_form' => "Change this team's details.",
+    'bb_core.bb_team.settings' => "Change this team's settings.",
+    'bb_core.bb_team.members' => 'The members of this team.',
+    'bb_core.bb_team.stats' => 'The figures of this team.',
+    'entity.bb_team.delete_form' => 'Confirm the deletion of this team.',
+  ];
+
+  /**
    * The controller-backed tabs, named `bb_core.bb_team.<tab>`.
    *
    * The controller method carries the same name as the tab, which is what lets
@@ -46,6 +59,9 @@ final class BbTeamRouteProvider extends AdminHtmlRouteProvider {
       $collection->add('bb_core.bb_team.' . $tab, $this->getTabRoute($tab));
     }
     $collection->add('bb_core.bb_team.settings', $this->getSettingsRoute());
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
     return $collection;
   }
 

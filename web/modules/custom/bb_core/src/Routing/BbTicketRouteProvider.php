@@ -19,6 +19,24 @@ use Symfony\Component\Routing\Route;
 final class BbTicketRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_ticket.add_form' => 'Add a ticket to a project of this workspace.',
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRoutes(EntityTypeInterface $entity_type) {
+    $collection = parent::getRoutes($entity_type);
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
+    return $collection;
+  }
+
+  /**
    * {@inheritdoc}
    */
   protected function getCanonicalRoute(EntityTypeInterface $entity_type): ?Route {

@@ -17,6 +17,27 @@ use Symfony\Component\Routing\Route;
 final class BbTicketTemplateRouteProvider extends AdminHtmlRouteProvider {
 
   /**
+   * The line under the page title, by route.
+   */
+  private const DESCRIPTIONS = [
+    'entity.bb_ticket_template.add_form' => 'Add a ticket template.',
+    'entity.bb_ticket_template.canonical' => 'This ticket template and its details.',
+    'entity.bb_ticket_template.edit_form' => "Change this ticket template's settings.",
+    'entity.bb_ticket_template.delete_form' => 'Confirm the deletion of this ticket template.',
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRoutes(EntityTypeInterface $entity_type) {
+    $collection = parent::getRoutes($entity_type);
+    foreach (self::DESCRIPTIONS as $name => $description) {
+      $collection->get($name)?->setDefault('_description', $description);
+    }
+    return $collection;
+  }
+
+  /**
    * {@inheritdoc}
    */
   protected function getEditFormRoute(EntityTypeInterface $entity_type): ?Route {
