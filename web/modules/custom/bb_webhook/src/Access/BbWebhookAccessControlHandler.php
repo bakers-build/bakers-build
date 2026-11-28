@@ -14,8 +14,8 @@ use Drupal\entity\EntityAccessControlHandler;
 /**
  * Webhook access: the permissions, fenced to the own workspace by bb_core.
  *
- * The secret is never readable or editable through field access; it is shown
- * once, by the add form, after the first save.
+ * The secret is write-only: nobody views it through field access, editing it
+ * follows the webhook's update access. The add form shows it once.
  */
 final class BbWebhookAccessControlHandler extends EntityAccessControlHandler {
 
@@ -23,7 +23,7 @@ final class BbWebhookAccessControlHandler extends EntityAccessControlHandler {
    * {@inheritdoc}
    */
   protected function checkFieldAccess($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items = NULL): AccessResultInterface {
-    if ($field_definition->getName() === 'secret') {
+    if ($operation === 'view' && $field_definition->getName() === 'secret') {
       return AccessResult::forbidden('The webhook secret is write-only.');
     }
     return parent::checkFieldAccess($operation, $field_definition, $account, $items);

@@ -102,6 +102,8 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     'create bb_team',
     'create bb_term',
     'create bb_ticket',
+    // Krew creates one group webhook per customer through JSON:API.
+    'create bb_webhook',
     'edit bb_project',
     // The time tools record, correct and delete the owner's own worklogs.
     'record own worklog',
@@ -110,6 +112,7 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     'update any bb_term',
     'update any bb_ticket',
     'update any bb_workspace',
+    'update bb_webhook',
     'update own bb_machine',
     // A project's creator fixes its settings over the session.
     'update own bb_project',
@@ -134,6 +137,7 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     'view bb_team',
     'view bb_term',
     'view bb_ticket',
+    'view bb_webhook',
     'view bb_workspace',
     'write bakers via session scope',
   ];
