@@ -131,13 +131,6 @@ final class WebhookAccessTest extends WebhookKernelTestBase {
   }
 
   /**
-   * Webhooks are not a JSON:API or REST resource.
-   */
-  public function testNotExposedToJsonApi(): void {
-    $this->assertTrue($this->container->get('entity_type.manager')->getDefinition('bb_webhook')->isInternal());
-  }
-
-  /**
    * The add routes, whose response shows the secret once, are never stored.
    */
   public function testAddResponsesAreNotStored(): void {
@@ -151,13 +144,12 @@ final class WebhookAccessTest extends WebhookKernelTestBase {
   }
 
   /**
-   * Nobody reads or edits the secret through field access.
+   * Nobody reads the secret through field access; the lead may write it.
    */
-  public function testSecretFieldAccessDenied(): void {
+  public function testSecretIsWriteOnly(): void {
     $webhook = $this->webhooksOfA()['workspace'];
-    foreach (['view', 'edit'] as $operation) {
-      $this->assertFalse($webhook->get('secret')->access($operation, $this->leads['a']), "secret $operation is denied");
-    }
+    $this->assertFalse($webhook->get('secret')->access('view', $this->leads['a']), 'secret view is denied');
+    $this->assertTrue($webhook->get('secret')->access('edit', $this->leads['a']), 'secret edit follows update access');
     $this->assertTrue($webhook->get('url')->access('view', $this->leads['a']));
   }
 

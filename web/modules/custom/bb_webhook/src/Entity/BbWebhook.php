@@ -54,7 +54,6 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
     'delete-form' => '/_workspace/{bb_workspace}/webhook/{bb_webhook}/delete',
   ],
   admin_permission: 'administer bakers',
-  internal: TRUE,
   base_table: 'bb_webhook',
   constraints: [
     'Callback' => ['callback' => [self::class, 'validateScope']],
@@ -62,6 +61,9 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
   additional: [
     // Read by bb_core's workspace resolver and rank fence.
     'bb_workspace_path' => ['workspace_id'],
+    // Lets JSON:API filter webhooks, e.g. by group; query access still bounds
+    // the rows.
+    'bb_jsonapi_filter_scope' => TRUE,
   ],
 )]
 final class BbWebhook extends BbContentEntityBase implements BbWebhookInterface {
